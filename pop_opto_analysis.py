@@ -5,6 +5,9 @@ from scipy import stats
 from itertools import compress
 import random
 import utilities as util
+import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
+sns.set_style('ticks')
 
 
 class population_opto_analysis():
@@ -20,14 +23,11 @@ class population_opto_analysis():
 
             INPUT PARAMETERS
                 imaging_data - dictionary of the calcium imaging data outpt from
-                               the load_mat functions. Also accepts a list of
-                               dictionaries if you wish to analyze more than one
-                               session. More than one session is required for
+                               the load_mat functions. More than one session is required for
                                power_curve method.
 
                 behavior_data - dictionary of the behavior data output from the
-                                load_mat functions. Also accepts a list of
-                                dictionaries if you wish to analyze more than one.
+                                load_mat functions.
 
                 sampling_rate - scaler specifying the image sampling rate. Default
                                 is set to 30hz.
@@ -41,6 +41,7 @@ class population_opto_analysis():
 
                 to_plot - boolean True or False of weather or not you wish to
                           plot all figures generated.
+            
 
 
                 '''
@@ -240,13 +241,25 @@ class population_opto_analysis():
         return sig_results
     
     
-    def power_curve():
-        ## Need to change the code above and this code so that it can accept
-        ## lists of dataframes for the different sessions
-                    
-            
-            
-                
-                
-                
-                    
+    def plot_session_activity(self, title='Session Activity'):
+        plt.figure(figsize=(7,8))
+        for i, col in enumerate(self.dFoF.columns):
+            plt.plot(self.dFoF[col] + i*5, label=col, linewidth=0.5)
+        
+        for iti in self.itis:
+            plt.axvspan(iti[0],iti[1], alpha=0.3, color='red')
+        
+        plt.tick_params(axis='both', which='both', direction='in')
+        plt.xlabel('Imagine Frames')
+        plt.ylabel(r'$\Delta$F/F')
+        plt.title(title)
+        plt.legend(bbox_to_anchor=(1.1,1.05))
+        plt.show()
+
+
+    def plot_mean_sem(self):
+        
+        
+    def plot_shuff_results(self):
+        print('unfinished')
+        

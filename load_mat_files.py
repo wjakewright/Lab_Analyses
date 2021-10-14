@@ -212,7 +212,3 @@ def load_soma_imaging(fname,fname1=None,path=None):
     return data_dict
     
     
-    
-    
-    
-        
