@@ -233,13 +233,19 @@ class population_opto_analysis():
             # Put final results in dictionary
             sig_results = {}
             for col, real, shuff, b, sig in zip(data.columns,real_diffs,
-                                                      shuff_diffs,bounds, sigs):
+                                                      shuff_diffs,bounds,sigs):
                 sig_results[col] = {'real_diff':real,'shuff_diff':shuff,
                                     'bounds':b, 'sig':sig}
             self.sig_results = sig_results
         
         return sig_results
     
+    
+    def disp_results(self):
+        # Displaying sig results as a DataFrame for easy visualization in 
+        # Jupyter Notebook
+        
+        
     
     def plot_session_activity(self,figsize=(7,8), title='Session Activity'):
         plt.figure(figsize=figsize)
@@ -292,6 +298,36 @@ class population_opto_analysis():
             count +=1
         fig.tight_layout()
         
-    def plot_shuff_results(self):
-        print('unfinished')
+    def plot_shuff_results(self, figsize=(7,5), col_num=4, main_title="Shuffle Distributions"):
+        if self.method == 'test':
+            print('Wilcoxon-test not shuffled distribution was performed')
+        else:
+            pass
+        
+        if self.sig_results is None:
+            sig_results = self.significance_testing(method='shuff')
+        else:
+            sig_results = self.sig_results
+        
+        tot = len(sig_results.keys())
+        col_num = col_num
+        row_num = tot//col_num
+        row_num += tot%col_num
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(hspace=0.5)
+        fig.suptitle(main_title)
+        
+        count = 1
+        for key, value in sig_results.items():
+            ax = fig.add_subplot(row_num, col_num, count)
+            ax.hist(value['shuff_diff'],color='mediumblue',alpha=0.7,
+                    linewidth=0.5)
+            ax.axvline(x=value['real_diff'], color='red',linewidth=2.5)
+            ax.axvline(x=value['bounds'][0], color='black',linewidth=1,linestyle='--')
+            ax.axvline(x=value['bounds'][1], color='black',linewidth=1,linestyle='--')
+            ax.set_title(self.ROIs[count-1],fontsize=10)
+            
+            count += 1
+        
+        fig.tight_layout()
         
