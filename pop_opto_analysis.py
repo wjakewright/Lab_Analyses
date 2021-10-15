@@ -241,24 +241,48 @@ class population_opto_analysis():
         return sig_results
     
     
-    def plot_session_activity(self, title='Session Activity'):
-        plt.figure(figsize=(7,8))
+    def plot_session_activity(self,figsize=(7,8), title='Session Activity'):
+        plt.figure(figsize=figsize)
         for i, col in enumerate(self.dFoF.columns):
-            plt.plot(self.dFoF[col] + i*5, label=col, linewidth=0.5)
+            x = np.linspace(0,len(self.dFoF[col])/30,len(self.dFoF[col]))
+            plt.plot(x,self.dFoF[col] + i*5, label=col, linewidth=0.5)
         
         for iti in self.itis:
-            plt.axvspan(iti[0],iti[1], alpha=0.3, color='red')
+            plt.axvspan(iti[0]/30,iti[1]/30, alpha=0.3, color='red')
         
         plt.tick_params(axis='both', which='both', direction='in')
-        plt.xlabel('Imagine Frames')
+        plt.xlabel('Time(s)')
         plt.ylabel(r'$\Delta$F/F')
         plt.title(title)
         plt.legend(bbox_to_anchor=(1.1,1.05))
-        plt.show()
-
-
-    def plot_mean_sem(self):
+        plt.tight_layout()
         
+
+
+    def plot_mean_sem(self, figsize=(7,8), col_num=4, main_title='Mean Opto Activity'):
+        # Get the trace mean and sem for each ROI first
+        roi_stim_epochs, roi_mean_sems = self.opto_trace_mean_sems()
+        new_window = [self.window[0],self.window[1]+self.stim_len]
+        tot = len(roi_mean_sems)
+        col_num = col_num
+        row_num = tot//col_num
+        row_num += tot%col_num
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(hspace=0.5)
+        fig.suptitle(main_title)
+        
+        count = 1
+        for key, value in roi_mean_sems.items():
+            x = np.linspace(new_window[0],new_window[1],len(value[0]))
+            ax = fig.add_subplot(row_num,col_num,count)
+            ax.plot(x,value[0],color='mediumblue')
+            ax.fill_between(x,value[0]-value[1],value[0]+value[1],
+                             color='mediumblue', alpha=0.2)
+            plt.xticks(ticks = [new_window[0],0,new_window[1]],
+                      labels = [new_window[0],0,new_window[1]])
+            ax.set_title(self.ROIs[count-1],fontsize=10)
+            count +=1
+        fig.tight_layout()
         
     def plot_shuff_results(self):
         print('unfinished')
