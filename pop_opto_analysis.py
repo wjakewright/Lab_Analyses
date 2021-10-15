@@ -245,7 +245,15 @@ class population_opto_analysis():
         # Displaying sig results as a DataFrame for easy visualization in 
         # Jupyter Notebook
         
+        if self.sig_results is None:
+            return print('Must test significance first')
+        else:
+            sig_results = self.sig_results 
         
+        disp_results = pd.DataFrame.from_dict(sig_results,orient='index')
+        disp_results = disp_results.drop(columns=['shuff_diff'])
+        
+        return disp_results
     
     def plot_session_activity(self,figsize=(7,8), title='Session Activity'):
         plt.figure(figsize=figsize)
@@ -294,6 +302,7 @@ class population_opto_analysis():
             plt.xticks(ticks = [new_window[0],0,new_window[1]],
                       labels = [new_window[0],0,new_window[1]])
             ax.set_title(self.ROIs[count-1],fontsize=10)
+            ax.tick_params(axis='both', which='both', direction='in',length=4)
             plt.ylim(top=ymax+(ymax*0.1))
             count +=1
         fig.tight_layout()
@@ -326,6 +335,7 @@ class population_opto_analysis():
             ax.axvline(x=value['bounds'][0], color='black',linewidth=1,linestyle='--')
             ax.axvline(x=value['bounds'][1], color='black',linewidth=1,linestyle='--')
             ax.set_title(self.ROIs[count-1],fontsize=10)
+            ax.tick_params(axis='both', which='both', direction='in', length=4)
             
             count += 1
         
