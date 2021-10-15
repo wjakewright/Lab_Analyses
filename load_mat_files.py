@@ -188,7 +188,7 @@ def load_soma_imaging(fname,fname1=None,path=None):
     data_dict['ZoomValue'] = mat_file[fname1]['ZoomValue'][0,0][0][0]
     data_dict['Is_Longitudinal'] = mat_file[fname1]['IsLongitudinal'][0,0][0][0]
     data_dict['ROIs'] = np.floor(mat_file[fname1]['SpineROIs'][0,0][0])
-    data_dict['ROI_text'] = np.floor(mat_file[fname1]['SpineROItext'][0,0][0])
+    #data_dict['ROI_text'] = np.floor(mat_file[fname1]['SpineROItext'][0,0][0])
     data_dict['ROI_num'] = mat_file[fname1]['NumberofSpines'][0,0][0][0]
     data_dict['threshold_multiplier'] = mat_file[fname1]['somathresholdmultiplier'][0,0][0][0]
     data_dict['smooth_window'] = mat_file[fname1]['somasmoothwindow'][0,0][0][0]
