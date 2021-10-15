@@ -271,6 +271,12 @@ class population_opto_analysis():
         fig.subplots_adjust(hspace=0.5)
         fig.suptitle(main_title)
         
+        # Get max amplitude in order to set ylim
+        ms = []
+        for key,value in roi_mean_sems.items():
+            ms.append(np.max(value[0]+value[1]))
+        ymax = max(ms)
+        
         count = 1
         for key, value in roi_mean_sems.items():
             x = np.linspace(new_window[0],new_window[1],len(value[0]))
@@ -278,9 +284,11 @@ class population_opto_analysis():
             ax.plot(x,value[0],color='mediumblue')
             ax.fill_between(x,value[0]-value[1],value[0]+value[1],
                              color='mediumblue', alpha=0.2)
+            ax.axvspan(0,1, alpha=0.1, color='red')
             plt.xticks(ticks = [new_window[0],0,new_window[1]],
                       labels = [new_window[0],0,new_window[1]])
             ax.set_title(self.ROIs[count-1],fontsize=10)
+            plt.ylim(top=ymax+(ymax*0.1))
             count +=1
         fig.tight_layout()
         
