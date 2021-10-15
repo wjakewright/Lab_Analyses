@@ -78,7 +78,7 @@ class population_opto_analysis():
 
         # Making sure the iti intervals are consistent and within imaging period
         for i in range(len(itis)):
-            if itis[i][1] > len(dFoF):
+            if itis[i][1] + self.after_f + self.stim_len_f > len(dFoF):
                 itis = itis[0:i-1]
             else:
                 pass
@@ -216,8 +216,8 @@ class population_opto_analysis():
                     s_diffs.append(np.mean(np.array(shuff_after)-np.array(shuff_before)))
                 
                 # Assess significance
-                upper = np.percentile(s_diffs, 95)
-                lower = np.percentile(s_diffs, 5)
+                upper = np.percentile(s_diffs, 97.5)
+                lower = np.percentile(s_diffs, 2.5)
                 
                 if lower <= r_diff <= upper:
                     sig = 0
@@ -255,7 +255,9 @@ class population_opto_analysis():
         
         return disp_results
     
-    def plot_session_activity(self,figsize=(7,8), title='Session Activity'):
+    def plot_session_activity(self,figsize=(7,8), title='default'):
+        if title == 'default':
+            title = 'Session Activity'
         plt.figure(figsize=figsize)
         for i, col in enumerate(self.dFoF.columns):
             x = np.linspace(0,len(self.dFoF[col])/30,len(self.dFoF[col]))
@@ -273,8 +275,10 @@ class population_opto_analysis():
         
 
 
-    def plot_mean_sem(self, figsize=(7,8), col_num=4, main_title='Mean Opto Activity'):
+    def plot_mean_sem(self, figsize=(10,10), col_num=4, main_title='default'):
         # Get the trace mean and sem for each ROI first
+        if main_title == 'default':
+            main_title = 'Mean Opto Activity'
         roi_stim_epochs, roi_mean_sems = self.opto_trace_mean_sems()
         new_window = [self.window[0],self.window[1]+self.stim_len]
         tot = len(roi_mean_sems)
@@ -307,7 +311,9 @@ class population_opto_analysis():
             count +=1
         fig.tight_layout()
         
-    def plot_shuff_results(self, figsize=(7,5), col_num=4, main_title="Shuffle Distributions"):
+    def plot_shuff_dist(self, figsize=(10,10), col_num=4, main_title="default"):
+        if main_title == 'default':
+            main_title = "Shuffle Distributions"
         if self.method == 'test':
             print('Wilcoxon-test not shuffled distribution was performed')
         else:
