@@ -66,8 +66,8 @@ class pop_opto_curve():
         for imaging,behavior in zip(self.imaging_data,
                                     self.behavioral_data):
             
-            opto = pop_opto_analysis(imaging,behavior,self.sampling_rate,
-                                     self.window,self.stim_len,self.to_plot)
+            opto = pop_opto_analysis.population_opto_analysis(imaging,behavior,self.sampling_rate,
+                                                              self.window,self.stim_len)
             optos.append(opto)
         self.optos = optos
         return optos
@@ -109,11 +109,11 @@ class pop_opto_curve():
             sems = []
             # for each roi
             for col in data.columns:
-                before, after = util.get_before_after_means(activity=data[col],
-                                                            timestamps=itis,
-                                                            window=self.window,
-                                                            sampling_rate=self.sampling_rate,
-                                                            offset=False,single=True)
+                before, after = utils.get_before_after_means(activity=data[col],
+                                                             timestamps=itis,
+                                                             window=self.window,
+                                                             sampling_rate=self.sampling_rate,
+                                                             offset=False,single=True)
                 ds = np.array(after) - np.array(before)
                 diffs.append(np.mean(ds))
                 sems.append(stats.sem(ds))
@@ -125,11 +125,22 @@ class pop_opto_curve():
         
         return mean_diffs, sem_diffs
     
-    def plot_individual_sessions(self):
+    def visualize_individual_sessions(self, sess):
+        '''Plot the analysis results for each individual session. Must input the 
+            index of which session you wish to visualize (e.g. 0 for first session'''
+            
         # Plot the individual activity of each ROI for each imaging session
         # Uses the plots from pop_opto_analysis
+        if self.optos is None:
+            self.analyze_opto()
             
+        session = self.optos[sess]
+        sess_name = str(self.powers[sess]) + ' mW'
+        session.plot_session_activity(title = sess_name + ' Session Activity')
+        session.plot_mean_sem(main_title = sess_name + ' Mean Opto Activity')
+        session.plot_shuff_dist(main_title = sess_name + ' Shuff Distributions')
+        
     
     def generate_curves(self):
         #
-            
+         print('incomplete')   
