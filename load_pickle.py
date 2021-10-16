@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import pickle
+import os
 
-def load_pickle(fname_list):
+def load_pickle(fname_list, path=None):
     '''load_pickle - a function to load a list of pickled files.
     
         CREATOR
@@ -17,8 +18,15 @@ def load_pickle(fname_list):
             loaded_files = a list of the loaded files
             
             '''
+    if path is None:
+        fnames = fname_list
+    else:
+        fnames = []
+        for n in fname_list:
+            fn = os.path.join(path,n)
+            fnames.append(fn)
     loaded_files = []
-    for fname in fname_list:
+    for fname in fnames:
         f = open(fname,'rb')
         file = pickle.load(f)
         loaded_files.append(file)
