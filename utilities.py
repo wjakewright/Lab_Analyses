@@ -148,3 +148,21 @@ def get_trace_mean_sem(activity,timestamps,window,sampling_rate=30):
 
     return roi_stim_epochs, roi_mean_sems
 
+def z_score(data):
+    ''' Function to z-score the dat
+    
+        INPUT PARAMETERS
+            data - dataframe of neural data. Each column represents a seperate
+                   neuron.
+        
+        OUTPUT PARAMATERS
+            z_data - dataframe of z-scored neural data. Same format as input'''
+            
+    cols = data.columns
+    z_data = pd.DataFrame()
+    for col in cols:
+        z_data[col] = (data[col] - data[col].mean()) / data[col].std(ddof=0)
+    
+    return z_data
+    
+
