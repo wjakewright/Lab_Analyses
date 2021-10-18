@@ -5,6 +5,10 @@ import scipy as sy
 from scipy import stats
 import pop_opto_analysis
 import utilities as utils
+import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
+from IPython.display import display
+sns.set_style('ticks')
 
 
 class pop_opto_curve():
@@ -12,11 +16,11 @@ class pop_opto_curve():
         different stimulation power levels'''
         
     def __init__(self,imaging_data, behavioral_data, powers, method, sampling_rate=30, window=[-2,2],
-                 stim_len=1):
+                 stim_len=1,zscore=False):
         '''__init__ - Initialize pop_opto_curve Class.
         
             CREATOR
-                William (Jake) Wright
+                William (Jake) Wright  -  10/14/2021
             
             INPUT PARAMETERS
                 imaging_data - list of the dictionaries containing the imaging data
@@ -54,8 +58,9 @@ class pop_opto_curve():
         self.sampling_rate = sampling_rate
         self.window = window
         self.stim_len = stim_len
+        self.zscore = zscore
         self.optos = None
-        self.sig_results = None
+        self.significance = None
         self.mean_diffs = None
         self.sem_diffs = None
     
@@ -67,7 +72,7 @@ class pop_opto_curve():
                                     self.behavioral_data):
             
             opto = pop_opto_analysis.population_opto_analysis(imaging,behavior,self.sampling_rate,
-                                                              self.window,self.stim_len)
+                                                              self.window,self.stim_len,self.zscore)
             optos.append(opto)
         self.optos = optos
         return optos
@@ -81,12 +86,12 @@ class pop_opto_curve():
             self.analyze_opto()
         else:
             pass
-        sig_results = []
+        results = []
         for o in self.optos:
-            sig_results.append(o.significance_testing(method=self.method))
-        self.sig_results = sig_results
+            results.append(o.significance_testing(method=self.method))
+        self.significance = results
         
-        return sig_results
+        return results
             
     
     def get_mean_sems(self):
@@ -127,7 +132,7 @@ class pop_opto_curve():
     
     def visualize_individual_sessions(self, sess):
         '''Plot the analysis results for each individual session. Must input the 
-            index of which session you wish to visualize (e.g. 0 for first session'''
+            index of which session you wish to visualize (e.g. 0 for first session)'''
             
         # Plot the individual activity of each ROI for each imaging session
         # Uses the plots from pop_opto_analysis
@@ -138,9 +143,66 @@ class pop_opto_curve():
         sess_name = str(self.powers[sess]) + ' mW'
         session.plot_session_activity(title = sess_name + ' Session Activity')
         session.plot_mean_sem(main_title = sess_name + ' Mean Opto Activity')
-        session.plot_shuff_dist(main_title = sess_name + ' Shuff Distributions')
+        if self.method == 'shuff':
+            session.plot_shuff_dist(main_title = sess_name + ' Shuff Distributions')
+        else:
+            pass
+        display(session.disp_results())
         
     
-    def generate_curves(self):
-        #
-         print('incomplete')   
+    def get_power_curves(self):
+        ''' Function to generate the power curve and plot it'''
+        if self.mean_diffs is None:
+            self.get_mean_sems()
+        ## For Figure 1
+        ## Plotting the mean change in activity 
+        power_diffs = []
+        power_scatter = pd.DataFrame()
+        power_sem = []
+        for diff,power in zip(self.mean_diffs,self.powers):
+            power_diffs.append(np.mean(diff))
+            power_scatter[power] = np.array(diff)
+            power_sem.append(stats.sem(diff))
+        
+        ## For Figure 2
+        ## Get percentage of neurons that display significant change
+        if self.significance is None:
+            self.get_sig_results()
+        else:
+            pass
+        signi = self.significance
+        
+        percent_sig = []
+        for result in signi:
+            s = []
+            for key,value in result.items():
+                s.append(value['sig'])
+            percent = (sum(s)/len(s))*100
+            percent_sig.append(percent)
+        ## Plot figures
+        fig = plt.figure(figsize=(8,4))
+        ax1 = fig.add_subplot(1,2,1)
+        p = list(range(len(self.powers)))
+        powers = [str(x) for x in self.powers]
+        ax1.errorbar(p,power_diffs,yerr=power_sem,color='red',
+                     marker='o',markerfacecolor='red',ecolor='red')
+        sns.swarmplot(data=power_scatter,color='red',size=4,alpha=0.2)
+        ax1.axhline(y=0,color='black',linestyle='--',linewidth=1)
+        ax1.set_title('Mean Change in Activity',fontsize = 12)
+        ax1.set_ylabel('$\Delta$F/F')
+        ax1.set_xticklabels(labels=powers)
+        ax2 = fig.add_subplot(1,2,2)
+        ax2.plot(p,percent_sig,color='red',marker='o',markerfacecolor='red')
+        ax2.set_title('Percent Significant',fontsize=12)
+        ax2.set_ylabel('Percentage of Neurons')
+        ax2.set_xticks(p)
+        ax2.set_xticklabels(labels=powers)
+        plt.ylim(bottom=0)
+        
+        fig.add_subplot(111,frame_on=False)
+        plt.tick_params(labelcolor='none',bottom=False,left=False)
+        plt.xlabel('Power (mW)',labelpad=15)
+        fig.tight_layout()
+        
+    def disp_results(self):
+        print('incomplete code')

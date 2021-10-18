@@ -15,7 +15,7 @@ class population_opto_analysis():
         by optogenetic stimulation.'''
 
     def __init__(self, imaging_data, behavior_data, sampling_rate=30,
-                 window = [-2,2], stim_len=1, to_plot=False):
+                 window = [-2,2], stim_len=1,zscore=False):
         ''' __init__- Initilize population_opto_analysis Class.
 
             CREATOR
@@ -39,8 +39,7 @@ class population_opto_analysis():
                 stim_len - scaler specifying how long opto stim was delivered for.
                            Default is set to 1 sec
 
-                to_plot - boolean True or False of weather or not you wish to
-                          plot all figures generated.
+                zscore - boolean True or False of wheather to zscore the data.
             
 
 
@@ -51,22 +50,26 @@ class population_opto_analysis():
         self.behavior = behavior_data
         self.sampling_rate = sampling_rate
         self.window = window
-        self.to_plot = to_plot
         self.before_t = window[0] # before window in time(s)
         self.before_f = window[0]*sampling_rate # before window in frames
         self.after_t = window[1]
         self.after_f = window[1]*sampling_rate
         self.stim_len = stim_len
         self.stim_len_f = stim_len*sampling_rate
+        self.zscore = zscore
         
         # Pulling data from the inputs that will be used
         ROIs = []
         for i in list(imaging_data['ROIs'][:-1]):
             ROIs.append('ROI ' + str(i))
         dFoF = pd.DataFrame(data=imaging_data['processed_dFoF'].T,columns=ROIs)
+        if zscore is True:
+            self.dFoF = util.z_score(dFoF)
+        else:
+            self.dFoF = dFoF
 
         self.ROIs = ROIs
-        self.dFoF = dFoF
+        #self.dFoF = dFoF
 
         # Select on the trials that were imaged
         i_trials = behavior_data['imaged_trials']
@@ -160,7 +163,7 @@ class population_opto_analysis():
                 a = after
 
                 # Perform Wilcoxon signed-rank test; significance set at 0.01
-                rank, pVal = stats.wilcoxon(b,a)
+                rank, pVal = stats.wilcoxon(a,b)
                 pValues.append(pVal)
                 rankValues.append(rank)
                 diffs.append(np.mean(np.array(a)-np.array(b)))
@@ -186,7 +189,6 @@ class population_opto_analysis():
                                    'rank':rank_dict[key],
                                    'diff':diff_dict[key],
                                    'sig':sig_dict[key]}
-            self.sig_results = sig_results
             
         elif method == 'shuff':
             data = self.dFoF.copy()
@@ -236,7 +238,9 @@ class population_opto_analysis():
                                                       shuff_diffs,bounds,sigs):
                 sig_results[col] = {'real_diff':real,'shuff_diff':shuff,
                                     'bounds':b, 'sig':sig}
-            self.sig_results = sig_results
+        else:
+            return ('Not a valid testing method indicated!!!')
+        self.sig_results = sig_results
         
         return sig_results
     
@@ -251,7 +255,8 @@ class population_opto_analysis():
             sig_results = self.sig_results 
         
         disp_results = pd.DataFrame.from_dict(sig_results,orient='index')
-        disp_results = disp_results.drop(columns=['shuff_diff'])
+        if 'shuff_diff' in disp_results.columns:
+            disp_results = disp_results.drop(columns=['shuff_diff'])
         
         return disp_results
     
