@@ -5,6 +5,7 @@ from scipy import stats
 from itertools import compress
 import random
 import utilities as util
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
 sns.set_style('ticks')
@@ -284,7 +285,7 @@ class population_opto_analysis():
         # Get the trace mean and sem for each ROI first
         if main_title == 'default':
             main_title = 'Mean Opto Activity'
-        roi_stim_epochs, roi_mean_sems = self.opto_trace_mean_sems()
+        _, roi_mean_sems = self.opto_trace_mean_sems()
         new_window = [self.window[0],self.window[1]+self.stim_len]
         tot = len(roi_mean_sems)
         col_num = col_num
@@ -314,6 +315,43 @@ class population_opto_analysis():
             ax.tick_params(axis='both', which='both', direction='in',length=4)
             plt.ylim(top=ymax+(ymax*0.1))
             count +=1
+        fig.tight_layout()
+        
+    def plot_heatmap(self, figsize=(4,5), main_title='default', cmap=None):
+        if main_title == 'default':
+            main_title = 'Mean Opto Activity Heatmap'
+        _, roi_mean_sems = self.opto_trace_mean_sems()
+        # Custom color map for the heatmap
+        d_map = mpl.colors.LinearSegmentedColormap.from_list('custom',
+                                                            [(0.0, 'mediumblue'),
+                                                             (0.3, 'royalblue'),
+                                                             (0.5, 'white'),
+                                                             (0.7, 'tomato'),
+                                                             (1.0, 'red')],N=1000)
+        # Put data in a dataframe to make it easier to plot
+        df = pd.DataFrame()
+        for key, value in roi_mean_sems.items():
+            df[key] = value[0]
+        df_t = df.T
+        # Plot the heatmap
+        if cmap is None:
+            cmap=d_map
+        else:
+            pass
+        fig = plt.figure(figsize=figsize)
+        fig.suptitle(main_title)
+        ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=2,vmin=-2,
+                         cbar_kws={'label':'z-score','orientation':'vertical',
+                                   'ticks':(-2,0,2)},yticklabels=False)
+        
+        plt.xticks(ticks = [0,(self.sampling_rate),(self.sampling_rate*2),
+                            (self.sampling_rate*3),(self.sampling_rate*4),
+                            (self.sampling_rate*5)],
+                   labels = [-2,1,0,1,2,3], rotation=0)
+        ax.axvline(x=(self.sampling_rate*2),ymin=0,ymax=1,color='black',linestyle='--')
+        ax.patch.set_edgecolor('black')
+        ax.patch.set_linewidth('2.5')
+        
         fig.tight_layout()
         
     def plot_shuff_dist(self, figsize=(10,10), col_num=4, main_title="default"):

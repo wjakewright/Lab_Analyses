@@ -3,11 +3,14 @@ import numpy as np
 import pandas as pd
 import scipy as sy
 from scipy import stats
+import itertools
 import pop_opto_analysis
 import utilities as utils
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
 from IPython.display import display
+from statsmodels.stats.multitest import multipletests
+from tabulate import tabulate
 sns.set_style('ticks')
 
 
@@ -125,8 +128,8 @@ class pop_opto_curve():
             mean_diffs.append(diffs)
             sem_diffs.append(sems)
         
-        self.mean_diffs = mean_diffs
-        self.sem_diffs = sem_diffs
+        self.mean_diffs = np.array(mean_diffs)
+        self.sem_diffs = np.array(sem_diffs)
         
         return mean_diffs, sem_diffs
     
@@ -143,6 +146,7 @@ class pop_opto_curve():
         sess_name = str(self.powers[sess]) + ' mW'
         session.plot_session_activity(title = sess_name + ' Session Activity')
         session.plot_mean_sem(main_title = sess_name + ' Mean Opto Activity')
+        session.plot_heatmap(main_title = sess_name +' Mean Opto Heatmap')
         if self.method == 'shuff':
             session.plot_shuff_dist(main_title = sess_name + ' Shuff Distributions')
         else:
@@ -163,6 +167,7 @@ class pop_opto_curve():
             power_diffs.append(np.mean(diff))
             power_scatter[power] = np.array(diff)
             power_sem.append(stats.sem(diff))
+        
         
         ## For Figure 2
         ## Get percentage of neurons that display significant change
@@ -189,7 +194,11 @@ class pop_opto_curve():
         sns.swarmplot(data=power_scatter,color='red',size=4,alpha=0.2)
         ax1.axhline(y=0,color='black',linestyle='--',linewidth=1)
         ax1.set_title('Mean Change in Activity',fontsize = 12)
-        ax1.set_ylabel('$\Delta$F/F')
+        if self.zscore is True:
+            ylab = 'z-scored $\Delta$F/F'
+        else:
+            ylab = '$\Delta$F/F'
+        ax1.set_ylabel(ylab)
         ax1.set_xticklabels(labels=powers)
         ax2 = fig.add_subplot(1,2,2)
         ax2.plot(p,percent_sig,color='red',marker='o',markerfacecolor='red')
@@ -205,4 +214,67 @@ class pop_opto_curve():
         fig.tight_layout()
         
     def disp_results(self):
-        print('incomplete code')
+        ''' Function to display results in an easily readable manner'''
+        
+        ## Get some of the data of interests
+        if self.mean_diffs is None:
+            self.get_mean_sems()
+        if self.significance is None:
+            self.get_sig_results()
+        
+        all_diffs = {}
+        power_diffs = []
+        power_sems = []
+        percent_sig = []
+        for diff,power in zip(self.mean_diffs,self.powers):
+            all_diffs[str(power) + ' mW'] = diff
+            power_diffs.append(np.mean(diff))
+            power_sems.append(stats.sem(diff))
+        for result in self.significance:
+            s = []
+            for key, value in result.items():
+                s.append(value['sig'])
+            p = (sum(s)/len(s))*100
+            percent_sig.append(p)
+        
+        ## Generate table summarizing results
+        summary_df = pd.DataFrame()
+        for diff,sem,p_sig,power,opto in zip(power_diffs,power_sems,percent_sig,self.powers,self.optos):
+            summary_df[str(power) + ' mW'] = [diff, sem, p_sig,len(opto.ROIs)]
+        summary_df.set_axis(['mean_diff', 'sem_diff', 'percent_sig', 'n'],axis=0,inplace=True)
+        
+        ## Perform One-way ANOVA on the results
+        f_stat, anova_p = stats.f_oneway(*self.mean_diffs)
+
+        
+        # Perform t-test across all groups
+
+        combos = list(itertools.combinations(all_diffs.keys(),2))
+        test_performed = []
+        t_vals = []
+        raw_pvals = []
+        for combo in combos:
+            test_performed.append(combo[0] + ' vs.' + combo[1])
+            t, p = stats.ttest_ind(all_diffs[combo[0]],all_diffs[combo[1]])
+            t_vals.append(t)
+            raw_pvals.append(p)
+        # Peform multiple comparisons correction
+        # Set up for Bonferroni at the moment
+        _, adj_pvals, _, alpha_corrected =multipletests(raw_pvals,alpha=0.05,
+                                                        method='bonferroni',is_sorted=False,
+                                                        returnsorted=False)
+        results_dict = {'comparison':test_performed,'t stat':t_vals,
+                        'raw p-values':raw_pvals,'adjusted p-vals':adj_pvals}
+        results_table = tabulate(results_dict,headers='keys',tablefmt='fancy_grid')
+        summary_table = tabulate(summary_df,headers='keys',tablefmt='fancy_grid')
+        
+        # Display results
+        print('One-Way ANOVA results')
+        print(f'F statistic: ', f_stat, '\np value: ', anova_p)
+        print('\n')
+        print('Bonferroni Posttest Results')
+        print(results_table)
+        print('\n')
+        print('Summary statistics')
+        print(summary_table)
+        
