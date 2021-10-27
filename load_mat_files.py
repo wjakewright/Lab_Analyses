@@ -48,7 +48,11 @@ def load_behavior(fname,fname1=None,path=None):
         p = path
 
     mat_fname = pjoin(p,fname)
-    mat_file = sio.loadmat(mat_fname)
+    try:
+        mat_file = sio.loadmat(mat_fname)
+    except FileNotFoundError:
+        print(fname + ' not found')
+        return
 
     ## Extract data from the .mat file into a dictionary
     behavior_dict = {}
@@ -153,7 +157,11 @@ def load_soma_imaging(fname,fname1=None,path=None):
         p = path
 
     mat_fname = pjoin(p,fname)
-    mat_file = sio.loadmat(mat_fname)
+    try:
+        mat_file = sio.loadmat(mat_fname)
+    except FileNotFoundError:
+        print(fname + ' not found')
+        return
 
     data_dict = {}
     data_dict['baseline_frames'] = mat_file[fname1]['BaselineFrames'][0,0]
