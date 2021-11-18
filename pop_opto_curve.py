@@ -184,6 +184,7 @@ class pop_opto_curve():
                 s.append(value['sig'])
             percent = (sum(s)/len(s))*100
             percent_sig.append(percent)
+            
         ## Plot figures
         fig = plt.figure(figsize=(8,4))
         ax1 = fig.add_subplot(1,2,1)

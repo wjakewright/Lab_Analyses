@@ -219,8 +219,8 @@ class population_opto_analysis():
                     s_diffs.append(np.mean(np.array(shuff_after)-np.array(shuff_before)))
                 
                 # Assess significance
-                upper = np.percentile(s_diffs, 97.5)
-                lower = np.percentile(s_diffs, 2.5)
+                upper = np.percentile(s_diffs, 99)
+                lower = np.percentile(s_diffs, 1)
                 
                 if lower <= r_diff <= upper:
                     sig = 0
@@ -278,6 +278,9 @@ class population_opto_analysis():
         plt.title(title)
         plt.legend(bbox_to_anchor=(1.1,1.05))
         plt.tight_layout()
+
+    def plot_each_event(self, figsize=(7,8),title='default'):
+        pass
         
 
 
@@ -359,6 +362,7 @@ class population_opto_analysis():
             main_title = "Shuffle Distributions"
         if self.method == 'test':
             print('Wilcoxon-test not shuffled distribution was performed')
+            return
         else:
             pass
         
@@ -389,4 +393,3 @@ class population_opto_analysis():
             count += 1
         
         fig.tight_layout()
-        
