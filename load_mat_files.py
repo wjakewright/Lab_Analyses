@@ -43,10 +43,9 @@ def load_behavior(fname,fname1=None,path=None):
 
     ## set the path to load the .mat file
     if path == None:
-        p = 'C:\\Users\\Jake\\Desktop\\Processed_data'
+        p = r'C:\Users\Jake\Desktop\Processed_data'
     else:
         p = path
-
     mat_fname = pjoin(p,fname)
     try:
         mat_file = sio.loadmat(mat_fname)
@@ -152,10 +151,10 @@ def load_soma_imaging(fname,fname1=None,path=None):
 
     ## set the path to load the .mat file
     if path == None:
-        p = 'C:\\Users\\Jake\\Desktop\\Processed_data'
+        p = r'C:\UsersJake\Desktop\Processed_data'
     else:
         p = path
-
+    
     mat_fname = pjoin(p,fname)
     try:
         mat_file = sio.loadmat(mat_fname)
@@ -219,4 +218,9 @@ def load_soma_imaging(fname,fname1=None,path=None):
     
     return data_dict
     
-    
+
+def merge_imaging_behavior(imaging_dict, behavior_dict):
+    ''' Function to merge imaging and behavioral data into single dictionary'''
+    data_dict = {'imaging':imaging_dict, 'behavior':behavior_dict}
+    return data_dict
+  

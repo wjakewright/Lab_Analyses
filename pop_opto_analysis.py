@@ -280,6 +280,7 @@ class population_opto_analysis():
         plt.tight_layout()
 
     def plot_each_event(self, figsize=(7,8),title='default'):
+        
         pass
         
 
