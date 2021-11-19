@@ -16,7 +16,7 @@ class population_opto_analysis():
         by optogenetic stimulation.'''
 
     def __init__(self, imaging_data, behavior_data, sampling_rate=30,
-                 window = [-2,2], stim_len=1,zscore=False):
+                 window = [-2,2], stim_len=1,zscore=False,spines=False):
         ''' __init__- Initilize population_opto_analysis Class.
 
             CREATOR
@@ -60,10 +60,16 @@ class population_opto_analysis():
         self.zscore = zscore
         
         # Pulling data from the inputs that will be used
-        ROIs = []
-        for i in list(imaging_data['ROIs'][:-1]):
-            ROIs.append('ROI ' + str(i))
-        dFoF = pd.DataFrame(data=imaging_data['processed_dFoF'].T,columns=ROIs)
+        if spines is False:
+            ROIs = []
+            for i in list(imaging_data['ROIs'][:-1]):
+                ROIs.append('ROI ' + str(i))
+            dFoF = pd.DataFrame(data=imaging_data['processed_dFoF'].T,columns=ROIs)
+        else:
+            ROIs = []
+            for i in list(imaging_data['Spine_ROIs'][:-1]):
+                ROIs.append('ROI ' + str(i))
+            dFoF = pd.DataFrame(data=imaging_data['spine_processed_dFoF'].T,columns=ROIs)
         if zscore is True:
             self.dFoF = util.z_score(dFoF)
         else:
@@ -280,7 +286,7 @@ class population_opto_analysis():
         plt.tight_layout()
 
     def plot_each_event(self, figsize=(7,8),title='default'):
-        
+
         pass
         
 
