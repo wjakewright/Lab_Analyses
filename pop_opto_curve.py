@@ -145,6 +145,7 @@ class pop_opto_curve():
         session = self.optos[sess]
         sess_name = str(self.powers[sess]) + ' mW'
         session.plot_session_activity(title = sess_name + ' Session Activity')
+        session.plot_each_event(title = sess_name + ' Session Timelocked Activity')
         session.plot_mean_sem(main_title = sess_name + ' Mean Opto Activity')
         session.plot_heatmap(main_title = sess_name +' Mean Opto Heatmap')
         if self.method == 'shuff':

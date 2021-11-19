@@ -272,7 +272,7 @@ class population_opto_analysis():
             title = 'Session Activity'
         plt.figure(figsize=figsize)
         for i, col in enumerate(self.dFoF.columns):
-            x = np.linspace(0,len(self.dFoF[col])/30,len(self.dFoF[col]))
+            x = np.linspace(0,len(self.dFoF[col])/30,len(self.dFoF[col])) # Will be in units time(s)
             plt.plot(x,self.dFoF[col] + i*5, label=col, linewidth=0.5)
         
         for iti in self.itis:
@@ -285,10 +285,39 @@ class population_opto_analysis():
         plt.legend(bbox_to_anchor=(1.1,1.05))
         plt.tight_layout()
 
-    def plot_each_event(self, figsize=(7,8),title='default'):
+    def plot_each_event(self, figsize=(10,10),title='default'):
+        # Get each stimulation epoch for each ROI first
+        if title == 'default':
+            title = 'Time Locked Activity'
+        roi_stim_epochs, _ = self.opto_trace_mean_sems()
+        new_window = [self.window[0],self.window[1]+self.stim_len]
+        tot = len(roi_stim_epochs.keys())
+        col_num = 2
+        row_num = tot//col_num
+        row_num += tot%col_num
+        fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(hspace=0.5)
+        fig.suptitle(title)
 
-        pass
-        
+        for count, (key,value) in enumerate(roi_stim_epochs.items()):
+            ax = fig.add_subplot(row_num,col_num,count+1)
+            win_len = np.shape(value)[0]
+            x = np.linspace(0,win_len/30,win_len) # Will be in units time(s)
+            iti_shade = np.array([1,2])
+            for col in range(len(value[0,:])):
+                if col == 0:
+                    ax.plot(x,value[:,col],color='mediumblue')
+                    ax.axvspan(iti_shade[0],iti_shade[1],color='red')
+                else:
+                    pad = len(x) + 1
+                    x = x + pad
+                    iti_shade = iti_shade + pad
+                    ax.plot(x,value[:,col],color='mediumblue')
+                    ax.axvspan(iti_shade[0],iti_shade[1],color='red')
+            ax.set_title(self.ROIs[count],fontsize=10)
+            ax.tick_params(axis='both',which='both',direction='in',length=4)
+        fig.tight_layout()
+
 
 
     def plot_mean_sem(self, figsize=(10,10), col_num=4, main_title='default'):
