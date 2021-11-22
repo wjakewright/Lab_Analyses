@@ -19,7 +19,7 @@ class pop_opto_curve():
         different stimulation power levels'''
         
     def __init__(self,imaging_data, behavioral_data, powers, method, sampling_rate=30, window=[-2,2],
-                 stim_len=1,zscore=False):
+                 stim_len=1,zscore=False,spines=False):
         '''__init__ - Initialize pop_opto_curve Class.
         
             CREATOR
@@ -62,6 +62,7 @@ class pop_opto_curve():
         self.window = window
         self.stim_len = stim_len
         self.zscore = zscore
+        self.spines = spines
         self.optos = None
         self.significance = None
         self.mean_diffs = None
@@ -75,7 +76,7 @@ class pop_opto_curve():
                                     self.behavioral_data):
             
             opto = pop_opto_analysis.population_opto_analysis(imaging,behavior,self.sampling_rate,
-                                                              self.window,self.stim_len,self.zscore)
+                                                              self.window,self.stim_len,self.zscore,self.spines)
             optos.append(opto)
         self.optos = optos
         return optos

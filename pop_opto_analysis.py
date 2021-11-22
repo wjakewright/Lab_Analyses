@@ -280,40 +280,43 @@ class population_opto_analysis():
         
         plt.tick_params(axis='both', which='both', direction='in')
         plt.xlabel('Time(s)')
-        plt.ylabel(r'$\Delta$F/F')
+        if self.zscore is True:
+            plt.ylabel('z-score')
+        else:
+            plt.ylabel(r'$\Delta$F/F')
         plt.title(title)
         plt.legend(bbox_to_anchor=(1.1,1.05))
         plt.tight_layout()
 
-    def plot_each_event(self, figsize=(10,10),title='default'):
+    def plot_each_event(self, figsize=(10,20),title='default'):
         # Get each stimulation epoch for each ROI first
         if title == 'default':
             title = 'Time Locked Activity'
         roi_stim_epochs, _ = self.opto_trace_mean_sems()
         new_window = [self.window[0],self.window[1]+self.stim_len]
         tot = len(roi_stim_epochs.keys())
-        col_num = 2
+        col_num = 1
         row_num = tot//col_num
         row_num += tot%col_num
         fig = plt.figure(figsize=figsize)
-        fig.subplots_adjust(hspace=0.5)
+        fig.subplots_adjust(hspace=1)
         fig.suptitle(title)
 
         for count, (key,value) in enumerate(roi_stim_epochs.items()):
             ax = fig.add_subplot(row_num,col_num,count+1)
             win_len = np.shape(value)[0]
-            x = np.linspace(0,win_len/30,win_len) # Will be in units time(s)
-            iti_shade = np.array([1,2])
+            x = np.linspace(0,win_len,win_len) # Will be in units time(s)
+            iti_shade = np.array([60,90])
             for col in range(len(value[0,:])):
                 if col == 0:
                     ax.plot(x,value[:,col],color='mediumblue')
-                    ax.axvspan(iti_shade[0],iti_shade[1],color='red')
+                    ax.axvspan(iti_shade[0],iti_shade[1],color='red', alpha=0.1)
                 else:
                     pad = len(x) + 1
                     x = x + pad
                     iti_shade = iti_shade + pad
                     ax.plot(x,value[:,col],color='mediumblue')
-                    ax.axvspan(iti_shade[0],iti_shade[1],color='red')
+                    ax.axvspan(iti_shade[0],iti_shade[1],color='red', alpha=0.1)
             ax.set_title(self.ROIs[count],fontsize=10)
             ax.tick_params(axis='both',which='both',direction='in',length=4)
         fig.tight_layout()
@@ -379,9 +382,14 @@ class population_opto_analysis():
             pass
         fig = plt.figure(figsize=figsize)
         fig.suptitle(main_title)
-        ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=2,vmin=-2,
-                         cbar_kws={'label':'z-score','orientation':'vertical',
-                                   'ticks':(-2,0,2)},yticklabels=False)
+        if self.zscore is True:
+            ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=2,vmin=-2,
+                            cbar_kws={'label':'z-score','orientation':'vertical',
+                                      'ticks':(-2,0,2)},yticklabels=False)
+        else:
+            ax = sns.heatmap(df_t,cmap='inferno',vmax=5,vmin=-0.5,
+                            cbar_kws={'label':r'$\Delta$F/F','orientation':'vertical',
+                                      'ticks':(-0.5,0,5)},yticklabels=False) 
         
         plt.xticks(ticks = [0,(self.sampling_rate),(self.sampling_rate*2),
                             (self.sampling_rate*3),(self.sampling_rate*4),
