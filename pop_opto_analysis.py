@@ -8,16 +8,18 @@ import utilities as util
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
+import opto_plotting as plotting
 sns.set_style('ticks')
 
 
 class population_opto_analysis():
-    '''Class to determine if neurons are being significantly activated
-        by optogenetic stimulation.'''
+    '''Class to analyze single optogenetic stimulation sessoins. Tests if ROIs
+        are significantly activated by stimulation. Also includes methods to 
+        get summarized activity and generate plots for visualization'''
 
     def __init__(self, imaging_data, behavior_data, sampling_rate=30,
                  window = [-2,2], stim_len=1,zscore=False,spines=False):
-        ''' __init__- Initilize population_opto_analysis Class.
+        '''__init__- Initilize population_opto_analysis Class.
 
             CREATOR
                 William (Jake) Wright 10/7/2021
@@ -41,10 +43,7 @@ class population_opto_analysis():
                            Default is set to 1 sec
 
                 zscore - boolean True or False of wheather to zscore the data.
-            
-
-
-                '''
+        '''
 
         # Storing the initial input data
         self.imaging = imaging_data
@@ -58,7 +57,7 @@ class population_opto_analysis():
         self.stim_len = stim_len
         self.stim_len_f = stim_len*sampling_rate
         self.zscore = zscore
-        
+
         # Pulling data from the inputs that will be used
         if spines is False:
             ROIs = []
@@ -78,7 +77,7 @@ class population_opto_analysis():
         self.ROIs = ROIs
         #self.dFoF = dFoF
 
-        # Select on the trials that were imaged
+        # Select the trials that were imaged
         i_trials = behavior_data['imaged_trials']
         i_trials = i_trials == 1
         behavior = list(compress(behavior_data['behavior_frames'],i_trials))
@@ -106,11 +105,18 @@ class population_opto_analysis():
         self.i_trials = i_trials
         self.behavior = behavior
         self.itis = itis
+        # Attributes to be defined
         self.method = None
         self.sig_results = None
-
-
+        self.all_befores = None
+        self.all_afters = None
+        self.roi_stim_epochs = None
+        self.roi_mean_sems = None
+        self.sig_results_dict = None
+        self.sig_results_df = None
+    
     def opto_before_after_means(self, data=None,single=None):
+        '''Method to get mean activity before and after stim'''
         if data is None:
             data = self.dFoF
         else:
@@ -124,10 +130,14 @@ class population_opto_analysis():
                                                               window=self.window,
                                                               sampling_rate=self.sampling_rate,
                                                               offset=False,single=single)
+        self.all_befores = all_befores
+        self.all_afters = all_afters
 
         return all_befores, all_afters
 
     def opto_trace_mean_sems(self,data=None):
+        '''Method to get the activity of each ROI for each trial
+            as well as the mean and sem across all trials'''
         if data is None:
             data = self.dFoF
         else:
@@ -142,10 +152,11 @@ class population_opto_analysis():
                                                                 timestamps=new_timestamps,
                                                                 window=new_window,
                                                                 sampling_rate=self.sampling_rate)
+        self.roi_stim_epochs = roi_stim_epochs
+        self.roi_mean_sems = roi_mean_sems
 
         return roi_stim_epochs, roi_mean_sems
-
-
+    
     def significance_testing(self, method):
         ''' Method to determine if each ROI was significantly activated by
             optogenetic stimulation.
@@ -158,9 +169,13 @@ class population_opto_analysis():
                              'shuff' - compares the real difference in activity
                                        against a shuffled distribution '''
         self.method = method
-
-        before_m, after_m = self.opto_before_after_means()
-
+        if self.all_befores is None:
+            before_m, after_m = self.opto_before_after_means()
+        else:
+            before_m = self.all_befores
+            after_m = self.all_afters
+        
+        # Preform significance testing
         if method == 'test':
             pValues = []
             rankValues = []
@@ -174,38 +189,31 @@ class population_opto_analysis():
                 pValues.append(pVal)
                 rankValues.append(rank)
                 diffs.append(np.mean(np.array(a)-np.array(b)))
-                
+            # Group in dictionaries
             pValue_dict = dict(zip(self.dFoF.columns,pValues))
             rank_dict = dict(zip(self.dFoF.columns,rankValues))
             diff_dict = dict(zip(self.dFoF.columns,diffs))
 
-            
-            # Assess significance and differences
-            sig = []
-            for key,value in pValue_dict.items():
-                if value < 0.01:
-                    sig.append(1)
-                else:
-                    sig.append(0)
+            # Assess significance
+            sig = (np.array(list(pValue_dict.values)) < 0.01) * 1
             sig_dict = dict(zip(self.dFoF.columns,sig))
-            
-            #Put final results in dictionary
+
             sig_results = {}
             for key,value in pValue_dict.items():
                 sig_results[key] = {'pvalue':value,
                                    'rank':rank_dict[key],
                                    'diff':diff_dict[key],
                                    'sig':sig_dict[key]}
-            
+        
         elif method == 'shuff':
             data = self.dFoF.copy()
             real_diffs = [] 
             shuff_diffs = [] 
             bounds = [] 
             sigs = []
-            smallest = self.sampling_rate # smallest shift if 1 second
+            smallest = self.sampling_rate # smallest shift is 1 second
             biggest = 300 * self.sampling_rate # biggest shift is 5 min
-            
+
             # Assess each ROI individually
             for col in data.columns:
                 d = self.dFoF[col]
@@ -238,8 +246,7 @@ class population_opto_analysis():
                 shuff_diffs.append(s_diffs)
                 bounds.append((upper,lower))
                 sigs.append(sig)
-            
-            # Put final results in dictionary
+             # Put final results in dictionary
             sig_results = {}
             for col, real, shuff, b, sig in zip(data.columns,real_diffs,
                                                       shuff_diffs,bounds,sigs):
@@ -247,163 +254,37 @@ class population_opto_analysis():
                                     'bounds':b, 'sig':sig}
         else:
             return ('Not a valid testing method indicated!!!')
-        self.sig_results = sig_results
-        
+        self.sig_results_dict = sig_results
+
+        results_df = pd.DataFrame.from_dict(sig_results,orient='index')
+        if 'shuff_diff' in results_df.columns:
+            results_df = results_df.drop(columns=['shuff_diff'])
+        self.sig_results_df = results_df
         return sig_results
     
+    def plot_sess_activity(self,figsize=(7,8), title='default'):
+        plotting.plot_session_activity(self.dFoF, self.itis, zscore=self.zscore, figsize=figsize, title=title)
     
-    def disp_results(self):
-        # Displaying sig results as a DataFrame for easy visualization in 
-        # Jupyter Notebook
-        
-        if self.sig_results is None:
-            return print('Must test significance first')
-        else:
-            sig_results = self.sig_results 
-        
-        disp_results = pd.DataFrame.from_dict(sig_results,orient='index')
-        if 'shuff_diff' in disp_results.columns:
-            disp_results = disp_results.drop(columns=['shuff_diff'])
-        
-        return disp_results
-    
-    def plot_session_activity(self,figsize=(7,8), title='default'):
-        if title == 'default':
-            title = 'Session Activity'
-        plt.figure(figsize=figsize)
-        for i, col in enumerate(self.dFoF.columns):
-            x = np.linspace(0,len(self.dFoF[col])/30,len(self.dFoF[col])) # Will be in units time(s)
-            plt.plot(x,self.dFoF[col] + i*5, label=col, linewidth=0.5)
-        
-        for iti in self.itis:
-            plt.axvspan(iti[0]/30,iti[1]/30, alpha=0.3, color='red')
-        
-        plt.tick_params(axis='both', which='both', direction='in')
-        plt.xlabel('Time(s)')
-        if self.zscore is True:
-            plt.ylabel('z-score')
-        else:
-            plt.ylabel(r'$\Delta$F/F')
-        plt.title(title)
-        plt.legend(bbox_to_anchor=(1.1,1.05))
-        plt.tight_layout()
-
-    def plot_each_event(self, figsize=(10,20),title='default'):
+    def plot_each_stim(self, figsize=(10,20),title='default'):
         # Get each stimulation epoch for each ROI first
-        if title == 'default':
-            title = 'Time Locked Activity'
         roi_stim_epochs, _ = self.opto_trace_mean_sems()
-        new_window = [self.window[0],self.window[1]+self.stim_len]
-        tot = len(roi_stim_epochs.keys())
-        col_num = 1
-        row_num = tot//col_num
-        row_num += tot%col_num
-        fig = plt.figure(figsize=figsize)
-        fig.subplots_adjust(hspace=1)
-        fig.suptitle(title)
+        ROIs = self.ROIs
+        plotting.plot_each_event(roi_stim_epochs, ROIs, figsize=figsize, title=title)
 
-        for count, (key,value) in enumerate(roi_stim_epochs.items()):
-            ax = fig.add_subplot(row_num,col_num,count+1)
-            win_len = np.shape(value)[0]
-            x = np.linspace(0,win_len,win_len) # Will be in units time(s)
-            iti_shade = np.array([60,90])
-            for col in range(len(value[0,:])):
-                if col == 0:
-                    ax.plot(x,value[:,col],color='mediumblue')
-                    ax.axvspan(iti_shade[0],iti_shade[1],color='red', alpha=0.1)
-                else:
-                    pad = len(x) + 1
-                    x = x + pad
-                    iti_shade = iti_shade + pad
-                    ax.plot(x,value[:,col],color='mediumblue')
-                    ax.axvspan(iti_shade[0],iti_shade[1],color='red', alpha=0.1)
-            ax.set_title(self.ROIs[count],fontsize=10)
-            ax.tick_params(axis='both',which='both',direction='in',length=4)
-        fig.tight_layout()
-
-
-
-    def plot_mean_sem(self, figsize=(10,10), col_num=4, main_title='default'):
+    def plot_mean_sems(self, figsize=(10,10), col_num=4, main_title='default'):
         # Get the trace mean and sem for each ROI first
-        if main_title == 'default':
-            main_title = 'Mean Opto Activity'
         _, roi_mean_sems = self.opto_trace_mean_sems()
         new_window = [self.window[0],self.window[1]+self.stim_len]
-        tot = len(roi_mean_sems)
-        col_num = col_num
-        row_num = tot//col_num
-        row_num += tot%col_num
-        fig = plt.figure(figsize=figsize)
-        fig.subplots_adjust(hspace=0.5)
-        fig.suptitle(main_title)
-        
-        # Get max amplitude in order to set ylim
-        ms = []
-        for key,value in roi_mean_sems.items():
-            ms.append(np.max(value[0]+value[1]))
-        ymax = max(ms)
-        
-        count = 1
-        for key, value in roi_mean_sems.items():
-            x = np.linspace(new_window[0],new_window[1],len(value[0]))
-            ax = fig.add_subplot(row_num,col_num,count)
-            ax.plot(x,value[0],color='mediumblue')
-            ax.fill_between(x,value[0]-value[1],value[0]+value[1],
-                             color='mediumblue', alpha=0.2)
-            ax.axvspan(0,1, alpha=0.1, color='red')
-            plt.xticks(ticks = [new_window[0],0,new_window[1]],
-                      labels = [new_window[0],0,new_window[1]])
-            ax.set_title(self.ROIs[count-1],fontsize=10)
-            ax.tick_params(axis='both', which='both', direction='in',length=4)
-            plt.ylim(top=ymax+(ymax*0.1))
-            count +=1
-        fig.tight_layout()
+        plotting.plot_mean_sem(roi_mean_sems, new_window, self.ROIs, figsize=figsize, col_num=col_num, main_title=main_title)
         
     def plot_heatmap(self, figsize=(4,5), main_title='default', cmap=None):
         if main_title == 'default':
             main_title = 'Mean Opto Activity Heatmap'
         _, roi_mean_sems = self.opto_trace_mean_sems()
-        # Custom color map for the heatmap
-        d_map = mpl.colors.LinearSegmentedColormap.from_list('custom',
-                                                            [(0.0, 'mediumblue'),
-                                                             (0.3, 'royalblue'),
-                                                             (0.5, 'white'),
-                                                             (0.7, 'tomato'),
-                                                             (1.0, 'red')],N=1000)
-        # Put data in a dataframe to make it easier to plot
-        df = pd.DataFrame()
-        for key, value in roi_mean_sems.items():
-            df[key] = value[0]
-        df_t = df.T
-        # Plot the heatmap
-        if cmap is None:
-            cmap=d_map
-        else:
-            pass
-        fig = plt.figure(figsize=figsize)
-        fig.suptitle(main_title)
-        if self.zscore is True:
-            ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=2,vmin=-2,
-                            cbar_kws={'label':'z-score','orientation':'vertical',
-                                      'ticks':(-2,0,2)},yticklabels=False)
-        else:
-            ax = sns.heatmap(df_t,cmap='inferno',vmax=5,vmin=-0.5,
-                            cbar_kws={'label':r'$\Delta$F/F','orientation':'vertical',
-                                      'ticks':(-0.5,0,5)},yticklabels=False) 
+        plotting.plot_opto_heatmap(roi_mean_sems, self.zscore, self.sampling_rate, figsize=figsize, main_title=main_title, cmap=cmap)
         
-        plt.xticks(ticks = [0,(self.sampling_rate),(self.sampling_rate*2),
-                            (self.sampling_rate*3),(self.sampling_rate*4),
-                            (self.sampling_rate*5)],
-                   labels = [-2,1,0,1,2,3], rotation=0)
-        ax.axvline(x=(self.sampling_rate*2),ymin=0,ymax=1,color='black',linestyle='--')
-        ax.patch.set_edgecolor('black')
-        ax.patch.set_linewidth('2.5')
-        
-        fig.tight_layout()
         
     def plot_shuff_dist(self, figsize=(10,10), col_num=4, main_title="default"):
-        if main_title == 'default':
-            main_title = "Shuffle Distributions"
         if self.method == 'test':
             print('Wilcoxon-test not shuffled distribution was performed')
             return
@@ -414,26 +295,4 @@ class population_opto_analysis():
             sig_results = self.significance_testing(method='shuff')
         else:
             sig_results = self.sig_results
-        
-        tot = len(sig_results.keys())
-        col_num = col_num
-        row_num = tot//col_num
-        row_num += tot%col_num
-        fig = plt.figure(figsize=figsize)
-        fig.subplots_adjust(hspace=0.5)
-        fig.suptitle(main_title)
-        
-        count = 1
-        for key, value in sig_results.items():
-            ax = fig.add_subplot(row_num, col_num, count)
-            ax.hist(value['shuff_diff'],color='mediumblue',alpha=0.7,
-                    linewidth=0.5)
-            ax.axvline(x=value['real_diff'], color='red',linewidth=2.5)
-            ax.axvline(x=value['bounds'][0], color='black',linewidth=1,linestyle='--')
-            ax.axvline(x=value['bounds'][1], color='black',linewidth=1,linestyle='--')
-            ax.set_title(self.ROIs[count-1],fontsize=10)
-            ax.tick_params(axis='both', which='both', direction='in', length=4)
-            
-            count += 1
-        
-        fig.tight_layout()
+        plotting.plot_shuff_distribution(sig_results, self.ROIs, figsize=figsize, col_num=col_num, main_title=main_title)

@@ -5,7 +5,7 @@ import scipy as sy
 from scipy import stats
 import itertools
 import pop_opto_analysis
-import utilities as utils
+import utilities as util
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
 from IPython.display import display
@@ -16,8 +16,9 @@ sns.set_style('ticks')
 
 class pop_opto_curve():
     ''' Class to generate a power curve for optogenetic stimulation across
-        different stimulation power levels'''
-        
+        different stimulation power levels. Includes visualization and statistical testing between powers. 
+        Dependent on population_opto_analysis class. '''
+    
     def __init__(self,imaging_data, behavioral_data, powers, method, sampling_rate=30, window=[-2,2],
                  stim_len=1,zscore=False,spines=False):
         '''__init__ - Initialize pop_opto_curve Class.
@@ -67,7 +68,8 @@ class pop_opto_curve():
         self.significance = None
         self.mean_diffs = None
         self.sem_diffs = None
-    
+        self.analyze_opto()
+
     def analyze_opto(self):
         # Getting opto objects using pop_opto_analysis
         optos = []
@@ -76,7 +78,7 @@ class pop_opto_curve():
                                     self.behavioral_data):
             
             opto = pop_opto_analysis.population_opto_analysis(imaging,behavior,self.sampling_rate,
-                                                              self.window,self.stim_len,self.zscore,self.spines)
+                                                                    self.window,self.stim_len,self.zscore,self.spines)
             optos.append(opto)
         self.optos = optos
         return optos
@@ -94,10 +96,8 @@ class pop_opto_curve():
         for o in self.optos:
             results.append(o.significance_testing(method=self.method))
         self.significance = results
-        
-        return results
+   
             
-    
     def get_mean_sems(self):
         ## Getting the mean and sems
         # get all the opto objects for each imaging session
@@ -118,7 +118,7 @@ class pop_opto_curve():
             sems = []
             # for each roi
             for col in data.columns:
-                before, after = utils.get_before_after_means(activity=data[col],
+                before, after = util.get_before_after_means(activity=data[col],
                                                              timestamps=itis,
                                                              window=self.window,
                                                              sampling_rate=self.sampling_rate,
@@ -131,9 +131,7 @@ class pop_opto_curve():
         
         self.mean_diffs = np.array(mean_diffs)
         self.sem_diffs = np.array(sem_diffs)
-        
-        return mean_diffs, sem_diffs
-    
+
     def visualize_individual_sessions(self, sess):
         '''Plot the analysis results for each individual session. Must input the 
             index of which session you wish to visualize (e.g. 0 for first session)'''
@@ -145,15 +143,15 @@ class pop_opto_curve():
             
         session = self.optos[sess]
         sess_name = str(self.powers[sess]) + ' mW'
-        session.plot_session_activity(title = sess_name + ' Session Activity')
-        session.plot_each_event(title = sess_name + ' Session Timelocked Activity')
-        session.plot_mean_sem(main_title = sess_name + ' Mean Opto Activity')
+        session.plot_sess_activity(title = sess_name + ' Session Activity')
+        session.plot_each_stim(title = sess_name + ' Session Timelocked Activity')
+        session.plot_mean_sems(main_title = sess_name + ' Mean Opto Activity')
         session.plot_heatmap(main_title = sess_name +' Mean Opto Heatmap')
         if self.method == 'shuff':
             session.plot_shuff_dist(main_title = sess_name + ' Shuff Distributions')
         else:
             pass
-        display(session.disp_results())
+        display(session.sig_results_df)
         
     
     def get_power_curves(self):
@@ -280,4 +278,3 @@ class pop_opto_curve():
         print('\n')
         print('Summary statistics')
         print(summary_table)
-        
