@@ -3,10 +3,8 @@ import numpy as np
 import pandas as pd
 import scipy as sy
 from scipy import stats
-import itertools
 import pop_opto_analysis
 import utilities as util
-import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
 from IPython.display import display
 from statsmodels.stats.multitest import multipletests
@@ -65,11 +63,14 @@ class pop_opto_curve():
         self.stim_len = stim_len
         self.zscore = zscore
         self.spines = spines
-        self.optos = None
+        #self.optos = None
         self.significance = None
+        self.sig_df = None
         self.mean_diffs = None
         self.sem_diffs = None
         self.analyze_opto()
+        self.get_sig_results()
+        self.get_mean_sems()
 
     def analyze_opto(self):
         # Getting opto objects using pop_opto_analysis
@@ -80,6 +81,8 @@ class pop_opto_curve():
             
             opto = pop_opto_analysis.population_opto_analysis(imaging,behavior,self.sampling_rate,
                                                                     self.window,self.stim_len,self.zscore,self.spines)
+            opto.opto_before_after_means()
+            opto. opto_trace_mean_sems()
             optos.append(opto)
         self.optos = optos
         return optos
@@ -94,9 +97,15 @@ class pop_opto_curve():
         else:
             pass
         results = []
+        results_df = []
         for o in self.optos:
-            results.append(o.significance_testing(method=self.method))
+            o.significance_testing(method=self.method)
+            result = o.sig_results_dict
+            result_df = o.sig_results_df
+            results.append(result)
+            results_df.append(result_df)
         self.significance = results
+        self.sig_df = results_df
    
             
     def get_mean_sems(self):
