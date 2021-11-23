@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import scipy as sy
 from scipy import stats
+import itertools
+from statsmodels.stats.multitest import multipletests
+from tabulate import tabulate
 
 
 def get_before_after_means(activity, timestamps, window,
@@ -165,4 +168,51 @@ def z_score(data):
     
     return z_data
     
+def ANOVA_1way_bonferroni(data_dict, method):
+    '''Function to perform a one way ANOVA with posttests
+    
+        CREATOR
+            William (Jake) Wright   11/22/2021
+        
+        INPUT PARAMETERS
+            data_dict  -  dictionary of the data to be analyzed. Each item is 
+                          a different group. Keys represent group names, and 
+                          values represent data points of the group
+            
+            method  -  string specifying which posttest to perform. See documentation
+                        for statsmodels.stats.multitest for available methods
+                        
+        OUTPUT PAREMETERS
+            f_stat  -  the f statistic from the one way ANOVA
+
+            anova_p  -  p-value of the one way ANOVA
+
+            results_table  -  table of the results of the posttest'''
+
+    # Perform one-way ANOVA
+    data_array = np.array(list(data_dict.values()))
+    f_stat, anova_p = stats.f_oneway(*data_array)
+
+    # Perform t-test across all groups
+    combos = list(itertools.combinations(data_dict.keys(),2))
+    test_performed = []
+    t_vals = []
+    raw_pvals = []
+    for combo in combos:
+        test_performed.append(combo[0] + ' vs.' + combo[1])
+        t, p = stats.ttest_ind(data_dict[combo[0]],data_dict[combo[1]])
+        t_vals.append(t)
+        raw_pvals.append(p)
+    # Peform multiple comparisons correction
+    # Set up for Bonferroni at the moment
+    _, adj_pvals, _, alpha_corrected =multipletests(raw_pvals,alpha=0.05,
+                                                    method=method,is_sorted=False,
+                                                    returnsorted=False)
+    results_dict = {'comparison':test_performed,'t stat':t_vals,
+                        'raw p-values':raw_pvals,'adjusted p-vals':adj_pvals}
+    
+    results_table = tabulate(results_dict,headers='keys',tablefmt='fancy_grid')
+
+    return f_stat, anova_p, results_table
+
 

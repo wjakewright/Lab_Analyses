@@ -214,7 +214,7 @@ class pop_opto_curve():
         plt.xlabel('Power (mW)',labelpad=15)
         fig.tight_layout()
         
-    def disp_results(self):
+    def disp_results(self,method):
         ''' Function to display results in an easily readable manner'''
         
         ## Get some of the data of interests
@@ -245,28 +245,8 @@ class pop_opto_curve():
         summary_df.set_axis(['mean_diff', 'sem_diff', 'percent_sig', 'n'],axis=0,inplace=True)
         
         ## Perform One-way ANOVA on the results
-        f_stat, anova_p = stats.f_oneway(*self.mean_diffs)
+        f_stat, anova_p, results_table = util.ANOVA_1way_bonferroni(all_diffs, method)
 
-        
-        # Perform t-test across all groups
-
-        combos = list(itertools.combinations(all_diffs.keys(),2))
-        test_performed = []
-        t_vals = []
-        raw_pvals = []
-        for combo in combos:
-            test_performed.append(combo[0] + ' vs.' + combo[1])
-            t, p = stats.ttest_ind(all_diffs[combo[0]],all_diffs[combo[1]])
-            t_vals.append(t)
-            raw_pvals.append(p)
-        # Peform multiple comparisons correction
-        # Set up for Bonferroni at the moment
-        _, adj_pvals, _, alpha_corrected =multipletests(raw_pvals,alpha=0.05,
-                                                        method='bonferroni',is_sorted=False,
-                                                        returnsorted=False)
-        results_dict = {'comparison':test_performed,'t stat':t_vals,
-                        'raw p-values':raw_pvals,'adjusted p-vals':adj_pvals}
-        results_table = tabulate(results_dict,headers='keys',tablefmt='fancy_grid')
         summary_table = tabulate(summary_df,headers='keys',tablefmt='fancy_grid')
         
         # Display results
