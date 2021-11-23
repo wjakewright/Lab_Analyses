@@ -166,9 +166,35 @@ def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, main_
     
     fig.tight_layout()
 
-def plot_power_curve():
+def plot_power_curve(ps, diffs, sems, scatter, percent_sig, zscore):
     '''Function to plot mean activity and percent significant for different optostimulation
         power sessions.'''
     
+    fig = plt.figure(figsize=(8,4))
+    ax1 = fig.add_subplot(1,2,1)
+    p = list(range(len(ps)))
+    powers = [str(x) for x in ps]
+    ax1.errorbar(p,diffs,yerr=sems,color='red',
+                    marker='o',markerfacecolor='red',ecolor='red')
+    sns.swarmplot(data=scatter,color='red',size=4,alpha=0.2)
+    ax1.axhline(y=0,color='black',linestyle='--',linewidth=1)
+    ax1.set_title('Mean Change in Activity',fontsize = 12)
+    if zscore is True:
+        ylab = 'z-scored $\Delta$F/F'
+    else:
+        ylab = '$\Delta$F/F'
+    ax1.set_ylabel(ylab)
+    ax1.set_xticklabels(labels=powers)
+    ax2 = fig.add_subplot(1,2,2)
+    ax2.plot(p,percent_sig,color='red',marker='o',markerfacecolor='red')
+    ax2.set_title('Percent Significant',fontsize=12)
+    ax2.set_ylabel('Percentage of Neurons')
+    ax2.set_xticks(p)
+    ax2.set_xticklabels(labels=powers)
+    plt.ylim(bottom=0)
     
+    fig.add_subplot(111,frame_on=False)
+    plt.tick_params(labelcolor='none',bottom=False,left=False)
+    plt.xlabel('Power (mW)',labelpad=15)
+    fig.tight_layout()
     

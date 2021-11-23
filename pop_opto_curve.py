@@ -11,6 +11,7 @@ import seaborn as sns; sns.set()
 from IPython.display import display
 from statsmodels.stats.multitest import multipletests
 from tabulate import tabulate
+import opto_plotting as plotting
 sns.set_style('ticks')
 
 
@@ -186,33 +187,8 @@ class pop_opto_curve():
             percent_sig.append(percent)
             
         ## Plot figures
-        fig = plt.figure(figsize=(8,4))
-        ax1 = fig.add_subplot(1,2,1)
-        p = list(range(len(self.powers)))
-        powers = [str(x) for x in self.powers]
-        ax1.errorbar(p,power_diffs,yerr=power_sem,color='red',
-                     marker='o',markerfacecolor='red',ecolor='red')
-        sns.swarmplot(data=power_scatter,color='red',size=4,alpha=0.2)
-        ax1.axhline(y=0,color='black',linestyle='--',linewidth=1)
-        ax1.set_title('Mean Change in Activity',fontsize = 12)
-        if self.zscore is True:
-            ylab = 'z-scored $\Delta$F/F'
-        else:
-            ylab = '$\Delta$F/F'
-        ax1.set_ylabel(ylab)
-        ax1.set_xticklabels(labels=powers)
-        ax2 = fig.add_subplot(1,2,2)
-        ax2.plot(p,percent_sig,color='red',marker='o',markerfacecolor='red')
-        ax2.set_title('Percent Significant',fontsize=12)
-        ax2.set_ylabel('Percentage of Neurons')
-        ax2.set_xticks(p)
-        ax2.set_xticklabels(labels=powers)
-        plt.ylim(bottom=0)
+        plotting.plot_power_curve(self.powers, power_diffs, power_sem, power_scatter, percent_sig, self.zscore)
         
-        fig.add_subplot(111,frame_on=False)
-        plt.tick_params(labelcolor='none',bottom=False,left=False)
-        plt.xlabel('Power (mW)',labelpad=15)
-        fig.tight_layout()
         
     def disp_results(self,method):
         ''' Function to display results in an easily readable manner'''
