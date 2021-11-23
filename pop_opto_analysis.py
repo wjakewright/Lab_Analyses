@@ -195,7 +195,7 @@ class population_opto_analysis():
             diff_dict = dict(zip(self.dFoF.columns,diffs))
 
             # Assess significance
-            sig = (np.array(list(pValue_dict.values)) < 0.01) * 1
+            sig = (np.array(list(pValue_dict.values())) < 0.01) * 1
             sig_dict = dict(zip(self.dFoF.columns,sig))
 
             sig_results = {}

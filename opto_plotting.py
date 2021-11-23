@@ -165,3 +165,10 @@ def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, main_
         count += 1
     
     fig.tight_layout()
+
+def plot_power_curve():
+    '''Function to plot mean activity and percent significant for different optostimulation
+        power sessions.'''
+    
+    
+    
