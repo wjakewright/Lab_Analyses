@@ -5,6 +5,7 @@ from scipy import stats
 import pop_opto_curve as curve
 import utilities as util
 import opto_plotting as plotting
+from tabulate import tabulate
 import seaborn as sns; sns.set()
 sns.set_style('ticks')
 
@@ -52,6 +53,10 @@ class group_opto_analysis():
         self.group_mean_diffs = None
         self.group_mean_sems = None
         self.sig_list = None
+        self.power_diffs = None
+        self.power_scatter = None
+        self.power_sem = None
+        self.percent_sig = None
         self.group_data()
     
     def group_data(self):
@@ -82,17 +87,44 @@ class group_opto_analysis():
             power_diffs.append(np.mean(diff))
             power_scatter[power] = np.array(diff)
             power_sem.append(stats.sem(diff))
+        self.power_diffs = power_diffs
+        self.power_scatter = power_scatter
+        self.power_sem = power_sem
         
         # For Figure 2
         percent_sig = []
         for result in self.group_sig_results:
             percent = (result['sig'].sum()/len(result.index)) * 100 
             percent_sig.append(percent)
+        self.percent_sig = percent_sig
         
         plotting.plot_power_curve(self.powers,power_diffs,power_sem,power_scatter,percent_sig,self.zscore)
 
     def disp_group_results(self,method):
         '''Function to display results in an easily readable manner'''
-
+        if self.power_diffs is None:
+            self.get_grouped_power_curve()
         
+        all_diffs = {}
+        for diff, power in zip(self.group_mean_diffs,self.powers):
+            all_diffs[str(power) + ' mW'] = diff
+        
+        # Generate table summarizing results
+        summary_df = pd.DataFrame()
+        for diff, sem, p_sig, power in zip(self.power_diffs,self.power_sem,self.percent_sig,self.powers):
+            summary_df[str(power) + ' mW'] = [diff, sem, p_sig,len(self.new_ROIs)]
+        summary_df.set_axis(['mean_diff', 'sem_diff', 'percent_sig', 'n'],axis=0,inplace=True)
+        summary_table = tabulate(summary_df,headers='keys',tablefmt='fancy_grid')
 
+        # Perform one-way anova across different powers
+        f_stat, anova_p, results_table = util.ANOVA_1way_bonferroni(all_diffs,method)
+
+        # Display results
+        print('One-Way ANOVA results')
+        print(f'F statistic: ', f_stat, '\pvalue: ', anova_p)
+        print('\n')
+        print(method + ' Posttest Results')
+        print(results_table)
+        print('\n')
+        print('Summary Statistics')
+        print(summary_table)
