@@ -26,20 +26,23 @@ class group_opto_analysis():
         self.opto_objs = opto_objs
         ## Test is objects were analyzed with the same parameters
         obj_powers = [obj.powers for obj in opto_objs]
+        obj_powers_t = [tuple(obj.powers) for obj in opto_objs]
         obj_methods = [obj.method for obj in opto_objs]
         obj_zscore = [obj.zscore for obj in opto_objs]
         obj_spines = [obj.spines for obj in opto_objs]
-        testing_parameters = [obj_powers,obj_methods,obj_zscore,obj_spines]
-        #for test in testing_parameters:
-            #if len(set(test)) == 1:
-                #pass
-            #else:
-                #return print('Input objects were not analyzed with the same parameters')
+        obj_sampling_rate = [obj.sampling_rate for obj in opto_objs]
+        testing_parameters = [obj_powers_t,obj_methods,obj_zscore,obj_spines,obj_sampling_rate]
+        for test in testing_parameters:
+            if len(set(test)) == 1:
+                pass
+            else:
+                raise ValueError('Objects were not analyzed with the same parameters !!!')
         # Store parameters from the objects
         self.powers = obj_powers[0]
         self.method = obj_methods[0]
         self.zscore = obj_zscore[0]
         self.spines = obj_spines[0]
+        self.sampling_rate = obj_sampling_rate[0]
         # Renaming ROIs to correspond with different mice
         ROI_list = [obj.optos[0].ROIs for obj in opto_objs]
         self.ROI_list = ROI_list ## May need for future use
@@ -48,6 +51,7 @@ class group_opto_analysis():
             for ROI in ROIs: ## Iterating through each ROI
                 new_ROIs.append(f'Mouse {i} {ROI}')
         self.new_ROIs = new_ROIs
+
         # Getting grouped data
         
         self.group_mean_diffs = None
@@ -74,6 +78,7 @@ class group_opto_analysis():
             group_result.set_axis(self.new_ROIs,axis=0)
             group_sig_results.append(group_result)
         self.group_sig_results = group_sig_results
+
 
 
     def get_grouped_power_curve(self):
