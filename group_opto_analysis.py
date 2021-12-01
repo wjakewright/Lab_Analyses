@@ -12,7 +12,7 @@ sns.set_style('ticks')
 class group_opto_analysis():
     '''Class to analyze optogenetic stimulation experiments across different mice'''
 
-    def __init__(self,opto_objs):
+    def __init__(self,opto_objs,new_window=None):
         '''__init__ - Initialize group_opto_analysis Class.
         
            CREATOR
@@ -47,10 +47,20 @@ class group_opto_analysis():
         ROI_list = [obj.optos[0].ROIs for obj in opto_objs]
         self.ROI_list = ROI_list ## May need for future use
         new_ROIs = []
+        new_ROIs_list = [] # Each mouse ROIs in seperate list
         for i, ROIs in enumerate(ROI_list): ## Iterating through each mouse
+            ROI_list = []
             for ROI in ROIs: ## Iterating through each ROI
                 new_ROIs.append(f'Mouse {i} {ROI}')
+                ROI_list.append(f'Mouse {i} {ROI}')
+            new_ROIs_list.append(ROI_list)
         self.new_ROIs = new_ROIs
+        self.new_ROIs_list = new_ROIs_list
+
+        if new_window is None:
+            self.new_window = self.opto_objs[0].optos[0].new_window
+        else:
+            self.new_window = new_window
 
         # Getting grouped data
         
@@ -79,6 +89,54 @@ class group_opto_analysis():
             group_sig_results.append(group_result)
         self.group_sig_results = group_sig_results
 
+        roi_stim_dics = []
+        for ROIs, obj in zip(self.new_ROIs_list,self.opto_objs):
+            roi_stims = [opto.roi_stim_epochs for opto in obj.optos]
+            new_roi_stims = []
+            for roi_stim in roi_stims: #Loop to rename the keys
+                new_roi_stim = dict(zip(ROIs, list(roi_stim.values())))
+                new_roi_stims.append(new_roi_stim)
+            roi_stim_dics.append(new_roi_stims)
+        roi_stim_epochs = []
+        for dicts in zip(*roi_stim_dics):
+            group_dict = {}
+            for d in dicts:
+                group_dict.update(d)
+            roi_stim_epochs.append(group_dict)
+        self.roi_stim_epochs = roi_stim_epochs
+
+        roi_mean_dics = []
+        for ROIs, obj in zip(self.new_ROIs_list, self.opto_objs):
+            roi_means = [opto.roi_mean_sems for opto in obj.optos]
+            new_roi_means = []
+            for roi_mean in roi_means:
+                new_roi_mean = dict(zip(ROIs, list(roi_mean.values())))
+                new_roi_means.append(new_roi_mean)
+            roi_mean_dics.append(new_roi_means)
+        roi_mean_sems = []
+        for dicts in zip(*roi_mean_dics):
+            group_dict = {}
+            for d in dicts:
+                group_dict.update(d)
+            roi_mean_sems.append(group_dict)
+        self.roi_mean_sems = roi_mean_sems
+
+
+        sig_dics = []
+        for ROIs, obj in zip(self.new_ROIs_list, self.opto_objs):
+            sigs = obj.significance
+            new_sigs = []
+            for sig in sigs:
+                new_sig = dict(zip(ROIs, list(sig.values())))
+                new_sigs.append(new_sig)
+            sig_dics.append(new_sigs)
+        significance_dicts = []
+        for dicts in zip(*sig_dics):
+            group_dict = {}
+            for d in dicts:
+                group_dict.update(d)
+            significance_dicts.append(group_dict)
+        self.significance_dicts = significance_dicts
 
 
     def get_grouped_power_curve(self):
@@ -133,3 +191,24 @@ class group_opto_analysis():
         print('\n')
         print('Summary Statistics')
         print(summary_table)
+
+    def visulalize_specific_condition(self,sess):
+        '''Function to plot the grouped data for a specific stimulation condition.
+            Musut input the index of which session you wish to visuzliaze (e.g. 0 for first session)'''
+        
+        power = self.powers[sess]
+        sess_name = str(power) + ' mW'
+        for obj in self.opto_objs:
+            obj.optos[sess].plot_sess_activity(title=sess_name + ' Session Activity')
+        plotting.plot_each_event(self.roi_stim_epochs[sess],self.new_ROIs,figsize=(10,50),
+                                 title = sess_name + ' Session Timelocked Activity')
+        plotting.plot_mean_sem(self.roi_mean_sems[sess], self.new_window, self.new_ROIs,
+                                figsize=(10,20),main_title = sess_name + ' Mean Opto Activity')
+        plotting.plot_opto_heatmap(self.roi_mean_sems[sess],self.zscore, self.sampling_rate,
+                                    figsize=(4,5),main_title = sess_name +' Mean Opto Heatmap',
+                                    cmap=None)
+        if self.method == 'shuff':
+            plotting.plot_shuff_distribution(self.significance_dicts[sess],self.new_ROIs,
+                                             figsize=(10,20),col_num=4,main_title = sess_name + ' Shuff Distributions')
+        else:
+            pass

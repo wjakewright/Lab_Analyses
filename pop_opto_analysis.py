@@ -147,6 +147,7 @@ class population_opto_analysis():
         for i in self.itis:
             new_timestamps.append(i[0])
         new_window = [self.window[0],self.window[1]+self.stim_len]
+        self.new_window = new_window
         
         roi_stim_epochs,roi_mean_sems = util.get_trace_mean_sem(activity=data,
                                                                 timestamps=new_timestamps,
