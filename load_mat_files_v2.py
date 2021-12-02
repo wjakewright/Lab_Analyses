@@ -56,6 +56,9 @@ def load_mat(fname,fname1=None,path=None):
     
     return obj
 
-
+def merge_imaging_behavior(imaging_dict, behavior_dict):
+    ''' Function to merge imaging and behavioral data into single dictionary'''
+    data_dict = {'imaging':imaging_dict, 'behavior':behavior_dict}
+    return data_dict
     
 
