@@ -105,6 +105,8 @@ def load_behavior(fname,fname1=None,path=None):
 
     behavior_dict['behavior_frames'] = behavior_trials
     behavior_dict['frame_times'] = mat_file[fname1]['Frame_Times'][0,0]
+    
+   
 
     return behavior_dict
 
