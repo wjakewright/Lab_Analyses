@@ -61,14 +61,14 @@ class population_opto_analysis():
         # Pulling data from the inputs that will be used
         if spines is False:
             ROIs = []
-            for i in list(imaging_data['ROIs'][:-1]):
-                ROIs.append('ROI ' + str(i))
-            dFoF = pd.DataFrame(data=imaging_data['processed_dFoF'].T,columns=ROIs)
+            for i in list(imaging_data.SpineROIs[:-1]):
+                ROIs.append('Cell ' + str(np.floor(i)))
+            dFoF = pd.DataFrame(data=imaging_data.Processed_dFoF.T,columns=ROIs)
         else:
             ROIs = []
-            for i in list(imaging_data['Spine_ROIs'][:-1]):
-                ROIs.append('ROI ' + str(i))
-            dFoF = pd.DataFrame(data=imaging_data['spine_processed_dFoF'].T,columns=ROIs)
+            for i in list(imaging_data.SpineROIs[:-1]):
+                ROIs.append('Spine ' + str(np.floor(i)))
+            dFoF = pd.DataFrame(data=imaging_data.Processed_dFoF.T,columns=ROIs)
         if zscore is True:
             self.dFoF = util.z_score(dFoF)
         else:
@@ -78,12 +78,12 @@ class population_opto_analysis():
         #self.dFoF = dFoF
 
         # Select the trials that were imaged
-        i_trials = behavior_data['imaged_trials']
+        i_trials = behavior_data.Imaged_Trials
         i_trials = i_trials == 1
-        behavior = list(compress(behavior_data['behavior_frames'],i_trials))
+        behavior = list(compress(behavior_data.Behavior_Frames,i_trials))
         itis = []
         for i in behavior:
-            itis.append(i['states']['iti2'])
+            itis.append(i.states.iti2)
 
         # Making sure the iti intervals are consistent and within imaging period
         for i in range(len(itis)):
