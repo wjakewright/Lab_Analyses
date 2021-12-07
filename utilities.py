@@ -5,6 +5,7 @@ from scipy import stats
 import itertools
 from statsmodels.stats.multitest import multipletests
 from tabulate import tabulate
+import random
 
 
 def get_before_after_means(activity, timestamps, window,
@@ -214,5 +215,125 @@ def ANOVA_1way_bonferroni(data_dict, method):
     results_table = tabulate(results_dict,headers='keys',tablefmt='fancy_grid')
 
     return f_stat, anova_p, results_table
+
+def significance_testing(imaging,timestamps,window,sampling_rate,method):
+    '''Function to determine if each ROI was significantly activated by a specifice event.
+    
+        INPUT PARAMETERS
+            imaging - dataframe of the imaging data, with each column representing
+                      an ROI
+            
+            timestamps - list or array of timestamps corresponding to the imaging
+                        frame where event occured
+
+            method - string specifying which method is to be used to test
+                    significance. Currnetly coded to accept:
+                        
+                        'test' - Performs Wilcoxon Signed-Rank Test
+                        'shuff' - Compares the real difference in activity against
+                                    a shuffled distribution
+        
+        OUPTPUT PARAMETERS
+            'test' method returns two outputs and 'shuff' method returns 3
+
+            results_dict - dictionary containing the results for each ROI (keys)
+
+            results_df - DataFrame containing the results for each ROI (columns)
+
+            shuff_diffs - ('shuff' method only) list containing all the shuffled
+                            differences in activity for each ROI
+            '''
+    ROIs= imaging.columns
+    shuff_diffs = []
+    if method == 'test':
+        # Get the means before and after event of interest
+        befores, afters = get_before_after_means(activity=imaging,
+                                                timestamps=timestamps,
+                                                window=window,
+                                                sampling_rate=sampling_rate,
+                                                offset=False,
+                                                single=False)
+        pValues = []
+        rankValues = []
+        diffs = []
+        # Perform testing and get mean difference in activity
+        for before, after in zip(befores,afters):
+            rank, pVal = stats.wilcoson(after,before)
+            pValues.append(pVal)
+            rankValues.append(rank)
+            diffs.append(np.mean(np.array(after)-np.array(before)))
+        # Assess signficance
+        sig = (np.array(pValues)<0.01)*1
+
+        # Put results in dictionary
+        results_dict = {}
+        for p, r, d, s, ROI in zip(pValues,rankValues,diffs,sig,ROIs):
+            results_dict[ROI] = {'pvalue':p,
+                                 'rank':r,
+                                 'diff':d,
+                                 'sig':s}
+    
+    elif method == 'shuff':
+        data = imaging.copy()
+        real_diffs = []
+        shuff_diffs = []
+        bounds = []
+        sigs = []
+        smallest = sampling_rate # smallest shift of data is 1s
+        biggest = 300 * sampling_rate # biggest shift of data is 5min
+
+        # Assess each ROI individually
+        for col in data.columns:
+            d = data[col]
+
+            # Get the real difference
+            before, after = get_before_after_means(activity=d,
+                                                    timestamps=timestamps,
+                                                    window=window,
+                                                    sampling_rate=sampling_rate,
+                                                    offset=False,
+                                                    single=True)
+            r_diff = np.mean(np.array(after)-np.array(before))
+            # Perform 1000 shuffles
+            s_diffs = []
+            for i in range(1000):
+                n = random.randint(smallest,biggest)
+                s_d = np.copy(d)
+                shuff_d = np.roll(s_d,n)
+                s_before, s_after = get_before_after_means(activity=shuff_d,
+                                                            timestamps=timestamps,
+                                                            window=window,
+                                                            sampling_rate=sampling_rate,
+                                                            offset=False,
+                                                            single=True)
+                s_diffs.append(np.mean(np.array(s_after)-np.array(s_before)))
+            # Assess significance
+            upper = np.percentile(s_diffs,99)
+            lower = np.percentile(s_diffs,1)
+
+            if lower <= r_diff <= upper:
+                sig = 0
+            else:
+                sig = 1
+            # Store values for each ROI
+            real_diffs.append(r_diff)
+            shuff_diffs.append(s_diffs)
+            bounds.append((upper,lower))
+            sigs.append(sig)
+        # Put results in dictionary
+        results_dict = {}
+        for ROI, r, s, b, sig in zip(ROIs,real_diffs,shuff_diffs,bounds, sigs):
+            results_dict[ROI] = {'diff':r, 'shuff_diffs':s, 'bounds':b, 'sig':sig}
+    
+    else:
+        return ('Not a valid testing method specified!!!')
+    
+    # Generate a dataframe for results
+    results_df = pd.DataFrame.from_dict(results_dict,orient='index')
+    if 'shuff_diff' in results_df.columns:
+        results_df = results_df.drop(columns=['shuff_diffs'])
+    
+    
+    return results_dict, results_df, shuff_diffs
 
 
