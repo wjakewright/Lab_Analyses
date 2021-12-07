@@ -11,6 +11,8 @@ def plot_session_activity(dFoF, itis, zscore=False, figsize=(7,8), title='defaul
         Indicates the locations of each stimulation.'''
     if title == 'default':
         title = 'Session Activity'
+    else:
+        title = title + ' Session Activity'
     plt.figure(figsize=figsize)
     for i, col in enumerate(dFoF.columns):
         x = np.linspace(0,len(dFoF[col])/30,len(dFoF[col])) # Will be in units time(s)
@@ -33,6 +35,8 @@ def plot_each_event(roi_stim_epochs, ROIs, figsize=(7,8), title='default'):
     '''Function to plot the activity of each ROI around each stimulation event.'''
     if title == 'default':
         title = 'Time Locked Activity'
+    else:
+        title = title + ' Time Locked Activity'
     tot = len(roi_stim_epochs.keys())
     col_num = 1
     row_num = tot//col_num
@@ -64,6 +68,8 @@ def plot_each_event(roi_stim_epochs, ROIs, figsize=(7,8), title='default'):
 def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, main_title='default'):
     if main_title == 'default':
         main_title = 'Mean Opto Activity'
+    else:
+        main_title = main_title + ' Mean Opto Activity'
     tot = len(roi_mean_sems)
     col_num = col_num
     row_num = tot//col_num
@@ -99,6 +105,8 @@ def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), main_
 
     if main_title == 'default':
         main_title = 'Mean Opto Activity Heatmap'
+    else:
+        main_title = main_title + ' Mean Opto Activity Heatmap'
     # Custom color map for the heatmap
     d_map = mpl.colors.LinearSegmentedColormap.from_list('custom',
                                                         [(0.0, 'mediumblue'),
@@ -143,6 +151,8 @@ def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, main_
     
     if main_title == 'default':
         main_title = "Shuffle Distributions"
+    else:
+        main_title = main_title + ' Shuffle Distributions'
     tot = len(sig_results.keys())
     col_num = col_num
     row_num = tot//col_num
