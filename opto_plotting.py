@@ -65,18 +65,18 @@ def plot_each_event(roi_stim_epochs, ROIs, figsize=(7,8), title='default'):
     fig.tight_layout()
 
 
-def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, main_title='default'):
-    if main_title == 'default':
-        main_title = 'Mean Opto Activity'
+def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, title='default'):
+    if title == 'default':
+        title = 'Mean Opto Activity'
     else:
-        main_title = main_title + ' Mean Opto Activity'
+        title = title + ' Mean Opto Activity'
     tot = len(roi_mean_sems)
     col_num = col_num
     row_num = tot//col_num
     row_num += tot%col_num
     fig = plt.figure(figsize=figsize)
     fig.subplots_adjust(hspace=0.5)
-    fig.suptitle(main_title)
+    fig.suptitle(title)
     
     # Get max amplitude in order to set ylim
     ms = []
@@ -100,13 +100,13 @@ def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, m
         count +=1
     fig.tight_layout()
 
-def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), main_title='default', cmap=None):
+def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title='default', cmap=None):
     '''Function to plot heatmap of avg ROI activity'''
 
-    if main_title == 'default':
-        main_title = 'Mean Opto Activity Heatmap'
+    if title == 'default':
+        title = 'Mean Opto Activity Heatmap'
     else:
-        main_title = main_title + ' Mean Opto Activity Heatmap'
+        title = title + ' Mean Opto Activity Heatmap'
     # Custom color map for the heatmap
     d_map = mpl.colors.LinearSegmentedColormap.from_list('custom',
                                                         [(0.0, 'mediumblue'),
@@ -125,7 +125,7 @@ def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), main_
     else:
         pass
     fig = plt.figure(figsize=figsize)
-    fig.suptitle(main_title)
+    fig.suptitle(title)
     if zscore is True:
         ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=2,vmin=-2,
                         cbar_kws={'label':'z-score','orientation':'vertical',
@@ -145,21 +145,21 @@ def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), main_
     
     fig.tight_layout()
 
-def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, main_title="default"):
+def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, title="default"):
     '''Function to plot the shuffle distribution against the real data for 
         each ROI'''
     
-    if main_title == 'default':
-        main_title = "Shuffle Distributions"
+    if title == 'default':
+        title = "Shuffle Distributions"
     else:
-        main_title = main_title + ' Shuffle Distributions'
+        title = title + ' Shuffle Distributions'
     tot = len(sig_results.keys())
     col_num = col_num
     row_num = tot//col_num
     row_num += tot%col_num
     fig = plt.figure(figsize=figsize)
     fig.subplots_adjust(hspace=0.5)
-    fig.suptitle(main_title)
+    fig.suptitle(title)
     
     count = 1
     for key, value in sig_results.items():

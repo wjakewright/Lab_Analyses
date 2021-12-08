@@ -203,12 +203,12 @@ class group_opto_analysis():
         plotting.plot_each_event(self.roi_stim_epochs[sess],self.new_ROIs,figsize=(10,50),
                                  title = sess_name + ' Session Timelocked Activity')
         plotting.plot_mean_sem(self.roi_mean_sems[sess], self.new_window, self.new_ROIs,
-                                figsize=(10,20),main_title = sess_name + ' Mean Opto Activity')
+                                figsize=(10,20),title = sess_name + ' Mean Opto Activity')
         plotting.plot_opto_heatmap(self.roi_mean_sems[sess],self.zscore, self.sampling_rate,
-                                    figsize=(4,5),main_title = sess_name +' Mean Opto Heatmap',
+                                    figsize=(4,5),title = sess_name +' Mean Opto Heatmap',
                                     cmap=None)
         if self.method == 'shuff':
             plotting.plot_shuff_distribution(self.significance_dicts[sess],self.new_ROIs,
-                                             figsize=(10,20),col_num=4,main_title = sess_name + ' Shuff Distributions')
+                                             figsize=(10,20),col_num=4,title = sess_name + ' Shuff Distributions')
         else:
             pass

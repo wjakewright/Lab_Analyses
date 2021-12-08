@@ -272,20 +272,20 @@ class population_opto_analysis():
         ROIs = self.ROIs
         plotting.plot_each_event(roi_stim_epochs, ROIs, figsize=figsize, title=title)
 
-    def plot_mean_sems(self, figsize=(10,10), col_num=4, main_title='default'):
+    def plot_mean_sems(self, figsize=(10,10), col_num=4, title='default'):
         # Get the trace mean and sem for each ROI first
         _, roi_mean_sems = self.opto_trace_mean_sems()
         new_window = [self.window[0],self.window[1]+self.stim_len]
-        plotting.plot_mean_sem(roi_mean_sems, new_window, self.ROIs, figsize=figsize, col_num=col_num, main_title=main_title)
+        plotting.plot_mean_sem(roi_mean_sems, new_window, self.ROIs, figsize=figsize, col_num=col_num, title=title)
         
-    def plot_heatmap(self, figsize=(4,5), main_title='default', cmap=None):
-        if main_title == 'default':
-            main_title = 'Mean Opto Activity Heatmap'
+    def plot_heatmap(self, figsize=(4,5), title='default', cmap=None):
+        if title == 'default':
+            title = 'Mean Opto Activity Heatmap'
         _, roi_mean_sems = self.opto_trace_mean_sems()
-        plotting.plot_opto_heatmap(roi_mean_sems, self.zscore, self.sampling_rate, figsize=figsize, main_title=main_title, cmap=cmap)
+        plotting.plot_opto_heatmap(roi_mean_sems, self.zscore, self.sampling_rate, figsize=figsize, title=title, cmap=cmap)
         
         
-    def plot_shuff_dist(self, figsize=(10,10), col_num=4, main_title="default"):
+    def plot_shuff_dist(self, figsize=(10,10), col_num=4, title="default"):
         if self.method == 'test':
             print('Wilcoxon-test not shuffled distribution was performed')
             return
@@ -296,4 +296,4 @@ class population_opto_analysis():
             sig_results = self.significance_testing(method='shuff')
         else:
             sig_results = self.sig_results
-        plotting.plot_shuff_distribution(sig_results, self.ROIs, figsize=figsize, col_num=col_num, main_title=main_title)
+        plotting.plot_shuff_distribution(sig_results, self.ROIs, figsize=figsize, col_num=col_num, title=title)

@@ -258,7 +258,7 @@ def significance_testing(imaging,timestamps,window,sampling_rate,method):
         diffs = []
         # Perform testing and get mean difference in activity
         for before, after in zip(befores,afters):
-            rank, pVal = stats.wilcoson(after,before)
+            rank, pVal = stats.wilcoxon(after,before)
             pValues.append(pVal)
             rankValues.append(rank)
             diffs.append(np.mean(np.array(after)-np.array(before)))

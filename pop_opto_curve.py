@@ -155,10 +155,10 @@ class pop_opto_curve():
         sess_name = str(self.powers[sess]) + ' mW'
         session.plot_sess_activity(title = sess_name + ' Session Activity')
         session.plot_each_stim(title = sess_name + ' Session Timelocked Activity')
-        session.plot_mean_sems(main_title = sess_name + ' Mean Opto Activity')
-        session.plot_heatmap(main_title = sess_name +' Mean Opto Heatmap')
+        session.plot_mean_sems(title = sess_name + ' Mean Opto Activity')
+        session.plot_heatmap(title = sess_name +' Mean Opto Heatmap')
         if self.method == 'shuff':
-            session.plot_shuff_dist(main_title = sess_name + ' Shuff Distributions')
+            session.plot_shuff_dist(title = sess_name + ' Shuff Distributions')
         else:
             pass
         display(session.sig_results_df)
