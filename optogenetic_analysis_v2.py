@@ -82,6 +82,8 @@ class optogenetic_analysis():
         self.vis_window = vis_window
         if vis_window is not None:
             self.vis_after_f = vis_window[1]*sampling_rate
+        else:
+            self.vis_after_f = 0
         self.stim_len = stim_len
         self.stim_len_f = stim_len*sampling_rate
         self.zscore = zscore
@@ -125,7 +127,7 @@ class optogenetic_analysis():
         self.roi_stim_epochs = None # Dictionary of activity during each stim epoch for each ROI (keys)
         self.roi_mean_sems = None # Dictionary of mean and sem activity across stim epochs for each ROI (keys)
 
-        self.analzye()
+        self.analyze()
 
 
     def pull_data(self, data_dict):
@@ -206,8 +208,8 @@ class optogenetic_analysis():
         roi_mean_sems = []
         results_dicts = []
 
-        for dFoF, itis in zip(self.dFoF,self.itis):
-            for i, col in enumerate(dFoF.columns):
+        for i, (dFoF, itis) in enumerate(zip(self.dFoF,self.itis)):
+            for col in dFoF.columns:
                 name = f'Mouse {i+1} {col}'
                 new_ROIs.append(name)
             befores,afters = util.get_before_after_means(activity=dFoF,
@@ -221,20 +223,21 @@ class optogenetic_analysis():
                                                            timestamps=new_timestamps,
                                                            window=self.new_window,
                                                            sampling_rate=self.sampling_rate)
-            roi_stims = list(roi_stim_epochs.values())
+            roi_stims = list(roi_stims.values())
             roi_means = list(roi_means.values())
             all_befores.append(befores)
             all_afters.append(afters)
             roi_stim_epochs.append(roi_stims)
             roi_mean_sems.append(roi_means)
             r_dict, _, _ = util.significance_testing(imaging=dFoF,
-                                                              timestamps=itis,
-                                                              window=self.window,
-                                                              sampling_rate=self.sampling_rate,
-                                                              method=method)
+                                                    timestamps=itis,
+                                                    window=self.window,
+                                                    sampling_rate=self.sampling_rate,
+                                                    method=method)
             results_dicts.append(r_dict)
 
-        ROIs = [y for x in new_ROIs for y in x]
+        #ROIs = [y for x in new_ROIs for y in x]
+        ROIs = new_ROIs
         group_befores = [y for x in all_befores for y in x]
         group_afters = [y for x in all_afters for y in x]
         group_roi_stims = [y for x in roi_stim_epochs for y in x]
@@ -247,6 +250,7 @@ class optogenetic_analysis():
         group_results_df = pd.DataFrame.from_dict(group_results_dict,orient='index')
         if 'shuff_diff' in group_results_df.columns:
             group_results_df = group_results_df.drop(columns=['shuff_diffs'])
+        self.un_grouped_roi_means = roi_stim_epochs
 
         return [ROIs,group_befores,group_afters,group_roi_stim_epochs,
                 group_roi_mean_sems,group_results_dict,group_results_df]
@@ -386,10 +390,11 @@ class power_curve():
 
         # Summary table
         summary_df = pd.DataFrame()
+        n = len(power_scatter)
         for diff, sem, p_sig, power in zip(power_diffs,power_sem,percent_sig,self.powers):
-            summary_df[f'{power} mW'] = [diff,sem,p_sig,len(p_sig)]
+            summary_df[f'{power} mW'] = [diff,sem,p_sig,n]
         summary_df.set_axis(['mean_diff','sem_diff','percent_sig','n'],axis=0,inplace=True)
-        summary_table = tabulate(summary_df,headers='keys',tablefmt='fancygrid')
+        summary_table = tabulate(summary_df,headers='keys',tablefmt='fancy_grid')
 
         # Perform one-way anova across different powers
         f_stat, anova_p, results_table = util.ANOVA_1way_bonferroni(all_diffs,method)
