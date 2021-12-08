@@ -2,12 +2,11 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from itertools import compress
-import random
-from optogenetic_analysis import opto_analysis
 import utilities as util
 import opto_plotting as plotting
 from IPython.display import display
 from tabulate import tabulate
+import dataframe_image as dfi
 import seaborn as sns; sns.set()
 sns.set_style('ticks')
 
@@ -236,7 +235,7 @@ class optogenetic_analysis():
                                                     method=method)
             results_dicts.append(r_dict)
 
-        #ROIs = [y for x in new_ROIs for y in x]
+        # Grouping the data
         ROIs = new_ROIs
         group_befores = [y for x in all_befores for y in x]
         group_afters = [y for x in all_afters for y in x]
@@ -281,24 +280,33 @@ class optogenetic_analysis():
                 roi_mean_sems,results_dict,results_df]
 
     def display_results(self,fig1_size=(7,8),fig2_size=(10,20),fig3_size=(10,10),fig4_size=(4,5),
-                        fig5_size=(10,10),title='default'):
+                        fig5_size=(10,10),title='default',save=False):
         '''Method to display the data and results'''
-        if self.grouped is True:
-            for dFoF, itis, in zip(self.dFoF, self.itis):
-                plotting.plot_session_activity(dFoF,itis,self.zscore,figsize=fig1_size,title=title)
+        if save is True:
+            value = input('File Name: \n')
+            name = str(value)
         else:
-            plotting.plot_session_activity(self.dFoF,self.itis,self.zscore,figsize=fig1_size,title=title)
+            name = None
+        if self.grouped is True:
+            for i, (dFoF, itis), in enumerate(zip(self.dFoF, self.itis)):
+                new_name = name + f'Mouse {i+1}'
+                plotting.plot_session_activity(dFoF,itis,self.zscore,figsize=fig1_size,title=title,save=save,name=new_name)
+        else:
+            plotting.plot_session_activity(self.dFoF,self.itis,self.zscore,figsize=fig1_size,title=title,save=save,name=name)
         
-        plotting.plot_each_event(self.roi_stim_epochs,self.new_ROIs,figsize=fig2_size,title=title)
+        plotting.plot_each_event(self.roi_stim_epochs,self.new_ROIs,figsize=fig2_size,title=title,save=save,name=name)
         plotting.plot_mean_sem(self.roi_mean_sems,self.new_window,self.new_ROIs,figsize=fig3_size,
-                                col_num=4,title=title)
-        plotting.plot_opto_heatmap(self.roi_mean_sems,self.zscore,self.sampling_rate,figsize=fig4_size,title=title)
+                                col_num=4,title=title,save=save,name=name)
+        plotting.plot_opto_heatmap(self.roi_mean_sems,self.zscore,self.sampling_rate,figsize=fig4_size,title=title,save=save,name=name)
         if self.method == 'shuff':
             plotting.plot_shuff_distribution(self.results_dict, self.new_ROIs,figsize=fig5_size,
-                                             col_num=4,title=title)
+                                             col_num=4,title=title,save=save,name=name)
         else:
             pass
         display(self.results_df)
+        if save is True:
+            t_name = str(value)+'_table.png'
+            dfi.export(self.results_df,t_name)
 
 
 class power_curve():
@@ -368,9 +376,13 @@ class power_curve():
             opto_objs.append(opto_obj)
         self.opto_objs = opto_objs
     
-    def generate_power_curve(self,method):
+    def generate_power_curve(self,method,save=False):
         '''Method to generate power curve'''
-
+        if save is True:
+            value = input('File Name: \n')
+            name = str(value)
+        else:
+            name = None
         power_diffs = []
         power_scatter = pd.DataFrame()
         power_sem = []
@@ -386,7 +398,7 @@ class power_curve():
             percent = (results['sig'].sum()/len(results.index))*100
             percent_sig.append(percent)
         
-        plotting.plot_power_curve(self.powers,power_diffs,power_sem,power_scatter,percent_sig,self.zscore)
+        plotting.plot_power_curve(self.powers,power_diffs,power_sem,power_scatter,percent_sig,self.zscore,save=save,name=name)
 
         # Summary table
         summary_df = pd.DataFrame()
@@ -397,7 +409,7 @@ class power_curve():
         summary_table = tabulate(summary_df,headers='keys',tablefmt='fancy_grid')
 
         # Perform one-way anova across different powers
-        f_stat, anova_p, results_table = util.ANOVA_1way_bonferroni(all_diffs,method)
+        f_stat, anova_p, results_table, results_df = util.ANOVA_1way_bonferroni(all_diffs,method)
 
         # Display results
         print('One-Way ANOVA results')
@@ -408,10 +420,16 @@ class power_curve():
         print('\n')
         print('Summary Statistics')
         print(summary_table)
+
+        if save is True:
+            s_name = str(value)+'_summary_table.png'
+            r_name = str(value)+'_results_table.png'
+            dfi.export(results_df,r_name)
+            dfi.export(summary_df,s_name)
     
     def visualize_session(self,session,fig1_size=(7,8),fig2_size=(10,20),fig3_size=(10,10),fig4_size=(4,5),
-                          fig5_size=(10,10)):
+                          fig5_size=(10,10),save=False):
         '''Method to vizualize a single imaging session with a specific power'''
         name = f'{self.powers[session]} mW'
-        self.opto_objs[session].display_results(fig1_size,fig2_size,fig3_size,fig4_size,fig5_size,name)
+        self.opto_objs[session].display_results(fig1_size,fig2_size,fig3_size,fig4_size,fig5_size,title=name,save=save)
         

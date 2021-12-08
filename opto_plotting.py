@@ -6,7 +6,7 @@ import seaborn as sns; sns.set()
 sns.set_style('ticks')
 
 
-def plot_session_activity(dFoF, itis, zscore=False, figsize=(7,8), title='default'):
+def plot_session_activity(dFoF, itis, zscore=False, figsize=(7,8), title='default',save=False,name=None):
     '''Function to plot the activity of each ROI for the entire imaging session.
         Indicates the locations of each stimulation.'''
     if title == 'default':
@@ -30,8 +30,10 @@ def plot_session_activity(dFoF, itis, zscore=False, figsize=(7,8), title='defaul
     plt.title(title)
     plt.legend(bbox_to_anchor=(1.1,1.05))
     plt.tight_layout()
+    if save is True:
+        plt.savefig(name+'_Session_Activity.pdf')
 
-def plot_each_event(roi_stim_epochs, ROIs, figsize=(7,8), title='default'):
+def plot_each_event(roi_stim_epochs, ROIs, figsize=(7,8), title='default',save=False,name=None):
     '''Function to plot the activity of each ROI around each stimulation event.'''
     if title == 'default':
         title = 'Time Locked Activity'
@@ -63,9 +65,11 @@ def plot_each_event(roi_stim_epochs, ROIs, figsize=(7,8), title='default'):
         ax.set_title(ROIs[count],fontsize=10)
         ax.tick_params(axis='both',which='both',direction='in',length=4)
     fig.tight_layout()
+    if save is True:
+        fig.savefig(name+'_Time_Locked_Activity.pdf')
 
 
-def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, title='default'):
+def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, title='default',save=False,name=None):
     if title == 'default':
         title = 'Mean Opto Activity'
     else:
@@ -99,8 +103,10 @@ def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, t
         plt.ylim(top=ymax+(ymax*0.1))
         count +=1
     fig.tight_layout()
+    if save is True:
+        fig.savefig(name+'_Mean_Activity.pdf')
 
-def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title='default', cmap=None):
+def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title='default', cmap=None,save=False,name=None):
     '''Function to plot heatmap of avg ROI activity'''
 
     if title == 'default':
@@ -144,8 +150,10 @@ def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title
     ax.patch.set_linewidth('2.5')
     
     fig.tight_layout()
+    if save is True:
+        fig.savefig(name+'_Heatmap.pdf')
 
-def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, title="default"):
+def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, title="default",save=False,name=None):
     '''Function to plot the shuffle distribution against the real data for 
         each ROI'''
     
@@ -175,8 +183,10 @@ def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, title
         count += 1
     
     fig.tight_layout()
+    if save is True:
+        fig.savefig(name+'_Shuffle_Distributions.pdf')
 
-def plot_power_curve(ps, diffs, sems, scatter, percent_sig, zscore):
+def plot_power_curve(ps, diffs, sems, scatter, percent_sig, zscore,save=False,name=None):
     '''Function to plot mean activity and percent significant for different optostimulation
         power sessions.'''
     
@@ -207,4 +217,6 @@ def plot_power_curve(ps, diffs, sems, scatter, percent_sig, zscore):
     plt.tick_params(labelcolor='none',bottom=False,left=False)
     plt.xlabel('Power (mW)',labelpad=15)
     fig.tight_layout()
+    if save is True:
+        fig.savefig(name+' Power Curve.pdf')
     

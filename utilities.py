@@ -211,10 +211,12 @@ def ANOVA_1way_bonferroni(data_dict, method):
                                                     returnsorted=False)
     results_dict = {'comparison':test_performed,'t stat':t_vals,
                         'raw p-values':raw_pvals,'adjusted p-vals':adj_pvals}
+
+    results_df = pd.DataFrame.from_dict(results_dict)
     
     results_table = tabulate(results_dict,headers='keys',tablefmt='fancy_grid')
 
-    return f_stat, anova_p, results_table
+    return f_stat, anova_p, results_table, results_df
 
 def significance_testing(imaging,timestamps,window,sampling_rate,method):
     '''Function to determine if each ROI was significantly activated by a specifice event.
