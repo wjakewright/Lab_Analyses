@@ -106,8 +106,14 @@ def plot_mean_sem(roi_mean_sems, new_window, ROIs, figsize=(10,10), col_num=4, t
     if save is True:
         fig.savefig(name+'_Mean_Activity.pdf')
 
-def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title='default', cmap=None,save=False,name=None):
+def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title='default', cmap=None,save=False,name=None,hmap_range=None):
     '''Function to plot heatmap of avg ROI activity'''
+    if hmap_range is None:
+        z_range = (-2,2)
+        df_range = (-0.5,5)
+    else:
+        z_range = hmap_range
+        df_range = hmap_range
 
     if title == 'default':
         title = 'Mean Opto Activity Heatmap'
@@ -133,13 +139,13 @@ def plot_opto_heatmap(roi_mean_sems, zscore, sampling_rate, figsize=(4,5), title
     fig = plt.figure(figsize=figsize)
     fig.suptitle(title)
     if zscore is True:
-        ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=2,vmin=-2,
+        ax = sns.heatmap(df_t,cmap=cmap,center=0,vmax=z_range[1],vmin=z_range[0],
                         cbar_kws={'label':'z-score','orientation':'vertical',
-                                    'ticks':(-2,0,2)},yticklabels=False)
+                                    'ticks':(z_range[0],0,z_range[1])},yticklabels=False)
     else:
-        ax = sns.heatmap(df_t,cmap='inferno',vmax=5,vmin=-0.5,
+        ax = sns.heatmap(df_t,cmap='inferno',vmax=df_range[1],vmin=df_range[0],
                         cbar_kws={'label':r'$\Delta$F/F','orientation':'vertical',
-                                    'ticks':(-0.5,0,5)},yticklabels=False) 
+                                    'ticks':(df_range[0],0,df_range[1])},yticklabels=False) 
     
     plt.xticks(ticks = [0,(sampling_rate),(sampling_rate*2),
                         (sampling_rate*3),(sampling_rate*4),
@@ -172,9 +178,9 @@ def plot_shuff_distribution(sig_results, ROIs, figsize=(10,10), col_num=4, title
     count = 1
     for key, value in sig_results.items():
         ax = fig.add_subplot(row_num, col_num, count)
-        ax.hist(value['shuff_diff'],color='mediumblue',alpha=0.7,
+        ax.hist(value['shuff_diffs'],color='mediumblue',alpha=0.7,
                 linewidth=0.5)
-        ax.axvline(x=value['real_diff'], color='red',linewidth=2.5)
+        ax.axvline(x=value['diff'], color='red',linewidth=2.5)
         ax.axvline(x=value['bounds'][0], color='black',linewidth=1,linestyle='--')
         ax.axvline(x=value['bounds'][1], color='black',linewidth=1,linestyle='--')
         ax.set_title(ROIs[count-1],fontsize=10)

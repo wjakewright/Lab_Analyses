@@ -280,13 +280,13 @@ class optogenetic_analysis():
                 roi_mean_sems,results_dict,results_df]
 
     def display_results(self,fig1_size=(7,8),fig2_size=(10,20),fig3_size=(10,10),fig4_size=(4,5),
-                        fig5_size=(10,10),title='default',save=False):
+                        fig5_size=(10,10),title='default',save=False,hmap_range=None):
         '''Method to display the data and results'''
         if save is True:
             value = input('File Name: \n')
             name = str(value)
         else:
-            name = None
+            name = ''
         if self.grouped is True:
             for i, (dFoF, itis), in enumerate(zip(self.dFoF, self.itis)):
                 new_name = name + f'Mouse {i+1}'
@@ -297,7 +297,7 @@ class optogenetic_analysis():
         plotting.plot_each_event(self.roi_stim_epochs,self.new_ROIs,figsize=fig2_size,title=title,save=save,name=name)
         plotting.plot_mean_sem(self.roi_mean_sems,self.new_window,self.new_ROIs,figsize=fig3_size,
                                 col_num=4,title=title,save=save,name=name)
-        plotting.plot_opto_heatmap(self.roi_mean_sems,self.zscore,self.sampling_rate,figsize=fig4_size,title=title,save=save,name=name)
+        plotting.plot_opto_heatmap(self.roi_mean_sems,self.zscore,self.sampling_rate,figsize=fig4_size,title=title,save=save,name=name,hmap_range=hmap_range)
         if self.method == 'shuff':
             plotting.plot_shuff_distribution(self.results_dict, self.new_ROIs,figsize=fig5_size,
                                              col_num=4,title=title,save=save,name=name)
@@ -428,8 +428,8 @@ class power_curve():
             dfi.export(summary_df,s_name)
     
     def visualize_session(self,session,fig1_size=(7,8),fig2_size=(10,20),fig3_size=(10,10),fig4_size=(4,5),
-                          fig5_size=(10,10),save=False):
+                          fig5_size=(10,10),save=False,hmap_range=None):
         '''Method to vizualize a single imaging session with a specific power'''
         name = f'{self.powers[session]} mW'
-        self.opto_objs[session].display_results(fig1_size,fig2_size,fig3_size,fig4_size,fig5_size,title=name,save=save)
+        self.opto_objs[session].display_results(fig1_size,fig2_size,fig3_size,fig4_size,fig5_size,title=name,save=save,hmap_range=hmap_range)
         
