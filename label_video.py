@@ -1,6 +1,6 @@
 import os
 from os.path import join as pjoin
-import scipy.io as sio
+from skimage import io as sio
 import numpy as np
 import cv2
 from PIL import Image, ImageEnhance
@@ -55,12 +55,12 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
             '''
     # Get all image filenames
     images = [img for img in os.listdir(img_dir) if img.endswith('.tif')]
-    images = images.sort()
+    images.sort()
     # Grab and process images
     if img_range is None:
         images = images
     else:
-        images = images[img_range[0],img_range[1]+1]
+        images = images[img_range[0]:img_range[1]+1]
     # Loading the images
     tif_stack = []
     for image in images:
@@ -74,7 +74,7 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
         for tif in range(np.shape(t)[0]):
             # Convert to heatmap
             i = t[tif,:,:]
-            heat = cv2.applyColorMap(i,cv2.COLORMAP_MAGMA)
+            heat = cv2.applyColorMap(i,cv2.COLORMAP_HOT)
             heat = cv2.cvtColor(heat,cv2.COLOR_RGB2BGR)
             img = Image.fromarray(heat)
             # Scale brightness
@@ -91,7 +91,7 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
             # Convert back to array
             img = np.array(im)
             if low_thresh is not None:
-                _,img = cv2.threshold(img,low_thresh,cv2.THRESH_TOZERO)
+                _,img = cv2.threshold(img,low_thresh,255,cv2.THRESH_TOZERO)
             else:
                 pass
             if filter_param is not None:
@@ -100,8 +100,12 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
                 pass
 
             tif_concat.append(img)
+            i=None
+            heat=None
+            img=None
     # Add the labels
     tif_array = np.array(tif_concat)
+    tif_concat = None
     for label in labels:
         if label[1] < len(tif_array):
             a = int(label[0])
@@ -111,10 +115,11 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
 
     # Downsample the video
     if ds_rate is not None:
-        avg_tif = block_reduce(np.array(tif_concat),block_size=(ds_rate,1,1,1),func=np.mean,cval=np.mean(np.array(tif_concat)))
+        avg_tif = block_reduce(np.array(tif_array),block_size=(ds_rate,1,1,1),func=np.mean,cval=np.mean(np.array(tif_array)))
     else:
-        avg_tif = np.array(tif_concat)
+        avg_tif = np.array(tif_array)
     # Make sure video arrays are of uint8
+    tif_array = None
     avg_tif = (avg_tif).astype(np.uint8)
 
     # Save the video
