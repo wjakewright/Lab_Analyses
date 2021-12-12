@@ -96,6 +96,8 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
                 pass
             if filter_param is not None:
                 img = cv2.GaussianBlur(img,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
+                #img = cv2.medianBlur(img,filter_param)
+                #img = cv2.bilateralFilter(img,5,75,75)
             else:
                 pass
 
@@ -121,6 +123,16 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
     # Make sure video arrays are of uint8
     tif_array = None
     avg_tif = (avg_tif).astype(np.uint8)
+    # if filter_param is not None:
+    #     filt_tif = []
+    #     for tif in avg_tif:
+    #         f = cv2.GaussianBlur(tif,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
+    #         filt_tif.append(f)
+    #     avg_tif = np.array(filt_tif).astype(np.uint8)
+    #     filt_tif = None
+    # else:
+    #     pass
+        
 
     # Save the video
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
