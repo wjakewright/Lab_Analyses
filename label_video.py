@@ -76,6 +76,15 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
             i = t[tif,:,:]
             heat = cv2.applyColorMap(i,cv2.COLORMAP_HOT)
             heat = cv2.cvtColor(heat,cv2.COLOR_RGB2BGR)
+            if low_thresh is not None:
+                _, heat = cv2.threshold(heat,low_thresh,255,cv2.THRESH_TOZERO)
+            else:
+                pass
+            if filter_param is not None:
+                heat = cv2.GaussianBlur(heat,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
+            else:
+                pass
+
             img = Image.fromarray(heat)
             # Scale brightness
             if scale is not None:
@@ -90,16 +99,16 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
                 pass
             # Convert back to array
             img = np.array(im)
-            if low_thresh is not None:
-                _,img = cv2.threshold(img,low_thresh,255,cv2.THRESH_TOZERO)
-            else:
-                pass
-            if filter_param is not None:
-                img = cv2.GaussianBlur(img,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
-                #img = cv2.medianBlur(img,filter_param)
-                #img = cv2.bilateralFilter(img,5,75,75)
-            else:
-                pass
+            # if low_thresh is not None:
+            #     _,img = cv2.threshold(img,low_thresh,255,cv2.THRESH_TOZERO)
+            # else:
+            #     pass
+            # if filter_param is not None:
+            #     img = cv2.GaussianBlur(img,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
+            #     #img = cv2.medianBlur(img,filter_param)
+            #     #img = cv2.bilateralFilter(img,5,75,75)
+            # else:
+            #     pass
 
             tif_concat.append(img)
             i=None
