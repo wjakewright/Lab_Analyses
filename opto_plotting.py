@@ -215,6 +215,7 @@ def plot_power_curve(ps, diffs, sems, scatter, percent_sig, zscore,save=False,na
     ax2.plot(p,percent_sig,color='red',marker='o',markerfacecolor='red')
     ax2.set_title('Percent Significant',fontsize=12)
     ax2.set_ylabel('Percentage of Neurons')
+    ax2.set_ylim([0, 100])
     ax2.set_xticks(p)
     ax2.set_xticklabels(labels=powers)
     plt.ylim(bottom=0)
