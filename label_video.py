@@ -1,17 +1,13 @@
 import os
-from os.path import join as pjoin
 from skimage import io as sio
 import numpy as np
 import cv2
-from PIL import Image, ImageEnhance
 from skimage.measure import block_reduce
-import matplotlib.pyplot as plt
-
 
 '''Module to process imaging videos for presnetation purposes. Allows transformation
     to a heatmap, downsampling, and frame labeling'''
 
-def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_range=None,scale=None,resize=None,low_thresh=None,
+def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_range=None,gamma=None,resize=None,low_thresh=None,
                 filter_param=None):
     '''Function to label specific frames of imaging videos that correpsonde
         with specific events. Also allows converstion to a heatmap and downsampling
@@ -40,8 +36,8 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
                         E.g. (0,4) to combine the first 4 image files. Default is set to none for 
                         concatenation of all images. Default is set to None to concat all images
             
-            scale - integer spcifying by what factor you wish to enhance the brightness of the images.
-                    Default is set to  None to not change the brightness
+            gamma - float spcifying by what factor you wish to enhance the brightness of the images
+                    using gamma correction. Default is set to  None to not change the brightness
             
             resize - tuple spcifying what size you wish to resize the image to. (e.g. 500x500 pixels)
                      Default is set to None for no resizing.
@@ -74,46 +70,45 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
         for tif in range(np.shape(t)[0]):
             # Convert to heatmap
             i = t[tif,:,:]
-            heat = cv2.applyColorMap(i,cv2.COLORMAP_HOT)
+            heat = cv2.applyColorMap(i,cv2.COLORMAP_INFERNO)
             heat = cv2.cvtColor(heat,cv2.COLOR_RGB2BGR)
+
+            # Threshold Image
             if low_thresh is not None:
                 _, heat = cv2.threshold(heat,low_thresh,255,cv2.THRESH_TOZERO)
             else:
                 pass
+
+            # Smooth Image
             if filter_param is not None:
                 heat = cv2.GaussianBlur(heat,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
             else:
                 pass
 
-            img = Image.fromarray(heat)
-            # Scale brightness
-            if scale is not None:
-                enhancer = ImageEnhance.Brightness(img)
-                im = enhancer.enhance(scale)
+            img = heat
+            heat = None
+
+            # Adjust brightness
+            if gamma is not None:
+                im = gamma_correction(gamma,img)
             else:
                 im = img
+
             # Adjust image size
             if resize is not None:
-                im = im.resize(resize,Image.ANTIALIAS)
+                im = cv2.resize(im,resize)
             else:
                 pass
-            # Convert back to array
-            img = np.array(im)
-            # if low_thresh is not None:
-            #     _,img = cv2.threshold(img,low_thresh,255,cv2.THRESH_TOZERO)
-            # else:
-            #     pass
-            # if filter_param is not None:
-            #     img = cv2.GaussianBlur(img,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
-            #     #img = cv2.medianBlur(img,filter_param)
-            #     #img = cv2.bilateralFilter(img,5,75,75)
-            # else:
-            #     pass
+
+            # Ensure dtype is unit8
+            img = (im).astype(np.uint8)
+         
 
             tif_concat.append(img)
             i=None
-            heat=None
+            im=None
             img=None
+
     # Add the labels
     tif_array = np.array(tif_concat)
     tif_concat = None
@@ -129,20 +124,11 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
         avg_tif = block_reduce(np.array(tif_array),block_size=(ds_rate,1,1,1),func=np.mean,cval=np.mean(np.array(tif_array)))
     else:
         avg_tif = np.array(tif_array)
+
     # Make sure video arrays are of uint8
     tif_array = None
     avg_tif = (avg_tif).astype(np.uint8)
-    # if filter_param is not None:
-    #     filt_tif = []
-    #     for tif in avg_tif:
-    #         f = cv2.GaussianBlur(tif,(filter_param[0],filter_param[1]),filter_param[2],filter_param[3])
-    #         filt_tif.append(f)
-    #     avg_tif = np.array(filt_tif).astype(np.uint8)
-    #     filt_tif = None
-    # else:
-    #     pass
         
-
     # Save the video
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
     video_name = out_name + '.avi'
@@ -153,6 +139,14 @@ def label_video(img_dir,labels,out_name,image_rate,speed=1,ds_rate=None,img_rang
         video.write(cv2.cvtColor(avg_tif[i],cv2.COLOR_RGB2BGR)) # ensuring image is BGR for cv2 ouput
     cv2.destroyAllWindows
     video.release()
+
+def gamma_correction(gamma,image):
+    ## Helper function to perform gamma correction on labeled video
+    inv_gamma = 1/gamma
+    table = [((i/255) ** inv_gamma) * 255 for i in range(256)]
+    table = np.array(table,np.uint8)
+
+    return cv2.LUT(image,table)
 
 
             
