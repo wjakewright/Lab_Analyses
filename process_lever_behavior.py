@@ -63,12 +63,82 @@ def parse_lever_movement_continuous(xsg_data):
     lever_active = np.convolve(lever_active, movement_leeway_filt, "same")
     # Close gaps of detrmined size
     gap_allowance = 500  # in ms
+    (
+        lever_active_starts,
+        lever_active_stops,
+        _,
+        lever_active_intermovement_times,
+    ) = get_lever_active_points(lever_active)
+    lever_active_fill = lever_active_intermovement_times < gap_allowance
+    for i in np.nonzero(lever_active_fill):
+        lever_active[lever_active_stops[i] : lever_active_starts(i + 1)] = 1
+    # Get rid of small movments
+    minimum_movement_fast = 0  ## Not using since small movements seemed real
+    minimum_movemet = minimum_movement_fast + movement_leeway
+    (
+        lever_active_starts,
+        lever_active_stops,
+        lever_active_movement_times,
+        _,
+    ) = get_lever_active_points(lever_active)
+    lever_active_erase = lever_active_movement_times < minimum_movemet
+    for i in np.nonzero(lever_active_erase):
+        lever_active[lever_active_starts[i] : lever_active_stops[i]] = 0
+
+    # Edges of hilbert envelope always goes up
+    # Eliminate the first/last movements if they're on the edges
+    (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
+        lever_active
+    )
+    if lever_active_starts[0] == 1:
+        lever_active[0 : lever_active_stops[0]] = 0
+    if lever_active_stops[-1] == len(lever_force_resample):
+        lever_active[lever_active_starts[-1] : -1] = 0
+
+    # Refine the lever active starts and stops
+    (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
+        lever_active
+    )
+    noise = lever_force_resample(np.where(lever_active == 0)) - lever_force_smooth(
+        np.where(lever_active == 0)
+    )
+    noise_cutoff = np.percentile(noise, 99)
+    move_start_values = lever_force_smooth(lever_active_starts)
+    move_start_cutoffs = move_start_values + noise_cutoff
+    move_stop_values = lever_force_smooth(lever_active_stops)
+    move_stop_cutoffs = move_stop_values + noise_cutoff
+    sizes = 1 + lever_active_stops - lever_active_starts
+    splits = [sizes[0] - 1]
+    for size in sizes[1:]:
+        splits.append(splits[-1] + size)
+    splits = [x + 1 for x in splits]
+    movement_epochs = np.split(lever_force_resample(lever_active), splits)
+    # Look for trace consecutively past threshold
+    thresh_run = 3
+
+
+def get_move_start_offset(w, x, y, z):
+    """Helper function to get movement start offsets"""
+
+
+def get_lever_active_points(lever_active):
+    """Helper function to get active_lever_switch, active_lever_starts, active_lever_stops"""
     lever_active_switch = np.diff(
-        np.pad(lever_active, pad_width=1, mode="constant", constant_value=0)
+        np.pad(lever_active, pad_width=1, mode="constat", constant_value=0)
     )
     lever_active_starts = np.argwhere(lever_active_switch == 1).flatten()
-    lever_active_stops = np.argwhere(lever_active_switch == -1).flatten()
-    lever_active_movement_times = lever_active_starts - lever_active_stops
+    lever_active_stops = np.arwhere(lever_active_switch=-1).flatten()
+    lever_active_movement_times = lever_active_stops - lever_active_starts
+    lever_active_intermovement_times = (
+        lever_active_starts[1:-1] - lever_active_stops[0:-2]
+    )
+
+    return (
+        lever_active_starts,
+        lever_active_stops,
+        lever_active_movement_times,
+        lever_active_intermovement_times,
+    )
 
 
 def load_xsg_continuous(dirname):
