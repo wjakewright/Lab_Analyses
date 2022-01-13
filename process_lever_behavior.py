@@ -18,7 +18,7 @@ def parse_lever_movement_continuous(xsg_data):
                         output from load_xsg_continuous() function.
                         
         OUTPUT PARAMETERS
-            lever_active - 
+            lever_active - binarized np.array indicating when lever is active(1) or inactive (0)
             
             lever_force_resample - 
             
@@ -47,7 +47,7 @@ def parse_lever_movement_continuous(xsg_data):
     ] = np.nan
 
     # Get lever velocity envelope
-    lever_velocity_hilbert = sysignal(lever_velocity_resample_smooth)
+    lever_velocity_hilbert = sysignal.hilbert(lever_velocity_resample_smooth)
     lever_velocity_envelope = np.sqrt(
         (lever_velocity_hilbert * np.conj(lever_velocity_hilbert))
     )
@@ -115,19 +115,69 @@ def parse_lever_movement_continuous(xsg_data):
     movement_epochs = np.split(lever_force_resample(lever_active), splits)
     # Look for trace consecutively past threshold
     thresh_run = 3
+    movement_start_offsets = []
+    for w, x, y, z in zip(
+        move_start_values, movement_epochs, move_start_cutoffs, lever_active_starts
+    ):
+        offset = get_move_start_offset(w, x, y, z, thresh_run)
+        movement_start_offsets.append(offset)
+    movement_stop_offsets = []
+    for w, x, y, z in zip(
+        move_start_values, movement_epochs, move_start_cutoffs, lever_active_starts
+    ):
+        offset = get_move_stop_offset(w, x, y, z, thresh_run)
+        movement_stop_offsets.append(offset)
+
+    lever_active[movement_start_offsets] = 0
+    lever_active[movement_stop_offsets] = 0
+
+    return (
+        lever_active,
+        lever_force_resample,
+        lever_force_smooth,
+        lever_velocity_envelope_smooth,
+    )
 
 
-def get_move_start_offset(w, x, y, z):
+def get_move_start_offset(w, x, y, z, thresh_run):
     """Helper function to get movement start offsets"""
+    conv = np.convolve(
+        (np.absolute(x - w) > np.np.absolute(y - w)).astype(int),
+        np.ones((thresh_run, 1)),
+        "same",
+    )
+    flr = np.floor(thresh_run / 2)
+    find = np.nonzero(conv >= thresh_run)[0]
+    end = find - flr
+    result = np.arange(z, z + end)
+
+    return result
+
+
+def get_move_stop_offset(w, x, y, z, thresh_run):
+    """Helper function to get movment stop offsets"""
+    conv = np.convolve(
+        (np.absolute(x[::-1] - w) > np.absolute(y - w)).astype(int),
+        np.ones((thresh_run, 1)),
+        "same",
+    )
+    flr = np.floor(thresh_run / 2)
+    find = np.nonzero(conv >= thresh_run)[0]
+    end = find - flr
+    result = np.arange(z - end, z)
+
+    return result
 
 
 def get_lever_active_points(lever_active):
     """Helper function to get active_lever_switch, active_lever_starts, active_lever_stops"""
     lever_active_switch = np.diff(
-        np.pad(lever_active, pad_width=1, mode="constat", constant_value=0)
+        np.pad(lever_active, pad_width=1, mode="constant", constant_values=(0))
     )
     lever_active_starts = np.argwhere(lever_active_switch == 1).flatten()
-    lever_active_stops = np.arwhere(lever_active_switch=-1).flatten()
+    lever_active_stops = np.argwhere(lever_active_switch == -1).flatten()
+    print(np.shape(lever_active_starts))
+    print(np.shape(lever_active_stops))
     lever_active_movement_times = lever_active_stops - lever_active_starts
     lever_active_intermovement_times = (
         lever_active_starts[1:-1] - lever_active_stops[0:-2]
@@ -182,7 +232,7 @@ def load_xsg_continuous(dirname):
     # Load and store each xsglog file
     data.channels = {}
     for file in files:
-        fn = file.name
+        fn = file
         _, _, channel_name = parse_xsg_filename(fn)
         try:
             with open(os.path.join(dirname, fn), "rb") as fid:
@@ -210,7 +260,10 @@ def parse_xsg_filename(fname):
     """
     name = re.search("[A-Z]{2}[0-9]{4}", fname).group()
     epoch = re.search("[A-Z]{4}[0-9]{4}", fname).group()
-    channel = re.search("_(\w+).xsglog", fname).group()[1:]
+    # channel = re.search("_(\w+).xsglog", fname).group()[1:]
+    channel = re.search("_(\w+)", fname).group()[1:]
+
+    return name, epoch, channel
 
 
 def matlab_smooth(data, window):
