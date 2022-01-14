@@ -79,8 +79,8 @@ def parse_lever_movement_continuous(xsg_data):
         lever_active_intermovement_times,
     ) = get_lever_active_points(lever_active)
     lever_active_fill = lever_active_intermovement_times < gap_allowance
-    for i in np.nonzero(lever_active_fill):
-        lever_active[lever_active_stops[i] : lever_active_starts(i + 1)] = 1
+    for i in np.nonzero(lever_active_fill)[0]:
+        lever_active[lever_active_stops[i] : lever_active_starts[i + 1]] = 1
     # Get rid of small movments
     minimum_movement_fast = 0  ## Not using since small movements seemed real
     minimum_movemet = minimum_movement_fast + movement_leeway
