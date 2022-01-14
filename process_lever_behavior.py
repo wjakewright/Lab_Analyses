@@ -50,7 +50,7 @@ def parse_lever_movement_continuous(xsg_data):
     lever_velocity_hilbert = sysignal.hilbert(lever_velocity_resample_smooth)
     lever_velocity_envelope = np.sqrt(
         (lever_velocity_hilbert * np.conj(lever_velocity_hilbert))
-    )
+    ).astype(float)
     # Change window if you would like to smooth envelope velocity
     lever_velocity_envelope_smooth = matlab_smooth(lever_velocity_envelope, 1)
 
