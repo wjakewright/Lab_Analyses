@@ -180,9 +180,7 @@ def get_move_stop_offset(w, x, y, z, thresh_run):
 
 def get_lever_active_points(lever_active):
     """Helper function to get active_lever_switch, active_lever_starts, active_lever_stops"""
-    lever_active_switch = np.diff(
-        np.pad(lever_active, pad_width=1, mode="constant", constant_values=(0))
-    )
+    lever_active_switch = np.diff(lever_active, prepend=0, append=0)
     lever_active_starts = np.argwhere(lever_active_switch == 1).flatten()
     lever_active_stops = np.argwhere(lever_active_switch == -1).flatten()
     lever_active_movement_times = (lever_active_stops - 1) - (
