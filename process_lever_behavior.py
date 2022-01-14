@@ -99,7 +99,7 @@ def parse_lever_movement_continuous(xsg_data):
     (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
         lever_active
     )
-    if lever_active_starts[0] == 1:
+    if lever_active_starts[0] == 0:
         lever_active[0 : lever_active_stops[0]] = 0
     if lever_active_stops[-1] == len(lever_force_resample):
         lever_active[lever_active_starts[-1] : -1] = 0
