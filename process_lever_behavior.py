@@ -35,7 +35,14 @@ def parse_lever_movement_continuous(xsg_data):
     )
     butterworth_stop = 5 / 500  # fraction of nyquist (cutoff = 10 Hz)
     butter = sysignal.butter(4, butterworth_stop, "low")
-    lever_force_smooth = sysignal.filtfilt(butter[0], butter[1], lever_force_resample)
+    lever_force_smooth = sysignal.filtfilt(
+        butter[0],
+        butter[1],
+        lever_force_resample,
+        axis=0,
+        padtype="odd",
+        padlen=3 * (max(len(butter[1]), len(butter[0])) - 1),
+    )
 
     # Get lever velocity and smooth
     lever_velocity_resample = np.insert(np.diff(lever_force_smooth), 0, 0, axis=0)
