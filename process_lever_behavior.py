@@ -67,7 +67,9 @@ def parse_lever_movement_continuous(xsg_data):
     # Give leeway on both ends to all movements
     movement_leeway = 150  # ms to extend the movment total (half on each end)
     movement_leeway_filt = np.ones(movement_leeway, dtype=int)
-    lever_active = np.convolve(lever_active, movement_leeway_filt, "same")
+    lever_active = (
+        np.convolve(lever_active, movement_leeway_filt, "same").astype(bool).astype(int)
+    )
     # Close gaps of detrmined size
     gap_allowance = 500  # in ms
     (
