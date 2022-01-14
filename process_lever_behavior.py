@@ -57,7 +57,7 @@ def parse_lever_movement_continuous(xsg_data):
     lever_velocity_hilbert = sysignal.hilbert(lever_velocity_resample_smooth)
     lever_velocity_envelope = np.sqrt(
         (lever_velocity_hilbert * np.conj(lever_velocity_hilbert))
-    ).astype(float)
+    ).astype(np.float64)
     # Change window if you would like to smooth envelope velocity
     lever_velocity_envelope_smooth = matlab_smooth(lever_velocity_envelope, 1)
 
@@ -100,14 +100,16 @@ def parse_lever_movement_continuous(xsg_data):
         lever_active
     )
     if lever_active_starts[0] == 0:
-        lever_active[0 : lever_active_stops[0]] = 0
-    if lever_active_stops[-1] == len(lever_force_resample):
-        lever_active[lever_active_starts[-1] : -1] = 0
+        lever_active[0 : lever_active_stops[0] + 1] = 0
+    if lever_active_stops[-1] == len(lever_force_resample) - 1:
+        lever_active[lever_active_starts[-1] :] = 0
 
     # Refine the lever active starts and stops
     (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
         lever_active
     )
+    lever_active_starts = lever_active_starts - 1  # Having weird indexing issues
+    lever_active_stops = lever_active_stops - 1
     noise = lever_force_resample(np.where(lever_active == 0)) - lever_force_smooth(
         np.where(lever_active == 0)
     )
@@ -122,6 +124,7 @@ def parse_lever_movement_continuous(xsg_data):
         splits.append(splits[-1] + size)
     splits = [(x + 1) - 1 for x in splits]
     movement_epochs = np.split(lever_force_resample[lever_active.astype(bool)], splits)
+    movement_epochs = movement_epochs[:-1]
     # Look for trace consecutively past threshold
     thresh_run = 3
     movement_start_offsets = []
@@ -182,8 +185,8 @@ def get_lever_active_points(lever_active):
     """Helper function to get active_lever_switch, active_lever_starts, active_lever_stops"""
     lever_active_switch = np.diff(lever_active, prepend=0, append=0)
     lever_active_starts = np.argwhere(lever_active_switch == 1).flatten()
-    lever_active_stops = np.argwhere(lever_active_switch == -1).flatten()
-    lever_active_movement_times = (lever_active_stops - 1) - (
+    lever_active_stops = np.argwhere(lever_active_switch == -1).flatten() - 1
+    lever_active_movement_times = (lever_active_stops) - (
         lever_active_starts + 1
     )  # Accounting for index differences
     lever_active_intermovement_times = (
