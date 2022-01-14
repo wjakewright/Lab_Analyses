@@ -91,7 +91,7 @@ def parse_lever_movement_continuous(xsg_data):
         _,
     ) = get_lever_active_points(lever_active)
     lever_active_erase = lever_active_movement_times < minimum_movemet
-    for i in np.nonzero(lever_active_erase):
+    for i in np.nonzero(lever_active_erase)[0]:
         lever_active[lever_active_starts[i] : lever_active_stops[i]] = 0
 
     # Edges of hilbert envelope always goes up
