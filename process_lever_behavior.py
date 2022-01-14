@@ -185,12 +185,12 @@ def get_lever_active_points(lever_active):
     )
     lever_active_starts = np.argwhere(lever_active_switch == 1).flatten()
     lever_active_stops = np.argwhere(lever_active_switch == -1).flatten()
-    print(np.shape(lever_active_starts))
-    print(np.shape(lever_active_stops))
-    lever_active_movement_times = lever_active_stops - lever_active_starts
+    lever_active_movement_times = (lever_active_stops - 1) - (
+        lever_active_starts + 1
+    )  # Accounting for index differences
     lever_active_intermovement_times = (
-        lever_active_starts[1:-1] - lever_active_stops[0:-2]
-    )
+        (lever_active_starts[1:] + 1) - lever_active_stops[0:-1]
+    )  # Accounting for index differences
 
     return (
         lever_active_starts,
