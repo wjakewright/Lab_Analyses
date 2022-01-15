@@ -10,6 +10,9 @@ import numpy as np
 import scipy.signal as sysignal
 
 
+# ------------------------------------------------------------------
+# ----------------------EXTRACT LEVER DATA--------------------------
+# ------------------------------------------------------------------
 def parse_lever_movement_continuous(xsg_data):
     """Function to parse the lever force into movement and nonmovement epochs
     
@@ -202,6 +205,26 @@ def get_lever_active_points(lever_active):
     )
 
 
+def matlab_smooth(data, window):
+    """Function to replicate the implementation of matlab smooth function
+    
+        INPUT PARAMETERS
+            data - 1d numpy array
+            
+            window - int. Must be odd value
+            
+    """
+    out0 = np.convolve(data, np.ones(window, dtype=int), "valid") / window
+    r = np.arange(1, window - 1, 2)
+    start = np.cumsum(data[: window - 1])[::2] / r
+    stop = (np.cumsum(data[:-window:-1])[::2] / r)[::1]
+
+    return np.concatenate((start, out0, stop))
+
+
+# ---------------------------------------------------------------
+# -------------------LOAD XSG.LOG DATA FILES --------------------
+# ---------------------------------------------------------------
 def load_xsg_continuous(dirname):
     """Function to load xsg files output from ephus
         
@@ -275,23 +298,6 @@ def parse_xsg_filename(fname):
     channel = re.search("_(\w+)", fname).group()[1:]
 
     return name, epoch, channel
-
-
-def matlab_smooth(data, window):
-    """Function to replicate the implementation of matlab smooth function
-    
-        INPUT PARAMETERS
-            data - 1d numpy array
-            
-            window - int. Must be odd value
-            
-    """
-    out0 = np.convolve(data, np.ones(window, dtype=int), "valid") / window
-    r = np.arange(1, window - 1, 2)
-    start = np.cumsum(data[: window - 1])[::2] / r
-    stop = (np.cumsum(data[:-window:-1])[::2] / r)[::1]
-
-    return np.concatenate((start, out0, stop))
 
 
 @dataclass
