@@ -167,15 +167,15 @@ def get_move_start_offset(w, x, y, z, thresh_run):
 
 def get_move_stop_offset(w, x, y, z, thresh_run):
     """Helper function to get movment stop offsets"""
-    conv = np.convolve(
-        (np.absolute(x[::-1] - w) > np.absolute(y - w)).astype(int),
-        np.ones((thresh_run, 1)),
-        "same",
-    )
+    u = (np.absolute(x[::-1] - w) > np.absolute(y - w)).astype(int)
+    v = np.ones(thresh_run)
+    npad = len(v) - 1
+    u_padded = np.pad(u, (npad // 2, npad - npad // 2), mode="constant")
+    conv = np.convolve(u_padded, v, "valid")
     flr = np.floor(thresh_run / 2)
-    find = np.nonzero(conv >= thresh_run)[0]
-    end = find - flr
-    result = np.arange(z - end, z)
+    find = np.nonzero(conv >= thresh_run)[0][0]
+    end = z - find + flr - 1  # weird indexing issue
+    result = np.arange(end, z + 1)
 
     return result
 
