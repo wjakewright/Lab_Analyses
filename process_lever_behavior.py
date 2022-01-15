@@ -131,16 +131,16 @@ def parse_lever_movement_continuous(xsg_data):
         move_start_values, movement_epochs, move_start_cutoffs, lever_active_starts
     ):
         offset = get_move_start_offset(w, x, y, z, thresh_run)
-        movement_start_offsets.append(offset)
+        movement_start_offsets.append(offset.astyp(int))
     movement_stop_offsets = []
     for w, x, y, z in zip(
         move_stop_values, movement_epochs, move_stop_cutoffs, lever_active_starts
     ):
         offset = get_move_stop_offset(w, x, y, z, thresh_run)
-        movement_stop_offsets.append(offset)
+        movement_stop_offsets.append(offset.astype(int))
 
-    lever_active[movement_start_offsets] = 0
-    lever_active[movement_stop_offsets] = 0
+    lever_active[np.concatenate(movement_start_offsets)] = 0
+    lever_active[np.concatenate(movement_stop_offsets)] = 0
 
     return (
         lever_active,
