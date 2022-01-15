@@ -1,15 +1,17 @@
 from os.path import join as pjoin
-import scipy.io as sio
-import numpy as np
 
-'''Module to load .mat files containing behavior and imaging data into
+import numpy as np
+import scipy.io as sio
+
+"""Module to load .mat files containing behavior and imaging data into
     a python compatible format
     
     CREATOR
-        William (Jake) Wright 12/02/2021'''
+        William (Jake) Wright 12/02/2021"""
 
-def load_mat(fname,fname1=None,path=None):
-    '''load_mat - Function to load .mat files into an object that is 
+
+def load_mat(fname, fname1=None, path=None):
+    """load_mat - Function to load .mat files into an object that is 
                     compatible with python.
 
         CREATOR
@@ -31,10 +33,10 @@ def load_mat(fname,fname1=None,path=None):
         OUTPUT PARAMETERs
             behavior_obj - Object containing the matlab structure with each field
                             being an attribute of the object. Some attributes are
-                            additional objects. Check attributes with obj.__dict__.keys()'''
+                            additional objects. Check attributes with obj.__dict__.keys()"""
 
-    # In case the name of the structure in the file doesn't match what it is 
-    # saved as. 
+    # In case the name of the structure in the file doesn't match what it is
+    # saved as.
 
     if fname1 == None:
         fname1 = fname
@@ -43,22 +45,22 @@ def load_mat(fname,fname1=None,path=None):
 
     # set the path to load the .mat file
     if path == None:
-        p = r'C:\Users\Jake\Desktop\Processed_data\matlab_data\to_convert'
+        p = r"C:\Users\Jake\Desktop\Processed_data\matlab_data\to_convert"
     else:
         p = path
-    mat_fname = pjoin(p,fname)
+    mat_fname = pjoin(p, fname)
     try:
-        mat_file = sio.loadmat(mat_fname,squeeze_me=True,struct_as_record=False)
+        mat_file = sio.loadmat(mat_fname, squeeze_me=True, struct_as_record=False)
     except FileNotFoundError:
-        print(fname + ' not found')
+        print(fname + " not found")
         return
     obj = mat_file[fname1]
-    
+
     return obj
 
+
 def merge_imaging_behavior(imaging_dict, behavior_dict):
-    ''' Function to merge imaging and behavioral data into single dictionary'''
-    data_dict = {'imaging':imaging_dict, 'behavior':behavior_dict}
+    """ Function to merge imaging and behavioral data into single dictionary"""
+    data_dict = {"imaging": imaging_dict, "behavior": behavior_dict}
     return data_dict
-    
 
