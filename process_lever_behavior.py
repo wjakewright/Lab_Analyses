@@ -119,8 +119,9 @@ def parse_lever_movement_continuous(xsg_data):
     (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
         lever_active
     )
-    noise = lever_force_resample(np.where(lever_active == 0)) - lever_force_smooth(
-        np.where(lever_active == 0)
+    noise = (
+        lever_force_resample[np.where(lever_active == 0)]
+        - lever_force_smooth[np.where(lever_active == 0)]
     )
     noise_cutoff = np.percentile(noise, 99)
     move_start_values = lever_force_smooth[lever_active_starts]
@@ -136,7 +137,7 @@ def parse_lever_movement_continuous(xsg_data):
         move_start_values, movement_epochs, move_start_cutoffs, lever_active_starts
     ):
         offset = get_move_start_offset(w, x, y, z, thresh_run)
-        movement_start_offsets.append(offset.astyp(int))
+        movement_start_offsets.append(offset.astype(int))
     movement_stop_offsets = []
     for w, x, y, z in zip(
         move_stop_values, movement_epochs, move_stop_cutoffs, lever_active_starts
