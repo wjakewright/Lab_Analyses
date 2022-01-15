@@ -122,13 +122,8 @@ def parse_lever_movement_continuous(xsg_data):
     move_start_cutoffs = move_start_values + noise_cutoff
     move_stop_values = lever_force_smooth[lever_active_stops]
     move_stop_cutoffs = move_stop_values + noise_cutoff
-    sizes = lever_active_stops - lever_active_starts
-    splits = [sizes[0]]
-    for size in sizes[1:]:
-        splits.append(splits[-1] + size)
-    splits = [(x + 1) for x in splits]
-    movement_epochs = np.split(lever_force_resample[lever_active.astype(bool)], splits)
-    movement_epochs = movement_epochs[:-1]
+    splits = list(zip(lever_active_starts, lever_active_stops + 1))
+    movement_epochs = [lever_force_resample[x:y] for x, y in splits]
     # Look for trace consecutively past threshold
     thresh_run = 3
     movement_start_offsets = []
