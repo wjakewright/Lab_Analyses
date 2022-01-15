@@ -152,15 +152,15 @@ def parse_lever_movement_continuous(xsg_data):
 
 def get_move_start_offset(w, x, y, z, thresh_run):
     """Helper function to get movement start offsets"""
-    conv = np.convolve(
-        (np.absolute(x - w) > np.np.absolute(y - w)).astype(int),
-        np.ones((thresh_run, 1)),
-        "same",
-    )
+    u = (np.absolute(x - w) > np.absolute(y - w)).astype(int)
+    v = np.ones(thresh_run)
+    npad = len(v) - 1
+    u_padded = np.pad(u, (npad // 2, npad - npad // 2), mode="constant")
+    conv = np.convolve(u_padded, v, "valid")
     flr = np.floor(thresh_run / 2)
-    find = np.nonzero(conv >= thresh_run)[0]
+    find = np.nonzero(conv >= thresh_run)[0][0]
     end = find - flr
-    result = np.arange(z, z + end)
+    result = np.arange(z, z + end + 1)
 
     return result
 
