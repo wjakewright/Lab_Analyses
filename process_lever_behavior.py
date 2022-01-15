@@ -206,7 +206,7 @@ def get_lever_active_points(lever_active):
 
 
 def matlab_smooth(data, window):
-    """Function to replicate the implementation of matlab smooth function
+    """Helper function to replicate the implementation of matlab smooth function
     
         INPUT PARAMETERS
             data - 1d numpy array
@@ -232,7 +232,12 @@ def load_xsg_continuous(dirname):
             dirname - string with the path to directory where files are located
 
         OUTPUT PARAMETERS
-            data - dictionary containing an array for each xsglog data file
+            data - xsglog_data dataclass with attributes:
+                        name - str of the file name
+                        epoch - str of the epoch name
+                        file_info- FileInfo dataclass
+                        channels - dictionary with key value pairs for each file name
+                                    and file data (np.array)
     """
     # Get all the xsglog file names
     files = [file for file in os.listdir(dirname) if file.endswith(".xsglog")]
@@ -277,9 +282,7 @@ def load_xsg_continuous(dirname):
 
     # Check if all the data files are of the same length
     lens = map(len, data.channels.values())
-    if len(set(lens)) == 1:
-        pass
-    else:
+    if len(set(lens)) != 1:
         raise ValueError("Mismatched data size!!!")
 
     return data
