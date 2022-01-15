@@ -20,11 +20,13 @@ def parse_lever_movement_continuous(xsg_data):
         OUTPUT PARAMETERS
             lever_active - binarized np.array indicating when lever is active(1) or inactive (0)
             
-            lever_force_resample - 
+            lever_force_resample - np.array of the lever force resampled to 1kHz
             
-            lever_force_smooth - 
+            lever_force_smooth -  np.array of the resampled lever force smoothed with 
+                                  a butterworth filter
             
-            lever_velocity_envelope_smooth -
+            lever_velocity_envelope_smooth - np.array of the lever velocity envelope calculated
+                                             with hilbert transformation and then smoothed
             
     """
     # Set xsg sampling rate
