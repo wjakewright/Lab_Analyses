@@ -1,6 +1,7 @@
 from itertools import compress
 
 import dataframe_image as dfi
+import Lab_Analyses.Utilities.utilities as util
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -9,7 +10,6 @@ from scipy import stats
 from tabulate import tabulate
 
 import opto_plotting as plotting
-import utilities as util
 
 sns.set()
 sns.set_style("ticks")
