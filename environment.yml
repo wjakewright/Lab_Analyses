@@ -18,5 +18,6 @@ dependencies:
   - tabulate >= 0.8.9
   - pip:
     - opencv-python >= 4.5.4.58
+    - black >= 19.10b0
     - -e.
 
