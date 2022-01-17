@@ -8,6 +8,38 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.signal as sysignal
+from Lab_Analyses.Utilities.load_mat_files import load_mat
+
+
+# -------------------------------------------------------------------
+# ----------------------EXTRACT DISPATCHER FRAMES--------------------
+# -------------------------------------------------------------------
+def dispatcher_to_frames_continuous(file_name, path, xsg_data):
+    """ Function to convert dispatcher behavior data into frames to match 
+        with imaging data
+        
+        INPUT PARAMETERS
+            file_name - string containing the file name of the dispatcher file
+
+            path - string containing the path to where the file is loacted
+            
+            xsg_data - object containing the data from all the xsglog files. This
+                       is output from load_xsg_continuous() function
+        
+        OUTPUT PARAMETERS
+            behavior_frames - 
+            
+            imaged_trials - 
+            
+            frame_times - 
+    
+    """
+    # Load the structures within the dispatcher .mat file
+    mat_saved = load_mat(fname=file_name, fname1="saved", path=path)
+    mat_saved_autoset = load_mat(fname=file_name, fname1="saved_autoset", path=path)
+    mat_saved_history = load_mat(fname=file_name, fname1="saved_history", path=path)
+
+    bhv_frames = mat_saved_history.ProtocolsSection_parsed_events
 
 
 # ------------------------------------------------------------------
