@@ -27,11 +27,12 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
                        is output from load_xsg_continuous() function
         
         OUTPUT PARAMETERS
-            behavior_frames - 
+            behavior_frames - object containing the behavioral data converted to match
+                              imaging frames
             
-            imaged_trials - 
+            imaged_trials - np.array logical of which trials were imaged
             
-            frame_times - 
+            frame_times - the time (sec) of each image frame
     
     """
     # Load the structures within the dispatcher .mat file
@@ -40,6 +41,174 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
     mat_saved_history = load_mat(fname=file_name, fname1="saved_history", path=path)
 
     bhv_frames = mat_saved_history.ProtocolsSection_parsed_events
+    imaged_trials = np.zeros(len(bhv_frames))
+
+    # Get trial offsets in samples - must be hardcoded since not stored in xsg raw files
+    xsg_sample_rate = 10000
+
+    # Get frame times (sec) from frame trigger trace
+    frame_trace = xsg_data.channels["Frame"]
+    frame_times = (
+        np.nonzero(
+            (frame_trace[1:] > 2.5).astype(int) & (frame_trace[:-1] < 2.5).astype(int)
+        )[0]
+        + 1
+    )
+    frame_times = frame_times / xsg_sample_rate
+
+    # Get trials in raw samples since started
+    trial_channel = xsg_data.channels["Trial_number"]
+    curr_trial_list = read_bit_code(trial_channel)
+
+    # Loop through trials and find the offsets
+    for idx, curr_trial in enumerate(curr_trial_list[:, 1]):
+        # skip if it's the last trial and not completed in behavior
+        if curr_trial > len(bhv_frames) or curr_trial < 1:
+            continue
+        # the start time is the rise of the first bitcode
+        curr_bhv_start = bhv_frames[curr_trial].states.bitcode[0]
+        curr_xsg_bhv_offset = curr_bhv_start - curr_trial_list[idx, 0]
+        # Apply the offset to all numbers within the trial
+        # Find all fields in overall structure of trial
+        curr_fieldnames = bhv_frames[curr_trial]._fieldnames
+        # Determine which trials were imaged
+        bhv_window = (
+            bhv_frames[curr_trial].states.state_0 - curr_xsg_bhv_offset
+        )  ## Start-time to stop-time of behavioral trial (sec)
+        # Get the frame times within the current behavioral trial window
+        imaged_frames = np.round(
+            frame_times[
+                np.nonzero(
+                    (frame_times > bhv_window[0, 1]).astype(int) & frame_times
+                    < bhv_window[1, 0]
+                )
+            ]
+            * xsg_sample_rate
+        )
+        # Extract the voltage signals indicating whether imaging frames were captured during this window
+        frame_trace_window = frame_trace[imaged_frames]
+
+        if np.sum(frame_trace_window):
+            imaged_trials[curr_trial] = 1
+        else:
+            imaged_trials[curr_trial] = 0
+
+        for curr_field in curr_fieldnames:
+            # get subfields
+            curr_field_data = getattr(bhv_frames[curr_trial], curr_field)
+            curr_subfields = curr_field_data._fieldnames
+            # find which subfields are numeric
+            curr_numeric_subfields = [
+                x
+                for x in curr_subfields
+                if type(getattr(curr_field_data, x)) == np.ndarray
+            ]
+            # subtract offset from numeric fields and convert to frames
+            for s_field in curr_numeric_subfields:
+                # pull subfield data
+                s_field_data = getattr(curr_field_data, s_field)
+                # compensate for offset
+                curr_bhv_times = s_field_data - curr_xsg_bhv_offset
+                # convert to frames (get the closest frame from frame time)
+                curr_bhv_frames = np.empty(np.shape(curr_bhv_times)).flatten()
+                for index, _ in enumerate(curr_bhv_frames):
+                    # get index of closest frame [HL]
+                    curr_bhv_frames[index] = np.argmin(
+                        np.absolute(frame_times - curr_bhv_times[index])
+                    )
+                # Update the current subfield value in the object
+                new_curr_field = setattr(curr_field_data, s_field, curr_bhv_frames)
+            # Update the current field value in the object
+            setattr(bhv_frames[curr_trial], curr_field, new_curr_field)
+
+    return bhv_frames, imaged_trials, frame_times
+
+
+def read_bit_code(xsg_trial):
+    """Helper function to help read the bitcode from Dispatcher
+    
+        INPUT PARAMETERS
+            xsg_trial - np.array of the trial_number located within the xsg file. 
+                        Output from load_xsg_continuous as xsg_data.channels['trial_number']
+        
+        OUTPUT PARAMETERS
+            trial_number - 2d np.array. Col 1 contains the time and Col 2 contains the trial number
+
+        NOTES:
+            Reads bitcode which has a sync signal followed by 12 bits for the trial number,
+            which all have 5ms times with 5ms gaps in between.
+            Bitcode is most significant bit first (2048 to 1).
+            Total time: 5ms sync, 5ms*12gaps +5ms*12bits = 125ms
+            The temporal resolution of linux state machine give >0.1ms loss per 5ms period.
+            This causes ~2.6ms to be lost over the course of 24 states
+
+            The start of the trial is defined as the START of the bitcode
+    """
+    num_bits = 12
+    threshold_value = 2
+
+    xsg_sample_rate = 10000
+    binary_threshold = (xsg_trial > threshold_value).astype(float)
+    shift_binary_threshold = np.insert(binary_threshold[:-1], 0, np.nan)
+    # Get raw times for rising edge of signals
+    rising_bitcode = np.nonzero(
+        (binary_threshold == 1).astype(int) & (shift_binary_threshold == 0).astype(int)
+    )[0]
+
+    # Set up the possible bits, 12 values, most significant first
+    bit_values = np.arange(num_bits - 1, -1, -1, dtype=int)
+    bit_values = 2 ** bit_values
+
+    # Find the sync bitcodes: anything where the differences is larger than the length
+    # of the bitcode (16ms - set as 20 ms to be safe)
+    bitcode_time_samples = 125 * (xsg_sample_rate / 1000)  ## 125ms
+    bitcode_sync = np.nonzero(np.diff(rising_bitcode) > bitcode_time_samples)[0]
+
+    # Find the sync signal from the 2nd bitcode, coz diff. And this is index of rising bitcode [HL]
+    # Assume that the first rising edge is a sync signal
+    if len(rising_bitcode) == 0:
+        trial_number = []
+    else:
+        # Add first one back and shift back to rising pulse; get the bitcode index in time [HL]
+        bitcode_sync = rising_bitcode[np.insert(bitcode_sync + 1, 0, 0)]
+        # Initialize trial_number output -col 2 = trial number, col 1 = time
+        trial_number = np.zeros((len(bitcode_sync), 2))
+        # For each bitcode sync, check each bit and record as hi or low
+        for i, curr_bitcode_sync in enumerate(bitcode_sync):
+            curr_bitcode = np.zeros(num_bits)
+            for curr_bit in np.array(range(num_bits)) + 1:
+                # boundaries for bits: between the half of each break
+                # (bitcode_sync+5ms+2.5ms = 7.5ms)
+                bit_boundary_min = (
+                    curr_bitcode_sync
+                    + (7.5 * (xsg_sample_rate / 1000))
+                    + ((curr_bit - 1) * 10.2 * (xsg_sample_rate / 1000))
+                )
+                bit_boundary_max = (
+                    curr_bitcode_sync
+                    + (7.5 * (xsg_sample_rate / 1000))
+                    + ((curr_bit) * 10.2 * (xsg_sample_rate / 1000))
+                )
+                a = rising_bitcode > bit_boundary_min
+                b = rising_bitcode < bit_boundary_max
+                if any(a & b):
+                    curr_bitcode[curr_bit - 1] = 1
+
+            curr_bitcode_trial = np.sum(curr_bitcode * bit_values)
+            # trial_number col 2 is trial number
+            trial_number[i, 1] = curr_bitcode_trial
+            # trial_number col 1 is time (sec)
+            trial_number[i, 0] = bitcode_sync[i] / xsg_sample_rate
+
+            # Catch rare instance of the xsg file cutting out before the end of the bitcode
+            if bit_boundary_max > len(binary_threshold):
+                trial_number[i, :] = []
+
+        # Check for anything strange going on and display warning
+        if not all(np.diff(trial_number[:2])):
+            print("TRIAL NUMBER WARNING: Nonconsecutive trials")
+
+    return trial_number
 
 
 # ------------------------------------------------------------------
