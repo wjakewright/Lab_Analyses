@@ -9,12 +9,139 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Utilities.load_mat_files import load_mat
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
+
+
+# --------------------------------------------------------------------
+# -------------------ANALYZE LEVER PRESS BEHAVIOR---------------------
+# --------------------------------------------------------------------
+def analyze_lever_press_behavior(path, imaged, save=False, save_suffix=None):
+    """Function to process lever press behavioral data
+    
+        INPUT PARAMETERS
+            path - string indicating the path where all of the behavior
+                    files are located. Should contain all files from
+                    dispatcher and ephus
+
+            imaged - boolean True or False indicating if the behavioral session
+                    was also imaged
+            
+            save - boolean True or False to save the data at the end or not
+                  Default is set to False
+
+            save_suffix - optional string to be appended at the end of the file name
+                          Used to indicate any additional info about the sesson.
+                          Default is set to None
+                    
+        OUTPUT PAREAMTERS
+            behavior_data - dataclass object containing the behavior data
+                            Contains:
+                            dispatcher_data - object containing all the native
+                                            data from dispatcher directly loaded 
+                                            from matlab
+
+                            xsg_data - xsglog_Data object containing the xsglog data
+
+                            lever_active - binary array indicating when the lever was
+                                            being actively moved
+
+                            lever_force_resample - np.array of the lever force resampled to 1kHz
+                            
+                            lever_force_smooth -  np.array of the resampled lever force smoothed with 
+                                                   a butterworth filter
+
+                            lever_velocity_envelope_smooth - np.array of the lever velocity envelope calculated
+                                                            with hilbert transformation and then smoothed 
+                            
+                            behavior_frames - array containing the data for each behavioral trial. 
+                                              Data for each trial is stored in an object
+                                              
+                            imaged_trials - logical array indicating which trials the imaging was 
+                                            also performed during
+                                            
+                            frame_times - array with the time (sec) of each imaging frame
+    """
+    # Load xsg data
+    xsg_data = load_xsg_continuous(path)
+    # parse the lever movement
+    (
+        lever_active,
+        lever_force_resample,
+        lever_force_smooth,
+        lever_velocity_envelope_smooth,
+    ) = parse_lever_movement_continuous(xsg_data)
+    # match behvior to imaging frames
+    fnames = os.listdir(path)
+    # Get dispatcher filename
+    dispatcher_fname = []
+    for fname in fnames:
+        if "data_@lever2p" in fname:
+            dispatcher_fname.append(fname)
+    # Make sure only one dispatcher file
+    if len(dispatcher_fname) > 1:
+        raise Exception(
+            "More than one dispatcher file found!!! Move or delete one of the files."
+        )
+    if imaged is True:
+        (
+            dispatcher_data,
+            behavior_frames,
+            imaged_trials,
+            frame_times,
+        ) = dispatcher_to_frames_continuous(dispatcher_fname[0], path, xsg_data, imaged)
+    else:
+        dispatcher_data = dispatcher_to_frames_continuous(
+            dispatcher_fname[0], path, xsg_data, imaged
+        )
+        behavior_frames = np.array([])
+        imaged_trials = np.array([])
+        frame_times = np.array([])
+
+    behavior_data = Behavior_Data(
+        dispatcher_data,
+        xsg_data,
+        lever_active,
+        lever_force_resample,
+        lever_force_smooth,
+        lever_velocity_envelope_smooth,
+        behavior_frames,
+        imaged_trials,
+        frame_times,
+    )
+
+    if save is True:
+        id = re.sarch("[A-Z]{2}[0-9]{3,4}", dispatcher_fname).group()
+        date = re.search("[0-9]{6}", dispatcher_fname).group()
+        if save_suffix is not None:
+            save_name = f"{id}_{date}_lever_behavior_{save_suffix}"
+        else:
+            save_name = f"{id}_{date}_lever_behavior"
+        save_pickle(save_name, behavior_data, path)
+    else:
+        pass
+
+    return behavior_data
+
+
+@dataclass
+class Behavior_Data:
+    """Dataclass for storing the final behavioral data output"""
+
+    dispatcher_data: object
+    xsg_data: object
+    lever_active: np.ndarray
+    lever_force_resample: np.ndarray
+    lever_force_smooth: np.ndarray
+    lever_velocity_envelope_smooth: np.ndarray
+    behavior_frames: np.ndarray
+    imaged_trials: np.ndarray
+    frame_times: np.ndarray
 
 
 # -------------------------------------------------------------------
 # ----------------------EXTRACT DISPATCHER FRAMES--------------------
 # -------------------------------------------------------------------
-def dispatcher_to_frames_continuous(file_name, path, xsg_data):
+def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
     """ Function to convert dispatcher behavior data into frames to match 
         with imaging data
         
@@ -25,8 +152,12 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
             
             xsg_data - object containing the data from all the xsglog files. This
                        is output from load_xsg_continuous() function
+
+            imaged - boolean true or false if behavioral data was also imaged
         
         OUTPUT PARAMETERS
+            dispatcher_data - object containing all the native
+                              data from dispatcher directly loade from matlab
             behavior_frames - object containing the behavioral data converted to match
                               imaging frames
             
@@ -39,6 +170,9 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
     mat_saved = load_mat(fname=file_name, fname1="saved", path=path)
     mat_saved_autoset = load_mat(fname=file_name, fname1="saved_autoset", path=path)
     mat_saved_history = load_mat(fname=file_name, fname1="saved_history", path=path)
+    dispatcher_data = Dispatcher_Data(mat_saved, mat_saved_autoset, mat_saved_history)
+    if imaged is False:
+        return dispatcher_data
 
     bhv_frames = mat_saved_history.ProtocolsSection_parsed_events
     imaged_trials = np.zeros(len(bhv_frames))
@@ -119,7 +253,7 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
             # Update the current field value in the object
             setattr(bhv_frames[curr_trial], curr_field, new_curr_field)
 
-    return bhv_frames, imaged_trials, frame_times
+    return dispatcher_data, bhv_frames, imaged_trials, frame_times
 
 
 def read_bit_code(xsg_trial):
@@ -207,6 +341,15 @@ def read_bit_code(xsg_trial):
             print("TRIAL NUMBER WARNING: Nonconsecutive trials")
 
     return trial_number
+
+
+@dataclass
+class Dispatcher_Data:
+    """Dataclass to store the native dispatcher data loaded from Matlab"""
+
+    saved: object
+    autoset: object
+    saved_history: object
 
 
 # ------------------------------------------------------------------
