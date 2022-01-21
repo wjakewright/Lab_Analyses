@@ -111,9 +111,10 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
                 for index, _ in enumerate(curr_bhv_frames):
                     # get index of closest frame [HL]
                     curr_bhv_frames[index] = np.argmin(
-                        np.absolute(frame_times - curr_bhv_times[index])
+                        np.absolute(frame_times - curr_bhv_times.flatten()[index])
                     )
                 # Update the current subfield value in the object
+                curr_bhv_frames.reshape(np.shape(curr_bhv_times))
                 new_curr_field = setattr(curr_field_data, s_field, curr_bhv_frames)
             # Update the current field value in the object
             setattr(bhv_frames[curr_trial], curr_field, new_curr_field)
