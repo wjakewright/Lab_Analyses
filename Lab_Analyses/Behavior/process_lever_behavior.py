@@ -54,7 +54,7 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
         )[0]
         + 1
     )
-    frame_times = frame_times / xsg_sample_rate
+    frame_times = (frame_times + 1) / xsg_sample_rate
 
     # Get trials in raw samples since started
     trial_channel = xsg_data.channels["Trial_number"]
@@ -63,7 +63,8 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
     # Loop through trials and find the offsets
     for idx, curr_trial in enumerate(curr_trial_list[:, 1]):
         # skip if it's the last trial and not completed in behavior
-        if curr_trial > len(bhv_frames) or curr_trial < 1:
+        curr_trial = curr_trial.astype(int) - 1
+        if curr_trial >= len(bhv_frames) or curr_trial < 0:
             continue
         # the start time is the rise of the first bitcode
         curr_bhv_start = bhv_frames[curr_trial].states.bitcode[0]
@@ -76,14 +77,10 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data):
             bhv_frames[curr_trial].states.state_0 - curr_xsg_bhv_offset
         )  ## Start-time to stop-time of behavioral trial (sec)
         # Get the frame times within the current behavioral trial window
-        imaged_frames = np.round(
-            frame_times[
-                np.nonzero(
-                    (frame_times > bhv_window[0, 1]).astype(int) & frame_times
-                    < bhv_window[1, 0]
-                )
-            ]
-            * xsg_sample_rate
+        a = (frame_times > bhv_window[0, 1]).astype(int)
+        b = (frame_times > bhv_window[1, 0]).astype(int)
+        imaged_frames = (
+            np.round(frame_times[np.nonzero(a & b)] * xsg_sample_rate).astype(int) - 1
         )
         # Extract the voltage signals indicating whether imaging frames were captured during this window
         frame_trace_window = frame_trace[imaged_frames]
@@ -198,7 +195,7 @@ def read_bit_code(xsg_trial):
             # trial_number col 2 is trial number
             trial_number[i, 1] = curr_bitcode_trial
             # trial_number col 1 is time (sec)
-            trial_number[i, 0] = bitcode_sync[i] / xsg_sample_rate
+            trial_number[i, 0] = (bitcode_sync[i] + 1) / xsg_sample_rate
 
             # Catch rare instance of the xsg file cutting out before the end of the bitcode
             if bit_boundary_max > len(binary_threshold):
