@@ -97,7 +97,7 @@ def analyze_lever_press_behavior(path, imaged, save=False, save_suffix=None):
         imaged_trials = np.array([])
         frame_times = np.array([])
 
-    behavior_data = Behavior_Data(
+    behavior_data = Processed_Lever_Data(
         dispatcher_data,
         xsg_data,
         lever_active,
@@ -124,7 +124,7 @@ def analyze_lever_press_behavior(path, imaged, save=False, save_suffix=None):
 
 
 @dataclass
-class Behavior_Data:
+class Processed_Lever_Data:
     """Dataclass for storing the final behavioral data output"""
 
     dispatcher_data: object
@@ -248,10 +248,10 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
                         np.absolute(frame_times - curr_bhv_times.flatten()[index])
                     )
                 # Update the current subfield value in the object
-                curr_bhv_frames.reshape(np.shape(curr_bhv_times))
-                new_curr_field = setattr(curr_field_data, s_field, curr_bhv_frames)
+                curr_bhv_frames = curr_bhv_frames.reshape(np.shape(curr_bhv_times))
+                setattr(curr_field_data, s_field, curr_bhv_frames)
             # Update the current field value in the object
-            setattr(bhv_frames[curr_trial], curr_field, new_curr_field)
+            setattr(bhv_frames[curr_trial], curr_field, curr_field_data)
 
     return dispatcher_data, bhv_frames, imaged_trials, frame_times
 
