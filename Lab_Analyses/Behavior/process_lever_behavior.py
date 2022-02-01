@@ -15,7 +15,7 @@ from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 # --------------------------------------------------------------------
 # -------------------ANALYZE LEVER PRESS BEHAVIOR---------------------
 # --------------------------------------------------------------------
-def analyze_lever_press_behavior(path, imaged, save=False, save_suffix=None):
+def process_lever_press_behavior(path, imaged, save=False, save_suffix=None):
     """Function to process lever press behavioral data
     
         INPUT PARAMETERS
