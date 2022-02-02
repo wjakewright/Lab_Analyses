@@ -20,8 +20,7 @@ def summarize_lever_behavior(file):
             file - An object (Processed_Lever_Data dataclass) containing the processed
                     lever behavior for a single session for a single mouse
     """
-    rewards = 0
-    movestartfault = 0
+
     maxtrialnum = 110
 
     # Smooth lick data if any is present
@@ -53,7 +52,20 @@ def summarize_imaged_lever_behavior(file):
     file.cue_to_reward = []
     file.post_success_licking = []
 
+    # Initialize some variables
+    used_trial = []
+    reaction_time = []
+    cue_to_reward = []
+    trial_length = []
+    move_duration_before_cue = []
+    movement_matrix = []
+    number_of_movements_during_ITI_pre_ignored_trials = []
+    fraction_ITI_spent_moving_pre_ignored_trials = []
+    number_of_movement_during_ITI_pre_rewarded_trials = []
+    fraction_ITI_spent_moving_pre_reward_trials = []
+
     rewards = 0
+    move_at_start_fault = 0
     reward_times = []
     cue_starts = []
     trial_ends = []
@@ -113,13 +125,56 @@ def summarize_imaged_lever_behavior(file):
             past_threshold_reward_trials.append(past_thresh)
 
             ## Profile Rewarded Movements
+            (
+                file,
+                used_trial_info,
+                fault,
+                ignored_trial_info,
+            ) = profile_rewarded_movments(
+                file,
+                boundary_frames,
+                num,
+                cue_start,
+                reward_times,
+                trial_ends,
+                movement,
+                past_thresh,
+            )
+            if fault == 1:
+                move_at_start_fault = move_at_start_fault + 1
+                move_duration_before_cue.append(
+                    ignored_trial_info.move_duration_before_cue
+                )
+                number_of_movements_during_ITI_pre_ignored_trials.append(
+                    ignored_trial_info.number_of_movements_since_last_trial
+                )
+                fraction_ITI_spent_moving_pre_ignored_trials.append(
+                    ignored_trial_info.fraction_ITI_spent_moving
+                )
+                number_of_movement_during_ITI_pre_rewarded_trials.append(np.nan)
+                fraction_ITI_spent_moving_pre_reward_trials.append(np.nan)
+            else:
+                move_duration_before_cue = 0
+                number_of_movements_during_ITI_pre_ignored_trials.append(np.nan)
+                fraction_ITI_spent_moving_pre_ignored_trials.append(np.nan)
+                number_of_movement_during_ITI_pre_rewarded_trials.append(
+                    used_trial_info.number_of_movements_since_last_trial
+                )
+                fraction_ITI_spent_moving_pre_reward_trials.append(
+                    used_trial_info.fraction_ITI_spent_moving
+                )
+            if fault != 0:
+                continue
+
+            trial_length.append(used_trial_info.trial_length)
+            reaction_time.append(used_trial_info.reaction_time)
+            cue_to_reward.append(used_trial_info.cs2r)
 
 
 def profile_rewarded_movments(
     file,
     boundary_frames,
     trial_num,
-    rewards,
     cue_start,
     reward_times,
     trial_ends,
