@@ -183,7 +183,8 @@ def summarize_imaged_lever_behavior(file):
     num_tracked_movements = 0
     for rewarded_trial in range(rewards):
         try:
-            if not np.isnan(successful_movements[rewarded_trial]):
+            if isinstance(successful_movements[rewarded_trial], np.ndarray):
+                # if not np.isnan(successful_movements[rewarded_trial]):
                 move_array = np.array(successful_movements[rewarded_trial][: min_t + 1])
                 move_array[move_array == 0] = np.nan
                 movement_matrix.append(move_array)
@@ -203,7 +204,7 @@ def summarize_imaged_lever_behavior(file):
     # Convert list of movements into 2d array with each trial a row
     movement_matrix = np.array(movement_matrix)
 
-    min_move_num_contingency = num_tracked_movements > 5
+    min_move_num_contingency = num_tracked_movements > 0
     if rewards != 0 and min_move_num_contingency:
         movement_avg = np.nanmean(movement_matrix, axis=0)
     else:
