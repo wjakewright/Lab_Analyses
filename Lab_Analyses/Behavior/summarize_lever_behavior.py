@@ -40,6 +40,12 @@ def summarize_lever_behavior(file):
     if not file.behavior_frames.size == 0:
         summarized_data = summarize_imaged_lever_behavior(file)
 
+    # Summarize data collected while not imaging
+    else:
+        pass  # for now
+
+    return summarized_data
+
 
 # ------------------------------ IMAGED TRIALS -------------------------------------
 def summarize_imaged_lever_behavior(file):
@@ -58,7 +64,7 @@ def summarize_imaged_lever_behavior(file):
     cs2r = []  # time from cue to reward delivery
     trial_length = []  # Length of each trial
     move_duration_before_cue = []  # Duration of movement before cue
-    movement_matrix = np.array([])  # 2D array of the movements for each trial
+    movement_matrix = []  # 2D array of the movements for each trial
     number_of_movements_during_ITI = []  # Number of movements during ITI
     fraction_ITI_spent_moving = []  # Fraction of ITI time spent moving
 
@@ -88,6 +94,7 @@ def summarize_imaged_lever_behavior(file):
         # analyze rewarded trials
         if not trial.states.reward.size == 0:
             # Get time of the reward for current trial
+            rewards = rewards + 1
             reward_time = np.round(
                 file.frame_times[np.round(trial.states.reward[0]).astype(int)] * 1000
             )
@@ -134,7 +141,8 @@ def summarize_imaged_lever_behavior(file):
                 movement,
                 past_thresh,
             )
-
+            if trial_info.fault == 1:
+                move_at_start_fault = move_at_start_fault + 1
             used_trial.append(trial_info.trial_used)
             trial_length.append(trial_info.trial_length)
             cs2r.append(trial_info.cs2r)
@@ -148,6 +156,74 @@ def summarize_imaged_lever_behavior(file):
             cue_to_reward.append(trial_info.cue_to_reward)
             post_success_licking.append(trial_info.post_success_licking)
             faults.append(trial_info.fault)
+
+    # Get average reaction time and cue_to_reward
+    avg_reaction_time = np.nanmean(reaction_time)
+    avg_cue_to_reward_time = np.nanmean(cs2r)
+
+    # Remove zeros from trial length and set min trial length
+    trial_length[trial_length == 0] = np.nan
+    if not trial_length.size == 0:
+        min_t = np.min(trial_length)
+    else:
+        min_t = 3001
+
+    move_duration_before_cue = move_duration_before_cue[
+        np.invert(np.isnan(np.asarray(move_duration_before_cue))).astype(int)
+    ]
+
+    # Generate movement matrix
+    num_tracked_movements = 0
+    for rewarded_trial in range(rewards):
+        try:
+            if not np.isnan(successful_movements[rewarded_trial]):
+                move_array = np.array(successful_movements[rewarded_trial][: min_t + 1])
+                move_array[move_array == 0] = np.nan
+                movement_matrix.append(move_array)
+            else:
+                move_array = np.empty(min_t)
+                move_array[:] = np.nan
+                movement_matrix.append(move_array)
+        except Exception as error:
+            print(f"Movement was not tracked for trial {rewarded_trial}")
+            print("")
+            print(error)
+            move_array = np.empty(min_t)
+            move_array[:] = np.nan
+            movement_matrix.append(move_array)
+        if sum(np.invert(np.isnan(move_array)).astype(int)) > 100:
+            num_tracked_movements = num_tracked_movements + 1
+    # Convert list of movements into 2d array with each trial a row
+    movement_matrix = np.array(movement_matrix)
+
+    min_move_num_contingency = num_tracked_movements > 5
+    if rewards != 0 and min_move_num_contingency:
+        movement_avg = np.nanmean(movement_matrix, axis=0)
+    else:
+        movement_matrix = np.empty(movement_matrix.shape)
+        movement_matrix[:] = np.nan
+        movement_avg = np.empty(min_t)
+        movement_avg[:] = np.nan
+
+    # Plot movements
+    ### Add a behavior plotting module that will handle this later
+
+    # Generate outpt object
+    Summarized_Behavior = Session_Summary_Lever_Data(
+        used_trial=used_trial,
+        movement_matrix=movement_matrix,
+        movement_avg=movement_avg,
+        rewards=rewards,
+        move_at_start_faults=move_at_start_fault,
+        avg_reaction_time=avg_reaction_time,
+        avg_cue_to_reward=avg_cue_to_reward_time,
+        trials=num_trials,
+        move_duration_before_cue=move_duration_before_cue,
+        number_of_movements_during_ITI=number_of_movements_during_ITI,
+        fraction_ITI_spent_moving=fraction_ITI_spent_moving,
+    )
+
+    return Summarized_Behavior
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +239,9 @@ def profile_rewarded_movements(
     movement,
     past_thresh,
 ):
-    """Function to profile the rewarded movements
+    """Function to profile the rewarded movements. Identifies trials to use for analyses
+        and which ones to ignore. Characterizes movements during the ITI and gets the 
+        successful movement trace that triggered reward delivery
         
         INPUT PARAMETERS
             file - object containing the processed lever_press behavior_data
@@ -238,7 +316,7 @@ def profile_rewarded_movements(
         )
         return trial_info
 
-    ################### PROFILE GOOD TRIALS #########################
+    ###################### PROFILE GOOD TRIALS #########################
 
     # Characterize the ITI of successful trials
     number_of_movements_since_last_trial = len(
@@ -469,8 +547,17 @@ class Session_Summary_Lever_Data:
     """Dataclass for storing the analyzed lever press data of a single session for
         a single mouse"""
 
-    trials: int
+    used_trial = list
+    movement_matrix: np.ndarray
+    movement_avg: np.ndarray
     rewards: int
+    move_at_trial_start_faults = int
+    avg_reaction_time = float
+    avg_cue_to_reward = float
+    trials: int
+    move_duration_before_cue: list
+    number_of_movements_during_ITI: list
+    fraction_ITI_spent_moving: list
 
 
 @dataclass
