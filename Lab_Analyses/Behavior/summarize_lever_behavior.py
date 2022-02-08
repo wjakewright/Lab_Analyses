@@ -204,6 +204,7 @@ def summarize_imaged_lever_behavior(file):
     # Convert list of movements into 2d array with each trial a row
     movement_matrix = np.array(movement_matrix)
 
+    # Set conditional for minimum number of rewarded movements
     min_move_num_contingency = num_tracked_movements > 0
     if rewards != 0 and min_move_num_contingency:
         movement_avg = np.nanmean(movement_matrix, axis=0)
