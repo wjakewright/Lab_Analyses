@@ -11,7 +11,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.signal as sysignal
-from Lab_Analyses.Behavior.analyze_lever_behavior import profile_rewarded_movments
 
 # ----------------------------------------------------------------------------------
 # ------------------------SUMMARIZE LEVER PRESS BEHAVIOR----------------------------
@@ -100,10 +99,13 @@ def summarize_imaged_lever_behavior(file):
             )
             if reward_time == 0:
                 reward_time = 1
+            reward_time = int(reward_time)
             reward_times.append(reward_time)
             # Get time of the start of the cue for this trial
-            cue_start = np.round(
-                file.frame_times[np.round(trial.states.cue[0]).astype(int)] * 1000
+            cue_start = int(
+                np.round(
+                    file.frame_times[np.round(trial.states.cue[0]).astype(int)] * 1000
+                )
             )
             cue_starts.append(cue_start)
             # Get time of next cue, indicating end of the current trial
@@ -113,11 +115,12 @@ def summarize_imaged_lever_behavior(file):
                         np.round(file.behavior_frames[num + 1].states.cue[0]).astype(
                             int
                         )
-                        * 1000
                     ]
+                    * 1000
                 )
             else:
                 next_cue = np.round(file.frame_times[-1]) * 1000
+            next_cue = int(next_cue)
             trial_ends.append(next_cue)
 
             # Get movement trace
@@ -129,9 +132,9 @@ def summarize_imaged_lever_behavior(file):
                 * file.lever_active[cue_start - 1 : next_cue]
             )
             past_threshold_reward_trials.append(past_thresh)
-
+            print(num)
             ## Profile rewarded movements
-            trial_info = profile_rewarded_movments(
+            trial_info = profile_rewarded_movements(
                 file,
                 boundary_frames,
                 num,
@@ -148,14 +151,18 @@ def summarize_imaged_lever_behavior(file):
             cs2r.append(trial_info.cs2r)
             reaction_time.append(trial_info.reaction_time)
             number_of_movements_during_ITI.append(
-                trial_info.number_of_movments_since_last_trial
+                trial_info.number_of_mvmts_since_last_trial
             )
             move_duration_before_cue.append(trial_info.move_duration_before_cue)
             fraction_ITI_spent_moving.append(trial_info.fraction_ITI_spent_moving)
-            successful_movements.append(trial_info.successful_movments)
+            successful_movements.append(trial_info.successful_movements)
             cue_to_reward.append(trial_info.cue_to_reward)
             post_success_licking.append(trial_info.post_success_licking)
             faults.append(trial_info.fault)
+
+        else:
+            trial_ends.append(np.nan)
+            reward_times.append(0)
 
     # Get average reaction time and cue_to_reward
     avg_reaction_time = np.nanmean(reaction_time)
@@ -163,13 +170,13 @@ def summarize_imaged_lever_behavior(file):
 
     # Remove zeros from trial length and set min trial length
     trial_length[trial_length == 0] = np.nan
-    if not trial_length.size == 0:
-        min_t = np.min(trial_length)
+    if not len(trial_length) == 0:
+        min_t = np.nanmin(trial_length)
     else:
         min_t = 3001
-
-    move_duration_before_cue = move_duration_before_cue[
-        np.invert(np.isnan(np.asarray(move_duration_before_cue))).astype(int)
+    min_t = int(min_t)
+    move_duration_before_cue = np.array(move_duration_before_cue)[
+        np.invert(np.isnan(np.asarray(move_duration_before_cue)))
     ]
 
     # Generate movement matrix
@@ -354,7 +361,7 @@ def profile_rewarded_movements(
             )
 
     ## Get force from cue start to reward delivery
-    cue_to_reward = file.lever_force_smooth[cue_start : reward_times[trial_num + 1]]
+    cue_to_reward = file.lever_force_smooth[cue_start : reward_times[trial_num] + 1]
     cs2r = len(cue_to_reward) / 1000
 
     ## Define the beginning of a successful movement window
@@ -379,7 +386,7 @@ def profile_rewarded_movements(
         shift = np.absolute(baseline_start - 400)
     else:
         shift = 0
-
+    shift = int(shift)
     trial_stop_window = 3000
 
     # Add buffer for movements that extend beyond the end of the session
@@ -400,12 +407,14 @@ def profile_rewarded_movements(
     start_buffer[:] = np.nan
 
     successful_movement = np.concatenate(
-        start_buffer,
-        file.lever_force_smooth[
-            successful_mvmt_start
-            - 1 : successful_mvmt_start
-            + (trial_stop_window - shift)
-        ],
+        (
+            start_buffer,
+            file.lever_force_smooth[
+                int(successful_mvmt_start)
+                - 1 : int(successful_mvmt_start)
+                + (trial_stop_window - shift)
+            ],
+        )
     )
 
     trial_length = len(successful_movement)
@@ -432,12 +441,14 @@ def profile_rewarded_movements(
     # Get post reward licks if available
     if not file.lick_data_smooth.size == 0:
         post_success_licking = np.concatenate(
-            start_buffer,
-            file.lick_data_smooth[
-                successful_mvmt_start
-                - 1 : successful_mvmt_start
-                + (trial_stop_window - shift)
-            ],
+            (
+                start_buffer,
+                file.lick_data_smooth[
+                    successful_mvmt_start
+                    - 1 : successful_mvmt_start
+                    + (trial_stop_window - shift)
+                ],
+            )
         )
     else:
         post_success_licking = np.nan
@@ -547,13 +558,13 @@ class Session_Summary_Lever_Data:
     """Dataclass for storing the analyzed lever press data of a single session for
         a single mouse"""
 
-    used_trial = list
+    used_trial: list
     movement_matrix: np.ndarray
     movement_avg: np.ndarray
     rewards: int
-    move_at_trial_start_faults = int
-    avg_reaction_time = float
-    avg_cue_to_reward = float
+    move_at_start_faults: int
+    avg_reaction_time: float
+    avg_cue_to_reward: float
     trials: int
     move_duration_before_cue: list
     number_of_movements_during_ITI: list
@@ -564,11 +575,10 @@ class Session_Summary_Lever_Data:
 class Trial_Info:
     """Dataclass for storing information about individual trials"""
 
-    tiral_used: bool
+    trial_used: bool
     trial_length: int
     cs2r: int
     reaction_time: int
-    number_of_movements_during_ITI: int
     move_duration_before_cue: int
     fraction_ITI_spent_moving: float
     number_of_mvmts_since_last_trial: int
