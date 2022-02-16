@@ -19,14 +19,14 @@ import scipy.signal as sysignal
 # ------------------------------PARENT FUNCTION ------------------------------------
 def summarize_lever_behavior(file):
     """Function to summarize lever press behavior from a single mouse for a single session
-    
-        INPUT PARAMETERS
-            file - Object (Processed_Lever_Data dataclass) containing the processed
-                    lever behavior for a single session for a single mouse
-        
-        OUTPUT PARAMETERS
-            
-    
+
+    INPUT PARAMETERS
+        file - Object (Processed_Lever_Data dataclass) containing the processed
+                lever behavior for a single session for a single mouse
+
+    OUTPUT PARAMETERS
+
+
     """
 
     # Smooth lick data if any is present
@@ -41,7 +41,7 @@ def summarize_lever_behavior(file):
 
     # Summarize data collected while not imaging
     else:
-        pass  # for now
+        summarized_data = summarize_nonimaged_lever_behavior(file)
 
     return summarized_data
 
@@ -235,6 +235,11 @@ def summarize_imaged_lever_behavior(file):
     return Summarized_Behavior
 
 
+# ---------------------------NON-IMAGED TRIALS-------------------------------
+def summarize_nonimaged_lever_behavior(file):
+    """Function to summarize lever press behavior for sessions that were not imaged"""
+
+
 # ---------------------------------------------------------------------------
 # -------------------------PROFILE REWARDED MOVEMENTS------------------------
 # ---------------------------------------------------------------------------
@@ -249,26 +254,26 @@ def profile_rewarded_movements(
     past_thresh,
 ):
     """Function to profile the rewarded movements. Identifies trials to use for analyses
-        and which ones to ignore. Characterizes movements during the ITI and gets the 
-        successful movement trace that triggered reward delivery
-        
-        INPUT PARAMETERS
-            file - object containing the processed lever_press behavior_data
-            
-            boundary_frames - np.array containing the boundary frames of when the lever is active
-            
-            trial_num - int specifying the current trial index
-            
-            cue_start - int indicating the time when the cue started on the current trial
-            
-            reward_times - list containing the reward times of all trials analyzed thus far
-            
-            trial_ends - list containing the time of the end of all trials analyzed thus far
-            
-            past_threh - np.array of binarized movement of the current trial
+    and which ones to ignore. Characterizes movements during the ITI and gets the
+    successful movement trace that triggered reward delivery
 
-        OUTPUT PARAMETERS
-            trial_info - dataclass containing relevant trial information
+    INPUT PARAMETERS
+        file - object containing the processed lever_press behavior_data
+
+        boundary_frames - np.array containing the boundary frames of when the lever is active
+
+        trial_num - int specifying the current trial index
+
+        cue_start - int indicating the time when the cue started on the current trial
+
+        reward_times - list containing the reward times of all trials analyzed thus far
+
+        trial_ends - list containing the time of the end of all trials analyzed thus far
+
+        past_threh - np.array of binarized movement of the current trial
+
+    OUTPUT PARAMETERS
+        trial_info - dataclass containing relevant trial information
     """
     ###################### DISCARD BAD TRIALS ###########################
 
@@ -532,6 +537,45 @@ def profile_movement_before_cue(file, trial_num, cue_start, reward_times):
     return trial_info
 
 
+# ----------------------------------------------------------------------------
+# --------------------------PARSE BEHAVIOR BITCODE----------------------------
+# ----------------------------------------------------------------------------
+def parse_behavior_bitcode(xsg_trace):
+    """Function to parse behavior bitcode for unimaged sessions.
+    Similar to Read_Bitcode in process_lever_behavior, but with
+    some differences"""
+
+    # Set up some parameters
+    xsg_sample_rate = 10000
+    threshold_value = 2
+    num_bits = 12
+    binary_threshold = (xsg_trace > threshold_value).astype(float)
+    shift_binary_threshold = np.insert(binary_threshold[:-1], 0, np.nan)
+    # Get raw times for rising edge of signals
+    rising_bitcode = np.nonzero(
+        (binary_threshold == 1).astype(int) & (shift_binary_threshold == 0).astype(int)
+    )[0]
+
+    # Set up the possible bits, 12 values, most significant first
+    bit_values = np.arange(num_bits - 1, -1, -1, dtype=int)
+    bit_values = 2 ** bit_values
+
+    # Find the sync bitcodes: anything where the difference is larger than the
+    # length of the bitcode (16ms - set as 20ms to be safe)
+    bitcode_time_samples = 200 * (
+        xsg_sample_rate / 1000
+    )  # THIS IS DIFFERENT THAT READBITCODE
+    bitcode_sync = np.nonzeror(np.diff(rising_bitcode) > bitcode_time_samples)[0]
+
+    # Assume that the first rising edge is a sync signal
+    if len(rising_bitcode) == 0:
+        behavior_trials = []
+    else:
+        # Add first one back and shift back to rising pulse; get the bitcode index in time [HL]
+        bitcode_sync = rising_bitcode[np.insert(bitcode_sync + 1, 0, 0)]
+        # Initialize the
+
+
 # ---------------------------------------------------------------------------
 # -----------------------------HELPER FUNCTIONS------------------------------
 # ---------------------------------------------------------------------------
@@ -558,7 +602,7 @@ def smooth_lick_data(licks):
 @dataclass
 class Session_Summary_Lever_Data:
     """Dataclass for storing the analyzed lever press data of a single session for
-        a single mouse"""
+    a single mouse"""
 
     used_trial: list
     movement_matrix: np.ndarray
@@ -571,6 +615,16 @@ class Session_Summary_Lever_Data:
     move_duration_before_cue: list
     number_of_movements_during_ITI: list
     fraction_ITI_spent_moving: list
+
+
+@dataclass
+class Behavior_Trials:
+    """Dataclass for storing behavior trial info used in parse
+    behavior bitcode"""
+
+    xsg_sec: list
+    xsg_sample: list
+    behavior_trial_num: list
 
 
 @dataclass
@@ -588,4 +642,3 @@ class Trial_Info:
     cue_to_reward: np.ndarray
     post_success_licking: np.ndarray
     fault: int
-
