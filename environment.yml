@@ -19,5 +19,6 @@ dependencies:
   - pip:
     - opencv-python >= 4.5.4.58
     - black >= 19.10b0
+    - dataframe-image >= 0.1.1
     - -e.
 
