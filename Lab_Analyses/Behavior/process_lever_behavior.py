@@ -17,49 +17,49 @@ from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 # --------------------------------------------------------------------
 def process_lever_press_behavior(path, imaged, save=False, save_suffix=None):
     """Function to process lever press behavioral data
-    
-        INPUT PARAMETERS
-            path - string indicating the path where all of the behavior
-                    files are located. Should contain all files from
-                    dispatcher and ephus
 
-            imaged - boolean True or False indicating if the behavioral session
-                    was also imaged
-            
-            save - boolean True or False to save the data at the end or not
-                  Default is set to False
+    INPUT PARAMETERS
+        path - string indicating the path where all of the behavior
+                files are located. Should contain all files from
+                dispatcher and ephus
 
-            save_suffix - optional string to be appended at the end of the file name
-                          Used to indicate any additional info about the sesson.
-                          Default is set to None
-                    
-        OUTPUT PAREAMTERS
-            behavior_data - dataclass object containing the behavior data
-                            Contains:
-                            dispatcher_data - object containing all the native
-                                            data from dispatcher directly loaded 
-                                            from matlab
+        imaged - boolean True or False indicating if the behavioral session
+                was also imaged
 
-                            xsg_data - xsglog_Data object containing the xsglog data
+        save - boolean True or False to save the data at the end or not
+              Default is set to False
 
-                            lever_active - binary array indicating when the lever was
-                                            being actively moved
+        save_suffix - optional string to be appended at the end of the file name
+                      Used to indicate any additional info about the sesson.
+                      Default is set to None
 
-                            lever_force_resample - np.array of the lever force resampled to 1kHz
-                            
-                            lever_force_smooth -  np.array of the resampled lever force smoothed with 
-                                                   a butterworth filter
+    OUTPUT PAREAMTERS
+        behavior_data - dataclass object containing the behavior data
+                        Contains:
+                        dispatcher_data - object containing all the native
+                                        data from dispatcher directly loaded
+                                        from matlab
 
-                            lever_velocity_envelope_smooth - np.array of the lever velocity envelope calculated
-                                                            with hilbert transformation and then smoothed 
-                            
-                            behavior_frames - array containing the data for each behavioral trial. 
-                                              Data for each trial is stored in an object
-                                              
-                            imaged_trials - logical array indicating which trials the imaging was 
-                                            also performed during
-                                            
-                            frame_times - array with the time (sec) of each imaging frame
+                        xsg_data - xsglog_Data object containing the xsglog data
+
+                        lever_active - binary array indicating when the lever was
+                                        being actively moved
+
+                        lever_force_resample - np.array of the lever force resampled to 1kHz
+
+                        lever_force_smooth -  np.array of the resampled lever force smoothed with
+                                               a butterworth filter
+
+                        lever_velocity_envelope_smooth - np.array of the lever velocity envelope calculated
+                                                        with hilbert transformation and then smoothed
+
+                        behavior_frames - array containing the data for each behavioral trial.
+                                          Data for each trial is stored in an object
+
+                        imaged_trials - logical array indicating which trials the imaging was
+                                        also performed during
+
+                        frame_times - array with the time (sec) of each imaging frame
     """
     # Load xsg data
     xsg_data = load_xsg_continuous(path)
@@ -110,7 +110,7 @@ def process_lever_press_behavior(path, imaged, save=False, save_suffix=None):
     )
 
     if save is True:
-        id = re.sarch("[A-Z]{2}[0-9]{3,4}", dispatcher_fname).group()
+        id = re.search("[A-Z]{2}[0-9]{3,4}", dispatcher_fname).group()
         date = re.search("[0-9]{6}", dispatcher_fname).group()
         if save_suffix is not None:
             save_name = f"{id}_{date}_lever_behavior_{save_suffix}"
@@ -142,29 +142,29 @@ class Processed_Lever_Data:
 # ----------------------EXTRACT DISPATCHER FRAMES--------------------
 # -------------------------------------------------------------------
 def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
-    """ Function to convert dispatcher behavior data into frames to match 
-        with imaging data
-        
-        INPUT PARAMETERS
-            file_name - string containing the file name of the dispatcher file
+    """Function to convert dispatcher behavior data into frames to match
+    with imaging data
 
-            path - string containing the path to where the file is loacted
-            
-            xsg_data - object containing the data from all the xsglog files. This
-                       is output from load_xsg_continuous() function
+    INPUT PARAMETERS
+        file_name - string containing the file name of the dispatcher file
 
-            imaged - boolean true or false if behavioral data was also imaged
-        
-        OUTPUT PARAMETERS
-            dispatcher_data - object containing all the native
-                              data from dispatcher directly loade from matlab
-            behavior_frames - object containing the behavioral data converted to match
-                              imaging frames
-            
-            imaged_trials - np.array logical of which trials were imaged
-            
-            frame_times - the time (sec) of each image frame
-    
+        path - string containing the path to where the file is loacted
+
+        xsg_data - object containing the data from all the xsglog files. This
+                   is output from load_xsg_continuous() function
+
+        imaged - boolean true or false if behavioral data was also imaged
+
+    OUTPUT PARAMETERS
+        dispatcher_data - object containing all the native
+                          data from dispatcher directly loade from matlab
+        behavior_frames - object containing the behavioral data converted to match
+                          imaging frames
+
+        imaged_trials - np.array logical of which trials were imaged
+
+        frame_times - the time (sec) of each image frame
+
     """
     # Load the structures within the dispatcher .mat file
     mat_saved = load_mat(fname=file_name, fname1="saved", path=path)
@@ -258,23 +258,23 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
 
 def read_bit_code(xsg_trial):
     """Helper function to help read the bitcode from Dispatcher
-    
-        INPUT PARAMETERS
-            xsg_trial - np.array of the trial_number located within the xsg file. 
-                        Output from load_xsg_continuous as xsg_data.channels['trial_number']
-        
-        OUTPUT PARAMETERS
-            trial_number - 2d np.array. Col 1 contains the time and Col 2 contains the trial number
 
-        NOTES:
-            Reads bitcode which has a sync signal followed by 12 bits for the trial number,
-            which all have 5ms times with 5ms gaps in between.
-            Bitcode is most significant bit first (2048 to 1).
-            Total time: 5ms sync, 5ms*12gaps +5ms*12bits = 125ms
-            The temporal resolution of linux state machine give >0.1ms loss per 5ms period.
-            This causes ~2.6ms to be lost over the course of 24 states
+    INPUT PARAMETERS
+        xsg_trial - np.array of the trial_number located within the xsg file.
+                    Output from load_xsg_continuous as xsg_data.channels['trial_number']
 
-            The start of the trial is defined as the START of the bitcode
+    OUTPUT PARAMETERS
+        trial_number - 2d np.array. Col 1 contains the time and Col 2 contains the trial number
+
+    NOTES:
+        Reads bitcode which has a sync signal followed by 12 bits for the trial number,
+        which all have 5ms times with 5ms gaps in between.
+        Bitcode is most significant bit first (2048 to 1).
+        Total time: 5ms sync, 5ms*12gaps +5ms*12bits = 125ms
+        The temporal resolution of linux state machine give >0.1ms loss per 5ms period.
+        This causes ~2.6ms to be lost over the course of 24 states
+
+        The start of the trial is defined as the START of the bitcode
     """
     num_bits = 12
     threshold_value = 2
@@ -357,22 +357,22 @@ class Dispatcher_Data:
 # ------------------------------------------------------------------
 def parse_lever_movement_continuous(xsg_data):
     """Function to parse the lever force into movement and nonmovement epochs
-    
-        INPUT PARAMETERS
-            xsg_data - object containing the data from all the xsglog files. This is 
-                        output from load_xsg_continuous() function.
-                        
-        OUTPUT PARAMETERS
-            lever_active - binarized np.array indicating when lever is active(1) or inactive (0)
-            
-            lever_force_resample - np.array of the lever force resampled to 1kHz
-            
-            lever_force_smooth -  np.array of the resampled lever force smoothed with 
-                                  a butterworth filter
-            
-            lever_velocity_envelope_smooth - np.array of the lever velocity envelope calculated
-                                             with hilbert transformation and then smoothed
-            
+
+    INPUT PARAMETERS
+        xsg_data - object containing the data from all the xsglog files. This is
+                    output from load_xsg_continuous() function.
+
+    OUTPUT PARAMETERS
+        lever_active - binarized np.array indicating when lever is active(1) or inactive (0)
+
+        lever_force_resample - np.array of the lever force resampled to 1kHz
+
+        lever_force_smooth -  np.array of the resampled lever force smoothed with
+                              a butterworth filter
+
+        lever_velocity_envelope_smooth - np.array of the lever velocity envelope calculated
+                                         with hilbert transformation and then smoothed
+
     """
     # Set xsg sampling rate
     xsg_sample_rate = 10000  ## Should always be 10kHz
@@ -449,18 +449,24 @@ def parse_lever_movement_continuous(xsg_data):
 
     # Edges of hilbert envelope always goes up
     # Eliminate the first/last movements if they're on the edges
-    (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
-        lever_active
-    )
+    (
+        lever_active_starts,
+        lever_active_stops,
+        _,
+        _,
+    ) = get_lever_active_points(lever_active)
     if lever_active_starts[0] == 0:
         lever_active[0 : lever_active_stops[0] + 1] = 0
     if lever_active_stops[-1] == len(lever_force_resample) - 1:
         lever_active[lever_active_starts[-1] :] = 0
 
     # Refine the lever active starts and stops
-    (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
-        lever_active
-    )
+    (
+        lever_active_starts,
+        lever_active_stops,
+        _,
+        _,
+    ) = get_lever_active_points(lever_active)
     noise = (
         lever_force_resample[np.where(lever_active == 0)]
         - lever_force_smooth[np.where(lever_active == 0)]
@@ -537,8 +543,10 @@ def get_lever_active_points(lever_active):
         lever_active_starts + 1
     )  # Accounting for index differences
     lever_active_intermovement_times = (
-        (lever_active_starts[1:] + 1) - lever_active_stops[0:-1]
-    )  # Accounting for index differences
+        lever_active_starts[1:] + 1
+    ) - lever_active_stops[
+        0:-1
+    ]  # Accounting for index differences
 
     return (
         lever_active_starts,
@@ -550,12 +558,12 @@ def get_lever_active_points(lever_active):
 
 def matlab_smooth(data, window):
     """Helper function to replicate the implementation of matlab smooth function
-    
-        INPUT PARAMETERS
-            data - 1d numpy array
-            
-            window - int. Must be odd value
-            
+
+    INPUT PARAMETERS
+        data - 1d numpy array
+
+        window - int. Must be odd value
+
     """
     out0 = np.convolve(data, np.ones(window, dtype=int), "valid") / window
     r = np.arange(1, window - 1, 2)
@@ -570,17 +578,17 @@ def matlab_smooth(data, window):
 # ---------------------------------------------------------------
 def load_xsg_continuous(dirname):
     """Function to load xsg files output from ephus
-        
-        INPUT PARAMETERS 
-            dirname - string with the path to directory where files are located
 
-        OUTPUT PARAMETERS
-            data - xsglog_data dataclass with attributes:
-                        name - str of the file name
-                        epoch - str of the epoch name
-                        file_info- FileInfo dataclass
-                        channels - dictionary with key value pairs for each file name
-                                    and file data (np.array)
+    INPUT PARAMETERS
+        dirname - string with the path to directory where files are located
+
+    OUTPUT PARAMETERS
+        data - xsglog_data dataclass with attributes:
+                    name - str of the file name
+                    epoch - str of the epoch name
+                    file_info- FileInfo dataclass
+                    channels - dictionary with key value pairs for each file name
+                                and file data (np.array)
     """
     # Get all the xsglog file names
     files = [file for file in os.listdir(dirname) if file.endswith(".xsglog")]
@@ -632,11 +640,11 @@ def load_xsg_continuous(dirname):
 
 
 def parse_xsg_filename(fname):
-    """ Function to parse filenames into substrings
-    
-        INPUT PARAMETERS
-            fname - string of the filename to be parsed
-            
+    """Function to parse filenames into substrings
+
+    INPUT PARAMETERS
+        fname - string of the filename to be parsed
+
     """
     name = re.search("[A-Z]{2}[0-9]{4}", fname).group()
     epoch = re.search("[A-Z]{4}[0-9]{4}", fname).group()
@@ -664,4 +672,3 @@ class xsglog_Data:
     name: str
     epoch: str
     file_info: FileInfo
-
