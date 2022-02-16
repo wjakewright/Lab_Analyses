@@ -11,6 +11,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.signal as sysignal
+from Lab_Analyses.Behavior.process_lever_behavior import read_bit_code
+from nbformat import read
 
 # ----------------------------------------------------------------------------------
 # ------------------------SUMMARIZE LEVER PRESS BEHAVIOR----------------------------
@@ -238,6 +240,73 @@ def summarize_imaged_lever_behavior(file):
 # ---------------------------NON-IMAGED TRIALS-------------------------------
 def summarize_nonimaged_lever_behavior(file):
     """Function to summarize lever press behavior for sessions that were not imaged"""
+    ## Set up new attributes and variables
+    ### Note for unrewarded or ignored trials the values will be np.nan
+    successful_movements = []  # movement trace for rewarded movements for each trial
+    cue_to_reward = []  # movement trace from cue to reward delivery
+    post_success_licking = []  # licking trace following reward delivery
+
+    faults = []
+    num_trials = len(file.behavior_frames)  # Number of trials performed
+    trial_used = []
+    used_trial = []  # Boolean list indicating if a trial was used or ignored
+    reaction_time = []  # Reaction time values
+    cs2r = []  # time from cue to reward delivery
+    trial_length = []  # Length of each trial
+    move_duration_before_cue = []  # Duration of movement before cue
+    movement_matrix = []  # 2D array of the movements for each trial
+    number_of_movements_during_ITI = []  # Number of movements during ITI
+    fraction_ITI_spent_moving = []  # Fraction of ITI time spent moving
+
+    # Set up temporary variables
+    rewards = 0  # Reward counter
+    move_at_start_fault = 0
+    reward_times = []
+    cue_starts = []
+    trial_ends = []
+    movements = []
+    past_threshold_reward_trials = []
+
+    xsg_data = file.xsg_data.channels["Trial_number"]
+    bit_code = read_bit_code(xsg_data)
+    bitcode = bit_code[:, 1]
+    trials = file.dispatcher_data.saved.ProtocolsSection_n_done_trials
+    if bit_code.size == 0:
+        raise Exception("Could not extract bitcode information")
+
+    movements_only = file.lever_force_smooth * file.lever_active
+    boundary_frames = np.nonzero(
+        np.diff(
+            np.insert(
+                file.lever_active.astype(float),
+                [0, len(file.lever_active)],
+                np.Inf,
+                axis=0,
+            )
+            != 0
+        )
+    )[0]
+    if boundary_frames[0] == 1:
+        boundary_frames = boundary_frames[1:]
+
+    bitcode_offset = bitcode - np.arange(1, len(bitcode) + 1)
+
+    for num, trial in enumerate(
+        file.dispatcher_data.saved_history.ProtocolsSection_parsed_events
+    ):
+        if num + 1 > len(bitcode):
+            continue
+        i_bitcode = (num + 1) - np.absolute(bitcode_offset[num])
+        if i_bitcode <= 0:
+            continue
+        if np.sum(np.isin(trial_used, i_bitcode)):
+            continue
+        trial_used.append(i_bitcode)
+
+        start_trial = np.round(bit_code[i_bitcode])
+
+        if not trial.states.bitcode[0].size == 0:
+            pass
 
 
 # ---------------------------------------------------------------------------

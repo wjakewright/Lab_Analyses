@@ -213,9 +213,9 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
         # Get the frame times within the current behavioral trial window
         a = (frame_times > bhv_window[0, 1]).astype(int)
         b = (frame_times > bhv_window[1, 0]).astype(int)
-        imaged_frames = (
-            np.round(frame_times[np.nonzero(a & b)] * xsg_sample_rate).astype(int) - 1
-        )
+        imaged_frames = np.round(
+            frame_times[np.nonzero(a & b)] * xsg_sample_rate
+        ).astype(int)
         # Extract the voltage signals indicating whether imaging frames were captured during this window
         frame_trace_window = frame_trace[imaged_frames]
 
@@ -449,24 +449,18 @@ def parse_lever_movement_continuous(xsg_data):
 
     # Edges of hilbert envelope always goes up
     # Eliminate the first/last movements if they're on the edges
-    (
-        lever_active_starts,
-        lever_active_stops,
-        _,
-        _,
-    ) = get_lever_active_points(lever_active)
+    (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
+        lever_active
+    )
     if lever_active_starts[0] == 0:
         lever_active[0 : lever_active_stops[0] + 1] = 0
     if lever_active_stops[-1] == len(lever_force_resample) - 1:
         lever_active[lever_active_starts[-1] :] = 0
 
     # Refine the lever active starts and stops
-    (
-        lever_active_starts,
-        lever_active_stops,
-        _,
-        _,
-    ) = get_lever_active_points(lever_active)
+    (lever_active_starts, lever_active_stops, _, _,) = get_lever_active_points(
+        lever_active
+    )
     noise = (
         lever_force_resample[np.where(lever_active == 0)]
         - lever_force_smooth[np.where(lever_active == 0)]
@@ -543,10 +537,8 @@ def get_lever_active_points(lever_active):
         lever_active_starts + 1
     )  # Accounting for index differences
     lever_active_intermovement_times = (
-        lever_active_starts[1:] + 1
-    ) - lever_active_stops[
-        0:-1
-    ]  # Accounting for index differences
+        (lever_active_starts[1:] + 1) - lever_active_stops[0:-1]
+    )  # Accounting for index differences
 
     return (
         lever_active_starts,
