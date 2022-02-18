@@ -73,7 +73,6 @@ def summarize_imaged_lever_behavior(file):
     rewards = 0  # Reward counter
     move_at_start_fault = 0
     reward_times = []
-    cue_starts = []
     trial_ends = []
     movements = []
     past_threshold_reward_trials = []
@@ -109,7 +108,6 @@ def summarize_imaged_lever_behavior(file):
                     file.frame_times[np.round(trial.states.cue[0]).astype(int)] * 1000
                 )
             )
-            cue_starts.append(cue_start)
             # Get time of next cue, indicating end of the current trial
             if num < len(file.behavior_frames) - 1:
                 next_cue = np.round(
@@ -262,7 +260,6 @@ def summarize_nonimaged_lever_behavior(file):
     rewards = 0  # Reward counter
     move_at_start_fault = 0
     reward_times = []
-    cue_starts = []
     trial_ends = []
     movements = []
     past_threshold_reward_trials = []
@@ -294,19 +291,151 @@ def summarize_nonimaged_lever_behavior(file):
     for num, trial in enumerate(
         file.dispatcher_data.saved_history.ProtocolsSection_parsed_events
     ):
+
         if num + 1 > len(bitcode):
             continue
         i_bitcode = (num + 1) - np.absolute(bitcode_offset[num])
-        if i_bitcode <= 0:
+        i_bitcode = int(i_bitcode)
+        if i_bitcode < 0:
             continue
         if np.sum(np.isin(trial_used, i_bitcode)):
             continue
         trial_used.append(i_bitcode)
 
-        start_trial = np.round(bit_code[i_bitcode])
+        start_trial = np.round(
+            bit_code[i_bitcode, 0] * 1000
+        )  # Getting the bitcode in time
+        t0 = trial.states.bitcode[0]
+        end_trial = int(
+            start_trial + np.round((trial.states.state_0[1, 0] - t0) * 1000)
+        )
 
         if not trial.states.bitcode[0].size == 0:
-            pass
+            rewards = rewards + 1
+            reward_time = np.round(start_trial + (trial.states.reward[0] - t0) * 1000)
+            if reward_time == 0:
+                reward_time = 1
+            reward_time = int(reward_time)
+            reward_times.append(reward_time)
+
+            cue_start = int(np.round(start_trial + (trial.states.cue[0] - t0) * 1000))
+            if cue_start >= len(file.lever_force_smooth) or reward_time >= len(
+                file.lever_force_smooth
+            ):
+                continue
+
+            if end_trial > len(file.lever_force_smooth):
+                end_trial = len(file.lever_force_smooth)
+            trial_ends.append(end_trial)
+
+            movement = file.lever_force_smooth[cue_start - 1 : end_trial]
+            movements.append(movement)
+            # Binarize movement trace
+            past_thresh = (
+                file.lever_force_smooth[cue_start - 1 : end_trial]
+                * file.lever_active[cue_start - 1 : end_trial]
+            )
+            past_threshold_reward_trials.append(past_thresh)
+
+            trial_info = profile_rewarded_movements(
+                file,
+                boundary_frames,
+                num,
+                cue_start,
+                reward_times,
+                trial_ends,
+                movement,
+                past_thresh,
+            )
+            if trial_info.fault == 1:
+                move_at_start_fault = move_at_start_fault + 1
+            used_trial.append(trial_info.trial_used)
+            trial_length.append(trial_info.trial_length)
+            cs2r.append(trial_info.cs2r)
+            reaction_time.append(trial_info.reaction_time)
+            number_of_movements_during_ITI.append(
+                trial_info.number_of_mvmts_since_last_trial
+            )
+            move_duration_before_cue.append(trial_info.move_duration_before_cue)
+            fraction_ITI_spent_moving.append(trial_info.fraction_ITI_spent_moving)
+            successful_movements.append(trial_info.successful_movements)
+            cue_to_reward.append(trial_info.cue_to_reward)
+            post_success_licking.append(trial_info.post_success_licking)
+            faults.append(trial_info.fault)
+
+        else:
+            trial_ends.append(np.nan)
+            reward_times.append(0)
+
+        # Get average reaction time and cue_to_reward
+    avg_reaction_time = np.nanmean(reaction_time)
+    avg_cue_to_reward_time = np.nanmean(cs2r)
+
+    # Remove zeros from trial length and set min trial length
+    trial_length[trial_length == 0] = np.nan
+    if not len(trial_length) == 0:
+        min_t = np.nanmin(trial_length)
+    else:
+        min_t = 3001
+    min_t = int(min_t)
+    move_duration_before_cue = np.array(move_duration_before_cue)[
+        np.invert(np.isnan(np.asarray(move_duration_before_cue)))
+    ]
+
+    # Generate movement matrix
+    num_tracked_movements = 0
+    for rewarded_trial in range(rewards):
+        try:
+            if isinstance(successful_movements[rewarded_trial], np.ndarray):
+                # if not np.isnan(successful_movements[rewarded_trial]):
+                move_array = np.array(successful_movements[rewarded_trial][: min_t + 1])
+                move_array[move_array == 0] = np.nan
+                movement_matrix.append(move_array)
+            else:
+                move_array = np.empty(min_t)
+                move_array[:] = np.nan
+                movement_matrix.append(move_array)
+        except Exception as error:
+            print(f"Movement was not tracked for trial {rewarded_trial}")
+            print("")
+            print(error)
+            move_array = np.empty(min_t)
+            move_array[:] = np.nan
+            movement_matrix.append(move_array)
+        if sum(np.invert(np.isnan(move_array)).astype(int)) > 100:
+            num_tracked_movements = num_tracked_movements + 1
+    # Convert list of movements into 2d array with each trial a row
+    movement_matrix = np.array(movement_matrix)
+
+    # Set conditional for minimum number of rewarded movements
+    min_move_num_contingency = num_tracked_movements > 0
+    if rewards != 0 and min_move_num_contingency:
+        movement_avg = np.nanmean(movement_matrix, axis=0)
+    else:
+        movement_matrix = np.empty(movement_matrix.shape)
+        movement_matrix[:] = np.nan
+        movement_avg = np.empty(min_t)
+        movement_avg[:] = np.nan
+
+    # Plot movements
+    ### Add a behavior plotting module that will handle this later
+
+    # Generate outpt object
+    Summarized_Behavior = Session_Summary_Lever_Data(
+        used_trial=used_trial,
+        movement_matrix=movement_matrix,
+        movement_avg=movement_avg,
+        rewards=rewards,
+        move_at_start_faults=move_at_start_fault,
+        avg_reaction_time=avg_reaction_time,
+        avg_cue_to_reward=avg_cue_to_reward_time,
+        trials=num_trials,
+        move_duration_before_cue=move_duration_before_cue,
+        number_of_movements_during_ITI=number_of_movements_during_ITI,
+        fraction_ITI_spent_moving=fraction_ITI_spent_moving,
+    )
+
+    return Summarized_Behavior
 
 
 # ---------------------------------------------------------------------------
