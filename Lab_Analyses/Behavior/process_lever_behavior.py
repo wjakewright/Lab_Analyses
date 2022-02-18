@@ -214,7 +214,7 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
         a = (frame_times > bhv_window[0, 1]).astype(int)
         b = (frame_times > bhv_window[1, 0]).astype(int)
         imaged_frames = np.round(
-            frame_times[np.nonzero(a & b)] * xsg_sample_rate
+            frame_times[np.nonzero(a & b)[0]] * xsg_sample_rate
         ).astype(int)
         # Extract the voltage signals indicating whether imaging frames were captured during this window
         frame_trace_window = frame_trace[imaged_frames]
