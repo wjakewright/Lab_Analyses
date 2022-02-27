@@ -310,7 +310,7 @@ def summarize_nonimaged_lever_behavior(file):
             start_trial + np.round((trial.states.state_0[1, 0] - t0) * 1000)
         )
 
-        if not trial.states.bitcode[0].size == 0:
+        if not trial.states.reward.size == 0:
             rewards = rewards + 1
             reward_time = np.round(start_trial + (trial.states.reward[0] - t0) * 1000)
             if reward_time == 0:
@@ -626,9 +626,10 @@ def profile_rewarded_movements(
     if trial_length == 0:
         raise ValueError("Error with Trial Length on successful trial !!!")
 
-    reaction_time = np.nonzero(past_thresh)[0][0] / 1000  ## Converted to seconds
-    if reaction_time.size == 0:
+    if np.sum(past_thresh) == 0:
         reaction_time = 0
+    else:
+        reaction_time = np.nonzero(past_thresh)[0][0] / 1000  ## Converted to seconds
 
     # Repeat above steps for licking data if available
     trial_stop_window = 5000
