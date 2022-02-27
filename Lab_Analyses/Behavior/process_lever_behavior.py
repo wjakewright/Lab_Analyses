@@ -293,7 +293,7 @@ def read_bit_code(xsg_trial):
 
     # Find the sync bitcodes: anything where the differences is larger than the length
     # of the bitcode (16ms - set as 20 ms to be safe)
-    bitcode_time_samples = 125 * (xsg_sample_rate / 1000)  ## 125ms
+    bitcode_time_samples = 200 * (xsg_sample_rate / 1000)  ## 200ms
     bitcode_sync = np.nonzero(np.diff(rising_bitcode) > bitcode_time_samples)[0]
 
     # Find the sync signal from the 2nd bitcode, coz diff. And this is index of rising bitcode [HL]
@@ -311,16 +311,22 @@ def read_bit_code(xsg_trial):
             for curr_bit in np.array(range(num_bits)) + 1:
                 # boundaries for bits: between the half of each break
                 # (bitcode_sync+5ms+2.5ms = 7.5ms)
-                bit_boundary_min = (
+                bit_boundary_min = curr_bitcode_sync + (curr_bit - 0.5) * 10.3 * (
+                    xsg_sample_rate / 1000
+                )
+                """ bit_boundary_min = (
                     curr_bitcode_sync
                     + (7.5 * (xsg_sample_rate / 1000))
                     + ((curr_bit - 1) * 10.2 * (xsg_sample_rate / 1000))
+                ) """
+                bit_boundary_max = curr_bitcode_sync + (curr_bit + 0.5) * 10.3 * (
+                    xsg_sample_rate / 1000
                 )
-                bit_boundary_max = (
+                """ bit_boundary_max = (
                     curr_bitcode_sync
                     + (7.5 * (xsg_sample_rate / 1000))
                     + ((curr_bit) * 10.2 * (xsg_sample_rate / 1000))
-                )
+                ) """
                 a = rising_bitcode > bit_boundary_min
                 b = rising_bitcode < bit_boundary_max
                 if any(a & b):
