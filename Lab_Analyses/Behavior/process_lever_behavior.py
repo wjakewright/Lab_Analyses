@@ -488,7 +488,7 @@ def parse_lever_movement_continuous(xsg_data):
         movement_start_offsets.append(offset.astype(int))
     movement_stop_offsets = []
     for w, x, y, z in zip(
-        move_stop_values, movement_epochs, move_stop_cutoffs, lever_active_starts
+        move_stop_values, movement_epochs, move_stop_cutoffs, lever_active_stops
     ):
         offset = get_move_stop_offset(w, x, y, z, thresh_run)
         movement_stop_offsets.append(offset.astype(int))
@@ -514,7 +514,7 @@ def get_move_start_offset(w, x, y, z, thresh_run):
     flr = np.floor(thresh_run / 2)
     find = np.nonzero(conv >= thresh_run)[0][0]
     end = find - flr
-    result = np.arange(z, z + end + 1)
+    result = np.arange(z, z + end + 2)
 
     return result
 
@@ -542,9 +542,9 @@ def get_lever_active_points(lever_active):
     lever_active_movement_times = (lever_active_stops) - (
         lever_active_starts + 1
     )  # Accounting for index differences
-    lever_active_intermovement_times = (
-        (lever_active_starts[1:] + 1) - lever_active_stops[0:-1]
-    )  # Accounting for index differences
+    lever_active_intermovement_times = (lever_active_starts[1:]) - lever_active_stops[
+        0:-1
+    ]  # Accounting for index differences
 
     return (
         lever_active_starts,
