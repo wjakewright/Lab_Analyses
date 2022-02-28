@@ -12,7 +12,6 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Behavior.process_lever_behavior import read_bit_code
-from nbformat import read
 
 # ----------------------------------------------------------------------------------
 # ------------------------SUMMARIZE LEVER PRESS BEHAVIOR----------------------------
@@ -245,7 +244,7 @@ def summarize_nonimaged_lever_behavior(file):
     post_success_licking = []  # licking trace following reward delivery
 
     faults = []
-    num_trials = len(file.behavior_frames)  # Number of trials performed
+    # num_trials = len(file.behavior_frames)  # Number of trials performed
     trial_used = []
     used_trial = []  # Boolean list indicating if a trial was used or ignored
     reaction_time = []  # Reaction time values
@@ -267,7 +266,7 @@ def summarize_nonimaged_lever_behavior(file):
     xsg_data = file.xsg_data.channels["Trial_number"]
     bit_code = read_bit_code(xsg_data)
     bitcode = bit_code[:, 1]
-    trials = file.dispatcher_data.saved.ProtocolsSection_n_done_trials
+    num_trials = file.dispatcher_data.saved.ProtocolsSection_n_done_trials
     if bit_code.size == 0:
         raise Exception("Could not extract bitcode information")
 
@@ -283,7 +282,7 @@ def summarize_nonimaged_lever_behavior(file):
             != 0
         )
     )[0]
-    if boundary_frames[0] == 1:
+    if boundary_frames[0] == 0:
         boundary_frames = boundary_frames[1:]
 
     bitcode_offset = bitcode - np.arange(1, len(bitcode) + 1)
@@ -292,9 +291,9 @@ def summarize_nonimaged_lever_behavior(file):
         file.dispatcher_data.saved_history.ProtocolsSection_parsed_events
     ):
 
-        if num + 1 > len(bitcode):
+        if num > len(bitcode):
             continue
-        i_bitcode = (num + 1) - np.absolute(bitcode_offset[num])
+        i_bitcode = (num) - np.absolute(bitcode_offset[num])
         i_bitcode = int(i_bitcode)
         if i_bitcode < 0:
             continue
@@ -478,7 +477,7 @@ def profile_rewarded_movements(
     ## Discard trial if the animal is already moving
     ## Still record details about the nature of the movements
     if any(file.lever_active[cue_start - 100 : cue_start] == 1):
-        print(f"Animal was moving at the beginning of trial {trial_num}!")
+        print(f"Animal was moving at the beginning of trial {trial_num+1}!")
 
         trial_info = profile_movement_before_cue(
             file, trial_num, cue_start, reward_times
