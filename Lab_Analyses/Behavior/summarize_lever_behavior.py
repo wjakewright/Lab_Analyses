@@ -26,6 +26,25 @@ def summarize_lever_behavior(file):
                 lever behavior for a single session for a single mouse
 
     OUTPUT PARAMETERS
+        suummarized_data - Session_Summary_Lever_Data dataclass containing:
+        
+            used_trial - boolean array of which trials were used and ignored
+            movement_matrix - np.array of all rewarded movements, each row
+                              representing a single movement traces
+            movement_avg - np.array of the averaged rewarded movement trace
+            rewards - int specifying how many rewards were recieved
+            move_at_start_faults - int specifying how many trials were ignored due
+                                    to mouse moving at the start of the trial
+            avg_reaction_time - float of the average reaction time for mouse to move
+            avg_cue_to_reward - float of the average time from cue onset till mouse
+                                recieved the reward
+            trials - int specifying the number of trials within the session
+            move_duration_before_cue - list of floats specifying how much time 
+                                        mouse spent moving before the cue
+            number_of_movements_during_ITI - list of the number of movments mouse made
+                                             during the ITI of each trial
+            fraction_ITI_spent_moving - list of the fraction of time mouse spent moving
+                                        during the ITI of each trial
 
 
     """
@@ -131,7 +150,6 @@ def summarize_imaged_lever_behavior(file):
                 * file.lever_active[cue_start - 1 : next_cue]
             )
             past_threshold_reward_trials.append(past_thresh)
-            print(num)
             ## Profile rewarded movements
             trial_info = profile_rewarded_movements(
                 file,
@@ -143,6 +161,7 @@ def summarize_imaged_lever_behavior(file):
                 movement,
                 past_thresh,
             )
+            print(trial_info.reaction_time)
             if trial_info.fault == 1:
                 move_at_start_fault = move_at_start_fault + 1
             used_trial.append(trial_info.trial_used)
@@ -176,7 +195,7 @@ def summarize_imaged_lever_behavior(file):
     min_t = int(min_t)
     move_duration_before_cue = np.array(move_duration_before_cue)[
         np.invert(np.isnan(np.asarray(move_duration_before_cue)))
-    ]
+    ]/1000
 
     # Generate movement matrix
     num_tracked_movements = 0
@@ -379,7 +398,7 @@ def summarize_nonimaged_lever_behavior(file):
     min_t = int(min_t)
     move_duration_before_cue = np.array(move_duration_before_cue)[
         np.invert(np.isnan(np.asarray(move_duration_before_cue)))
-    ]
+    ]/1000
 
     # Generate movement matrix
     num_tracked_movements = 0
@@ -531,7 +550,7 @@ def profile_rewarded_movements(
 
     # Characterize the ITI of successful trials
     number_of_movements_since_last_trial = len(
-        np.nonzero(np.diff(file.lever_active[0:cue_start]) > 0)
+        np.nonzero(np.diff(file.lever_active[0:cue_start]) > 0)[0]
     )
 
     if trial_num > 0:
@@ -733,45 +752,6 @@ def profile_movement_before_cue(file, trial_num, cue_start, reward_times):
         fault=fault,
     )
     return trial_info
-
-
-# ----------------------------------------------------------------------------
-# --------------------------PARSE BEHAVIOR BITCODE----------------------------
-# ----------------------------------------------------------------------------
-def parse_behavior_bitcode(xsg_trace):
-    """Function to parse behavior bitcode for unimaged sessions.
-    Similar to Read_Bitcode in process_lever_behavior, but with
-    some differences"""
-
-    # Set up some parameters
-    xsg_sample_rate = 10000
-    threshold_value = 2
-    num_bits = 12
-    binary_threshold = (xsg_trace > threshold_value).astype(float)
-    shift_binary_threshold = np.insert(binary_threshold[:-1], 0, np.nan)
-    # Get raw times for rising edge of signals
-    rising_bitcode = np.nonzero(
-        (binary_threshold == 1).astype(int) & (shift_binary_threshold == 0).astype(int)
-    )[0]
-
-    # Set up the possible bits, 12 values, most significant first
-    bit_values = np.arange(num_bits - 1, -1, -1, dtype=int)
-    bit_values = 2 ** bit_values
-
-    # Find the sync bitcodes: anything where the difference is larger than the
-    # length of the bitcode (16ms - set as 20ms to be safe)
-    bitcode_time_samples = 200 * (
-        xsg_sample_rate / 1000
-    )  # THIS IS DIFFERENT THAT READBITCODE
-    bitcode_sync = np.nonzeror(np.diff(rising_bitcode) > bitcode_time_samples)[0]
-
-    # Assume that the first rising edge is a sync signal
-    if len(rising_bitcode) == 0:
-        behavior_trials = []
-    else:
-        # Add first one back and shift back to rising pulse; get the bitcode index in time [HL]
-        bitcode_sync = rising_bitcode[np.insert(bitcode_sync + 1, 0, 0)]
-        # Initialize the
 
 
 # ---------------------------------------------------------------------------
