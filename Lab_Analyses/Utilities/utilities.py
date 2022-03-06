@@ -1,5 +1,6 @@
 import itertools
 import random
+import statistics as st
 
 import numpy as np
 import pandas as pd
@@ -347,4 +348,72 @@ def significance_testing(imaging, timestamps, window, sampling_rate, method):
         results_df = results_df.drop(columns=["shuff_diffs"])
 
     return results_dict, results_df, shuff_diffs
+
+
+def diff_sorting(data, length, sampling_rate):
+    """Function to sort neurons based on their change in activity
+        around a specified event 
+        
+        INPUT PARAMETERS
+            data - array or dataframe of neural activity, with each row
+                    representing a single neuron or trial (for a single neuron). 
+                    Note data must be centered around the event
+            
+            length - tuple of ints specifying how long before and after
+                     the event to compare (e.g. (2,2) for 2s before vs
+                    2s after)
+            
+            sampling_rate - int of the imaging sampling rate (e.g. 30hz)
+            
+        OUTPUT PARAMETERS
+            sorted_data - dataframe of the sorted neural activity
+            
+    """
+    if type(data) == np.ndarray:
+        data = pd.DataFrame(data)
+    b_len = int(length[0] * sampling_rate)
+    a_len = int(length[1] * sampling_rate)
+
+    before = data.iloc[:, :b_len].mean(axis=1)
+    after = data.iloc[:, b_len : b_len + a_len].mean(axis=1)
+    differences = []
+    for before_i, after_i in zip(before, after):
+        differences.append(after_i - before_i)
+    data["Diffs"] = differences
+    sorted_data = data.sort_values(by="Diffs", ascending=False)
+    sorted_data = sorted_data.drop(columns=["Diffs"])
+
+    return sorted_data
+
+
+def zero_window(data, base_win, sampling_rate):
+    """Function to zero neural activity for a specified baseline
+        period (For trail activity). For plotting purposes
+        
+        INPUT PARAMETERS
+            data - array or dataframe of neural activity, with each
+                    column representing a neuron or trial
+            
+            base_win - tuple of ints specifying the period you wish
+                        to define as the baseline period to zero. 
+                        In seconds (e.g. 0,1) to normalize over the 
+                        first second of activity. 
+            
+            sampling_rate - int specifying the imaging sampling rate
+                            E.g. 30hz
+        
+        OUTPUT PARAMETER
+            zeored_data - dataframe of the data now zeroed
+            
+    """
+
+    if type(data) == np.ndarray:
+        data = pd.DataFrame(data)
+    zero_b = int(base_win[0] * sampling_rate)
+    zero_a = int(base_win[1] * sampling_rate)
+    zeroed_data = pd.DataFrame()
+    for col in data.columns:
+        zeroed_data[col] = data[col].sub(st.median(data[col].loc[zero_b:zero_a]))
+
+    return zeroed_data
 

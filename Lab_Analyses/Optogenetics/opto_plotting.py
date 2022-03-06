@@ -2,8 +2,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 import seaborn as sns
+from Lab_Analyses.Utilities import utilities as utils
 
 sns.set()
 sns.set_style("ticks")
@@ -134,7 +134,129 @@ def plot_mean_sem(
         fig.savefig(name + "_Mean_Activity.pdf")
 
 
-def plot_opto_heatmap(
+def plot_trial_heatmap(
+    roi_stim_epochs,
+    zscore,
+    sampling_rate,
+    figsize=(7, 8),
+    title="default",
+    col_num=4,
+    cmap=None,
+    save=False,
+    name=None,
+    hmap_range=None,
+    zeroed=False,
+    sort=False,
+    center=None,
+):
+    """Function to plot heatmap of activity of each neuron for each trial"""
+    if hmap_range is None:
+        z_range = (-2, 2)
+        df_range = (-0.5, 5)
+    else:
+        z_range = hmap_range
+        df_range = hmap_range
+
+    if title == "default":
+        title == "Opto Activity Heatmap"
+    else:
+        title = title + " Opto Activity Heatmap"
+
+    # Custom color map for the heatmap
+    d_map = mpl.colors.LinearSegmentedColormap.from_list(
+        "custom",
+        [
+            (0.0, "mediumblue"),
+            (0.3, "royalblue"),
+            (0.5, "white"),
+            (0.7, "tomato"),
+            (1.0, "red"),
+        ],
+        N=1000,
+    )
+
+    # Setup the subplots
+    tot = len(roi_stim_epochs.keys())
+    col_num = col_num
+    row_num = tot // col_num
+    row_num += tot % col_num
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(hspace=0.5)
+    fig.suptitle(title)
+
+    if cmap is None:
+        z_cmap = d_map
+        df_cmap = "inferno"
+    else:
+        z_cmap = cmap
+        df_cmap = cmap
+
+    # Plot heatmap for each neuron
+    for count, (key, value) in enumerate(roi_stim_epochs.items()):
+        # Put data in dataframe for easier plotting
+        df = pd.DataFrame(value)
+        if zeroed is True:
+            df = utils.zero_window(df, (0, 2), sampling_rate)
+        df_t = df.T
+        if sort is True:
+            df_t = utils.diff_sorting(df_t, (2, 2), sampling_rate)
+        # Plot
+        ax = fig.add_subplot(row_num, col_num, count + 1)
+        if zscore is True:
+            hax = sns.heatmap(
+                df_t,
+                cmap=z_cmap,
+                center=center,
+                vmax=z_range[1],
+                vmin=z_range[0],
+                cbar_kws={
+                    "label": "z-score",
+                    "orientation": "vertical",
+                    "ticks": (z_range[0], 0, z_range[1]),
+                },
+                yticklabels=False,
+                ax=ax,
+            )
+        else:
+            hax = sns.heatmap(
+                df_t,
+                cmap=df_cmap,
+                vmax=df_range[1],
+                vmin=df_range[0],
+                cbar_kws={
+                    "label": r"$\Delta$F/F",
+                    "orientation": "vertical",
+                    "ticks": (df_range[0], 0, df_range[1]),
+                },
+                yticklabels=False,
+                ax=ax,
+            )
+
+        plt.xticks(
+            ticks=[
+                0,
+                (sampling_rate),
+                (sampling_rate * 2),
+                (sampling_rate * 3),
+                (sampling_rate * 4),
+                (sampling_rate * 5),
+            ],
+            labels=[-2, 1, 0, 1, 2, 3],
+            rotation=0,
+        )
+        hax.axvline(
+            x=(sampling_rate * 2), ymin=0, ymax=1, color="black", linestyle="--"
+        )
+        hax.patch.set_edgecolor("black")
+        hax.patch.set_linewidth("2.5")
+
+    # Final formating and saving
+    fig.tight_layout()
+    if save is True:
+        fig.savefig(name + "_Trial_Heatmap.pdf")
+
+
+def plot_mean_heatmap(
     roi_mean_sems,
     zscore,
     sampling_rate,
@@ -144,6 +266,9 @@ def plot_opto_heatmap(
     save=False,
     name=None,
     hmap_range=None,
+    zeroed=False,
+    sort=False,
+    center=None,
 ):
     """Function to plot heatmap of avg ROI activity"""
     if hmap_range is None:
@@ -173,7 +298,12 @@ def plot_opto_heatmap(
     df = pd.DataFrame()
     for key, value in roi_mean_sems.items():
         df[key] = value[0]
+    if zeroed is True:
+        df = utils.zero_window(df, (0, 2), sampling_rate)
     df_t = df.T
+    if sort is True:
+        df_t = utils.diff_sorting(df_t, (2, 2), sampling_rate)
+
     # Plot the heatmap
     if cmap is None:
         cmap = d_map
@@ -185,7 +315,7 @@ def plot_opto_heatmap(
         ax = sns.heatmap(
             df_t,
             cmap=cmap,
-            center=0,
+            center=center,
             vmax=z_range[1],
             vmin=z_range[0],
             cbar_kws={

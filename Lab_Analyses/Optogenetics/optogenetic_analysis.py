@@ -333,6 +333,10 @@ class optogenetic_analysis:
         title="default",
         save=False,
         hmap_range=None,
+        cmap=None,
+        zeroed=False,
+        sort=False,
+        center=None,
     ):
         """Method to display the data and results"""
         if save is True:
@@ -363,14 +367,29 @@ class optogenetic_analysis:
                 name=name,
             )
 
-        plotting.plot_each_event(
+        # plotting.plot_each_event(
+        #    self.roi_stim_epochs,
+        #    self.new_ROIs,
+        #    figsize=fig2_size,
+        #    title=title,
+        #    save=save,
+        #    name=name,
+        # )
+        plotting.plot_trial_heatmap(
             self.roi_stim_epochs,
-            self.new_ROIs,
+            self.zscore,
+            self.sampling_rate,
             figsize=fig2_size,
             title=title,
+            cmap=cmap,
             save=save,
             name=name,
+            hmap_range=hmap_range,
+            zeroed=zeroed,
+            sort=False,
+            center=center,
         )
+
         plotting.plot_mean_sem(
             self.roi_mean_sems,
             self.new_window,
@@ -381,15 +400,19 @@ class optogenetic_analysis:
             save=save,
             name=name,
         )
-        plotting.plot_opto_heatmap(
+        plotting.plot_mean_heatmap(
             self.roi_mean_sems,
             self.zscore,
             self.sampling_rate,
             figsize=fig4_size,
             title=title,
+            cmap=cmap,
             save=save,
             name=name,
             hmap_range=hmap_range,
+            zeroed=zeroed,
+            sort=sort,
+            center=center,
         )
         if self.method == "shuff":
             plotting.plot_shuff_distribution(
@@ -573,6 +596,10 @@ class power_curve:
         fig5_size=(10, 10),
         save=False,
         hmap_range=None,
+        cmap=None,
+        zeroed=False,
+        sort=False,
+        center=None,
     ):
         """Method to vizualize a single imaging session with a specific power"""
         name = f"{self.powers[session]} mW"
@@ -585,5 +612,9 @@ class power_curve:
             title=name,
             save=save,
             hmap_range=hmap_range,
+            cmap=cmap,
+            zeroed=zeroed,
+            sort=sort,
+            center=center,
         )
 
