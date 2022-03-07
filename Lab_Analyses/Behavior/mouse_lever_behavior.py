@@ -39,7 +39,8 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
     # Pull out relevant data to store
     mouse_lever_data = Mouse_Lever_Data(mouse_id=id, experiment=exp, sessions=sessions, trials=[], rewards=[], used_trials=[], 
             all_movements=[], average_movements=[], reacton_time=[], cue_to_reward=[], move_at_start_faults=[],
-            move_duration_before_cue=[], number_movements_during_ITI=[], fraction_ITI_moving=[], correlation_matrix=np.nan)
+            move_duration_before_cue=[], number_movements_during_ITI=[], fraction_ITI_moving=[], correlation_matrix=np.nan,
+            within_sess_corr=np.nan, across_sess_corr=np.nan)
     for data in summarized_data:
         mouse_lever_data.trials.append(data.trials)
         mouse_lever_data.rewards.append(data.rewards)
@@ -53,8 +54,11 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
         mouse_lever_data.fraction_ITI_moving.append(data.fraction_ITI_spent_moving)
     
     mouse_lever_data.correlation_matrix = correlate_lever_press(mouse_lever_data.all_movements)
-    
+    mouse_lever_data.within_sess_corr = mouse_lever_data.correlation_matrix.diagonal()
+    mouse_lever_data.across_sess_corr = mouse_lever_data.correlation_matrix.diagonal(offset=1)
 
+    return mouse_lever_data
+    
 
 def correlate_lever_press(movement_matrices):
     """Function to correlate movements within and across sessions for a single mouse
@@ -81,7 +85,7 @@ def correlate_lever_press(movement_matrices):
                 correlation_matrix[j_idx,i_idx] = corr
     
     return correlation_matrix
-
+    
 
 def correlate_btw_sessions(A, B):
     """Helper function to perform pairwise correlations between movements from two
@@ -121,8 +125,6 @@ def correlate_btw_sessions(A, B):
     return across_corr
 
 
-
-
 #-------------------------------------------------------------------------
 #---------------------------DATACLASSES USED------------------------------
 #-------------------------------------------------------------------------
@@ -147,3 +149,5 @@ class Mouse_Lever_Data:
     number_movements_during_ITI: list
     fraction_ITI_moving: list
     correlation_matrix: np.ndarray
+    within_sess_corr: np.ndarray
+    across_sess_corr: np.ndarray
