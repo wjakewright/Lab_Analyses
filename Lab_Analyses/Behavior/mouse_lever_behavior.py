@@ -17,7 +17,7 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
             files - a list of objects/files output from process_lever_behavior.py
 
             exp - string containing description of experiment
-                        
+
             sessions - a list of numbers indicating the session number for each 
                        input file. Optional. If no sessions are provide it is
                        assumeed that the files are in correct order
@@ -52,14 +52,74 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
         mouse_lever_data.number_movements_during_ITI.append(data.number_of_movements_during_ITI)
         mouse_lever_data.fraction_ITI_moving.append(data.fraction_ITI_spent_moving)
     
-    correlation_matrix = correlate_lever_press(mouse_lever_data.all_movements)
+    mouse_lever_data.correlation_matrix = correlate_lever_press(mouse_lever_data.all_movements)
+    
 
 
 def correlate_lever_press(movement_matrices):
     """Function to correlate movements within and across sessions for a single mouse
         
         INPUT PARAMETERS
-            movement_matrices - list containing np.arrays of all the rewarded movements. """
+            movement_matrices - list containing np.arrays of all the rewarded movements. 
+            
+        OUTPUT PARAMETERS
+            correlation_matrix - np.array of the median pairwise movement correlations for
+                                each pair of sessions
+    """
+
+    # Initialize the correlation matrix
+    correlation_matrix = np.zeros((len(movement_matrices),len(movement_matrices)))
+
+    # Perform pairwise correlations
+    for i_idx, i in enumerate(movement_matrices):
+        for j_idx, j in enumerate(movement_matrices):
+            corr = correlate_btw_sessions(i,j)
+            if i_idx == j_idx:
+                correlation_matrix[i_idx,j_idx] = corr
+            else:
+                correlation_matrix[i_idx,j_idx] = corr
+                correlation_matrix[j_idx,i_idx] = corr
+    
+    return correlation_matrix
+
+
+def correlate_btw_sessions(A, B):
+    """Helper function to perform pairwise correlations between movements from two
+        different sessions. This is a vectorized approach for faster run time
+        
+        INPUT PARAMETERS
+            A - np.array of movement matrix of the first session
+            
+            B - np.array of movement matrix fo the second session
+            
+        OUTPUT PARAMETER
+            across_corr - float of the median pairwise correlation for all movements
+                          in session A with those of session B
+    
+    """
+    # Transpose movement rows to columns
+    A = A.T
+    B = B.T
+
+    # Get number of rows in either A or B (should be same)
+    n = B.shape[0]
+    # Store column-wise in A and B
+    sA = A.sum(axis=0)
+    sB = B.sum(axis=0)
+
+    # Vectorize and broadcast the A and B
+    p1 = n*np.dot(B.T,A)
+    p2 = sA*sB[:,None]
+    p3 = n*((B**2).sum(axis=0)) - (sB**2)
+    p4 = n*((A**2).sum(axis=0)) - (sA**2)
+
+    # Compute pairwise Pearsons Correlation Coefficient as 2D array
+    pcorr = ((p1-p2)/np.sqrt(p4*p3[:,None]))
+
+    across_corr = np.median(pcorr)
+
+    return across_corr
+
 
 
 
