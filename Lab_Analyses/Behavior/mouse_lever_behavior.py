@@ -1,5 +1,7 @@
 """ Module to analyze and summarize the main metrics of lever press behavior
-    for a single mouse across all sessions. Stores output as a dataclass."""
+    for a single mouse across all sessions. Stores output as a dataclass.
+    
+    CREATOR - William (Jake) Wright 3/6/2022"""
 
 from dataclasses import dataclass
 import numpy as np
@@ -14,7 +16,8 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
         INPUT PARAMETERS
             id - string specifying what the mouses ID is
 
-            files - a list of objects/files output from process_lever_behavior.py
+            files - a list of objects/files output from process_lever_behavior.py. Missing
+                    session should be entered in as None within the list
 
             exp - string containing description of experiment
 
@@ -33,6 +36,8 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
     # Summarize lever press behavior for each session
     summarized_data = []
     for file in files:
+        if file is None:
+            summarized_data.append(None)
         summed_data = slb.summarize_lever_behavior(file)
         summarized_data.append(summed_data)
     
@@ -42,16 +47,28 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
             move_duration_before_cue=[], number_movements_during_ITI=[], fraction_ITI_moving=[], correlation_matrix=np.nan,
             within_sess_corr=np.nan, across_sess_corr=np.nan)
     for data in summarized_data:
-        mouse_lever_data.trials.append(data.trials)
-        mouse_lever_data.rewards.append(data.rewards)
-        mouse_lever_data.used_trials.append(data.used_trial)
-        mouse_lever_data.all_movements.append(data.movement_matrix)
-        mouse_lever_data.average_movements.append(data.movement_avg)
-        mouse_lever_data.reaction_time.append(data.avg_reaction_time)
-        mouse_lever_data.move_at_start_faults.append(data.move_at_start_faults)
-        mouse_lever_data.move_duration_before_cue.append(data.move_duration_before_cue)
-        mouse_lever_data.number_movements_during_ITI.append(data.number_of_movements_during_ITI)
-        mouse_lever_data.fraction_ITI_moving.append(data.fraction_ITI_spent_moving)
+        if data is not None:
+            mouse_lever_data.trials.append(data.trials)
+            mouse_lever_data.rewards.append(data.rewards)
+            mouse_lever_data.used_trials.append(data.used_trial)
+            mouse_lever_data.all_movements.append(data.movement_matrix)
+            mouse_lever_data.average_movements.append(data.movement_avg)
+            mouse_lever_data.reaction_time.append(data.avg_reaction_time)
+            mouse_lever_data.move_at_start_faults.append(data.move_at_start_faults)
+            mouse_lever_data.move_duration_before_cue.append(data.move_duration_before_cue)
+            mouse_lever_data.number_movements_during_ITI.append(data.number_of_movements_during_ITI)
+            mouse_lever_data.fraction_ITI_moving.append(data.fraction_ITI_spent_moving)
+        else:
+            mouse_lever_data.trials.append(np.nan)
+            mouse_lever_data.rewards.append(np.nan)
+            mouse_lever_data.used_trials.append(np.nan)
+            mouse_lever_data.all_movements.append(np.nan)
+            mouse_lever_data.average_movements.append(np.nan)
+            mouse_lever_data.reaction_time.append(np.nan)
+            mouse_lever_data.move_at_start_faults.append(np.nan)
+            mouse_lever_data.move_duration_before_cue.append(np.nan)
+            mouse_lever_data.number_movements_during_ITI.append(np.nan)
+            mouse_lever_data.fraction_ITI_moving.append(np.nan)
     
     mouse_lever_data.correlation_matrix = correlate_lever_press(mouse_lever_data.all_movements)
     mouse_lever_data.within_sess_corr = mouse_lever_data.correlation_matrix.diagonal()
