@@ -40,6 +40,12 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
             summarized_data.append(None)
         summed_data = slb.summarize_lever_behavior(file)
         summarized_data.append(summed_data)
+
+    # Sort the summarized session to be in correct order based on sessions
+    zipped_data = zip(sessions, summarized_data)
+    sorted_data = sorted(zipped_data)
+    ts = zip(*sorted_data)
+    sessions, summarized_data = [list(t) for t in ts]
     
     # Pull out relevant data to store
     mouse_lever_data = Mouse_Lever_Data(mouse_id=id, experiment=exp, sessions=sessions, trials=[], rewards=[], used_trials=[], 
