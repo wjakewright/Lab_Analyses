@@ -60,6 +60,21 @@ class Group_Lever_Press:
         
         self.within_sess_corr = within_corr_mean_sems
 
+    def analyze_cross_sess_corr(self):
+        """Function to get mean and sem across session correlations across sessions"""
+        all_cross_corr = []
+        for i, _ in enumerate(self.sessions[1:]):
+            cross_corr = [file.across_sess_corr[i] for file in self.files]
+            all_cross_corr.append(np.array(cross_corr))
+        
+        across_corr_mean_sems = {}
+        for session, corr in zip(self.sessions[1:], all_cross_corr):
+            corr_mean = np.nanmean(corr)
+            corr_sem = np.nanstd(corr, ddof=1) / np.sqrt(corr.size)
+            across_corr_mean_sems[session] = [corr_mean, corr_sem]
+
+        self.across_sess_corr = across_corr_mean_sems
+
     
     def check_same_sessions(self):
         """Function to check to make sure that all mice have same number of sessions"""
