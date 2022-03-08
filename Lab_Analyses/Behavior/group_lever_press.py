@@ -20,6 +20,11 @@ class Group_Lever_Press:
         self.mice = []
         for file in files:
             self.mice.append(file.mouse_id)
+        
+        # Check that all mice have the same number of sessions
+        self.check_same_sessions()
+
+        self.sessions = files[0].sessions
 
         # Attributes to be defined later
         self.avg_corr_matrix = None
@@ -43,5 +48,19 @@ class Group_Lever_Press:
         # Get all the within session correlations
         # Store as arrays in a list for each session
         all_within_corr = []
-        
+
+    
+    def check_same_sessions(self):
+        """Function to check to make sure that all mice have same number of sessions"""
+        sess_nums  = [len(x.sessions) for x in self.files]
+        values, counts = np.unique(sess_nums, return_counts=True)
+        if len(values) > 1:
+            diff_idx = [counts.index(x) for x in counts if x != np.max(counts)]
+            error_mice = [file.mouse_id for file in np.array(self.files)[diff_idx]]
+            majority_num = np.max(counts)
+            diff_values = [x for x in np.array(counts)[diff_idx]]
+            error_mice_values = zip(error_mice, diff_values)
+            print(f"Supposed to have {majority_num} sessions")
+            [print(f"{x} has {y} sessions") for x,y in error_mice_values]
+            raise ValueError("Mice cannot have different number of sessions!!!!")
         
