@@ -54,8 +54,8 @@ class Group_Lever_Press:
         
         within_corr_mean_sems = {}
         for session, corr in zip(self.sessions, all_within_corr):
-            corr_mean = np.mean(corr)
-            corr_sem = np.std(corr, ddof=1) / np.sqrt(corr.size)
+            corr_mean = np.nanmean(corr)
+            corr_sem = np.nanstd(corr, ddof=1) / np.sqrt(corr.size)
             within_corr_mean_sems[session] = [corr_mean, corr_sem]
         
         self.within_sess_corr = within_corr_mean_sems
