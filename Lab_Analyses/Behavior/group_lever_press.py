@@ -48,6 +48,17 @@ class Group_Lever_Press:
         # Get all the within session correlations
         # Store as arrays in a list for each session
         all_within_corr = []
+        for i, _ in enumerate(self.sessions):
+            within_corr = [file.within_sess_corr[i] for file in self.files]
+            all_within_corr.append(np.array(within_corr))
+        
+        within_corr_mean_sems = {}
+        for session, corr in zip(self.sessions, all_within_corr):
+            corr_mean = np.mean(corr)
+            corr_sem = np.std(corr, ddof=1) / np.sqrt(corr.size)
+            within_corr_mean_sems[session] = [corr_mean, corr_sem]
+        
+        self.within_sess_corr = within_corr_mean_sems
 
     
     def check_same_sessions(self):
