@@ -30,6 +30,21 @@ class Group_Lever_Press:
         self.avg_corr_matrix = None
         self.within_sess_corr = None
         self.across_sess_corr = None
+        self.avg_cue_to_reward = None
+        self.avg_reaction_time = None
+        self.success_rate = None
+
+        self.analyze_data()
+
+    def analyze_data(self):
+        """Parent function to analyze all key metrics"""
+
+        self.average_correlation_matrix()
+        self.analyze_within_sess_corr()
+        self.analyze_cross_sess_corr()
+        self.analyze_cue_to_reward()
+        self.analyze_reaction_time()
+        self.analyze_success_rate()
 
     def average_correlation_matrix(self):
         """Function to average the correlation matrices across mice"""
@@ -74,6 +89,52 @@ class Group_Lever_Press:
             across_corr_mean_sems[session] = [corr_mean, corr_sem]
 
         self.across_sess_corr = across_corr_mean_sems
+
+    def analyze_cue_to_reward(self):
+        """Function to get mean and sem of the cue to reward across sessions"""
+        all_cue_to_reward = []
+        for i, _ in enumerate(self.sessions):
+            cue_to_reward = [file.cue_to_reward[i] for file in self.files]
+            all_cue_to_reward.append(np.array(cue_to_reward))
+
+        avg_cue_to_reward = {}
+        for session, ctr in zip(self.sessions, all_cue_to_reward):
+            ctr_mean = np.nanmen(ctr)
+            ctr_sem = np.nanstd(ctr, ddof=1) / np.sqrt(ctr.size)
+            avg_cue_to_reward[session] = [ctr_mean, ctr_sem]
+
+        self.avg_cue_to_reward = avg_cue_to_reward
+
+    def analyze_reaction_time(self):
+        """Function to get mean and sem of the movement reaction time across sessions"""
+        all_reaction_time = []
+        for i, _ in enumerate(self.sessions):
+            reaction_time = [file.reaction_time[i] for file in self.files]
+            all_reaction_time.append(np.array(reaction_time))
+        
+        avg_reaction_time = {}
+        for session, rt in zip(self.sessions, all_reaction_time):
+            rt_mean = np.nanmean(rt)
+            rt_sem = np.nanstd(rt, ddof=1) / np.sqrt(rt.size)
+            avg_reaction_time[session] = [rt_mean, rt_sem]
+
+        self.avg_reaction_time = avg_reaction_time
+
+    def analyze_success_rate(self):
+        """Function to get mean and sem of the success rate across sessions"""
+        all_success_rates = []
+        for i, _ in enumerate(self.sessions):
+            success_rates = [file.rewards[i]/file.trials[i] for file in self.files]
+            all_success_rates.append(np.array(success_rates))
+        
+        avg_success_rates = {}
+        for session, sr in zip(self.sessions, all_success_rates):
+            sr_mean = np.nanmean(sr)
+            sr_sem = np.nanstd(sr, ddof=1) / np.sqrt(sr.size)
+            avg_success_rates[session] = [sr_mean, sr_sem]
+        
+        self.success_rate = avg_success_rates
+            
 
     
     def check_same_sessions(self):
