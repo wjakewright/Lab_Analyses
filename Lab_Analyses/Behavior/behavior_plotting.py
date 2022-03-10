@@ -98,3 +98,65 @@ def plot_movement_corr_matrix(
     ax.patch.set_linewidth("2.5")
 
     fig.tight_layout()
+
+
+def plot_mean_sem_line_plot(
+    sessions, mean, sem, individual, title, xtitle, ytitle, ylim=None, figsize=(8, 5), color="mediumblue"
+):
+    """Function to plot data across sessions as a line. Plots mean, sem, and individual values
+
+    INPUT PARAMETERS
+        sessions - list or np.array of session numbers to be plotted
+
+        mean - 1d np.array containing the mean for each session
+
+        sem - 1d np.array containing the sem for each session
+
+        individual - 2d np.array containing values for each mouse in columns
+
+        title - string specifying the name of the title
+
+        xtitle - string specifying the name of the x axis
+
+        ytitle - string specifying the name of the y axis (bottom,top)
+
+        ylim - tuple specifying the limits of the y axis
+
+        figsize - tuple specifying the desired figure size, Default is 8x5
+
+        color - string specifying what color you wish the lines and error
+                bars to be. default is "medium blue"
+
+    """
+
+    fig = plt.figure(figsize=figsize)
+    fig.suptitle(title)
+
+    # Put individual data in dataframe for easier plotting
+    ind = pd.DataFrame(individual)
+
+    # Plot individual data
+    for col in ind.columns:
+        plt.plot(ind[col], color=color, linewidth=0.5, alpha=0.2)
+
+    # Plot mean and sem
+    plt.errorbar(
+        sessions,
+        mean,
+        yerr=sem,
+        color=color,
+        marker="o",
+        markerfacecolor="white",
+        markeredgecolor=color,
+        linewidth=1.5,
+        elinewidth=0.8,
+        ecolor=color,
+    )
+
+    plt.xlabel(xtitle, labelpad=15)
+    plt.xticks(sessions, sessions)
+    plt.ylabel(ytitle, labelpad=15)
+    if ylim is not None:
+        plt.ylim(bottom=ylim[0],top=ylim[1])
+    
+    fig.tight_layout()
