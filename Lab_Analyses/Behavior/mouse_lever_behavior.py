@@ -4,20 +4,24 @@
     CREATOR - William (Jake) Wright 3/6/2022"""
 
 from dataclasses import dataclass
+import os
 import numpy as np
 
 from Lab_Analyses.Behavior import summarize_lever_behavior as slb
+from Lab_Analyses.Behavior import process_lever_behavior as plb
 
 
-def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
+def analyze_mouse_lever_behavior(id, path, imaged, exp=None):
     """Function to analyze the lever press behavior all the 
         sessions for a single mouse.
         
         INPUT PARAMETERS
             id - string specifying what the mouses ID is
 
-            files - a list of objects/files output from process_lever_behavior.py. Missing
-                    session should be entered in as None within the list
+            path - string of the path to the directory containing all the behavioral
+                    data for a given mouse, with each session in a subdirectory
+
+            imaged - boolean specifying if the session was also imaged or not
 
             exp - string containing description of experiment
 
@@ -28,10 +32,26 @@ def analyze_mouse_lever_behavior(id, files, exp=None, sessions=None):
         OUTPUT PARAMETERS
     
     """
+    ## Move to the directory containing all the behavioral data for the mouse
+    os.chdir(path)
+    directories = [x[0] for x in os.walk(".")]
+    directories = sorted(directories)
+    directories = directories[1:]
+
     if sessions is None:
-        sessions = np.arange(len(files)) + 1
+        sessions = np.arange(len(directories)) + 1
     else:
         sessions = sessions
+
+    # Process lever data for each session
+    files = []
+    for directory in directories:
+        fnames = os.listdir(directory)
+        for fname in fnames:
+            if "data_@lever2p" not in fname:
+                p_file = None
+        p_file = plb.process_lever_press_behavior(directory, imaged)
+        files.append(p_file)
 
     # Summarize lever press behavior for each session
     summarized_data = []
