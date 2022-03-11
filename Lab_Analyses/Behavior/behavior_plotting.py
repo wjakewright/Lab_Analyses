@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from Optogenetics.opto_plotting import plot_mean_sem
 
 sns.set()
 sns.set_style("ticks")
@@ -100,8 +101,158 @@ def plot_movement_corr_matrix(
     fig.tight_layout()
 
 
+def plot_within_session_corr(
+    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+):
+    """Function to plot within session movement correlations. Utilizes the plot_mean_sem_line_plot function
+        to carry out the plotting.
+    """
+    # Set up specific parameters
+    title = "Within Session Movement Correlation"
+    xtitle = "Session"
+    ytitle = "Movement Correlation"
+    if ylim is None:
+        ylim = (0, None)
+
+    plot_mean_sem_line_plot(
+        sessions,
+        mean,
+        sem,
+        individual,
+        title=title,
+        xtitle=xtitle,
+        ytitle=ytitle,
+        ylim=ylim,
+        xlim=None,
+        figsize=figsize,
+        color=color,
+    )
+
+
+def plot_across_session_corr(
+    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+):
+    """Function to plot across session movement correlations. Utilizes the plot_mean_sem_line_plot function
+        to carry out the plotting
+    """
+    # Set up specific parameters
+    title = "Across Session Movement Correlation"
+    xtitle = "Session"
+    ytitle = "Movement Correlation"
+    if ylim is None:
+        ylim = (0, None)
+    xlim = (0, None)
+
+    plot_mean_sem_line_plot(
+        sessions,
+        mean,
+        sem,
+        individual,
+        title=title,
+        xtitle=xtitle,
+        ytitle=ytitle,
+        ylim=ylim,
+        xlim=xlim,
+        figsize=figsize,
+        color=color,
+    )
+
+
+def plot_success_rate(
+    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+):
+    """Function to plot the success rate across sessions. Utilizes the plot_mean_sem_line_plot function
+        to carry out the plotting"""
+    # Set up specific parameters
+    title = "Success Rate"
+    xtitle = "Session"
+    ytitle = "Successful Trials (%)"
+    if ylim is None:
+        ylim = (0, 100)
+
+    plot_mean_sem_line_plot(
+        sessions,
+        mean,
+        sem,
+        individual,
+        title=title,
+        xtitle=xtitle,
+        ytitle=ytitle,
+        ylim=ylim,
+        xlim=None,
+        figsize=figsize,
+        color=color,
+    )
+
+
+def plot_cue_to_reward(
+    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+):
+    """Function to plot the cut_to_reward across sessions. Utilizes the plot_mean_sem_line_plot function 
+        to carry out the plotting
+    """
+    # Set up specific parameters
+    title = "Cue to Reward"
+    xtitle = "Session"
+    ytitle = "Cue to Reward Time (s)"
+    if ylim is None:
+        ylim = (0, None)
+
+    plot_mean_sem_line_plot(
+        sessions,
+        mean,
+        sem,
+        individual,
+        title=title,
+        xtitle=xtitle,
+        ytitle=ytitle,
+        ylim=ylim,
+        xlim=None,
+        figsize=figsize,
+        color=color,
+    )
+
+
+def plot_movement_reaction_time(
+    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+):
+    """Function to plot the movment reaction time across sessions. Utilizes the plot_mean_sem_line_plot function
+        to carry out the plotting
+    """
+    # Set up specific parameters
+    title = "Movement Reaction Time"
+    xtitle = "Session"
+    ytitle = "Movement Reaction Time (s)"
+    if ylim is None:
+        ylim = (0, None)
+
+    plot_mean_sem_line_plot(
+        sessions,
+        mean,
+        sem,
+        individual,
+        title=title,
+        xtitle=xtitle,
+        ytitle=ytitle,
+        ylim=ylim,
+        xlim=None,
+        figsize=figsize,
+        color=color,
+    )
+
+
 def plot_mean_sem_line_plot(
-    sessions, mean, sem, individual, title, xtitle, ytitle, ylim=None, figsize=(8, 5), color="mediumblue"
+    sessions,
+    mean,
+    sem,
+    individual,
+    title=None,
+    xtitle=None,
+    ytitle=None,
+    ylim=None,
+    xlim=None,
+    figsize=(8, 5),
+    color="mediumblue",
 ):
     """Function to plot data across sessions as a line. Plots mean, sem, and individual values
 
@@ -112,7 +263,7 @@ def plot_mean_sem_line_plot(
 
         sem - 1d np.array containing the sem for each session
 
-        individual - 2d np.array containing values for each mouse in columns
+        individual - 2d np.array containing values for each mouse in rows
 
         title - string specifying the name of the title
 
@@ -133,7 +284,7 @@ def plot_mean_sem_line_plot(
     fig.suptitle(title)
 
     # Put individual data in dataframe for easier plotting
-    ind = pd.DataFrame(individual)
+    ind = pd.DataFrame(individual.T)
 
     # Plot individual data
     for col in ind.columns:
@@ -155,8 +306,10 @@ def plot_mean_sem_line_plot(
 
     plt.xlabel(xtitle, labelpad=15)
     plt.xticks(sessions, sessions)
+    if xlim is not None:
+        plt.xlim(left=xlim[0], right=xlim[1])
     plt.ylabel(ytitle, labelpad=15)
     if ylim is not None:
-        plt.ylim(bottom=ylim[0],top=ylim[1])
-    
+        plt.ylim(bottom=ylim[0], top=ylim[1])
+
     fig.tight_layout()
