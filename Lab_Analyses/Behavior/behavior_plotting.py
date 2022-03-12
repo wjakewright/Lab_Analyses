@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from Optogenetics.opto_plotting import plot_mean_sem
 
 sns.set()
 sns.set_style("ticks")
