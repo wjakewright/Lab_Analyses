@@ -142,10 +142,15 @@ def correlate_lever_press(movement_matrices):
 
     # Initialize the correlation matrix
     correlation_matrix = np.zeros((len(movement_matrices), len(movement_matrices)))
+    correlation_matrix[:] = np.nan
 
     # Perform pairwise correlations
     for i_idx, i in enumerate(movement_matrices):
+        if type(i) is not np.ndarray:
+            continue
         for j_idx, j in enumerate(movement_matrices):
+            if type(j) is not np.ndarray:
+                continue
             corr = correlate_btw_sessions(i, j)
             if i_idx == j_idx:
                 correlation_matrix[i_idx, j_idx] = corr
@@ -189,7 +194,7 @@ def correlate_btw_sessions(A, B):
     # Compute pairwise Pearsons Correlation Coefficient as 2D array
     pcorr = (p1 - p2) / np.sqrt(p4 * p3[:, None])
 
-    across_corr = np.median(pcorr)
+    across_corr = np.nanmedian(pcorr)
 
     return across_corr
 
