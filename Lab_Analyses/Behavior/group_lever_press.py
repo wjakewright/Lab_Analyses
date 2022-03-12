@@ -2,7 +2,6 @@
 
     CREATOR - William (Jake) Wright 3/7/2022"""
 
-from types import NoneType
 
 import numpy as np
 from Lab_Analyses.Behavior import behavior_plotting as bplot
