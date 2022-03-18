@@ -413,7 +413,7 @@ def zero_window(data, base_win, sampling_rate):
     zero_a = int(base_win[1] * sampling_rate)
     zeroed_data = pd.DataFrame()
     for col in data.columns:
-        zeroed_data[col] = data[col].sub(st.median(data[col].loc[zero_b:zero_a]))
+        zeroed_data[col] = data[col].sub(np.nanmedian(data[col].loc[zero_b:zero_a]))
 
     return zeroed_data
 
