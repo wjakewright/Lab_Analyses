@@ -112,7 +112,7 @@ class Group_Lever_Press:
 
         avg_cue_to_reward = {"session": [], "mean": [], "sem": []}
         for session, ctr in zip(self.sessions, all_cue_to_reward):
-            ctr_mean = np.nanmen(ctr)
+            ctr_mean = np.nanmean(ctr)
             ctr_sem = np.nanstd(ctr, ddof=1) / np.sqrt(ctr.size)
             avg_cue_to_reward["session"].append(session)
             avg_cue_to_reward["mean"].append(ctr_mean)
@@ -159,7 +159,7 @@ class Group_Lever_Press:
         self.ind_success_rate = np.vstack(all_success_rates)
         self.success_rate = avg_success_rates
 
-    def plot_average_data(self, to_plot=None, colors=None, ylims=None):
+    def plot_average_data(self, to_plot=None, colors=None, ylims=None, save=False):
         """Function to plot data
             
             INPUT PARAMETERS
@@ -216,6 +216,7 @@ class Group_Lever_Press:
                 self.ind_success_rate,
                 ylim=ylims["success"],
                 color=colors["success"],
+                save=save,
             )
             bplot.plot_movement_reaction_time(
                 self.avg_reaction_time["session"],
@@ -224,6 +225,7 @@ class Group_Lever_Press:
                 self.ind_reaction_time,
                 ylim=ylims["reaction_time"],
                 color=colors["reaction_time"],
+                save=save,
             )
             bplot.plot_cue_to_reward(
                 self.avg_cue_to_reward["session"],
@@ -231,12 +233,14 @@ class Group_Lever_Press:
                 self.avg_cue_to_reward["sem"],
                 self.ind_cue_to_reward,
                 ylim=ylims["cue_to_reward"],
-                colors=colors["cue_to_reward"],
+                color=colors["cue_to_reward"],
+                save=save,
             )
             bplot.plot_movement_corr_matrix(
                 self.avg_corr_matrix,
                 title="Average Movement Correlation",
                 cmap=colors["cmap"],
+                save=save,
             )
             bplot.plot_within_session_corr(
                 self.within_sess_corr["session"],
@@ -245,6 +249,7 @@ class Group_Lever_Press:
                 self.ind_within_sess_corr,
                 ylim=ylims["within"],
                 color=colors["within"],
+                save=save,
             )
             bplot.plot_across_session_corr(
                 self.across_sess_corr["session"],
@@ -253,6 +258,7 @@ class Group_Lever_Press:
                 self.ind_across_sess_corr,
                 ylim=ylims["across"],
                 color=colors["across"],
+                save=save,
             )
         else:
             for x in to_plot:
@@ -264,6 +270,7 @@ class Group_Lever_Press:
                         self.ind_success_rate,
                         ylim=ylims["success"],
                         color=colors["success"],
+                        save=save,
                     )
                 elif x == "reaction time":
                     bplot.plot_movement_reaction_time(
@@ -273,6 +280,7 @@ class Group_Lever_Press:
                         self.ind_reaction_time,
                         ylim=ylims["reaction_time"],
                         color=colors["reaction_time"],
+                        save=save,
                     )
                 elif x == "cue to reward":
                     bplot.plot_cue_to_reward(
@@ -281,13 +289,15 @@ class Group_Lever_Press:
                         self.avg_cue_to_reward["sem"],
                         self.ind_cue_to_reward,
                         ylim=ylims["cue_to_reward"],
-                        colors=colors["cue_to_reward"],
+                        color=colors["cue_to_reward"],
+                        save=save,
                     )
                 elif x == "correlation_heatmap":
                     bplot.plot_movement_corr_matrix(
                         self.avg_corr_matrix,
                         title="Average Movement Correlation",
                         cmap=colors["cmap"],
+                        save=save,
                     )
                 elif x == "within correlation":
                     bplot.plot_within_session_corr(
@@ -297,6 +307,7 @@ class Group_Lever_Press:
                         self.ind_within_sess_corr,
                         ylim=ylims["within"],
                         color=colors["within"],
+                        save=save,
                     )
                 elif x == "across correlation":
                     bplot.plot_across_session_corr(
@@ -306,6 +317,7 @@ class Group_Lever_Press:
                         self.ind_across_sess_corr,
                         ylim=ylims["across"],
                         color=colors["across"],
+                        save=save,
                     )
                 else:
                     print(f"{x} is not a valid plot type")
