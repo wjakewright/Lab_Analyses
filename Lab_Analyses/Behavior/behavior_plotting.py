@@ -3,18 +3,21 @@
     CREATOR
         William (Jake) Wright 02/08/2022
 """
+import os
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from Lab_Analyses.Utilities import utilities as utils
 
 sns.set()
 sns.set_style("ticks")
 
 
 def plot_session_rewarded_lever_presses(
-    mouse_lever_data, session, figsize=(8, 5), x_lim=None, y_lim=None
+    mouse_lever_data, session, figsize=(8, 5), x_lim=None, y_lim=None, save=False
 ):
     """Function to plot each rewarded lever press as well as the
     average rewarded lever press
@@ -41,11 +44,16 @@ def plot_session_rewarded_lever_presses(
 
     # Plot individual movments
     move_mat = mouse_lever_data.all_movements[session - 1]
+    move_mat = utils.zero_window(move_mat.T, (0, 0.3), 1000)
+    move_mat = move_mat.to_numpy()
+    move_mat = move_mat.T
     for row, _ in enumerate(move_mat[:, 0]):
         plt.plot(move_mat[row, :], color="gray", linewidth=0.5, alpha=0.3)
 
     # Plot average movement
     avg_move = mouse_lever_data.average_movements[session - 1]
+    avg_move = utils.zero_window(avg_move, (0, 0.3), 1000)
+    avg_move = avg_move.to_numpy()
     plt.plot(avg_move, color="black", linewidth=1)
 
     if x_lim is not None:
@@ -54,10 +62,14 @@ def plot_session_rewarded_lever_presses(
         plt.ylim(bottom=y_lim[0], top=y_lim[1])
 
     fig.tight_layout()
+    save_directory = r"C:\Users\Jake\Desktop\Figures\test_lever"
+    if save is True:
+        fname = os.path.join(save_directory, title)
+        plt.savefig(fname + ".pdf")
 
 
 def plot_movement_corr_matrix(
-    correlation_matrix, title=None, cmap=None, figsize=(6, 6)
+    correlation_matrix, title=None, cmap=None, figsize=(6, 6), save=False
 ):
     """Function to plot a heatmap of the average movement correlations across sessions
 
@@ -98,10 +110,21 @@ def plot_movement_corr_matrix(
     ax.patch.set_linewidth("2.5")
 
     fig.tight_layout()
+    save_directory = r"C:\Users\Jake\Desktop\Figures\test_lever"
+    if save is True:
+        fname = os.path.join(save_directory, title)
+        plt.savefig(fname + ".pdf")
 
 
 def plot_within_session_corr(
-    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+    sessions,
+    mean,
+    sem,
+    individual,
+    ylim=None,
+    figsize=(6, 5),
+    color="mediumblue",
+    save=False,
 ):
     """Function to plot within session movement correlations. Utilizes the plot_mean_sem_line_plot function
         to carry out the plotting.
@@ -125,11 +148,19 @@ def plot_within_session_corr(
         xlim=None,
         figsize=figsize,
         color=color,
+        save=save,
     )
 
 
 def plot_across_session_corr(
-    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+    sessions,
+    mean,
+    sem,
+    individual,
+    ylim=None,
+    figsize=(6, 5),
+    color="mediumblue",
+    save=False,
 ):
     """Function to plot across session movement correlations. Utilizes the plot_mean_sem_line_plot function
         to carry out the plotting
@@ -154,11 +185,19 @@ def plot_across_session_corr(
         xlim=xlim,
         figsize=figsize,
         color=color,
+        save=save,
     )
 
 
 def plot_success_rate(
-    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+    sessions,
+    mean,
+    sem,
+    individual,
+    ylim=None,
+    figsize=(6, 5),
+    color="mediumblue",
+    save=False,
 ):
     """Function to plot the success rate across sessions. Utilizes the plot_mean_sem_line_plot function
         to carry out the plotting"""
@@ -181,11 +220,19 @@ def plot_success_rate(
         xlim=None,
         figsize=figsize,
         color=color,
+        save=save,
     )
 
 
 def plot_cue_to_reward(
-    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+    sessions,
+    mean,
+    sem,
+    individual,
+    ylim=None,
+    figsize=(6, 5),
+    color="mediumblue",
+    save=False,
 ):
     """Function to plot the cut_to_reward across sessions. Utilizes the plot_mean_sem_line_plot function 
         to carry out the plotting
@@ -209,11 +256,19 @@ def plot_cue_to_reward(
         xlim=None,
         figsize=figsize,
         color=color,
+        save=save,
     )
 
 
 def plot_movement_reaction_time(
-    sessions, mean, sem, individual, ylim=None, figsize=(8, 5), color="mediumblue"
+    sessions,
+    mean,
+    sem,
+    individual,
+    ylim=None,
+    figsize=(6, 5),
+    color="mediumblue",
+    save=False,
 ):
     """Function to plot the movment reaction time across sessions. Utilizes the plot_mean_sem_line_plot function
         to carry out the plotting
@@ -237,6 +292,7 @@ def plot_movement_reaction_time(
         xlim=None,
         figsize=figsize,
         color=color,
+        save=save,
     )
 
 
@@ -250,8 +306,9 @@ def plot_mean_sem_line_plot(
     ytitle=None,
     ylim=None,
     xlim=None,
-    figsize=(8, 5),
+    figsize=(6, 5),
     color="mediumblue",
+    save=False,
 ):
     """Function to plot data across sessions as a line. Plots mean, sem, and individual values
 
@@ -283,11 +340,11 @@ def plot_mean_sem_line_plot(
     fig.suptitle(title)
 
     # Put individual data in dataframe for easier plotting
-    ind = pd.DataFrame(individual.T)
+    ind = pd.DataFrame(individual)
 
     # Plot individual data
     for col in ind.columns:
-        plt.plot(ind[col], color=color, linewidth=0.5, alpha=0.2)
+        plt.plot(sessions, ind[col], color=color, linewidth=0.5, alpha=0.2)
 
     # Plot mean and sem
     plt.errorbar(
@@ -312,3 +369,8 @@ def plot_mean_sem_line_plot(
         plt.ylim(bottom=ylim[0], top=ylim[1])
 
     fig.tight_layout()
+    save_directory = r"C:\Users\Jake\Desktop\Figures\test_lever"
+    if save is True:
+        fname = os.path.join(save_directory, title)
+        plt.savefig(fname + ".pdf")
+
