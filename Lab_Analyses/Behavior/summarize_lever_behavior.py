@@ -193,9 +193,12 @@ def summarize_imaged_lever_behavior(file):
     else:
         min_t = 3001
     min_t = int(min_t)
-    move_duration_before_cue = np.array(move_duration_before_cue)[
-        np.invert(np.isnan(np.asarray(move_duration_before_cue)))
-    ]/1000
+    move_duration_before_cue = (
+        np.array(move_duration_before_cue)[
+            np.invert(np.isnan(np.asarray(move_duration_before_cue)))
+        ]
+        / 1000
+    )
 
     # Generate movement matrix
     num_tracked_movements = 0
@@ -315,8 +318,12 @@ def summarize_nonimaged_lever_behavior(file):
         i_bitcode = (num) - np.absolute(bitcode_offset[num])
         i_bitcode = int(i_bitcode)
         if i_bitcode < 0:
+            reward_times.append(0)
+            trial_ends.append(np.nan)
             continue
         if np.sum(np.isin(trial_used, i_bitcode)):
+            reward_times.append(0)
+            trial_ends.append(np.nan)
             continue
         trial_used.append(i_bitcode)
 
@@ -345,7 +352,6 @@ def summarize_nonimaged_lever_behavior(file):
             if end_trial > len(file.lever_force_smooth):
                 end_trial = len(file.lever_force_smooth)
             trial_ends.append(end_trial)
-
             movement = file.lever_force_smooth[cue_start - 1 : end_trial]
             movements.append(movement)
             # Binarize movement trace
@@ -382,7 +388,7 @@ def summarize_nonimaged_lever_behavior(file):
             faults.append(trial_info.fault)
 
         else:
-            trial_ends.append(np.nan)
+            trial_ends.append(end_trial)
             reward_times.append(0)
 
         # Get average reaction time and cue_to_reward
@@ -396,9 +402,12 @@ def summarize_nonimaged_lever_behavior(file):
     else:
         min_t = 3001
     min_t = int(min_t)
-    move_duration_before_cue = np.array(move_duration_before_cue)[
-        np.invert(np.isnan(np.asarray(move_duration_before_cue)))
-    ]/1000
+    move_duration_before_cue = (
+        np.array(move_duration_before_cue)[
+            np.invert(np.isnan(np.asarray(move_duration_before_cue)))
+        ]
+        / 1000
+    )
 
     # Generate movement matrix
     num_tracked_movements = 0
@@ -496,7 +505,7 @@ def profile_rewarded_movements(
     ## Discard trial if the animal is already moving
     ## Still record details about the nature of the movements
     if any(file.lever_active[cue_start - 100 : cue_start] == 1):
-        print(f"Animal was moving at the beginning of trial {trial_num+1}!")
+        # print(f"Animal was moving at the beginning of trial {trial_num+1}!")
 
         trial_info = profile_movement_before_cue(
             file, trial_num, cue_start, reward_times
