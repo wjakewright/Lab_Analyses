@@ -33,6 +33,7 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
     
     """
     ## Move to the directory containing all the behavioral data for the mouse
+    print(f"-----------------------\nAnalyzing Mouse {id_}")
     os.chdir(path)
     directories = [x[0] for x in os.walk(".")]
     directories = sorted(directories)
@@ -42,22 +43,27 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
         sessions = np.linspace(1, len(directories), len(directories), dtype=int)
     else:
         sessions = sessions
-    print(sessions)
     # Process lever data for each session
     files = []
-    for directory, im in zip(directories, imaged):
-        print(directory)
+    for directory, im, sess in zip(directories, imaged, sessions):
+        print(f" - Processing session {sess}", end="\r")
         fnames = os.listdir(directory)
+        xsg_files = [file for file in os.listdir(directory) if file.endswith(".xsglog")]
+        if len(xsg_files) == 0:
+            p_file = None
+            files.append(p_file)
+            continue
         for fname in fnames:
             if "data_@lever2p" not in fname:
                 p_file = None
             else:
                 p_file = plb.process_lever_press_behavior(directory, im)
         files.append(p_file)
-
+    print("")
     # Summarize lever press behavior for each session
     summarized_data = []
-    for file in files:
+    for file, sess in zip(files, sessions):
+        print(f" - Summarizing session {sess}", end="\r")
         if file is None:
             summarized_data.append(None)
         else:
@@ -98,6 +104,7 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
             mouse_lever_data.all_movements.append(data.movement_matrix)
             mouse_lever_data.average_movements.append(data.movement_avg)
             mouse_lever_data.reaction_time.append(data.avg_reaction_time)
+            mouse_lever_data.cue_to_reward.append(data.avg_cue_to_reward)
             mouse_lever_data.move_at_start_faults.append(data.move_at_start_faults)
             mouse_lever_data.move_duration_before_cue.append(
                 data.move_duration_before_cue
@@ -113,6 +120,7 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
             mouse_lever_data.all_movements.append(np.nan)
             mouse_lever_data.average_movements.append(np.nan)
             mouse_lever_data.reaction_time.append(np.nan)
+            mouse_lever_data.cue_to_reward.append(np.nan)
             mouse_lever_data.move_at_start_faults.append(np.nan)
             mouse_lever_data.move_duration_before_cue.append(np.nan)
             mouse_lever_data.number_movements_during_ITI.append(np.nan)
@@ -125,7 +133,7 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
     mouse_lever_data.across_sess_corr = mouse_lever_data.correlation_matrix.diagonal(
         offset=1
     )
-
+    print(f"\nDone Analyzing Mouse {id_}\n-----------------------")
     return mouse_lever_data
 
 
