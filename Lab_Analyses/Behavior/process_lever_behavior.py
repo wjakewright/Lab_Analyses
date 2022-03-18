@@ -4,6 +4,7 @@
 
 import os
 import re
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -63,6 +64,8 @@ def process_lever_press_behavior(path, imaged, save=False, save_suffix=None):
     """
     # Load xsg data
     xsg_data = load_xsg_continuous(path)
+    if xsg_data is None:
+        return None
     # parse the lever movement
     (
         lever_active,
@@ -408,9 +411,11 @@ def parse_lever_movement_continuous(xsg_data):
 
     # Get lever velocity envelope
     lever_velocity_hilbert = sysignal.hilbert(lever_velocity_resample_smooth)
-    lever_velocity_envelope = np.sqrt(
-        (lever_velocity_hilbert * np.conj(lever_velocity_hilbert))
-    ).astype(np.float64)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        lever_velocity_envelope = np.sqrt(
+            (lever_velocity_hilbert * np.conj(lever_velocity_hilbert))
+        ).astype(np.float64)
     # Change window if you would like to smooth envelope velocity
     lever_velocity_envelope_smooth = matlab_smooth(lever_velocity_envelope, 1)
 
@@ -637,7 +642,8 @@ def load_xsg_continuous(dirname):
     # Check if all the data files are of the same length
     lens = map(len, data.channels.values())
     if len(set(lens)) != 1:
-        raise ValueError("Mismatched data size!!!")
+        # raise ValueError("Mismatched data size!!!")
+        data = None
 
     return data
 
