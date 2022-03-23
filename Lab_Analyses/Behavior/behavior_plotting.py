@@ -62,14 +62,14 @@ def plot_session_rewarded_lever_presses(
         plt.ylim(bottom=y_lim[0], top=y_lim[1])
 
     fig.tight_layout()
-    save_directory = r"C:\Users\Jake\Desktop\Figures\test_lever"
+    save_directory = r"C:\Users\Jake\Desktop\Figures"
     if save is True:
         fname = os.path.join(save_directory, title)
         plt.savefig(fname + ".pdf")
 
 
 def plot_movement_corr_matrix(
-    correlation_matrix, title=None, cmap=None, figsize=(6, 6), save=False
+    correlation_matrix, title=None, cmap=None, figsize=(7, 6), save=False
 ):
     """Function to plot a heatmap of the average movement correlations across sessions
 
