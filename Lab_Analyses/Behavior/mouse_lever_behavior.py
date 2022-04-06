@@ -1,51 +1,69 @@
-""" Module to analyze and summarize the main metrics of lever press behavior
-    for a single mouse across all sessions. Stores output as a dataclass.
-    
-    CREATOR - William (Jake) Wright 3/6/2022"""
+"""Module for analzying and summarizing the main metrics of lever press behavior
+    for a single mouse across all sessions. Stores output as a dataclass"""
 
 import os
+import re
 from dataclasses import dataclass
 
 import numpy as np
-from Lab_Analyses.Behavior import process_lever_behavior as plb
-from Lab_Analyses.Behavior import summarize_lever_behavior as slb
+from Lab_Analyses.Behavior.process_lever_behavior import process_lever_behavior
+from Lab_Analyses.Behavior.summarize_lever_behavior import summarize_lever_behavior
+from Lab_Analyses.Utilities.check_file_exists import check_file_exists
+from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
-def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
-    """Function to analyze the lever press behavior all the 
-        sessions for a single mouse.
+def analyze_mouse_lever_behavior(
+    mouse_id,
+    path,
+    imaged,
+    sessions=None,
+    exp=None,
+    save=False,
+    save_suffix=None,
+    reanalyze_suffix=None,
+):
+    """Function to analyze the lever press behavior of all the sessions for a
+        single mouse
         
         INPUT PARAMETERS
-            id - string specifying what the mouses ID is
-
-            path - string of the path to the directory containing all the behavioral
-                    data for a given mouse, with each session in a subdirectory
-
-            imaged - boolean specifying if the session was also imaged or not
-
+            mouse_id - string specifying what the mouse's ID is
+            
+            path - string of the path to the directory containing all of the behavioral data
+                    for a given mouse, with each session in a subdirectory
+                    
+            imaged - boolean list specifying if the session was also imaged or not
+            
             exp - string containing description of experiment
-
+            
             sessions - a list of numbers indicating the session number for each 
-                       input file. Optional. If no sessions are provide it is
-                       assumeed that the files are in correct order
+                        input file. Optional. If no sessions are provided it is
+                        assumed that the files are in the correct order
+            
+            save - boolean specifying if the data is to be saved
 
+            save_suffix - list of str to add additonal descriptor to file name for each file
+
+            reanalyze_suffix - str to add to descriptor for reanalyzed datasets
+                        
         OUTPUT PARAMETERS
-    
-    """
-    ## Move to the directory containing all the behavioral data for the mouse
-    print(f"-----------------------\nAnalyzing Mouse {id_}")
+            """
+    # Parent path where analyzed data is stored
+    save_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+
+    # Move to the directory containing all the behvior data for the mouse
+    print(f"----------------------------\nAnalyzing Mouse {mouse_id}")
     os.chdir(path)
     directories = [x[0] for x in os.walk(".")]
     directories = sorted(directories)
     directories = directories[1:]
 
+    # Make sessions if it is not input
     if sessions is None:
         sessions = np.linspace(1, len(directories), len(directories), dtype=int)
-    else:
-        sessions = sessions
+
     # Process lever data for each session
     files = []
-    for directory, im, sess in zip(directories, imaged, sessions):
+    for directory, im, sess, suffix in zip(directories, imaged, sessions, save_suffix):
         print(f" - Processing session {sess}", end="\r")
         fnames = os.listdir(directory)
         xsg_files = [file for file in os.listdir(directory) if file.endswith(".xsglog")]
@@ -57,28 +75,33 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
             if "data_@lever2p" not in fname:
                 p_file = None
             else:
-                p_file = plb.process_lever_press_behavior(directory, im)
+                p_file = process_lever_behavior(
+                    directory, im, save=save, save_suffix=suffix
+                )
         files.append(p_file)
+
     print("")
+
     # Summarize lever press behavior for each session
     summarized_data = []
-    for file, sess in zip(files, sessions):
+    for file, sess, suffix in zip(files, sessions, save_suffix):
         print(f" - Summarizing session {sess}", end="\r")
         if file is None:
             summarized_data.append(None)
         else:
-            summed_data = slb.summarize_lever_behavior(file)
+            summed_data = summarize_lever_behavior(file, save=save, save_suffix=suffix)
         summarized_data.append(summed_data)
 
-    # Sort the summarized session to be in correct order based on sessions
+    # Sort the summarized sessions to be in the corred order based on sessions
     zipped_data = zip(sessions, summarized_data)
     sorted_data = sorted(zipped_data)
     ts = zip(*sorted_data)
     sessions, summarized_data = [list(t) for t in ts]
 
-    # Pull out relevant data to store
+    # Pull out relevant data to store together
+    # Initialize the dataclass object
     mouse_lever_data = Mouse_Lever_Data(
-        mouse_id=id_,
+        mouse_id=mouse_id,
         experiment=exp,
         sessions=sessions,
         trials=[],
@@ -96,6 +119,7 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
         within_sess_corr=np.nan,
         across_sess_corr=np.nan,
     )
+
     for data in summarized_data:
         if data is not None:
             mouse_lever_data.trials.append(data.trials)
@@ -133,20 +157,35 @@ def analyze_mouse_lever_behavior(id_, path, imaged, sessions=None, exp=None):
     mouse_lever_data.across_sess_corr = mouse_lever_data.correlation_matrix.diagonal(
         offset=1
     )
-    print(f"\nDone Analyzing Mouse {id_}\n-----------------------")
+
+    # Save section
+    if save is True:
+        mouse_id = file.mouse_id
+        # Make mouse folder to for its data if it doesn't already exist
+        mouse_path = os.path.join(save_path, mouse_id)
+        if not os.path.isdir(mouse_path):
+            os.mkdir(mouse_path)
+        # Check if mouse has path for behavioral data
+        behavior_path = os.path.join(mouse_path, "behavior")
+        if not os.isdir(behavior_path):
+            os.mkdir(behavior_path)
+        # Make file name
+        if save_suffix is not None:
+            save_name = f"{mouse_id}_all_lever_data_{reanalyze_suffix}"
+        else:
+            save_name = f"{mouse_id}_all_lever_data"
+        # Save the data as a pickle file
+        save_pickle(
+            save_name, mouse_lever_data, behavior_path,
+        )
+
+    print(f"\nDone Analyzing Mouse {mouse_id}\n----------------------------")
+
     return mouse_lever_data
 
 
 def correlate_lever_press(movement_matrices):
-    """Function to correlate movements within and across sessions for a single mouse
-        
-        INPUT PARAMETERS
-            movement_matrices - list containing np.arrays of all the rewarded movements. 
-            
-        OUTPUT PARAMETERS
-            correlation_matrix - np.array of the median pairwise movement correlations for
-                                each pair of sessions
-    """
+    """Helper function to correlate movements within and across sessions for a single mouse"""
 
     # Initialize the correlation matrix
     correlation_matrix = np.zeros((len(movement_matrices), len(movement_matrices)))
@@ -207,11 +246,7 @@ def correlate_btw_sessions(A, B):
     return across_corr
 
 
-# -------------------------------------------------------------------------
-# ---------------------------DATACLASSES USED------------------------------
-# -------------------------------------------------------------------------
-
-
+# --------------------------------DATACLASS USED--------------------------------------------
 @dataclass
 class Mouse_Lever_Data:
     """Dataclass for storing processed lever press behavior data across
