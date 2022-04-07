@@ -52,8 +52,8 @@ def load_pickle(fname_list, path=None):
             fnames.append(fn)
     loaded_files = []
     for fname in fnames:
-        f = open(fname + ".pickle", "rb")
-        file = pickle.load(f)
+        with open(fname + ".pickle", "rb") as f:
+            file = pickle.load(f)
         loaded_files.append(file)
 
     return loaded_files
