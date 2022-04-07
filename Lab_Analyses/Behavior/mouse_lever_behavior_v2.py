@@ -41,7 +41,7 @@ def analyze_mouse_lever_behavior(
     """
 
     # Parent path where analyzed data is stored
-    save_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
 
     # Move to the directory containing all the behavior data for the mouse
     print(f"----------------------------\nAnalyzing Mouse {mouse_id}")
@@ -68,7 +68,7 @@ def analyze_mouse_lever_behavior(
     ):
         print(f" - Processing session {sess}", end="\r")
         p_file = get_processed_data(
-            directory, im, name, save, suffix, save_path, reanalyze
+            mouse_id, directory, im, name, save, suffix, save_path, reanalyze
         )
         files.append(p_file)
     print("")
@@ -77,7 +77,9 @@ def analyze_mouse_lever_behavior(
     summarized_data = []
     for file, sess, name, suffix in zip(files, sessions, sess_names, save_suffix):
         print(f" - Summarizing session {sess}", end="\r")
-        summed_data = get_summarized_data(file, name, save, suffix)
+        summed_data = get_summarized_data(
+            file, name, save, suffix, save_path, reanalyze
+        )
         summarized_data.append(summed_data)
 
     # Pull out relevant data to store together
@@ -143,19 +145,15 @@ def analyze_mouse_lever_behavior(
     # Save section
     if save is True:
         mouse_id = file.mouse_id
-        # Make mouse folder to for its data if it doesn't already exist
-        mouse_path = os.path.join(save_path, mouse_id)
-        if not os.path.isdir(mouse_path):
-            os.mkdir(mouse_path)
-        # Check if mouse has path for behavioral data
-        behavior_path = os.path.join(mouse_path, "behavior")
-        if not os.isdir(behavior_path):
-            os.mkdir(behavior_path)
+        # Set path
+        save_path = os.path.join(initial_path, mouse_id, "behavior")
+        if not os.path.isdir(save_path):
+            os.mkdir(save_path)
         # Make file name
         save_name = f"{mouse_id}_all_lever_data"
         # Save the data as a pickle file
         save_pickle(
-            save_name, mouse_lever_data, behavior_path,
+            save_name, mouse_lever_data, save_path,
         )
 
     print(f"\nDone Analyzing Mouse {mouse_id}\n----------------------------")
@@ -225,20 +223,27 @@ def correlate_btw_sessions(A, B):
     return across_corr
 
 
-def get_processed_data(directory, im, sname, save, suffix, save_path, reanalyze):
+def get_processed_data(
+    mouse_id, directory, im, sname, save, suffix, save_path, reanalyze
+):
     """Helper function to get the processed data"""
     # Check if file already exists
     if reanalyze is False:
-        exists = get_existing_files(
-            path=os.path.join(save_path, "behavior", sname),
-            name="procssed_lever_data",
-            includes=True,
-        )
-        if exists is not None:
-            p_file = load_pickle(
-                fname_list=[exists], path=os.path.join(save_path, "behavior", sname)
+        try:
+            exists = get_existing_files(
+                path=os.path.join(save_path, mouse_id, "behavior", sname),
+                name="processed_lever_data",
+                includes=True,
             )
-            return p_file
+            if exists is not None:
+                p_file = load_pickle(
+                    fname_list=[exists.replace(".pickle", "")],
+                    path=os.path.join(save_path, mouse_id, "behavior", sname),
+                )
+                return p_file[0]
+
+        except FileNotFoundError:
+            pass
 
     # Run processing if it is reanalyzing or file does not already exist
     fnames = os.listdir(directory)
@@ -256,7 +261,9 @@ def get_processed_data(directory, im, sname, save, suffix, save_path, reanalyze)
         p_file = None
         return p_file
 
-    p_file = process_lever_behavior(directory, im, save=save, save_suffix=suffix)
+    p_file = process_lever_behavior(
+        mouse_id, directory, imaged=im, save=save, save_suffix=suffix
+    )
 
     return p_file
 
@@ -264,17 +271,24 @@ def get_processed_data(directory, im, sname, save, suffix, save_path, reanalyze)
 def get_summarized_data(file, sname, save, suffix, save_path, reanalyze):
     """Helper function to get the summarized data"""
     # Check if file already exists
+    if file is None:
+        summed_data = None
+        return None
     if reanalyze is False:
-        exists = get_existing_files(
-            path=os.path.join(save_path, "behavior", sname),
-            name="summarized_lever_data",
-            includes=True,
-        )
+        try:
+            exists = get_existing_files(
+                path=os.path.join(save_path, file.mouse_id, "behavior", sname),
+                name="summarized_lever_data",
+                includes=True,
+            )
+        except FileNotFoundError:
+            pass
         if exists is not None:
             summed_data = load_pickle(
-                fname_list=[exists], path=os.path.join(save_path, "behavior", sname)
+                fname_list=[exists.replace(".pickle", "")],
+                path=os.path.join(save_path, file.mouse_id, "behavior", sname),
             )
-            return summed_data
+            return summed_data[0]
 
     # Summarize data if it is reanalyzing or file does not already exist
     if file is None:
