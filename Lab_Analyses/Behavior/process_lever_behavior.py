@@ -116,7 +116,7 @@ def process_lever_behavior(mouse_id, path, imaged, save=False, save_suffix=None)
         imaged_trials = np.array([])
         frame_times = np.array([])
 
-    date = re.search("[0-9]{6}", dispatcher_fname).group()
+    date = re.search("[0-9]{6}", dispatcher_fname[0]).group()
 
     behavior_data = Processed_Lever_Data(
         mouse_id,
@@ -135,26 +135,18 @@ def process_lever_behavior(mouse_id, path, imaged, save=False, save_suffix=None)
 
     # Save the data
     if save is True:
+        # Set the save path
         initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
-        # Make mouse folder to for its data if it doesn't already exist
-        mouse_path = os.path.join(initial_path, mouse_id)
-        if not os.path.isdir(mouse_path):
-            os.mkdir(mouse_path)
-        # Check if mouse has path for behavioral data
-        behavior_path = os.path.join(mouse_path, "behavior")
-        if not os.isdir(behavior_path):
-            os.mkdir(behavior_path)
-        # Check if mouse has folder for this session
-        session_path = os.path.join(behavior_path, sess_name)
-        if not os.isdir(session_path):
-            os.mkdir(session_path)
+        save_path = os.path.join(initial_path, mouse_id, "behavior", sess_name)
+        if not os.path.isdir(save_path):
+            os.mkdir(save_path)
         # Make file name
         if save_suffix is not None:
             save_name = f"{mouse_id}_{sess_name}_processed_lever_data_{save_suffix}"
         else:
             save_name = f"{mouse_id}_{sess_name}_processed_lever_data"
         # Save the data as a pickle file
-        save_pickle(save_name, behavior_data, session_path)
+        save_pickle(save_name, behavior_data, save_path)
 
     return behavior_data
 
@@ -170,6 +162,7 @@ class Processed_Lever_Data:
 
     mouse_id: str
     sess_name: str
+    date: str
     dispatcher_data: object
     xsg_data: object
     lever_active: np.ndarray
