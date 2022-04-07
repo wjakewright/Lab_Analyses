@@ -84,26 +84,18 @@ def summarize_lever_behavior(file, save=False, save_suffix=None):
     if save is True:
         mouse_id = file.mouse_id
         sess_name = file.sess_name
+        # Set the path
         initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
-        # Make mouse folder to for its data if it doesn't already exist
-        mouse_path = os.path.join(initial_path, mouse_id)
-        if not os.path.isdir(mouse_path):
-            os.mkdir(mouse_path)
-        # Check if mouse has path for behavioral data
-        behavior_path = os.path.join(mouse_path, "behavior")
-        if not os.isdir(behavior_path):
-            os.mkdir(behavior_path)
-        # Check if mouse has folder for this session
-        session_path = os.path.join(behavior_path, sess_name)
-        if not os.isdir(session_path):
-            os.mkdir(session_path)
+        save_path = os.path.join(initial_path, mouse_id, "behavior", sess_name)
+        if not os.path.isdir(save_path):
+            os.mkdir(save_path)
         # Make file name
         if save_suffix is not None:
             save_name = f"{mouse_id}_{sess_name}_summarized_lever_data_{save_suffix}"
         else:
             save_name = f"{mouse_id}_{sess_name}_summarized_lever_data"
         # Save the data as a pickle file
-        save_pickle(save_name, summarized_data, session_path)
+        save_pickle(save_name, summarized_data, save_path)
 
     return summarized_data
 
