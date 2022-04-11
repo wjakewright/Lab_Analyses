@@ -18,7 +18,13 @@ sns.set_style("ticks")
 
 
 def plot_session_rewarded_lever_presses(
-    mouse_lever_data, session, figsize=(4, 5), x_lim=None, y_lim=None, save=False,
+    mouse_lever_data,
+    session,
+    figsize=(4, 5),
+    x_lim=None,
+    y_lim=None,
+    save=False,
+    save_path=None,
 ):
     """Function to plot each rewarded lever press as well as the mean average
         rewarded lever press
@@ -39,6 +45,8 @@ def plot_session_rewarded_lever_presses(
             save - boolean specifying if you wish to save the figure
     
     """
+    if save is True and save_path is None:
+        raise Exception("Must specify the save path in order to save the figures")
 
     # Set title
     title = f"{mouse_lever_data.mouse_id} from session {session}"
@@ -70,19 +78,18 @@ def plot_session_rewarded_lever_presses(
     fig.tight_layout()
 
     # Save section
-    start_directory = r"C:\Users\Jake\Desktop\Figures\individual_mice"
-    save_directory = os.path.join(
-        start_directory, mouse_lever_data.mouse_id, f"Session_{session}"
-    )
     if save is True:
-        if not os.path.isdir(save_directory):
-            os.mkdir(save_directory)
-        fname = os.path.join(save_directory, title)
+        fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
 
 
 def plot_movement_corr_matrix(
-    correlation_matrix, title=None, cmap=None, figsize=(7, 6), save=False
+    correlation_matrix,
+    title=None,
+    cmap=None,
+    figsize=(7, 6),
+    save=False,
+    save_path=None,
 ):
     """Function to plot a heatmap of the average movement correlations 
         across sessions for a group of mice
@@ -102,6 +109,8 @@ def plot_movement_corr_matrix(
             save - boolean specifying whether to save the figure or not 
     
     """
+    if save is True and save_path is None:
+        raise Exception("Must specify the save path in order to save the figures")
 
     # Set title
     if title is None:
@@ -128,10 +137,8 @@ def plot_movement_corr_matrix(
     fig.tight_layout()
 
     # Save section
-    ### Need to edit this to make it more specific
-    save_directory = r"C:\Users\Jake\Desktop\Figures"
     if save is True:
-        fname = os.path.join(save_directory, title)
+        fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
 
 
@@ -148,6 +155,7 @@ def plot_mean_sem_line_plot(
     figsize=(6, 5),
     color="mediumblue",
     save=False,
+    save_path=None,
 ):
     """General function to plot data across sessions as a line. 
         Plots mean, sem, and individual values
@@ -178,6 +186,8 @@ def plot_mean_sem_line_plot(
                     bars to be. Default is 'mediumblue' 
     
     """
+    if save is True and save_path is None:
+        raise Exception("Must specify the save path in order to save the figures")
 
     # Make the figure
     fig = plt.figure(figsize=figsize)
@@ -216,10 +226,8 @@ def plot_mean_sem_line_plot(
     fig.tight_layout()
 
     # Save section
-    ### Edit to make it more specific later
-    save_directory = r"C:\Users\Jake\Desktop\Figures"
     if save is True:
-        fname = os.path.join(save_directory, title)
+        fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
 
 
@@ -237,6 +245,7 @@ def plot_within_session_corr(
     figsize=(6, 5),
     color="mediumblue",
     save=False,
+    save_path=None,
 ):
     """Function to plot within session movement correlations.
         Uses the plot_mean_sem_line_plot
@@ -259,6 +268,7 @@ def plot_within_session_corr(
         figsize=figsize,
         color=color,
         save=save,
+        save_path=save_path,
     )
 
 
@@ -271,6 +281,7 @@ def plot_across_session_corr(
     figsize=(6, 5),
     color="mediumblue",
     save=False,
+    save_path=None,
 ):
     """Function to plot across session movement correlations.
         Uses the plot_mean_sem_line_plot
@@ -295,6 +306,7 @@ def plot_across_session_corr(
         figsize=figsize,
         color=color,
         save=save,
+        save_path=save_path,
     )
 
 
@@ -307,6 +319,7 @@ def plot_success_rate(
     figsize=(6, 5),
     color="mediumblue",
     save=False,
+    save_path=None,
 ):
     """Function to plot the success rate across sessions. 
        Uses the plot_mean_sem_line_plot 
@@ -331,6 +344,7 @@ def plot_success_rate(
         figsize=figsize,
         color=color,
         save=save,
+        save_path=save_path,
     )
 
 
@@ -343,6 +357,7 @@ def plot_cue_to_reward(
     figsize=(6, 5),
     color="mediumblue",
     save=False,
+    save_path=None,
 ):
     """Function to plot the cut_to_reward across sessions. 
         Uses the plot_mean_sem_line_plot 
@@ -367,6 +382,7 @@ def plot_cue_to_reward(
         figsize=figsize,
         color=color,
         save=save,
+        save_path=save_path,
     )
 
 
@@ -379,6 +395,7 @@ def plot_movement_reaction_time(
     figsize=(6, 5),
     color="mediumblue",
     save=False,
+    save_path=None,
 ):
     """Function to plot the movment reaction time across sessions. 
         Uses plot_mean_sem_line_plot 
@@ -403,4 +420,6 @@ def plot_movement_reaction_time(
         figsize=figsize,
         color=color,
         save=save,
+        save_path=save_path,
     )
+
