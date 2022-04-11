@@ -39,12 +39,31 @@ def analyze_mouse_lever_behavior(
     OUTPUT PARAMETERS
 
     """
+    print(f"----------------------------\nAnalyzing Mouse {mouse_id}")
 
     # Parent path where analyzed data is stored
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
 
+    # Check if file already exists
+    if reanalyze is False:
+        try:
+            exists = get_existing_files(
+                path=os.path.join(initial_path, mouse_id, "behavior"),
+                name="all_lever_data",
+                includes=True,
+            )
+            if exists is not None:
+                mouse_lever_data = load_pickle(
+                    fname_list=[exists.replace(".pickle", "")],
+                    path=os.path.join(initial_path, mouse_id, "behavior"),
+                )
+                print(" - Loading previously analyzed data")
+                return mouse_lever_data[0]
+
+        except FileNotFoundError:
+            pass
+
     # Move to the directory containing all the behavior data for the mouse
-    print(f"----------------------------\nAnalyzing Mouse {mouse_id}")
     os.chdir(path)
     directories = [x[0] for x in os.walk(".")]
     directories = sorted(directories)
