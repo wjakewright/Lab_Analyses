@@ -159,7 +159,9 @@ class Group_Lever_Press:
         self.ind_success_rate = np.vstack(all_success_rates)
         self.success_rate = avg_success_rates
 
-    def plot_average_data(self, to_plot=None, colors=None, ylims=None, save=False):
+    def plot_average_data(
+        self, to_plot=None, colors=None, ylims=None, save=False, save_path=None
+    ):
         """Function to plot data
             
             INPUT PARAMETERS
@@ -174,7 +176,13 @@ class Group_Lever_Press:
                 ylims - dictionary to specify what ylim to set each plot, with each key corresponding to the plot type
                         Keys it accepts: "success", "cue_to_reward", "reaction_time", "within", "across", "cmap"
                         Optional with default set to None. Can specify on the ones you wish to change.
+
+                save - boolean specifying whether or not you want to save the figure
+
+                save_path - str with the path of where to save the data
         """
+        if save is True and save_path is None:
+            raise Exception("Must specify the save path in order to save the figures")
 
         # Set up colors and ylims keyword arguments to ensure proper behavior if different partial inputs
         plot_keys = [
@@ -217,6 +225,7 @@ class Group_Lever_Press:
                 ylim=ylims["success"],
                 color=colors["success"],
                 save=save,
+                save_path=save_path,
             )
             bplot.plot_movement_reaction_time(
                 self.avg_reaction_time["session"],
@@ -226,6 +235,7 @@ class Group_Lever_Press:
                 ylim=ylims["reaction_time"],
                 color=colors["reaction_time"],
                 save=save,
+                save_path=save_path,
             )
             bplot.plot_cue_to_reward(
                 self.avg_cue_to_reward["session"],
@@ -235,12 +245,14 @@ class Group_Lever_Press:
                 ylim=ylims["cue_to_reward"],
                 color=colors["cue_to_reward"],
                 save=save,
+                save_path=save_path,
             )
             bplot.plot_movement_corr_matrix(
                 self.avg_corr_matrix,
                 title="Average Movement Correlation",
                 cmap=colors["cmap"],
                 save=save,
+                save_path=save_path,
             )
             bplot.plot_within_session_corr(
                 self.within_sess_corr["session"],
@@ -250,6 +262,7 @@ class Group_Lever_Press:
                 ylim=ylims["within"],
                 color=colors["within"],
                 save=save,
+                save_path=save_path,
             )
             bplot.plot_across_session_corr(
                 self.across_sess_corr["session"],
@@ -259,6 +272,7 @@ class Group_Lever_Press:
                 ylim=ylims["across"],
                 color=colors["across"],
                 save=save,
+                save_path=save_path,
             )
         else:
             for x in to_plot:
@@ -271,6 +285,7 @@ class Group_Lever_Press:
                         ylim=ylims["success"],
                         color=colors["success"],
                         save=save,
+                        save_path=save_path,
                     )
                 elif x == "reaction time":
                     bplot.plot_movement_reaction_time(
@@ -281,6 +296,7 @@ class Group_Lever_Press:
                         ylim=ylims["reaction_time"],
                         color=colors["reaction_time"],
                         save=save,
+                        save_path=save_path,
                     )
                 elif x == "cue to reward":
                     bplot.plot_cue_to_reward(
@@ -291,6 +307,7 @@ class Group_Lever_Press:
                         ylim=ylims["cue_to_reward"],
                         color=colors["cue_to_reward"],
                         save=save,
+                        save_path=save_path,
                     )
                 elif x == "correlation_heatmap":
                     bplot.plot_movement_corr_matrix(
@@ -298,6 +315,7 @@ class Group_Lever_Press:
                         title="Average Movement Correlation",
                         cmap=colors["cmap"],
                         save=save,
+                        save_path=save_path,
                     )
                 elif x == "within correlation":
                     bplot.plot_within_session_corr(
@@ -308,6 +326,7 @@ class Group_Lever_Press:
                         ylim=ylims["within"],
                         color=colors["within"],
                         save=save,
+                        save_path=save_path,
                     )
                 elif x == "across correlation":
                     bplot.plot_across_session_corr(
@@ -318,6 +337,7 @@ class Group_Lever_Press:
                         ylim=ylims["across"],
                         color=colors["across"],
                         save=save,
+                        save_path=save_path,
                     )
                 else:
                     print(f"{x} is not a valid plot type")
