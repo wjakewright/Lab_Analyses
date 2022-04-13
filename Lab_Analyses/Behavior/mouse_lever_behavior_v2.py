@@ -87,7 +87,7 @@ def analyze_mouse_lever_behavior(
     ):
         print(f" - Processing session {sess}", end="\r")
         p_file = get_processed_data(
-            mouse_id, directory, im, name, save, suffix, save_path, reanalyze
+            mouse_id, directory, im, name, save, suffix, initial_path, reanalyze
         )
         files.append(p_file)
     print("")
@@ -97,7 +97,7 @@ def analyze_mouse_lever_behavior(
     for file, sess, name, suffix in zip(files, sessions, sess_names, save_suffix):
         print(f" - Summarizing session {sess}", end="\r")
         summed_data = get_summarized_data(
-            file, name, save, suffix, save_path, reanalyze
+            file, name, save, suffix, initial_path, reanalyze
         )
         summarized_data.append(summed_data)
 
@@ -111,6 +111,7 @@ def analyze_mouse_lever_behavior(
         rewards=[],
         used_trials=[],
         all_movements=[],
+        corr_movements=[],
         average_movements=[],
         reaction_time=[],
         cue_to_reward=[],
@@ -129,6 +130,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.rewards.append(data.rewards)
             mouse_lever_data.used_trials.append(data.used_trial)
             mouse_lever_data.all_movements.append(data.movement_matrix)
+            mouse_lever_data.corr_movements.append(data.corr_matrix)
             mouse_lever_data.average_movements.append(data.movement_avg)
             mouse_lever_data.reaction_time.append(data.avg_reaction_time)
             mouse_lever_data.cue_to_reward.append(data.avg_cue_to_reward)
@@ -145,6 +147,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.rewards.append(np.nan)
             mouse_lever_data.used_trials.append(np.nan)
             mouse_lever_data.all_movements.append(np.nan)
+            mouse_lever_data.corr_movements.append(np.nan)
             mouse_lever_data.average_movements.append(np.nan)
             mouse_lever_data.reaction_time.append(np.nan)
             mouse_lever_data.cue_to_reward.append(np.nan)
@@ -154,7 +157,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.fraction_ITI_moving.append(np.nan)
 
     mouse_lever_data.correlation_matrix = correlate_lever_press(
-        mouse_lever_data.all_movements
+        mouse_lever_data.corr_movements
     )
     mouse_lever_data.within_sess_corr = mouse_lever_data.correlation_matrix.diagonal()
     mouse_lever_data.across_sess_corr = mouse_lever_data.correlation_matrix.diagonal(
@@ -352,6 +355,7 @@ class Mouse_Lever_Data:
     rewards: list
     used_trials: list
     all_movements: list
+    corr_movements: list
     average_movements: list
     reaction_time: list
     cue_to_reward: list

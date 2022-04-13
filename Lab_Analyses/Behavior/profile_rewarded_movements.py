@@ -40,6 +40,7 @@ def profile_rewarded_movements(
     """
     ############################### DISCARD BAD TRIALS ############################################
 
+    BASELINE_LEN = 400
     TRIAL_STOP_WINDOW = 3000
     LICK_STOP_WINDOW = 5000
 
@@ -67,6 +68,7 @@ def profile_rewarded_movements(
             fraction_ITI_spent_moving=np.nan,
             number_of_mvmts_since_last_trial=np.nan,
             successful_movements=np.nan,
+            succ_move_baseline=BASELINE_LEN,
             cue_to_reward=np.nan,
             post_success_licking=np.nan,
             fault=fault,
@@ -88,6 +90,7 @@ def profile_rewarded_movements(
             fraction_ITI_spent_moving=np.nan,
             number_of_mvmts_since_last_trial=np.nan,
             successful_movements=np.nan,
+            succ_move_baseline=BASELINE_LEN,
             cue_to_reward=np.nan,
             post_success_licking=np.nan,
             fault=fault,
@@ -132,18 +135,18 @@ def profile_rewarded_movements(
     cs2r = len(cue_to_reward) / 1000
 
     # Define the beginning of a successful movement window
-    if boundary_frames[temp[-1]] < 400:
+    if boundary_frames[temp[-1]] < BASELINE_LEN:
         baseline_start = len(np.arange(0, boundary_frames[temp[-1]]))
     else:
-        baseline_start = 400
+        baseline_start = BASELINE_LEN
 
     successful_mvmt_start = boundary_frames[temp[-1]] - baseline_start
 
     if successful_mvmt_start == 0:
         successful_mvmt_start = 1
 
-    if baseline_start < 400:
-        shift = np.absolute(baseline_start - 400)
+    if baseline_start < BASELINE_LEN:
+        shift = np.absolute(baseline_start - BASELINE_LEN)
     else:
         shift = 0
     shift = int(shift)
@@ -164,7 +167,6 @@ def profile_rewarded_movements(
     # Add buffer to the start to account for shift
     start_buffer = np.empty(shift)
     start_buffer[:] = np.nan
-
     successful_movement = np.concatenate(
         (
             start_buffer,
@@ -222,6 +224,7 @@ def profile_rewarded_movements(
         fraction_ITI_spent_moving=fraction_iti_spent_moving,
         number_of_mvmts_since_last_trial=number_of_movements_since_last_trial,
         successful_movements=successful_movement,
+        succ_move_baseline=BASELINE_LEN,
         cue_to_reward=cue_to_reward,
         post_success_licking=post_success_licking,
         fault=fault,
@@ -279,6 +282,7 @@ def profile_movement_before_cue(file, trial_num, cue_start, reward_times):
         fraction_ITI_spent_moving=fraction_iti_spent_moving,
         number_of_mvmts_since_last_trial=number_of_movements_since_last_trial,
         successful_movements=np.nan,
+        succ_move_baseline=400,
         cue_to_reward=np.nan,
         post_success_licking=np.nan,
         fault=fault,
@@ -304,6 +308,7 @@ class Trial_Info:
     fraction_ITI_spent_moving: float
     number_of_mvmts_since_last_trial: int
     successful_movements: np.ndarray
+    succ_move_baseline: int
     cue_to_reward: np.ndarray
     post_success_licking: np.ndarray
     fault: int

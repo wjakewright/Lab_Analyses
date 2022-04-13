@@ -106,6 +106,7 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
     # Set up new attributes and variables
     ## Unrewarded and ignored trials will have nan values
     successful_movements = []
+    movement_baselines = []
     cue_to_reward = []
     post_success_licking = []
     faults = []
@@ -116,6 +117,7 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
     trial_length = []
     move_duration_before_cue = []
     movement_matrix = []
+    corr_matrix = []
     number_of_movements_during_ITI = []
     fraction_ITI_spent_moving = []
 
@@ -208,6 +210,7 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
             move_duration_before_cue.append(trial_info.move_duration_before_cue)
             fraction_ITI_spent_moving.append(trial_info.fraction_ITI_spent_moving)
             successful_movements.append(trial_info.successful_movements)
+            movement_baselines.append(trial_info.succ_move_baseline)
             cue_to_reward.append(trial_info.cue_to_reward)
             post_success_licking.append(trial_info.post_success_licking)
             faults.append(trial_info.fault)
@@ -242,20 +245,28 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                 move_array = np.array(successful_movements[rewarded_trial][: min_t + 1])
                 move_array[move_array == 0] = np.nan
                 movement_matrix.append(move_array)
+                corr_array = move_array[movement_baselines[rewarded_trial]:]
+                corr_matrix.append(corr_array)
             else:
                 move_array = np.empty(min_t)
                 move_array[:] = np.nan
                 movement_matrix.append(move_array)
+                corr_array = move_array[movement_baselines[rewarded_trial]:]
+                corr_matrix.append(corr_array)
         except Exception as error:
             print(f"Movement was not tracked for trial {rewarded_trial}")
             print(error)
             move_array = np.empty(min_t)
             move_array[:] = np.nan
             movement_matrix.append(move_array)
+            corr_array = move_array[movement_baselines[rewarded_trial]:]
+            corr_matrix.append(corr_array)
+
         if sum(np.invert(np.isnan(move_array)).astype(int)) > 100:
             num_tracked_movements = num_tracked_movements + 1
     # Convert list of movements into 2d array with each trial a row
     movement_matrix = np.array(movement_matrix)
+    corr_matrix = np.array(corr_matrix)
 
     # Set conditional for minimum num of recorded movements
     min_move_num_contingency = num_tracked_movements > MIN_MOVE_NUM
@@ -266,6 +277,8 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
         movement_matrix[:] = np.nan
         movement_avg = np.empty(min_t)
         movement_avg[:] = np.nan
+        corr_matrix = np.empty(corr_matrix.shape)
+        corr_matrix[:] = np.nan
 
     # Generate outpt object
     Summarized_Behavior = Session_Summary_Lever_Data(
@@ -274,6 +287,7 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
         date=file.date,
         used_trial=used_trial,
         movement_matrix=movement_matrix,
+        corr_matrix=corr_matrix,
         movement_avg=movement_avg,
         rewards=rewards,
         move_at_start_faults=move_at_start_fault,
@@ -293,6 +307,7 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
 
     # Set up new attributes and variables // unrewarded or ignored trials will have np.nan
     successful_movements = []
+    movement_baselines = []
     cue_to_reward = []
     post_success_licking = []
     faults = []
@@ -302,6 +317,7 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
     trial_length = []
     move_duration_before_cue = []
     movement_matrix = []
+    corr_matrix = []
     number_of_movements_during_ITI = []
     fraction_ITI_spent_moving = []
 
@@ -426,6 +442,7 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
             move_duration_before_cue.append(trial_info.move_duration_before_cue)
             fraction_ITI_spent_moving.append(trial_info.fraction_ITI_spent_moving)
             successful_movements.append(trial_info.successful_movements)
+            movement_baselines.append(trial_info.succ_move_baseline)
             cue_to_reward.append(trial_info.cue_to_reward)
             post_success_licking.append(trial_info.post_success_licking)
             faults.append(trial_info.fault)
@@ -451,7 +468,7 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
         ]
         / 1000
     )
-
+    movement_baseline = movement_baselines[0]
     # Generate movement matrix
     num_tracked_movements = 0
     for rewarded_trial in range(rewards):
@@ -460,21 +477,28 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                 move_array = np.array(successful_movements[rewarded_trial][: min_t + 1])
                 move_array[move_array == 0] = np.nan
                 movement_matrix.append(move_array)
+                corr_array = move_array[movement_baseline:]
+                corr_matrix.append(corr_array)
             else:
                 move_array = np.empty(min_t)
                 move_array[:] = np.nan
                 movement_matrix.append(move_array)
+                corr_array = move_array[movement_baseline:]
+                corr_matrix.append(corr_array)
         except Exception as error:
             print(f"Movement was not tracked for trial {rewarded_trial}")
             print(error)
             move_array = np.empty(min_t)
             move_array[:] = np.nan
             movement_matrix.append(move_array)
+            corr_array = move_array[movement_baseline:]
+            corr_matrix.append(corr_array)
         if sum(np.invert(np.isnan(move_array)).astype(int)) > 100:
             num_tracked_movements = num_tracked_movements + 1
 
     # Convert list of movements into 2d array with each trial a row
     movement_matrix = np.array(movement_matrix)
+    corr_matrix = np.array(corr_matrix)
 
     # Set conditional for minimum number of rewarded movements
     min_move_num_contingency = num_tracked_movements > MIN_MOVE_NUM
@@ -485,6 +509,8 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
         movement_matrix[:] = np.nan
         movement_avg = np.empty(min_t)
         movement_avg[:] = np.nan
+        corr_matrix = np.empty(corr_matrix.shape)
+        corr_matrix[:] = np.nan
 
     # Generate outpt object
     Summarized_Behavior = Session_Summary_Lever_Data(
@@ -493,6 +519,7 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
         date=file.date,
         used_trial=used_trial,
         movement_matrix=movement_matrix,
+        corr_matrix=corr_matrix,
         movement_avg=movement_avg,
         rewards=rewards,
         move_at_start_faults=move_at_start_fault,
@@ -537,6 +564,7 @@ class Session_Summary_Lever_Data:
     date: str
     used_trial: list
     movement_matrix: np.ndarray
+    corr_matrix: np.ndarray
     movement_avg: np.ndarray
     rewards: int
     move_at_start_faults: int
