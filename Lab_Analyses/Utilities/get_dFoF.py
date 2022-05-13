@@ -40,10 +40,12 @@ def get_dFoF(
     SECONDS_TO_IGNORE = 10  # only used to correct for bout separations
     PAD_LENGTH = 1000
     SMOOTH_PAD_LENGTH = 500
-    SMOOTH_WINDOW = smooth_window * np.round(sampling_rate)
+    SMOOTH_WINDOW = int(smooth_window * np.round(sampling_rate))
 
     if artifact_frames is not None:
         jump_correction = True
+    else:
+        jump_correction = False
 
     # Fix NaN values for smoothing
     if np.isnan(data).any():
