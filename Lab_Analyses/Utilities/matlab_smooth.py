@@ -8,6 +8,8 @@ def matlab_smooth(data, window):
         
         window = int. Must be odd value
     """
+    if window % 2 == 0:
+        window = window + 1
     out0 = np.convolve(data, np.ones(window, dtype=int), "valid") / window
     r = np.arange(1, window - 1, 2)
     start = np.cumsum(data[: window - 1])[::2] / r
