@@ -4,6 +4,7 @@ import warnings
 
 import numpy as np
 import scipy.signal as sysignal
+from Lab_Analyses.Utilities.matlab_smooth import matlab_smooth
 
 
 def parse_lever_movement_continuous(xsg_data):
@@ -210,17 +211,3 @@ def get_lever_active_points(lever_active):
         lever_active_intermovement_times,
     )
 
-
-def matlab_smooth(data, window):
-    """Helper function to replication the implementation of matlab smooth function
-    
-        data = 1d np.array
-        
-        window = int. Must be odd value
-    """
-    out0 = np.convolve(data, np.ones(window, dtype=int), "valid") / window
-    r = np.arange(1, window - 1, 2)
-    start = np.cumsum(data[: window - 1])[::2] / r
-    stop = (np.cumsum(data[:-window:-1])[::2] / r)[::1]
-
-    return np.concatenate((start, out0, stop))
