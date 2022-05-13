@@ -36,21 +36,24 @@ def baseline_kde(x, ds_ratio, window, step):
     i_steps = []
     b_steps = []
     for i in np.arange(0, len(x_ds), step):
-        r = np.amax(np.array([0, i - h]))
-        l = np.amin(np.array([len(x_ds), i + step - 1 + h]))
+        r = int(np.amax(np.array([0, i - h])))
+        l = int(np.amin(np.array([len(x_ds), i + step - 1 + h])))
         i_steps.append(
             np.nanmean(i_ds[i : np.amin(np.array([i + step - 1, len(x_ds)]))])
         )
         b_steps.append(mode_kde(x_ds[r:l]))
 
-    estimated_baseline = interpolate.interp1d(i_steps, b_steps, kind="cubic")
+    baseline_interpolater = interpolate.interp1d(
+        i_steps, b_steps, kind="cubic", fill_value="extrapolate"
+    )
+    estimated_baseline = baseline_interpolater(np.arange(len(x)))
 
     return estimated_baseline
 
 
 def mode_kde(x):
     # Helper function to perform the baseline kernel density estimation
-    x = x[np.isnan(x)]
+    x = x[~np.isnan(x)]
     kde = stats.gaussian_kde(x)
     pts = np.linspace(x.min(), x.max(), 200)
     f = kde(pts)
@@ -59,18 +62,18 @@ def mode_kde(x):
     ii_2 = np.amin(np.array([ii + 1, len(f)]))
 
     if ii_2 - ii_1 == 2:
-        if f(ii_2) > f(ii_1):
-            if f(ii) - f(ii_2) < f(ii_2) - f(ii_1):
+        if f[ii_2] > f[ii_1]:
+            if f[ii] - f[ii_2] < f[ii_2] - f[ii_1]:
                 ii_1 = ii
         else:
-            if f(ii) - f(ii_1) < f(ii_1) - f(ii_2):
+            if f[ii] - f[ii_1] < f[ii_1] - f[ii_2]:
                 ii_2 = ii
 
     xx = np.linspace(pts[ii_1], pts[ii_2], 201)
     new_f = kde(xx)
     new_ii = np.nanargmax(new_f)
 
-    m = xx(new_ii)
+    m = xx[new_ii]
 
     return m
 
