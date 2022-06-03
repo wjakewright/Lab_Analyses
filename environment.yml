@@ -16,9 +16,11 @@ dependencies:
   - seaborn >= 0.11.2
   - statsmodels >= 0.12.2
   - tabulate >= 0.8.9
+  - git
   - pip:
     - opencv-python >= 4.5.4.58
     - black >= 19.10b0
     - dataframe-image >= 0.1.1
+    - git+https://github.com/wjakewright/Activity_Viewer.git
     - -e.
 
