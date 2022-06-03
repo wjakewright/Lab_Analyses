@@ -1,5 +1,6 @@
-"""Module for analzying and summarizing the main metrics of lever press behavior
-    for a single mouse across all sessions. Stores output as a dataclass"""
+"""Module for analyzing and summarizing the main metrics of lever press behavior
+    for a single mouse across all sessions. Stores outputs as dataclasses"""
+
 
 import os
 import re
@@ -13,90 +14,92 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
 def analyze_mouse_lever_behavior(
-    mouse_id,
-    path,
-    imaged,
-    sessions=None,
-    exp=None,
-    save=False,
-    save_suffix=None,
-    reanalyze_suffix=None,
+    mouse_id, path, imaged, exp=None, save=False, save_suffix=None, reanalyze=False,
 ):
-    """Function to analyze the lever press behavior of all the sessions for a
-        single mouse
+    """Function to analyze the lever press of all the sessions for a single
+        mouse
+    
+    INPUT PARAMETERS
+        mouse_id - str specifying what the mouse's id is
         
-        INPUT PARAMETERS
-            mouse_id - string specifying what the mouse's ID is
-            
-            path - string of the path to the directory containing all of the behavioral data
-                    for a given mouse, with each session in a subdirectory
-                    
-            imaged - boolean list specifying if the session was also imaged or not
-            
-            exp - string containing description of experiment
-            
-            sessions - a list of numbers indicating the session number for each 
-                        input file. Optional. If no sessions are provided it is
-                        assumed that the files are in the correct order
-            
-            save - boolean specifying if the data is to be saved
+        path - str of the path to the directory containing all of the behavioral
+                data for a given mouse, with each session in a subdirectory
+                
+        imaged - boolean list specifying if the session was also imaged or not
+        
+        exp - str containing descriptino of the experiment
 
-            save_suffix - list of str to add additonal descriptor to file name for each file
+        save - boolean specifying if the data is to be saved
 
-            reanalyze_suffix - str to add to descriptor for reanalyzed datasets
-                        
-        OUTPUT PARAMETERS
-            """
-    # Parent path where analyzed data is stored
-    save_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        save_suffix - list of str to add additional descriptor to file name 
+                        each file
+        
+        reanalyze - boolean specifying if this is to reanalyze data
 
-    # Move to the directory containing all the behvior data for the mouse
+    OUTPUT PARAMETERS
+
+    """
     print(f"----------------------------\nAnalyzing Mouse {mouse_id}")
+
+    # Parent path where analyzed data is stored
+    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+
+    # Check if file already exists
+    if reanalyze is False:
+        try:
+            exists = get_existing_files(
+                path=os.path.join(initial_path, mouse_id, "behavior"),
+                name="all_lever_data",
+                includes=True,
+            )
+            if exists is not None:
+                mouse_lever_data = load_pickle(
+                    fname_list=[exists.replace(".pickle", "")],
+                    path=os.path.join(initial_path, mouse_id, "behavior"),
+                )
+                print(" - Loading previously analyzed data")
+                return mouse_lever_data[0]
+
+        except FileNotFoundError:
+            pass
+
+    # Move to the directory containing all the behavior data for the mouse
     os.chdir(path)
     directories = [x[0] for x in os.walk(".")]
     directories = sorted(directories)
     directories = directories[1:]
 
-    # Make sessions if it is not input
-    if sessions is None:
-        sessions = np.linspace(1, len(directories), len(directories), dtype=int)
+    # Initialize sessions list
+    sessions = np.linspace(1, len(directories), len(directories), dtype=int)
+    sess_names = [os.path.basename(x) for x in directories]
 
-    # Process lever data for each session
+    # Check is save suffix is a list or not
+    if save_suffix is None:
+        save_suffix = [None for x in sessions]
+    else:
+        if len(save_suffix) == 1:
+            save_suffix = [save_suffix for x in sessions]
+
+    # Process lever press data for each session
     files = []
-    for directory, im, sess, suffix in zip(directories, imaged, sessions, save_suffix):
+    for directory, im, sess, name, suffix, in zip(
+        directories, imaged, sessions, sess_names, save_suffix
+    ):
         print(f" - Processing session {sess}", end="\r")
-        fnames = os.listdir(directory)
-        xsg_files = [file for file in os.listdir(directory) if file.endswith(".xsglog")]
-        if len(xsg_files) == 0:
-            p_file = None
-            files.append(p_file)
-            continue
-        for fname in fnames:
-            if "data_@lever2p" not in fname:
-                p_file = None
-            else:
-                p_file = process_lever_behavior(
-                    directory, im, save=save, save_suffix=suffix
-                )
+        p_file = get_processed_data(
+            mouse_id, directory, im, name, save, suffix, initial_path, reanalyze
+        )
         files.append(p_file)
-
     print("")
 
-    # Summarize lever press behavior for each session
+    # Summarize lever press data for each session
     summarized_data = []
-    for file, sess, suffix in zip(files, sessions, save_suffix):
+    for file, sess, name, suffix in zip(files, sessions, sess_names, save_suffix):
         print(f" - Summarizing session {sess}", end="\r")
-        if file is None:
-            summarized_data.append(None)
-        else:
-            summed_data = summarize_lever_behavior(file, save=save, save_suffix=suffix)
+        summed_data = get_summarized_data(
+            file, name, save, suffix, initial_path, reanalyze
+        )
         summarized_data.append(summed_data)
-
-    # Sort the summarized sessions to be in the corred order based on sessions
-    zipped_data = zip(sessions, summarized_data)
-    sorted_data = sorted(zipped_data)
-    ts = zip(*sorted_data)
-    sessions, summarized_data = [list(t) for t in ts]
 
     # Pull out relevant data to store together
     # Initialize the dataclass object
@@ -108,6 +111,7 @@ def analyze_mouse_lever_behavior(
         rewards=[],
         used_trials=[],
         all_movements=[],
+        corr_movements=[],
         average_movements=[],
         reaction_time=[],
         cue_to_reward=[],
@@ -126,6 +130,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.rewards.append(data.rewards)
             mouse_lever_data.used_trials.append(data.used_trial)
             mouse_lever_data.all_movements.append(data.movement_matrix)
+            mouse_lever_data.corr_movements.append(data.corr_matrix)
             mouse_lever_data.average_movements.append(data.movement_avg)
             mouse_lever_data.reaction_time.append(data.avg_reaction_time)
             mouse_lever_data.cue_to_reward.append(data.avg_cue_to_reward)
@@ -142,6 +147,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.rewards.append(np.nan)
             mouse_lever_data.used_trials.append(np.nan)
             mouse_lever_data.all_movements.append(np.nan)
+            mouse_lever_data.corr_movements.append(np.nan)
             mouse_lever_data.average_movements.append(np.nan)
             mouse_lever_data.reaction_time.append(np.nan)
             mouse_lever_data.cue_to_reward.append(np.nan)
@@ -151,7 +157,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.fraction_ITI_moving.append(np.nan)
 
     mouse_lever_data.correlation_matrix = correlate_lever_press(
-        mouse_lever_data.all_movements
+        mouse_lever_data.corr_movements
     )
     mouse_lever_data.within_sess_corr = mouse_lever_data.correlation_matrix.diagonal()
     mouse_lever_data.across_sess_corr = mouse_lever_data.correlation_matrix.diagonal(
@@ -161,22 +167,15 @@ def analyze_mouse_lever_behavior(
     # Save section
     if save is True:
         mouse_id = file.mouse_id
-        # Make mouse folder to for its data if it doesn't already exist
-        mouse_path = os.path.join(save_path, mouse_id)
-        if not os.path.isdir(mouse_path):
-            os.mkdir(mouse_path)
-        # Check if mouse has path for behavioral data
-        behavior_path = os.path.join(mouse_path, "behavior")
-        if not os.isdir(behavior_path):
-            os.mkdir(behavior_path)
+        # Set path
+        save_path = os.path.join(initial_path, mouse_id, "behavior")
+        if not os.path.isdir(save_path):
+            os.mkdir(save_path)
         # Make file name
-        if save_suffix is not None:
-            save_name = f"{mouse_id}_all_lever_data_{reanalyze_suffix}"
-        else:
-            save_name = f"{mouse_id}_all_lever_data"
+        save_name = f"{mouse_id}_all_lever_data"
         # Save the data as a pickle file
         save_pickle(
-            save_name, mouse_lever_data, behavior_path,
+            save_name, mouse_lever_data, save_path,
         )
 
     print(f"\nDone Analyzing Mouse {mouse_id}\n----------------------------")
@@ -246,6 +245,103 @@ def correlate_btw_sessions(A, B):
     return across_corr
 
 
+def get_processed_data(
+    mouse_id, directory, im, sname, save, suffix, save_path, reanalyze
+):
+    """Helper function to get the processed data"""
+    # Check if file already exists
+    if reanalyze is False:
+        try:
+            exists = get_existing_files(
+                path=os.path.join(save_path, mouse_id, "behavior", sname),
+                name="processed_lever_data",
+                includes=True,
+            )
+            if exists is not None:
+                p_file = load_pickle(
+                    fname_list=[exists.replace(".pickle", "")],
+                    path=os.path.join(save_path, mouse_id, "behavior", sname),
+                )
+                return p_file[0]
+
+        except FileNotFoundError:
+            pass
+
+    # Run processing if it is reanalyzing or file does not already exist
+    fnames = os.listdir(directory)
+    xsg_files = [file for file in os.listdir(directory) if file.endswith(".xsglog")]
+    if len(xsg_files) == 0:
+        p_file = None
+        return p_file
+    # Check if dispatcher file is present
+    d_present = False
+    for fname in fnames:
+        if "data_@lever2p" in fname:
+            d_present = True
+
+    if d_present is False:
+        p_file = None
+        return p_file
+
+    p_file = process_lever_behavior(
+        mouse_id, directory, imaged=im, save=save, save_suffix=suffix
+    )
+
+    return p_file
+
+
+def get_summarized_data(file, sname, save, suffix, save_path, reanalyze):
+    """Helper function to get the summarized data"""
+    # Check if file already exists
+    if file is None:
+        summed_data = None
+        return None
+    if reanalyze is False:
+        try:
+            exists = get_existing_files(
+                path=os.path.join(save_path, file.mouse_id, "behavior", sname),
+                name="summarized_lever_data",
+                includes=True,
+            )
+        except FileNotFoundError:
+            pass
+        if exists is not None:
+            summed_data = load_pickle(
+                fname_list=[exists.replace(".pickle", "")],
+                path=os.path.join(save_path, file.mouse_id, "behavior", sname),
+            )
+            return summed_data[0]
+
+    # Summarize data if it is reanalyzing or file does not already exist
+    if file is None:
+        summed_data = None
+        return summed_data
+
+    summed_data = summarize_lever_behavior(file, save=save, save_suffix=suffix)
+
+    return summed_data
+
+
+def get_existing_files(path, name, includes):
+    """Helper function to check and load existing files"""
+    exists, exist_files = check_file_exists(path, name, includes)
+    if exists is True:
+        if len(exist_files) > 1:
+            print("")
+            print("More than one matching file exists")
+            for n, file in enumerate(exist_files):
+                print(f"{n}). {file}")
+            fnum = input("Which file number would you like to load: ")
+            fnum = fnum - 1
+            fname = exist_files[fnum]
+        else:
+            fname = exist_files[0]
+    else:
+        fname = None
+
+    return fname
+
+
 # --------------------------------DATACLASS USED--------------------------------------------
 @dataclass
 class Mouse_Lever_Data:
@@ -259,6 +355,7 @@ class Mouse_Lever_Data:
     rewards: list
     used_trials: list
     all_movements: list
+    corr_movements: list
     average_movements: list
     reaction_time: list
     cue_to_reward: list
