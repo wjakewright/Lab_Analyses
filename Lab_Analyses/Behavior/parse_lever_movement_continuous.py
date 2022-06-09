@@ -148,8 +148,12 @@ def parse_lever_movement_continuous(xsg_data):
         offset = get_move_stop_offset(w, x, y, z, THRESH_RUN)
         movement_stop_offsets.append(offset.astype(int))
 
-    lever_active[np.concatenate(movement_start_offsets)] = 0
-    lever_active[np.concatenate(movement_stop_offsets)] = 0
+    try:
+        lever_active[np.concatenate(movement_start_offsets)] = 0
+        lever_active[np.concatenate(movement_stop_offsets)] = 0
+    except:
+        # If there are no active movements there is nothing to correct
+        pass
 
     return (
         lever_active,
