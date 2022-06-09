@@ -14,7 +14,14 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
 def analyze_mouse_lever_behavior(
-    mouse_id, path, imaged, exp=None, save=False, save_suffix=None, reanalyze=False,
+    mouse_id,
+    path,
+    imaged,
+    exp=None,
+    save=False,
+    save_suffix=None,
+    reanalyze=False,
+    ignore_dir=(),
 ):
     """Function to analyze the lever press of all the sessions for a single
         mouse
@@ -35,6 +42,8 @@ def analyze_mouse_lever_behavior(
                         each file
         
         reanalyze - boolean specifying if this is to reanalyze data
+
+        ignore_dir - tuple of strings specifying directories/days to ignore for analysis
 
     OUTPUT PARAMETERS
 
@@ -68,6 +77,10 @@ def analyze_mouse_lever_behavior(
     directories = [x[0] for x in os.walk(".")]
     directories = sorted(directories)
     directories = directories[1:]
+
+    if ignore_dir:
+        for dir in ignore_dir:
+            directories.remove(dir)
 
     # Initialize sessions list
     sessions = np.linspace(1, len(directories), len(directories), dtype=int)
