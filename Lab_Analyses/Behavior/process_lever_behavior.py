@@ -139,7 +139,7 @@ def process_lever_behavior(mouse_id, path, imaged, save=False, save_suffix=None)
         initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
         save_path = os.path.join(initial_path, mouse_id, "behavior", sess_name)
         if not os.path.isdir(save_path):
-            os.mkdir(save_path)
+            os.makedirs(save_path)
         # Make file name
         if save_suffix is not None:
             save_name = f"{mouse_id}_{sess_name}_processed_lever_data_{save_suffix}"
