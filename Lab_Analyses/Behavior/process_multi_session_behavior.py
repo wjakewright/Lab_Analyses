@@ -6,10 +6,11 @@ from Lab_Analyses.Behavior.process_lever_behavior import process_lever_behavior
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
-def analyze_opto_pulse_behavior(
+def process_multi_session_behavior(
     mouse_id, base_path, days=None, save=False,
 ):
-    """Function to analyze behavior from opto pulsed sessions from a single mouse
+    """Function to process behavior data when there are multiple sessions
+        in a single day
     
         INPUT PARAMETERS
             mouse_id - str specifying what the mouse's id is

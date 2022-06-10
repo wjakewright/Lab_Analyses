@@ -173,7 +173,7 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                     * 1000
                 )
             else:
-                nex_cue = np.round(file.frame_times[-1]) * 1000
+                next_cue = np.round(file.frame_times[-1]) * 1000
             next_cue = int(next_cue)
             trial_ends.append(next_cue)
 
@@ -245,13 +245,13 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                 move_array = np.array(successful_movements[rewarded_trial][: min_t + 1])
                 move_array[move_array == 0] = np.nan
                 movement_matrix.append(move_array)
-                corr_array = move_array[movement_baselines[rewarded_trial]:]
+                corr_array = move_array[movement_baselines[rewarded_trial] :]
                 corr_matrix.append(corr_array)
             else:
                 move_array = np.empty(min_t)
                 move_array[:] = np.nan
                 movement_matrix.append(move_array)
-                corr_array = move_array[movement_baselines[rewarded_trial]:]
+                corr_array = move_array[movement_baselines[rewarded_trial] :]
                 corr_matrix.append(corr_array)
         except Exception as error:
             print(f"Movement was not tracked for trial {rewarded_trial}")
@@ -259,7 +259,7 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
             move_array = np.empty(min_t)
             move_array[:] = np.nan
             movement_matrix.append(move_array)
-            corr_array = move_array[movement_baselines[rewarded_trial]:]
+            corr_array = move_array[movement_baselines[rewarded_trial] :]
             corr_matrix.append(corr_array)
 
         if sum(np.invert(np.isnan(move_array)).astype(int)) > 100:
