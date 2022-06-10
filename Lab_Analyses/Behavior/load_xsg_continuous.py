@@ -66,7 +66,7 @@ def load_xsg_continuous(dirname):
     # Check if all the data files are the same length
     lens = map(len, xsg_data.channels.values())
     if len(set(lens)) != 1:
-        raise Exception("Mismatched ata size!!!!")
+        raise Exception("Mismatched data size!!!!")
 
     return xsg_data
 
