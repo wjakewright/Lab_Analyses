@@ -90,7 +90,7 @@ def align_lever_behavior(behavior_data, imaging_data):
         used_trials.append(i_bitcode)
 
         # Getting the times for the start and end of the trial in terms of lever sampling rate
-        start_trial_time = np.round(curr_trial_list[i, 1] * 1000)
+        start_trial_time = np.round(curr_trial_list[i, 0] * 1000)
         t0 = dispatcher[i].states.bitcode[0]
         end_trial_time = start_trial_time + np.round(
             (dispatcher[i].states.state_0[1, 0] - t0) * 1000
@@ -118,6 +118,14 @@ def align_lever_behavior(behavior_data, imaging_data):
         lever_velocity_envelop_smooth_time = behavior_data.lever_velocity_envelope_smooth[
             start_trial_time:end_trial_time
         ]
+        # Zero start to minimize downsampling edge effects
+        lever_force_resample_time = (
+            lever_force_resample_time - lever_force_resample_time[0]
+        )
+        lever_force_smooth_time = lever_force_smooth_time - lever_force_smooth_time[0]
+        lever_velocity_envelop_smooth_time = (
+            lever_velocity_envelop_smooth_time - lever_velocity_envelop_smooth_time[0]
+        )
 
         # Downsample the lever traces to frames
         frac = Fraction(num_frames / len(lever_force_resample_time)).limit_denominator()
@@ -130,28 +138,21 @@ def align_lever_behavior(behavior_data, imaging_data):
             lever_velocity_envelop_smooth_time, n, d
         )
 
-        # Correct downsampling edge effects for traces
-        ### Correcting the start and end to be the median of the trace
-        force_resample_ds[:10] = np.nanmedian(behavior_data.lever_force_resample)
-        force_resample_ds[-10:] = np.nanmedian(behavior_data.lever_force_resample)
-        force_smooth_ds[:10] = np.nanmedian(behavior_data.lever_force_smooth)
-        force_smooth_ds[-10:] = np.nanmedian(behavior_data.lever_force_smooth)
-        velocity_envelope_ds[:10] = np.nanmedian(
-            behavior_data.lever_velocity_envelope_smooth
-        )
-        velocity_envelope_ds[-10:] = np.nanmedian(
-            behavior_data.lever_velocity_envelope_smooth
-        )
+        # Fix smooth of the binarized active trace
         active_ds[active_ds >= 0.5] = 1
         active_ds[active_ds < 0.5] = 0
 
         # Get cue and reward information
-        cue_start = (
-            behavior_data.behavior_frames[i].states.cue[0, 0] - start_trial_frames
+        cue_start = int(
+            behavior_data.behavior_frames[i].states.cue[0] - start_trial_frames
         )
         if cue_start == 0:
             cue_start = 1
-        cue_end = behavior_data.behavior_frames[i].states.cue[0, 1] - start_trial_frames
+        cue_end = int(
+            behavior_data.behavior_frames[i].states.cue[1] - start_trial_frames
+        )
+        binary_cue = np.zeros(num_frames)
+        binary_cue[cue_start, cue_end] = 1
 
 
 ################# DATACLASSES #################
