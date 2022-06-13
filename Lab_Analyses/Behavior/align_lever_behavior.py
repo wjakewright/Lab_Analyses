@@ -91,10 +91,11 @@ def align_lever_behavior(behavior_data, imaging_data):
         used_trials.append(i_bitcode)
 
         # Getting the times for the start and end of the trial in terms of lever sampling rate
-        start_trial_time = np.round(curr_trial_list[i, 0] * 1000)
+        start_trial_time = int(np.round(curr_trial_list[i, 0] * 1000))
         t0 = dispatcher[i].states.bitcode[0]
-        end_trial_time = start_trial_time + np.round(
-            (dispatcher[i].states.state_0[1, 0] - t0) * 1000
+        end_trial_time = int(
+            start_trial_time
+            + np.round((dispatcher[i].states.state_0[1, 0] - t0) * 1000)
         )
         if (
             start_trial_time > len(behavior_data.lever_force_smooth) - 1
@@ -103,8 +104,8 @@ def align_lever_behavior(behavior_data, imaging_data):
             continue
 
         # Get start and end of trials in behavior frames
-        start_trial_frames = behavior_data.behavior_frames[i].states.state_0[0, 1]
-        end_trial_frames = behavior_data.behavior_frames[i].states.state_0[1, 0]
+        start_trial_frames = int(behavior_data.behavior_frames[i].states.state_0[0, 1])
+        end_trial_frames = int(behavior_data.behavior_frames[i].states.state_0[1, 0])
         num_frames = len(np.arange(start_trial_frames, end_trial_frames))
 
         ############ BEHAVIOR SECTION #############
@@ -153,14 +154,14 @@ def align_lever_behavior(behavior_data, imaging_data):
             behavior_data.behavior_frames[i].states.cue[1] - start_trial_frames
         )
         binary_cue = np.zeros(num_frames)
-        binary_cue[cue_start, cue_end] = 1
+        binary_cue[cue_start:cue_end] = 1
 
-        if behavior_data.behavior_frames[i].states.reward:
+        if behavior_data.behavior_frames[i].states.reward.shape[0] > 0:
             result = 1  # This is for rewarded trials
-            result_start = (
+            result_start = int(
                 behavior_data.behavior_frames[i].states.reward[0] - start_trial_frames
             )
-            result_end = (
+            result_end = int(
                 behavior_data.behavior_frames[i].states.reward[1] - start_trial_frames
             )
             try:
@@ -168,21 +169,21 @@ def align_lever_behavior(behavior_data, imaging_data):
                 rwd_move_start = np.nonzero(
                     np.sign(np.diff(active_frames[cue_start:result_start])) == 1
                 )[0][-1]
-                rwd_move_start = rwd_move_start + cue_start
+                rwd_move_start = int(rwd_move_start + cue_start)
             except:
                 # If there isn't one detected, then movement must already have been going on, so set to start of trial
-                rwd_move_start = cue_start
+                rwd_move_start = int(cue_start)
             try:
                 # Trying to get the first movement termination after reward delivery
                 rwd_move_end = np.nonzero(
                     np.sign(np.diff(active_frames[rwd_move_start:end_trial_frames]))
                     == -1
                 )[0][0]
-                rwd_move_end = rwd_move_end + rwd_move_start
+                rwd_move_end = int(rwd_move_end + rwd_move_start)
             except:
                 # If no movement termination found, print error and set it to end of trial
                 print(f"Error finding movement end for trial {i}")
-                rwd_move_end = end_trial_frames
+                rwd_move_end = int(end_trial_frames)
 
             result_delivery = np.zeros(num_frames)
             result_delivery[result_start:result_end] = 1
@@ -195,10 +196,10 @@ def align_lever_behavior(behavior_data, imaging_data):
 
         else:
             result = 0  # This is for punished trials
-            result_start = (
+            result_start = int(
                 behavior_data.behavior_frames[i].states.punish[0] - start_trial_frames
             )
-            result_end = (
+            result_end = int(
                 behavior_data.behavior_frames[i].states.punish[0] - start_trial_frames
             )
 
@@ -230,4 +231,4 @@ class Trial_Lever_Data:
     rewarded_movement_force: list
     binary_cue: list
     result_delivery: list
-    activity: dict
+
