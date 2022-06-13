@@ -4,6 +4,7 @@
 from dataclasses import dataclass
 from fractions import Fraction
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Behavior.read_bit_code import read_bit_code
@@ -131,16 +132,16 @@ def align_lever_behavior(behavior_data, imaging_data):
         frac = Fraction(num_frames / len(lever_force_resample_time)).limit_denominator()
         n = frac.numerator
         d = frac.denominator
-        force_resample_ds = sysignal.resample_poly(lever_force_resample_time, n, d)
-        force_smooth_ds = sysignal.resample_poly(lever_force_smooth_time, n, d)
-        active_ds = sysignal.resample_poly(lever_active_time, n, d)
-        velocity_envelope_ds = sysignal.resample_poly(
+        force_resample_frames = sysignal.resample_poly(lever_force_resample_time, n, d)
+        force_smooth_frames = sysignal.resample_poly(lever_force_smooth_time, n, d)
+        active_frames = sysignal.resample_poly(lever_active_time, n, d)
+        velocity_envelope_frames = sysignal.resample_poly(
             lever_velocity_envelop_smooth_time, n, d
         )
 
         # Fix smooth of the binarized active trace
-        active_ds[active_ds >= 0.5] = 1
-        active_ds[active_ds < 0.5] = 0
+        active_frames[active_frames >= 0.5] = 1
+        active_frames[active_frames < 0.5] = 0
 
         # Get cue and reward information
         cue_start = int(
@@ -154,6 +155,58 @@ def align_lever_behavior(behavior_data, imaging_data):
         binary_cue = np.zeros(num_frames)
         binary_cue[cue_start, cue_end] = 1
 
+        if behavior_data.behavior_frames[i].states.reward:
+            result = 1  # This is for rewarded trials
+            result_start = (
+                behavior_data.behavior_frames[i].states.reward[0] - start_trial_frames
+            )
+            result_end = (
+                behavior_data.behavior_frames[i].states.reward[1] - start_trial_frames
+            )
+            try:
+                # Trying to get the last movement before reward delivery
+                rwd_move_start = np.nonzero(
+                    np.sign(np.diff(active_frames[cue_start:result_start])) == 1
+                )[0][-1]
+                rwd_move_start = rwd_move_start + cue_start
+            except:
+                # If there isn't one detected, then movement must already have been going on, so set to start of trial
+                rwd_move_start = cue_start
+            try:
+                # Trying to get the first movement termination after reward delivery
+                rwd_move_end = np.nonzero(
+                    np.sign(np.diff(active_frames[rwd_move_start:end_trial_frames]))
+                    == -1
+                )[0][0]
+                rwd_move_end = rwd_move_end + rwd_move_start
+            except:
+                # If no movement termination found, print error and set it to end of trial
+                print(f"Error finding movement end for trial {i}")
+                rwd_move_end = end_trial_frames
+
+            result_delivery = np.zeros(num_frames)
+            result_delivery[result_start:result_end] = 1
+            rwd_movement_binary = np.zeros(num_frames)
+            rwd_movement_binary[rwd_move_start:rwd_move_end] = 1
+            rwd_movement_force = np.zeros(num_frames)
+            rwd_movement_force[rwd_move_start:rwd_move_end] = force_smooth_frames[
+                rwd_move_start:rwd_move_end
+            ]
+
+        else:
+            result = 0  # This is for punished trials
+            result_start = (
+                behavior_data.behavior_frames[i].states.punish[0] - start_trial_frames
+            )
+            result_end = (
+                behavior_data.behavior_frames[i].states.punish[0] - start_trial_frames
+            )
+
+            result_delivery = np.zeros(num_frames)
+            result_delivery[result_start:result_end] = 1
+
+        ########### ACTIVITY SECTION ##############
+
 
 ################# DATACLASSES #################
 
@@ -163,12 +216,18 @@ class Trial_Lever_Data:
     """Dataclass to contain all the lever data for each trial.
         Includes it in terms of original sampling and in terms of image frames"""
 
+    mouse_id: str
+    session: str
+    date: str
     trial_list: list
-    force_resample_time: list
-    force_smooth_time: list
-    active_time: list
-    velocity_envelope_smooth_time: list
-    force_resample_frames: list
-    force_smooth_frames: list
-    active_frames: list
-    velocity_envelope_smooth_frames: list
+    trial_time: list
+    result: list
+    lever_force_resample_frames: list
+    lever_force_smooth_frames: list
+    lever_active_frames: list
+    lever_velocity_envelope_frames: list
+    rewarded_movement_binary: list
+    rewarded_movement_force: list
+    binary_cue: list
+    result_delivery: list
+    activity: dict
