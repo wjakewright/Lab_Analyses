@@ -28,7 +28,7 @@ def align_lever_behavior(behavior_data, imaging_data):
         behavior_data.dispatcher_data.saved_history.ProtocolsSection_parsed_events
     )
     # Pull bitcode from the xsg data
-    trial_channel = behavior_data.xsg_data.channels["Trial number"]
+    trial_channel = behavior_data.xsg_data.channels["Trial_number"]
     curr_trial_list = read_bit_code(trial_channel)
     # Get bitcode trial numbers. This starts at 1 so will subtract 1 when used for indexing
     bitcode = curr_trial_list[:, 1]
@@ -38,16 +38,16 @@ def align_lever_behavior(behavior_data, imaging_data):
     last_trial = len(behavior_data.behavior_frames)
 
     # Check for trial errors in the bitcode output
-    errors = np.nonzero(np.absolute(np.diff(bitcode_offset)) > 1)[0][0]
+    errors = np.nonzero(np.absolute(np.diff(bitcode_offset)) > 1)[0]
     if errors:
-        trial_error = errors + 1
-    # Check if there were issues with the trials at the beginning of the session
-    if trial_error < 20:
-        # Setting first trial to trial after the error trials
-        first_trial = trial_error
-    else:
-        # Setting last trial to trial before the error trials
-        last_trial = trial_error - 1  # Recheck for indexing issues
+        trial_error = errors[0] + 1
+        # Check if there were issues with the trials at the beginning of the session
+        if trial_error < 20:
+            # Setting first trial to trial after the error trials
+            first_trial = trial_error
+        else:
+            # Setting last trial to trial before the error trials
+            last_trial = trial_error - 1  # Recheck for indexing issues
 
     # Check if there are errors in what determining the first trial
     counted_as_frist_trial = np.nonzero(bitcode == 1)
@@ -130,7 +130,28 @@ def align_lever_behavior(behavior_data, imaging_data):
             lever_velocity_envelop_smooth_time, n, d
         )
 
-        # Correct downsampling edge effects
+        # Correct downsampling edge effects for traces
+        ### Correcting the start and end to be the median of the trace
+        force_resample_ds[:10] = np.nanmedian(behavior_data.lever_force_resample)
+        force_resample_ds[-10:] = np.nanmedian(behavior_data.lever_force_resample)
+        force_smooth_ds[:10] = np.nanmedian(behavior_data.lever_force_smooth)
+        force_smooth_ds[-10:] = np.nanmedian(behavior_data.lever_force_smooth)
+        velocity_envelope_ds[:10] = np.nanmedian(
+            behavior_data.lever_velocity_envelope_smooth
+        )
+        velocity_envelope_ds[-10:] = np.nanmedian(
+            behavior_data.lever_velocity_envelope_smooth
+        )
+        active_ds[active_ds >= 0.5] = 1
+        active_ds[active_ds < 0.5] = 0
+
+        # Get cue and reward information
+        cue_start = (
+            behavior_data.behavior_frames[i].states.cue[0, 0] - start_trial_frames
+        )
+        if cue_start == 0:
+            cue_start = 1
+        cue_end = behavior_data.behavior_frames[i].states.cue[0, 1] - start_trial_frames
 
 
 ################# DATACLASSES #################
