@@ -1,5 +1,6 @@
 """Module to convert dispatcher behavioral data into corresponding imaging frames"""
 
+import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -47,7 +48,7 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
         return dispatcher_data
 
     # Get behavior frames from dispatcher
-    bhv_frames = mat_saved_history.ProtocolsSection_parsed_events
+    bhv_frames = copy.deepcopy(mat_saved_history.ProtocolsSection_parsed_events)
     imaged_trials = np.zeros(len(bhv_frames))
 
     # Get frame times (sec) from frame trigger traces
