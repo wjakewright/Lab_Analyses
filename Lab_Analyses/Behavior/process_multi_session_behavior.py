@@ -39,6 +39,7 @@ def process_multi_session_behavior(
     for day in day_dirs:
         # Get all the different sessions for each day
         day_name = os.path.basename(day)
+        print(f"                           ", end="\r")
         print(f"- {day_name}")
         sess_dirs = [
             os.path.join(day, name)
@@ -48,6 +49,7 @@ def process_multi_session_behavior(
         # Process each day
         for sess in sess_dirs:
             sess_name = os.path.basename(sess)
+            print(f"                           ", end="\r")
             print(f"---{sess_name}", end="\r")
             # Check if there are missing files
             fnames = os.listdir(sess)
