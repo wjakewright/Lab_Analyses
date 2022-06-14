@@ -1,7 +1,7 @@
 """Module to align the lever traces with the activity traces for each trial"""
 
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from fractions import Fraction
 
 import matplotlib.pyplot as plt
@@ -111,14 +111,16 @@ def align_lever_behavior(behavior_data, imaging_data):
         ############ BEHAVIOR SECTION #############
         # Get lever traces for current trial in terms of time
         lever_force_resample_time = behavior_data.lever_force_resample[
-            start_trial_time:end_trial_time
+            start_trial_time : end_trial_time + 1
         ]
         lever_force_smooth_time = behavior_data.lever_force_smooth[
-            start_trial_time:end_trial_time
+            start_trial_time : end_trial_time + 1
         ]
-        lever_active_time = behavior_data.lever_active[start_trial_time:end_trial_time]
+        lever_active_time = behavior_data.lever_active[
+            start_trial_time : end_trial_time + 1
+        ]
         lever_velocity_envelop_smooth_time = behavior_data.lever_velocity_envelope_smooth[
-            start_trial_time:end_trial_time
+            start_trial_time : end_trial_time + 1
         ]
         # Zero start to minimize downsampling edge effects
         lever_force_resample_time = (
@@ -154,7 +156,7 @@ def align_lever_behavior(behavior_data, imaging_data):
             behavior_data.behavior_frames[i].states.cue[1] - start_trial_frames
         )
         binary_cue = np.zeros(num_frames)
-        binary_cue[cue_start:cue_end] = 1
+        binary_cue[cue_start : cue_end + 1] = 1
 
         if behavior_data.behavior_frames[i].states.reward.shape[0] > 0:
             result = 1  # This is for rewarded trials
@@ -167,7 +169,7 @@ def align_lever_behavior(behavior_data, imaging_data):
             try:
                 # Trying to get the last movement before reward delivery
                 rwd_move_start = np.nonzero(
-                    np.sign(np.diff(active_frames[cue_start:result_start])) == 1
+                    np.sign(np.diff(active_frames[cue_start : result_start + 1])) == 1
                 )[0][-1]
                 rwd_move_start = int(rwd_move_start + cue_start)
             except:
@@ -176,7 +178,9 @@ def align_lever_behavior(behavior_data, imaging_data):
             try:
                 # Trying to get the first movement termination after reward delivery
                 rwd_move_end = np.nonzero(
-                    np.sign(np.diff(active_frames[rwd_move_start:end_trial_frames]))
+                    np.sign(
+                        np.diff(active_frames[rwd_move_start : end_trial_frames + 1])
+                    )
                     == -1
                 )[0][0]
                 rwd_move_end = int(rwd_move_end + rwd_move_start)
@@ -186,12 +190,12 @@ def align_lever_behavior(behavior_data, imaging_data):
                 rwd_move_end = int(end_trial_frames)
 
             result_delivery = np.zeros(num_frames)
-            result_delivery[result_start:result_end] = 1
+            result_delivery[result_start : result_end + 1] = 1
             rwd_movement_binary = np.zeros(num_frames)
-            rwd_movement_binary[rwd_move_start:rwd_move_end] = 1
+            rwd_movement_binary[rwd_move_start : rwd_move_end + 1] = 1
             rwd_movement_force = np.zeros(num_frames)
-            rwd_movement_force[rwd_move_start:rwd_move_end] = force_smooth_frames[
-                rwd_move_start:rwd_move_end
+            rwd_movement_force[rwd_move_start : rwd_move_end + 1] = force_smooth_frames[
+                rwd_move_start : rwd_move_end + 1
             ]
 
         else:
@@ -204,9 +208,55 @@ def align_lever_behavior(behavior_data, imaging_data):
             )
 
             result_delivery = np.zeros(num_frames)
-            result_delivery[result_start:result_end] = 1
+            result_delivery[result_start : result_end + 1] = 1
 
         ########### ACTIVITY SECTION ##############
+        # Check what type of activity data is included in imaging data file
+        activity_fields = [field.name for field in fields(imaging_data)]
+
+        if "fluorescence" in activity_fields:
+            fluorescence = align_activity(
+                imaging_data.fluorescence, behavior_data.behavior_frames[i]
+            )
+
+
+def align_activity(activity, behavior_frames):
+    """Helper function to handle aligning all the FOVs in the activity dictionary
+        
+        INPUT PARAMETERS
+            activity - dict containing the activity for the different types of ROIs. 
+                        Each key is for a different ROI type, which then contains all
+                        the ROIs for that type within. 
+                        This is a single field from the Activity_Output Datalcass
+                        
+            behavior_frame - object containing the behavior frames generated from 
+                             dispatcher data
+                             
+        OUTPUT PARAMETERS
+            tiral_activity - dict containint the activity the different types of ROIs. 
+                            Same organization as the inpupt dict
+    """
+    # get the start and end of the trial
+    start = behavior_frames.states.state_0[0, 1]
+    end = behavior_frames.states.state_0[1, 0]
+
+    # initialize output dictionary
+    trial_activity = {}
+
+    # go through each roi type
+    for key, value in activity.items():
+        if key != "Dendrite Poly":
+            # Slicing the start and end of the trial
+            trial = value[start:end, :]
+        else:
+            trial = []
+            for poly in value:
+                trial_poly = poly[start : end + 1, :]
+                trial.append(trial_poly)
+
+        trial_activity[key] = trial
+
+    return trial_activity
 
 
 ################# DATACLASSES #################
