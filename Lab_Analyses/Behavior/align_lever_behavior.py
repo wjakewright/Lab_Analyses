@@ -1,7 +1,7 @@
 """Module to align the lever traces with the activity traces for each trial"""
 
 import os
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from fractions import Fraction
 
 import numpy as np
@@ -79,6 +79,7 @@ def align_lever_behavior(behavior_data, imaging_data, save):
     dFoF = []
     processed_dFoF = []
     spikes = []
+    opto_list = []
 
     # Go through each trial
     for i in trial_idxs:
@@ -212,6 +213,8 @@ def align_lever_behavior(behavior_data, imaging_data, save):
             rwd_movement_force[rwd_move_start : rwd_move_end + 1] = force_smooth_frames[
                 rwd_move_start : rwd_move_end + 1
             ]
+            rewarded_movement_binary.append(rwd_movement_binary)
+            rewarded_movement_force.append(rwd_movement_force)
 
         else:
             result = 0  # This is for punished trials
@@ -232,39 +235,35 @@ def align_lever_behavior(behavior_data, imaging_data, save):
         lever_force_smooth_frames.append(force_smooth_frames)
         lever_active_frames.append(active_frames)
         lever_velocity_envelope_frames.append(velocity_envelope_frames)
-        rewarded_movement_binary.append(rwd_movement_binary)
-        rewarded_movement_force.append(rwd_movement_force)
         binary_cue_list.append(binary_cue)
         result_delivery_list.append(result_delivery)
 
         ########### ACTIVITY SECTION ##############
         # Check what type of activity data is included in imaging data file
-        activity_fields = [field.name for field in fields(imaging_data)]
 
-        if "fluorescence" in activity_fields:
+        if imaging_data.fluorescence:
+            print("getting fluorescence")
             fluo = align_activity(
                 imaging_data.fluorescence, behavior_data.behavior_frames[i]
             )
             fluorescence.append(fluo)
 
-        elif "dFoF" in activity_fields:
+        if imaging_data.dFoF:
+            print("getting dFoF")
             dfof = align_activity(imaging_data.dFoF, behavior_data.behavior_frames[i])
             dFoF.append(dfof)
 
-        elif "processed_dFoF" in activity_fields:
+        if imaging_data.processed_dFoF:
             pdfof = align_activity(
                 imaging_data.processed_dFoF, behavior_data.behavior_frames[i]
             )
             processed_dFoF.append(pdfof)
 
-        elif "deconvolved_spikes" in activity_fields:
+        if imaging_data.deconvolved_spikes:
             deconv = align_activity(
                 imaging_data.deconvolved_spikes, behavior_data.behavior_frames[i]
             )
             spikes.append(deconv)
-
-        else:
-            pass
 
     ############ OUTPUT SECTION ###############
     # Generate the output dataclass
@@ -326,8 +325,8 @@ def align_activity(activity, behavior_frames):
                             Same organization as the inpupt dict
     """
     # get the start and end of the trial
-    start = behavior_frames.states.state_0[0, 1]
-    end = behavior_frames.states.state_0[1, 0]
+    start = int(behavior_frames.states.state_0[0, 1])
+    end = int(behavior_frames.states.state_0[1, 0])
 
     # initialize output dictionary
     trial_activity = {}
