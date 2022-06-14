@@ -1,16 +1,16 @@
 """Module to align the lever traces with the activity traces for each trial"""
 
-
+import os
 from dataclasses import dataclass, fields
 from fractions import Fraction
 
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Behavior.read_bit_code import read_bit_code
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
-def align_lever_behavior(behavior_data, imaging_data):
+def align_lever_behavior(behavior_data, imaging_data, save):
     """Function to align lever traces with the activity traces for each trial
         
         INPUT PARAMETERS
@@ -20,8 +20,10 @@ def align_lever_behavior(behavior_data, imaging_data):
             imaging_data - dataclass containing the Activity_Output with activity 
                             data in it. Output from Activity_Viewer
 
+            save - boolean to specify whether to save the output or not
+
         OUTPUT PARAMETERS
-            
+            aligned_data - dataclass containing 
 
     """
     # Get important part of dispatcher data
@@ -62,11 +64,21 @@ def align_lever_behavior(behavior_data, imaging_data):
     trial_idxs = np.arange(first_trial, last_trial)  # trial indexes
 
     # Set up variables that will contain the information for each trial
-    used_trials = []
-    trial_lever_force_resample_time = []
-    trial_lever_force_smooth_time = []
-    trial_lever_active_time = []
-    trial_lever_velocity_envelope_smooth_time = []
+    trial_list = []
+    trial_time = []
+    results = []
+    lever_force_resample_frames = []
+    lever_force_smooth_frames = []
+    lever_active_frames = []
+    lever_velocity_envelope_frames = []
+    rewarded_movement_binary = []
+    rewarded_movement_force = []
+    binary_cue_list = []
+    result_delivery_list = []
+    fluorescence = []
+    dFoF = []
+    processed_dFoF = []
+    spikes = []
 
     # Go through each trial
     for i in trial_idxs:
@@ -86,9 +98,9 @@ def align_lever_behavior(behavior_data, imaging_data):
 
         ######### TRIAL INFORMATION #########
         i_bitcode = i - np.absolute(bitcode_offset[i])
-        if i_bitcode in used_trials:
+        if i_bitcode in trial_list:
             continue
-        used_trials.append(i_bitcode)
+        trial_list.append(i_bitcode)
 
         # Getting the times for the start and end of the trial in terms of lever sampling rate
         start_trial_time = int(np.round(curr_trial_list[i, 0] * 1000))
@@ -107,6 +119,9 @@ def align_lever_behavior(behavior_data, imaging_data):
         start_trial_frames = int(behavior_data.behavior_frames[i].states.state_0[0, 1])
         end_trial_frames = int(behavior_data.behavior_frames[i].states.state_0[1, 0])
         num_frames = len(np.arange(start_trial_frames, end_trial_frames))
+
+        # Get the time of the trial frames
+        times = behavior_data.frame_times[start_trial_frames : end_trial_frames + 1]
 
         ############ BEHAVIOR SECTION #############
         # Get lever traces for current trial in terms of time
@@ -210,14 +225,88 @@ def align_lever_behavior(behavior_data, imaging_data):
             result_delivery = np.zeros(num_frames)
             result_delivery[result_start : result_end + 1] = 1
 
+        ## Append all the behavioral results
+        trial_time.append(times)
+        results.append(result)
+        lever_force_resample_frames.append(force_resample_frames)
+        lever_force_smooth_frames.append(force_smooth_frames)
+        lever_active_frames.append(active_frames)
+        lever_velocity_envelope_frames.append(velocity_envelope_frames)
+        rewarded_movement_binary.append(rwd_movement_binary)
+        rewarded_movement_force.append(rwd_movement_force)
+        binary_cue_list.append(binary_cue)
+        result_delivery_list.append(result_delivery)
+
         ########### ACTIVITY SECTION ##############
         # Check what type of activity data is included in imaging data file
         activity_fields = [field.name for field in fields(imaging_data)]
 
         if "fluorescence" in activity_fields:
-            fluorescence = align_activity(
+            fluo = align_activity(
                 imaging_data.fluorescence, behavior_data.behavior_frames[i]
             )
+            fluorescence.append(fluo)
+
+        elif "dFoF" in activity_fields:
+            dfof = align_activity(imaging_data.dFoF, behavior_data.behavior_frames[i])
+            dFoF.append(dfof)
+
+        elif "processed_dFoF" in activity_fields:
+            pdfof = align_activity(
+                imaging_data.processed_dFoF, behavior_data.behavior_frames[i]
+            )
+            processed_dFoF.append(pdfof)
+
+        elif "deconvolved_spikes" in activity_fields:
+            deconv = align_activity(
+                imaging_data.deconvolved_spikes, behavior_data.behavior_frames[i]
+            )
+            spikes.append(deconv)
+
+        else:
+            pass
+
+    ############ OUTPUT SECTION ###############
+    # Generate the output dataclass
+    aligned_data = Trial_Aligned_Data(
+        mouse_id=behavior_data.mouse_id,
+        session=behavior_data.sess_name,
+        date=behavior_data.date,
+        trial_list=trial_list,
+        trial_time=trial_time,
+        result=results,
+        lever_force_resample_frames=lever_force_resample_frames,
+        lever_force_smooth_frames=lever_force_smooth_frames,
+        lever_active_frames=lever_active_frames,
+        lever_velocity_envelope_frames=lever_velocity_envelope_frames,
+        rewarded_movement_binary=rewarded_movement_binary,
+        rewarded_movement_force=rewarded_movement_force,
+        binary_cue=binary_cue_list,
+        result_delivery=result_delivery_list,
+        fluorescence=fluorescence,
+        dFoF=dFoF,
+        processed_dFoF=processed_dFoF,
+        spikes=spikes,
+    )
+
+    # save data if specified
+    if save is True:
+        # Set up the save path
+        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        save_path = os.path.join(
+            initial_path,
+            behavior_data.mouse_id,
+            "aligned_data",
+            behavior_data.sess_name,
+        )
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+        # Make the filename
+        save_name = f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_data"
+        # Save data as pickle
+        save_pickle(save_name, aligned_data, save_path)
+
+    return aligned_data
 
 
 def align_activity(activity, behavior_frames):
@@ -263,7 +352,7 @@ def align_activity(activity, behavior_frames):
 
 
 @dataclass
-class Trial_Lever_Data:
+class Trial_Aligned_Data:
     """Dataclass to contain all the lever data for each trial.
         Includes it in terms of original sampling and in terms of image frames"""
 
@@ -281,4 +370,8 @@ class Trial_Lever_Data:
     rewarded_movement_force: list
     binary_cue: list
     result_delivery: list
+    fluorescence: list
+    dFoF: list
+    processed_dFoF: list
+    spikes: list
 
