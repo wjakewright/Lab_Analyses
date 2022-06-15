@@ -103,5 +103,8 @@ def classify_opto_response(
 
     dFoF = dFoF[:, 1:]  # Getting rid of the initialized zeros
 
+    if z_score is True:
+        dFoF = test_utils.z_score(dFoF)
+
     # Start analyzing the data
 
