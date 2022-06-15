@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass
 from fractions import Fraction
+from itertools import compress
 
 import numpy as np
 import scipy.signal as sysignal
@@ -63,6 +64,10 @@ def align_lever_behavior(behavior_data, imaging_data, save):
 
     trial_idxs = np.arange(first_trial, last_trial)  # trial indexes
 
+    # Used only imaged trials
+    i_trials = behavior_data.imaged_trials == 1
+    trial_idxs = list(compress(trial_idxs, i_trials))
+
     # Set up variables that will contain the information for each trial
     trial_list = []
     trial_time = []
@@ -79,7 +84,6 @@ def align_lever_behavior(behavior_data, imaging_data, save):
     dFoF = []
     processed_dFoF = []
     spikes = []
-    opto_list = []
 
     # Go through each trial
     for i in trial_idxs:
@@ -286,6 +290,9 @@ def align_lever_behavior(behavior_data, imaging_data, save):
         dFoF=dFoF,
         processed_dFoF=processed_dFoF,
         spikes=spikes,
+        imaging_parameters=imaging_data.parameters,
+        ROI_ids=imaging_data.ROI_ids,
+        ROI_flags=imaging_data.ROI_flags,
     )
 
     # save data if specified
@@ -373,4 +380,7 @@ class Trial_Aligned_Data:
     dFoF: list
     processed_dFoF: list
     spikes: list
+    imaging_parameters: dict
+    ROI_ids: dict
+    ROI_flags: dict
 
