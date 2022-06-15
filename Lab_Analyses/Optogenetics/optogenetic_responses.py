@@ -2,12 +2,15 @@
     optogenetic stimulation"""
 
 import os
+from dataclasses import dataclass
 from itertools import compress
 
+import Lab_Analyses.Optogenetics.opto_plotting as plotting
 import Lab_Analyses.Utilities.data_utilities as data_utils
 import Lab_Analyses.Utilities.test_utilities as test_utils
 import numpy as np
 import pandas as pd
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def classify_opto_response(
@@ -107,4 +110,102 @@ def classify_opto_response(
         dFoF = test_utils.z_score(dFoF)
 
     # Start analyzing the data
+    befores, afters = data_utils.get_before_after_means(
+        activity=dFoF,
+        timestamps=stims,
+        window=window,
+        sampling_rate=sampling_rate,
+        offset=False,
+        single=False,
+    )
+    new_stims = [i[0] for i in stims]
+    roi_stims, roi_means = data_utils.get_trace_mean_sem(
+        activity=dFoF,
+        timestamps=new_stims,
+        window=vis_window,
+        sampling_rate=sampling_rate,
+        single=False,
+    )
+    roi_stims = list(roi_stims.values())
+    roi_means = list(roi_means.values())
+    results_dict, _, _ = test_utils.response_testing(
+        imaging=dFoF,
+        timestamps=stims,
+        window=window,
+        sampling_rate=sampling_rate,
+        method=method,
+    )
+
+    # Put results into the output
+    opto_response_output = Opto_Repsonses(
+        mouse_id=behavior_data.mouse_id,
+        session=behavior_data.sess_name,
+        date=behavior_data.date,
+        ROI_ids=ROI_ids,
+        dFoF=dFoF,
+        stims=stims,
+        befores=befores,
+        afters=afters,
+        roi_stims=roi_stims,
+        roi_means=roi_means,
+        results=results_dict,
+    )
+
+    # Save section
+    if save is True:
+        # Set the save path
+        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        save_path = os.path.join(
+            initial_path, behavior_data.mouse_id, "behavior", behavior_data.date
+        )
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+        # Set filename
+        save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_opto_response"
+        # Save the data as a pickle file
+        save_pickle(save_name, opto_response_output, save_path)
+
+    return opto_response_output
+
+
+#################### DATACLASSES #######################
+@dataclass
+class Opto_Repsonses:
+    mouse_id: str
+    session: str
+    date: str
+    ROI_ids: list
+    dFoF: np.array
+    stims: list
+    befores: list
+    afters: list
+    roi_stims: list
+    roi_means: list
+    results: dict
+
+    def display_results(self, figsizes=None, parameters=None):
+        """Method to make plots and display the data
+        
+            INPUT PARAMETERS
+                figsizes - list containing tuples for how big each figures should be
+                
+                parameters - dict containg the following paramters:
+                                title - str
+                                hmap_range - tuple
+                                cmap - str
+                                zeroed - bool
+                                sort - bool
+                                center - int
+        """
+        if parameters is None:
+            parameters = {
+                "title": "default",
+                "hmap_range": None,
+                "cmap": None,
+                "zeroed": False,
+                "sort": False,
+                "center": None,
+            }
+        if figsizes is None:
+            figsizes = [(7, 8), (10, 10), (10, 10), (4, 5), (10, 10)]
 
