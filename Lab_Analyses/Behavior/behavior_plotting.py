@@ -49,7 +49,7 @@ def plot_session_rewarded_lever_presses(
         raise Exception("Must specify the save path in order to save the figures")
 
     # Set title
-    title = f"{mouse_lever_data.mouse_id} from session {session}"
+    title = f"{mouse_lever_data.mouse_id} press from session {session}"
 
     # Make the figure
     fig = plt.figure(figsize=figsize)
