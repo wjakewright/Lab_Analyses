@@ -183,7 +183,7 @@ def classify_opto_response(
     return opto_response_output
 
 
-def group_opto_responses(data, group_name, save_path):
+def group_opto_responses(data, group_name, save=False, save_path=None):
     """Function to group data across mice for the same session type
     
         INPUT PARAMETERS
@@ -219,7 +219,7 @@ def group_opto_responses(data, group_name, save_path):
     dates = [x.date for x in data]
     imaging_parameters = [x.imaging_parmaeters for x in data]
     analysis_settings = [x.analysis_settings for x in data]
-    dFof = [x.dFoF for x in data]
+    dFoF = [x.dFoF for x in data]
     stims = [x.stims for x in data]
 
     # Generate new ROIs
@@ -228,6 +228,49 @@ def group_opto_responses(data, group_name, save_path):
         for roi in dataset.ROI_ids:
             new_roi = f"{dataset.mouse_id}_{dataset.sessoin}_{dataset.date}_{roi}"
             new_ROIs.append(new_roi)
+
+    # Group the data together across mice
+    roi_stims = [x.roi_stims for x in data]
+    group_roi_stims = [y for x in roi_stims for y in x]
+    group_roi_stim_epochs = dict(zip(new_ROIs, group_roi_stims))
+    roi_mean_sems = [x.roi_mean_sems for x in data]
+    group_roi_means = [y for x in roi_mean_sems for y in x]
+    group_roi_mean_sems = dict(zip(new_ROIs, group_roi_means))
+    results = [x.results["dict"] for x in data]
+    results_values = [list(result.values()) for result in results]
+    group_results_values = [y for x in results_values for y in x]
+    group_results_dict = dict(zip(new_ROIs, group_results_values))
+    group_results_df = pd.DataFrame.from_dict(group_results_dict, orient="index")
+    if "shuff_diffs" in group_results_df.columns:
+        group_results_df = group_results_df.drop(columns=["shuff_diffs"])
+    group_results = {"dict": group_results_dict, "df": group_results_df}
+
+    # Generate the output
+    grouped_responses = Opto_Repsonses(
+        mouse_id=mouse_ids,
+        session=sessions,
+        date=dates,
+        ROI_ids=new_ROIs,
+        imaging_parameters=imaging_parameters,
+        analysis_settings=analysis_settings,
+        dFoF=dFoF,
+        stims=stims,
+        roi_stims=group_roi_stim_epochs,
+        roi_mean_sems=group_roi_mean_sems,
+        results=group_results,
+        group_name=group_name,
+    )
+
+    if save is True and save_path is None:
+        save_path = QFileDialog.getSaveFileName("Save Directory")[0]
+
+    if save is True:
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+        save_name = group_name
+        save_pickle(save_name, grouped_responses, save_path)
+
+    return grouped_responses
 
 
 #################### DATACLASSES #######################
@@ -242,7 +285,7 @@ class Opto_Repsonses:
     dFoF: np.array  # If data is grouped this will be a list
     stims: list
     roi_stims: list
-    roi_means: list
+    roi_mean_sems: list
     results: dict
     group_name: str = ""  # Filled in if data are grouped together
 
@@ -341,7 +384,7 @@ class Opto_Repsonses:
 
         # Plot the trial averaged trace
         plotting.plot_mean_sem(
-            self.roi_means,
+            self.roi_mean_sems,
             self.analysis_settings["vis_window"],
             self.ROI_ids,
             figsize=figsizes["fig3"],
