@@ -1,3 +1,5 @@
+import os
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +17,14 @@ sns.set_style("ticks")
 
 
 def plot_session_activity(
-    dFoF, itis, zscore=False, figsize=(7, 8), title="default", save=False, name=None
+    dFoF,
+    itis,
+    zscore=False,
+    figsize=(7, 8),
+    title="default",
+    save=False,
+    name=None,
+    save_path=None,
 ):
     """Function to plot the activity of each ROI for the entire imaging session.
         Indicates the locations of each stimulation."""
@@ -43,11 +52,21 @@ def plot_session_activity(
     plt.legend(bbox_to_anchor=(1.1, 1.05))
     plt.tight_layout()
     if save is True:
-        plt.savefig(name + "_Session_Activity.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        plt.savefig(save_name + "_Session_Activity.pdf")
 
 
 def plot_each_event(
-    roi_stim_epochs, ROIs, figsize=(7, 8), title="default", save=False, name=None
+    roi_stim_epochs,
+    ROIs,
+    figsize=(7, 8),
+    title="default",
+    save=False,
+    name=None,
+    save_path=None,
 ):
     """Function to plot the activity of each ROI around each stimulation event."""
     if title == "default":
@@ -81,7 +100,11 @@ def plot_each_event(
         ax.tick_params(axis="both", which="both", direction="in", length=4)
     fig.tight_layout()
     if save is True:
-        fig.savefig(name + "_Time_Locked_Activity.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        fig.savefig(save_name + "_Time_Locked_Activity.pdf")
 
 
 def plot_mean_sem(
@@ -93,6 +116,7 @@ def plot_mean_sem(
     title="default",
     save=False,
     name=None,
+    save_path=None,
 ):
     if title == "default":
         title = "Mean Opto Activity"
@@ -131,7 +155,11 @@ def plot_mean_sem(
         count += 1
     fig.tight_layout()
     if save is True:
-        fig.savefig(name + "_Mean_Activity.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        fig.savefig(save_name + "_Mean_Activity.pdf")
 
 
 def plot_trial_heatmap(
@@ -148,6 +176,7 @@ def plot_trial_heatmap(
     zeroed=False,
     sort=False,
     center=None,
+    save_path=None,
 ):
     """Function to plot heatmap of activity of each neuron for each trial"""
     if hmap_range is None:
@@ -253,7 +282,11 @@ def plot_trial_heatmap(
     # Final formating and saving
     fig.tight_layout()
     if save is True:
-        fig.savefig(name + "_Trial_Heatmap.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        fig.savefig(save_name + "_Trial_Heatmap.pdf")
 
 
 def plot_mean_heatmap(
@@ -269,6 +302,7 @@ def plot_mean_heatmap(
     zeroed=False,
     sort=False,
     center=None,
+    save_path=None,
 ):
     """Function to plot heatmap of avg ROI activity"""
     if hmap_range is None:
@@ -357,7 +391,11 @@ def plot_mean_heatmap(
 
     fig.tight_layout()
     if save is True:
-        fig.savefig(name + "_Heatmap.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        fig.savefig(save_name + "_Heatmap.pdf")
 
 
 def plot_shuff_distribution(
@@ -368,6 +406,7 @@ def plot_shuff_distribution(
     title="default",
     save=False,
     name=None,
+    save_path=None,
 ):
     """Function to plot the shuffle distribution against the real data for 
         each ROI"""
@@ -398,11 +437,23 @@ def plot_shuff_distribution(
 
     fig.tight_layout()
     if save is True:
-        fig.savefig(name + "_Shuffle_Distributions.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        fig.savefig(save_name + "_Shuffle_Distributions.pdf")
 
 
 def plot_power_curve(
-    ps, diffs, sems, scatter, percent_sig, zscore, save=False, name=None
+    ps,
+    diffs,
+    sems,
+    scatter,
+    percent_sig,
+    zscore,
+    save=False,
+    name=None,
+    save_path=None,
 ):
     """Function to plot mean activity and percent significant for different optostimulation
         power sessions."""
@@ -443,5 +494,9 @@ def plot_power_curve(
     plt.xlabel("Power (mW)", labelpad=15)
     fig.tight_layout()
     if save is True:
-        fig.savefig(name + " Power Curve.pdf")
+        if save_path is None:
+            save_name = name
+        else:
+            save_name = os.path.join(save_path, name)
+        fig.savefig(save_name + " Power Curve.pdf")
 
