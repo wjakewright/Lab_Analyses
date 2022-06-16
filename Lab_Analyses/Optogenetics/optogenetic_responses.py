@@ -6,11 +6,13 @@ import re
 from dataclasses import dataclass
 from itertools import compress
 
+import dataframe_image as dfi
 import Lab_Analyses.Optogenetics.opto_plotting as plotting
 import Lab_Analyses.Utilities.data_utilities as data_utils
 import Lab_Analyses.Utilities.test_utilities as test_utils
 import numpy as np
 import pandas as pd
+from IPython.display import display
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 from PyQt5.QtWidgets import QFileDialog
 
@@ -97,14 +99,16 @@ def classify_opto_response(
     dFoF = np.zeros(session_len).reshape(-1, 1)
     if processed_dFoF is False:
         for key, value in imaging_data.dFoF.items():
-            ids = [f"{key} {x+1}" for x in np.arange(value.shape[1])]
-            [ROI_ids.append(x) for x in ids]
-            dFoF = np.hstack((dFoF, value))
+            if key in ROI_TYPES:
+                ids = [f"{key} {x+1}" for x in np.arange(value.shape[1])]
+                [ROI_ids.append(x) for x in ids]
+                dFoF = np.hstack((dFoF, value))
     else:
         for key, value in imaging_data.processed_dFoF.items():
-            ids = [f"{key} {x+1}" for x in np.arange(value.shape[1])]
-            [ROI_ids.append(x) for x in ids]
-            dFoF = np.hstack((dFoF, value))
+            if key in ROI_TYPES:
+                ids = [f"{key} {x+1}" for x in np.arange(value.shape[1])]
+                [ROI_ids.append(x) for x in ids]
+                dFoF = np.hstack((dFoF, value))
 
     dFoF = dFoF[:, 1:]  # Getting rid of the initialized zeros
 
@@ -130,7 +134,7 @@ def classify_opto_response(
     )
     roi_stims = list(roi_stims.values())
     roi_means = list(roi_means.values())
-    results_dict, _, _ = test_utils.response_testing(
+    results_dict, results_df, _ = test_utils.response_testing(
         imaging=dFoF,
         timestamps=stims,
         window=window,
@@ -139,20 +143,27 @@ def classify_opto_response(
     )
 
     # Put results into the output
+    analysis_settings = {
+        "method": method,
+        "window": window,
+        "vis_window": vis_window,
+        "processed": processed_dFoF,
+        "stim length": stim_len,
+        "z_score": z_score,
+    }
+    results = {"dict": results_dict, "df": results_df}
     opto_response_output = Opto_Repsonses(
         mouse_id=behavior_data.mouse_id,
         session=behavior_data.sess_name,
         date=behavior_data.date,
         ROI_ids=ROI_ids,
-        z_score=z_score,
         imaging_parameters=imaging_data.parameters,
+        analysis_settings=analysis_settings,
         dFoF=dFoF,
         stims=stims,
-        befores=befores,
-        afters=afters,
         roi_stims=roi_stims,
         roi_means=roi_means,
-        results=results_dict,
+        results=results,
     )
 
     # Save section
@@ -168,10 +179,55 @@ def classify_opto_response(
         save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_opto_response"
         # Save the data as a pickle file
         save_pickle(save_name, opto_response_output, save_path)
-        opto_response_output.filename = save_name
-        opto_response_output.file_path = save_path
 
     return opto_response_output
+
+
+def group_opto_responses(data, group_name, save_path):
+    """Function to group data across mice for the same session type
+    
+        INPUT PARAMETERS
+            data - list of Opto_Responses dataclasses for each mouse being grouped
+
+            group_name - str specifying the name of the group
+
+            save_path - str specifying where to save the output
+            
+        OUTPUT PARAMETERS
+            grouped_responses - Opto_Responses data class
+            
+    """
+    # first test the different datasets have the same imaging and analysis parameters
+    first_sampling_rate = data[0].imaging_parameters["Sampling Rate"]
+    first_settings = data[0].analysis_settings
+
+    for dataset in data[1:]:
+        if dataset.imaging_parameters["Sampling Rate"] != first_sampling_rate:
+            return print(
+                f"{dataset.mouse_id}_{dataset.session}_{dataset.date} has a different sampling rate"
+            )
+        if list(dataset.analysis_settings.values()) != list(first_settings.values()):
+            return print(
+                f"{dataset.mouse_id}_{dataset.session}_{dataset.date} has a different analysis settings"
+            )
+
+    # Start grouping the datasets
+
+    # Put all the mice ids, sessions, and dates into lists
+    mouse_ids = [x.mouse_id for x in data]
+    sessions = [x.session for x in data]
+    dates = [x.date for x in data]
+    imaging_parameters = [x.imaging_parmaeters for x in data]
+    analysis_settings = [x.analysis_settings for x in data]
+    dFof = [x.dFoF for x in data]
+    stims = [x.stims for x in data]
+
+    # Generate new ROIs
+    new_ROIs = []
+    for dataset in data:
+        for roi in dataset.ROI_ids:
+            new_roi = f"{dataset.mouse_id}_{dataset.sessoin}_{dataset.date}_{roi}"
+            new_ROIs.append(new_roi)
 
 
 #################### DATACLASSES #######################
@@ -181,17 +237,14 @@ class Opto_Repsonses:
     session: str  # If data is grouped this will be a list
     date: str  # If data is grouped this will be a list
     ROI_ids: list
-    z_score: bool
-    imaging_parameters: dict
-    dFoF: np.array
+    imaging_parameters: dict  # If data is grouped this will be a list
+    analysis_settings: dict  # If data is grouped this will be a list
+    dFoF: np.array  # If data is grouped this will be a list
     stims: list
-    befores: list
-    afters: list
     roi_stims: list
     roi_means: list
     results: dict
-    filename: str = ""
-    file_path: str = ""
+    group_name: str = ""  # Filled in if data are grouped together
 
     def display_results(
         self, figsizes=None, parameters=None, save=False, save_path=None
@@ -237,42 +290,99 @@ class Opto_Repsonses:
         ## If data is grouped it will plot the different mice seperates
         ### Check if there are multiple groups
         multi_mice = list(filter(re.compile("JW").match, self.ROI_ids))
+
+        # Set up data names for plotting and saving purposes
+        if multi_mice:
+            data_name = self.group_name
+        else:
+            data_name = f"{self.mouse_id}_{self.session}_{self.date}"
+
         # If there are multiple datasets, then plot each dataset seperately
         if multi_mice:
-            datasets = set([x.rsplit("_", 1)[0] for x in self.ROI_ids])
-            for dataset in datasets:
-                idxs = [i for i, roi in enumerate(self.ROI_ids) if dataset in roi]
-                plot_data = self.dFoF[:, idxs[0] : idxs[-1] + 1]
+            for i, dataset in enumerate(self.dFoF):
                 plotting.plot_session_activity(
-                    plot_data,
-                    self.stims,
-                    self.z_score,
+                    dataset,
+                    self.stims[i],
+                    self.analysis_settings["z_score"],
                     figsize=figsizes["fig1"],
                     title=parameters["title"],
                     save=save,
-                    name=dataset,
+                    name=f"{self.mouse_id[i]}_{self.session[i]}_{self.date[i]}",
                     save_path=save_path,
                 )
         else:
             plotting.plot_session_activity(
                 self.dFoF,
                 self.stims,
-                self.z_score,
+                self.analysis_settings["z_score"],
                 figsize=figsizes["fig1"],
                 title=parameters["title"],
                 save=save,
-                name=f"{self.mouse_id}_{self.session}_{self.date}",
+                name=data_name,
                 save_path=save_path,
             )
 
         # Plot the trial heatmaps
         plotting.plot_trial_heatmap(
-            self.roi_stim_epochs,
-            self.z_score,
+            self.roi_stims,
+            self.analysis_settings["z_score"],
             self.imaging_parameters["Sampling Rate"],
             figsize=figsizes["fig2"],
             title=parameters["title"],
             cmap=parameters["cmap"],
             save=save,
+            name=data_name,
+            hmap_range=parameters["hmap_range"],
+            zeroed=parameters["zeroed"],
+            sort=False,
+            center=parameters["center"],
+            save_path=save_path,
         )
+
+        # Plot the trial averaged trace
+        plotting.plot_mean_sem(
+            self.roi_means,
+            self.analysis_settings["vis_window"],
+            self.ROI_ids,
+            figsize=figsizes["fig3"],
+            col_num=4,
+            title=parameters["title"],
+            save=save,
+            name=data_name,
+            save_path=save_path,
+        )
+
+        # Plot the mean heatmap
+        plotting.plot_mean_heatmap(
+            self.roi_means,
+            self.analysis_settings["z_score"],
+            self.imaging_parameters["Sampling Rate"],
+            figsize=figsizes["fig4"],
+            title=parameters["title"],
+            cmap=parameters["cmap"],
+            save=save,
+            name=data_name,
+            hmap_range=parameters["hmap_range"],
+            zeroed=parameters["zeroed"],
+            sort=parameters["sort"],
+            center=parameters["center"],
+            save_path=save_path,
+        )
+
+        if self.analysis_settings["method"] == "shuffle":
+            plotting.plot_shuff_distribution(
+                self.results["dict"],
+                self.ROI_ids,
+                figsize=figsizes["fig5"],
+                col_num=4,
+                title=parameters["title"],
+                save=save,
+                name=data_name,
+                save_path=save_path,
+            )
+
+        display(self.results["df"])
+        if save is True:
+            table_name = os.path.join(save_path, data_name + "_table.png")
+            dfi.export(self.results["df"], table_name)
 
