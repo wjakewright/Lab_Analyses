@@ -2,6 +2,7 @@
     optogenetic stimulation"""
 
 import os
+import re
 from dataclasses import dataclass
 from itertools import compress
 
@@ -11,6 +12,7 @@ import Lab_Analyses.Utilities.test_utilities as test_utils
 import numpy as np
 import pandas as pd
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
+from PyQt5.QtWidgets import QFileDialog
 
 
 def classify_opto_response(
@@ -142,6 +144,8 @@ def classify_opto_response(
         session=behavior_data.sess_name,
         date=behavior_data.date,
         ROI_ids=ROI_ids,
+        z_score=z_score,
+        imaging_parameters=imaging_data.parameters,
         dFoF=dFoF,
         stims=stims,
         befores=befores,
@@ -164,6 +168,8 @@ def classify_opto_response(
         save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_opto_response"
         # Save the data as a pickle file
         save_pickle(save_name, opto_response_output, save_path)
+        opto_response_output.filename = save_name
+        opto_response_output.file_path = save_path
 
     return opto_response_output
 
@@ -171,10 +177,12 @@ def classify_opto_response(
 #################### DATACLASSES #######################
 @dataclass
 class Opto_Repsonses:
-    mouse_id: str
-    session: str
-    date: str
+    mouse_id: str  # If data is grouped this will be a lsit
+    session: str  # If data is grouped this will be a list
+    date: str  # If data is grouped this will be a list
     ROI_ids: list
+    z_score: bool
+    imaging_parameters: dict
     dFoF: np.array
     stims: list
     befores: list
@@ -182,12 +190,16 @@ class Opto_Repsonses:
     roi_stims: list
     roi_means: list
     results: dict
+    filename: str = ""
+    file_path: str = ""
 
-    def display_results(self, figsizes=None, parameters=None):
+    def display_results(
+        self, figsizes=None, parameters=None, save=False, save_path=None
+    ):
         """Method to make plots and display the data
         
             INPUT PARAMETERS
-                figsizes - list containing tuples for how big each figures should be
+                figsizes - dict with a tuple for the specified figure
                 
                 parameters - dict containg the following paramters:
                                 title - str
@@ -196,6 +208,8 @@ class Opto_Repsonses:
                                 zeroed - bool
                                 sort - bool
                                 center - int
+                
+                save - boolean specifying if you wish to save the figures
         """
         if parameters is None:
             parameters = {
@@ -207,5 +221,58 @@ class Opto_Repsonses:
                 "center": None,
             }
         if figsizes is None:
-            figsizes = [(7, 8), (10, 10), (10, 10), (4, 5), (10, 10)]
+            figsizes = {
+                "fig1": (7, 8),
+                "fig2": (10, 10),
+                "fig3": (10, 10),
+                "fig4": (4, 5),
+                "fig5": (10, 10),
+            }
+
+        # Set up save values
+        if save is True and save_path is None:
+            save_path = QFileDialog.getSaveFileName("Save Directory")[0]
+
+        # Plot the session activity
+        ## If data is grouped it will plot the different mice seperates
+        ### Check if there are multiple groups
+        multi_mice = list(filter(re.compile("JW").match, self.ROI_ids))
+        # If there are multiple datasets, then plot each dataset seperately
+        if multi_mice:
+            datasets = set([x.rsplit("_", 1)[0] for x in self.ROI_ids])
+            for dataset in datasets:
+                idxs = [i for i, roi in enumerate(self.ROI_ids) if dataset in roi]
+                plot_data = self.dFoF[:, idxs[0] : idxs[-1] + 1]
+                plotting.plot_session_activity(
+                    plot_data,
+                    self.stims,
+                    self.z_score,
+                    figsize=figsizes["fig1"],
+                    title=parameters["title"],
+                    save=save,
+                    name=dataset,
+                    save_path=save_path,
+                )
+        else:
+            plotting.plot_session_activity(
+                self.dFoF,
+                self.stims,
+                self.z_score,
+                figsize=figsizes["fig1"],
+                title=parameters["title"],
+                save=save,
+                name=f"{self.mouse_id}_{self.session}_{self.date}",
+                save_path=save_path,
+            )
+
+        # Plot the trial heatmaps
+        plotting.plot_trial_heatmap(
+            self.roi_stim_epochs,
+            self.z_score,
+            self.imaging_parameters["Sampling Rate"],
+            figsize=figsizes["fig2"],
+            title=parameters["title"],
+            cmap=parameters["cmap"],
+            save=save,
+        )
 
