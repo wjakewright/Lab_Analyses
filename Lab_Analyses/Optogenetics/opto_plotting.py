@@ -33,11 +33,11 @@ def plot_session_activity(
     else:
         title = title + " Session Activity"
     plt.figure(figsize=figsize)
-    for i, col in enumerate(dFoF.columns):
+    for i in dFoF.shape[1]:
         x = np.linspace(
-            0, len(dFoF[col]) / 30, len(dFoF[col])
+            0, len(dFoF[:, i]) / 30, len(dFoF[:, i])
         )  # Will be in units time(s)
-        plt.plot(x, dFoF[col] + i * 5, label=col, linewidth=0.5)
+        plt.plot(x, dFoF[:, i] + i * 5, label=i, linewidth=0.5)
 
     for iti in itis:
         plt.axvspan(iti[0] / 30, iti[1] / 30, alpha=0.3, color="red")
