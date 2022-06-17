@@ -33,7 +33,7 @@ def plot_session_activity(
     else:
         title = title + " Session Activity"
     plt.figure(figsize=figsize)
-    for i in dFoF.shape[1]:
+    for i in range(dFoF.shape[1]):
         x = np.linspace(
             0, len(dFoF[:, i]) / 30, len(dFoF[:, i])
         )  # Will be in units time(s)
