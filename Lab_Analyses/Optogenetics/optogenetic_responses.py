@@ -85,7 +85,7 @@ def classify_opto_responses(
         for i in behavior_frames:
             stims.append(i.states.iti2)
         # Determine stimulation length from the iti durations
-        stim_len = np.nanmedian([x[1] - x[2] for x in stims])
+        stim_len = np.nanmedian([x[0] - x[1] for x in stims])
     else:
         return print("Only coded for pulsed trials right now")
     ## Check stimulation intervals are within imaging period
@@ -113,7 +113,7 @@ def classify_opto_responses(
     dFoF = dFoF[:, 1:]  # Getting rid of the initialized zeros
 
     if z_score is True:
-        dFoF = test_utils.z_score(dFoF)
+        dFoF = data_utils.z_score(dFoF)
 
     # Start analyzing the data
     befores, afters = data_utils.get_before_after_means(
@@ -122,20 +122,20 @@ def classify_opto_responses(
         window=window,
         sampling_rate=sampling_rate,
         offset=False,
-        single=False,
     )
     new_stims = [i[0] for i in stims]
     roi_stims, roi_means = data_utils.get_trace_mean_sem(
         activity=dFoF,
+        ROI_ids=ROI_ids,
         timestamps=new_stims,
         window=vis_window,
         sampling_rate=sampling_rate,
-        single=False,
     )
-    roi_stims = list(roi_stims.values())
-    roi_means = list(roi_means.values())
-    results_dict, results_df, _ = test_utils.response_testing(
+    # roi_stims = list(roi_stims.values())
+    # roi_means = list(roi_means.values())
+    results_dict, results_df = test_utils.response_testing(
         imaging=dFoF,
+        ROI_ids=ROI_ids,
         timestamps=stims,
         window=window,
         sampling_rate=sampling_rate,
@@ -162,7 +162,7 @@ def classify_opto_responses(
         dFoF=dFoF,
         stims=stims,
         roi_stims=roi_stims,
-        roi_means=roi_means,
+        roi_mean_sems=roi_means,
         results=results,
     )
 
@@ -171,7 +171,7 @@ def classify_opto_responses(
         # Set the save path
         initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
         save_path = os.path.join(
-            initial_path, behavior_data.mouse_id, "behavior", behavior_data.date
+            initial_path, behavior_data.mouse_id, "opto_response", behavior_data.date
         )
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
@@ -217,7 +217,7 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
     mouse_ids = [x.mouse_id for x in data]
     sessions = [x.session for x in data]
     dates = [x.date for x in data]
-    imaging_parameters = [x.imaging_parmaeters for x in data]
+    imaging_parameters = [x.imaging_parameters for x in data]
     analysis_settings = [x.analysis_settings for x in data]
     dFoF = [x.dFoF for x in data]
     stims = [x.stims for x in data]
@@ -226,14 +226,14 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
     new_ROIs = []
     for dataset in data:
         for roi in dataset.ROI_ids:
-            new_roi = f"{dataset.mouse_id}_{dataset.sessoin}_{dataset.date}_{roi}"
+            new_roi = f"{dataset.mouse_id}_{dataset.session}_{dataset.date}_{roi}"
             new_ROIs.append(new_roi)
 
     # Group the data together across mice
-    roi_stims = [x.roi_stims for x in data]
+    roi_stims = [list(x.roi_stims.values()) for x in data]
     group_roi_stims = [y for x in roi_stims for y in x]
     group_roi_stim_epochs = dict(zip(new_ROIs, group_roi_stims))
-    roi_mean_sems = [x.roi_mean_sems for x in data]
+    roi_mean_sems = [list(x.roi_mean_sems.values()) for x in data]
     group_roi_means = [y for x in roi_mean_sems for y in x]
     group_roi_mean_sems = dict(zip(new_ROIs, group_roi_means))
     results = [x.results["dict"] for x in data]
@@ -337,8 +337,18 @@ class Opto_Repsonses:
         # Set up data names for plotting and saving purposes
         if multi_mice:
             data_name = self.group_name
+            # Should all be the same
+            z_score = self.analysis_settings[0]["z_score"]
+            sampling_rate = self.imaging_parameters[0]["Sampling Rate"]
+            method = self.analysis_settings[0]["method"]
+            vis_window = self.analysis_settings[0]["vis_window"]
+
         else:
             data_name = f"{self.mouse_id}_{self.session}_{self.date}"
+            z_score = self.analysis_settings["z_score"]
+            sampling_rate = self.imaging_parameters["Sampling Rate"]
+            method = self.analysis_settings["method"]
+            vis_window = self.analysis_settings["vis_window"]
 
         # If there are multiple datasets, then plot each dataset seperately
         if multi_mice:
@@ -346,7 +356,7 @@ class Opto_Repsonses:
                 plotting.plot_session_activity(
                     dataset,
                     self.stims[i],
-                    self.analysis_settings["z_score"],
+                    self.analysis_settings[i]["z_score"],
                     figsize=figsizes["fig1"],
                     title=parameters["title"],
                     save=save,
@@ -357,7 +367,7 @@ class Opto_Repsonses:
             plotting.plot_session_activity(
                 self.dFoF,
                 self.stims,
-                self.analysis_settings["z_score"],
+                z_score,
                 figsize=figsizes["fig1"],
                 title=parameters["title"],
                 save=save,
@@ -368,8 +378,8 @@ class Opto_Repsonses:
         # Plot the trial heatmaps
         plotting.plot_trial_heatmap(
             self.roi_stims,
-            self.analysis_settings["z_score"],
-            self.imaging_parameters["Sampling Rate"],
+            z_score,
+            sampling_rate,
             figsize=figsizes["fig2"],
             title=parameters["title"],
             cmap=parameters["cmap"],
@@ -385,7 +395,7 @@ class Opto_Repsonses:
         # Plot the trial averaged trace
         plotting.plot_mean_sem(
             self.roi_mean_sems,
-            self.analysis_settings["vis_window"],
+            vis_window,
             self.ROI_ids,
             figsize=figsizes["fig3"],
             col_num=4,
@@ -397,9 +407,9 @@ class Opto_Repsonses:
 
         # Plot the mean heatmap
         plotting.plot_mean_heatmap(
-            self.roi_means,
-            self.analysis_settings["z_score"],
-            self.imaging_parameters["Sampling Rate"],
+            self.roi_mean_sems,
+            z_score,
+            sampling_rate,
             figsize=figsizes["fig4"],
             title=parameters["title"],
             cmap=parameters["cmap"],
@@ -412,7 +422,7 @@ class Opto_Repsonses:
             save_path=save_path,
         )
 
-        if self.analysis_settings["method"] == "shuffle":
+        if method == "shuffle":
             plotting.plot_shuff_distribution(
                 self.results["dict"],
                 self.ROI_ids,
