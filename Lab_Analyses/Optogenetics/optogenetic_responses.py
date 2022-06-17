@@ -319,10 +319,10 @@ class Opto_Repsonses:
         if figsizes is None:
             figsizes = {
                 "fig1": (7, 8),
-                "fig2": (10, 10),
-                "fig3": (10, 10),
+                "fig2": (10, 3),
+                "fig3": (10, 3),
                 "fig4": (4, 5),
-                "fig5": (10, 10),
+                "fig5": (10, 3),
             }
 
         # Set up save values
@@ -434,8 +434,8 @@ class Opto_Repsonses:
                 save_path=save_path,
             )
 
-        display(self.results["df"])
-        if save is True:
-            table_name = os.path.join(save_path, data_name + "_table.png")
-            dfi.export(self.results["df"], table_name)
+        # display(self.results["df"])
+        # if save is True:
+        #    table_name = os.path.join(save_path, data_name + "_table.png")
+        #    dfi.export(self.results["df"], table_name)
 

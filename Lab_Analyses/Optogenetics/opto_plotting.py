@@ -111,7 +111,7 @@ def plot_mean_sem(
     roi_mean_sems,
     new_window,
     ROIs,
-    figsize=(10, 10),
+    figsize=(10, 3),
     col_num=4,
     title="default",
     save=False,
@@ -126,7 +126,8 @@ def plot_mean_sem(
     col_num = col_num
     row_num = tot // col_num
     row_num += tot % col_num
-    fig = plt.figure(figsize=figsize)
+    fig_size = (figsize[0], figsize[1] * row_num)
+    fig = plt.figure(figsize=fig_size)
     fig.subplots_adjust(hspace=0.5)
     fig.suptitle(title)
 
@@ -166,7 +167,7 @@ def plot_trial_heatmap(
     roi_stim_epochs,
     zscore,
     sampling_rate,
-    figsize=(7, 8),
+    figsize=(10, 3),
     title="default",
     col_num=4,
     cmap=None,
@@ -209,7 +210,8 @@ def plot_trial_heatmap(
     col_num = col_num
     row_num = tot // col_num
     row_num += tot % col_num
-    fig = plt.figure(figsize=figsize)
+    fig_size = (figsize[0], figsize[1] * row_num)
+    fig = plt.figure(figsize=fig_size)
     fig.subplots_adjust(hspace=0.5)
     fig.suptitle(title)
 
@@ -329,9 +331,10 @@ def plot_mean_heatmap(
         N=1000,
     )
     # Put data in a dataframe to make it easier to plot
-    df = pd.DataFrame()
+    values = []
     for key, value in roi_mean_sems.items():
-        df[key] = value[0]
+        values.append(value[0].reshape(-1, 1))
+    df = pd.DataFrame(np.hstack(values))
     if zeroed is True:
         df = utils.zero_window(df, (0, 2), sampling_rate)
     df_t = df.T
@@ -401,7 +404,7 @@ def plot_mean_heatmap(
 def plot_shuff_distribution(
     sig_results,
     ROIs,
-    figsize=(10, 10),
+    figsize=(10, 3),
     col_num=4,
     title="default",
     save=False,
@@ -419,7 +422,8 @@ def plot_shuff_distribution(
     col_num = col_num
     row_num = tot // col_num
     row_num += tot % col_num
-    fig = plt.figure(figsize=figsize)
+    fig_size = (figsize[0], figsize[1] * row_num)
+    fig = plt.figure(figsize=fig_size)
     fig.subplots_adjust(hspace=0.5)
     fig.suptitle(title)
 
