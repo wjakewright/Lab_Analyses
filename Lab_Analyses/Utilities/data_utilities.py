@@ -1,6 +1,7 @@
 """Module containing various functions that help with data handeling"""
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 
@@ -148,7 +149,7 @@ def zero_window(data, base_win, sampling_rate):
         activity. For plotting purposes
         
         INPUT PARAMETERS
-            data - array of neural activity, with each column representing a single ROI
+            data - dataframe or array of neural activity, with each column representing a single ROI
             
             base_win - tuple of ints spcifying the period within the trial you wish to 
                         define as the baseline period in terms of seconds. 
@@ -156,15 +157,57 @@ def zero_window(data, base_win, sampling_rate):
             sampling_rate - int specifying the imaging rate 
         
         OUTPUT PARAMETERS
-            zeroed_data - array of the now zeroed data
+            zeroed_data - dataframe of the now zeroed data
     """
 
     # get baseline period in terms of frames
+    if type(data) == np.ndarray:
+        data = pd.DataFrame(data)
     zero_b = int(base_win[0] * sampling_rate)
     zero_a = int(base_win[1] * sampling_rate)
-    zeroed_data = np.zeros(data.shape)
-    for i in data.shape[1]:
-        zeroed = data[:, i].sub(np.nanmedian(data[zero_b:zero_a, i]))
-        zeroed_data[:, i] = zeroed
+    zeroed_data = []
+    for col in data.columns:
+        zeroed_data.append(
+            np.array(data[col].sub(np.nanmedian(data[col].loc[zero_b:zero_a]))).reshape(
+                -1, 1
+            )
+        )
+    zeroed_data = pd.DataFrame(np.hstack(zeroed_data))
 
     return zeroed_data
+
+
+def diff_sorting(data, length, sampling_rate):
+    """Function to sort neurons based on their change in activity
+        around a specified event 
+        
+        INPUT PARAMETERS
+            data - array or dataframe of neural activity, with each row
+                    representing a single neuron or trial (for a single neuron). 
+                    Note data must be centered around the event
+            
+            length - tuple of ints specifying how long before and after
+                     the event to compare (e.g. (2,2) for 2s before vs
+                    2s after)
+            
+            sampling_rate - int of the imaging sampling rate (e.g. 30hz)
+            
+        OUTPUT PARAMETERS
+            sorted_data - dataframe of the sorted neural activity
+            
+    """
+    if type(data) == np.ndarray:
+        data = pd.DataFrame(data)
+    b_len = int(length[0] * sampling_rate)
+    a_len = int(length[1] * sampling_rate)
+
+    before = data.iloc[:, :b_len].mean(axis=1)
+    after = data.iloc[:, b_len : b_len + a_len].mean(axis=1)
+    differences = []
+    for before_i, after_i in zip(before, after):
+        differences.append(after_i - before_i)
+    data["Diffs"] = differences
+    sorted_data = data.sort_values(by="Diffs", ascending=False)
+    sorted_data = sorted_data.drop(columns=["Diffs"])
+
+    return sorted_data

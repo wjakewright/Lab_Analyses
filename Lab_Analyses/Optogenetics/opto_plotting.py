@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from Lab_Analyses.Utilities import utilities as utils
+from Lab_Analyses.Utilities import data_utilities as data_utils
 
 sns.set()
 sns.set_style("ticks")
@@ -227,10 +227,10 @@ def plot_trial_heatmap(
         # Put data in dataframe for easier plotting
         df = pd.DataFrame(value)
         if zeroed is True:
-            df = utils.zero_window(df, (0, 2), sampling_rate)
+            df = data_utils.zero_window(df, (0, 2), sampling_rate)
         df_t = df.T
         if sort is True:
-            df_t = utils.diff_sorting(df_t, (2, 2), sampling_rate)
+            df_t = data_utils.diff_sorting(df_t, (2, 2), sampling_rate)
         # Plot
         ax = fig.add_subplot(row_num, col_num, count + 1)
         if zscore is True:
@@ -275,6 +275,7 @@ def plot_trial_heatmap(
             labels=[-2, 1, 0, 1, 2, 3],
             rotation=0,
         )
+        plt.yticks(ticks=[0, len(df_t.index)], labels=[0, len(df_t.index)])
         hax.axvline(
             x=(sampling_rate * 2), ymin=0, ymax=1, color="black", linestyle="--"
         )
@@ -336,10 +337,10 @@ def plot_mean_heatmap(
         values.append(value[0].reshape(-1, 1))
     df = pd.DataFrame(np.hstack(values))
     if zeroed is True:
-        df = utils.zero_window(df, (0, 2), sampling_rate)
+        df = data_utils.zero_window(df, (0, 2), sampling_rate)
     df_t = df.T
     if sort is True:
-        df_t = utils.diff_sorting(df_t, (2, 2), sampling_rate)
+        df_t = data_utils.diff_sorting(df_t, (2, 2), sampling_rate)
 
     # Plot the heatmap
     if cmap is None:
@@ -388,6 +389,7 @@ def plot_mean_heatmap(
         labels=[-2, 1, 0, 1, 2, 3],
         rotation=0,
     )
+    plt.yticks(ticks=[0, len(df_t.index)], labels=[0, len(df_t.index)])
     ax.axvline(x=(sampling_rate * 2), ymin=0, ymax=1, color="black", linestyle="--")
     ax.patch.set_edgecolor("black")
     ax.patch.set_linewidth("2.5")
