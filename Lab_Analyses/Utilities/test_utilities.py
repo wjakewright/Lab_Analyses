@@ -187,4 +187,4 @@ def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method
     if "shuff_diff" in results_df.columns:
         results_df = results_df.drop(columns=["shuff_diffs"])
 
-    return results_dict, results_df, shuff_diffs
+    return results_dict, results_df
