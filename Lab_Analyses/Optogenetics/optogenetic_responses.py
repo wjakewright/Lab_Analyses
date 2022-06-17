@@ -17,7 +17,7 @@ from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 from PyQt5.QtWidgets import QFileDialog
 
 
-def classify_opto_response(
+def classify_opto_responses(
     imaging_data,
     behavior_data,
     session_type,
