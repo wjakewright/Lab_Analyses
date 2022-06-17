@@ -34,12 +34,12 @@ def get_before_after_means(
     # Organize the timestampse
     if offset == False:
         if len(timestamps[0]) == 1:
-            stamp1 = timestamps
-            stamp2 = timestamps
+            stamp1 = [int(x) for x in timestamps]
+            stamp2 = [int(x) for x in timestamps]
         elif len(timestamps[0]) == 2:
             stamps = []
             for i in timestamps:
-                stamps.append(i[0])
+                stamps.append(int(i[0]))
             stamp1 = stamps
             stamp2 = stamps
         else:
@@ -48,8 +48,8 @@ def get_before_after_means(
         stamp1 = []
         stamp2 = []
         for i in timestamps:
-            stamp1.append(i[0])
-            stamp2.append(i[1])
+            stamp1.append(int(i[0]))
+            stamp2.append(int(i[1]))
 
     # Get before and after windows in terms of frames
     before_f = int(window[0] * sampling_rate)
@@ -58,7 +58,7 @@ def get_before_after_means(
     all_befores = []
     all_afters = []
     # Get the before an after values
-    for i in activity.shape[1]:
+    for i in range(activity.shape[1]):
         d = activity[:, i]
         before_values = []
         after_values = []
@@ -103,12 +103,13 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
 
     # Get each event epoch
     roi_event_epochs = {}
-    for i in activity.shape[1]:
-        d = activity[:i]
+    for i in range(activity.shape[1]):
+        d = activity[:, i]
         roi = ROI_ids[i]
         epochs = np.zeros(win_size).reshape(-1, 1)
         for t in timestamps:
-            e = d[t + before_f : t + after_f + 1].reshape(-1, 1)
+            t = int(t)
+            e = d[t + before_f : t + after_f].reshape(-1, 1)
             epochs = np.hstack((epochs, e))
         epochs = epochs[:, 1:]
         roi_event_epochs[roi] = epochs
@@ -135,7 +136,7 @@ def z_score(data):
 
     # initialize the output variable
     z_data = np.zeros(data.shape)
-    for i in data.shape[1]:
+    for i in range(data.shape[1]):
         z = (data[:, i] - data[:, i].mean()) / data[:, i].std(ddof=0)
         z_data[:, i] = z
 
