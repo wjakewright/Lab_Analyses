@@ -6,13 +6,11 @@ import re
 from dataclasses import dataclass
 from itertools import compress
 
-import dataframe_image as dfi
 import Lab_Analyses.Optogenetics.opto_plotting as plotting
 import Lab_Analyses.Utilities.data_utilities as data_utils
 import Lab_Analyses.Utilities.test_utilities as test_utils
 import numpy as np
 import pandas as pd
-from IPython.display import display
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 from PyQt5.QtWidgets import QFileDialog
 
@@ -22,6 +20,7 @@ def classify_opto_responses(
     behavior_data,
     session_type,
     method,
+    ROI_types=None,
     window=[-1, 1],
     vis_window=[-2, 3],
     stim_len=1,
@@ -65,7 +64,10 @@ def classify_opto_responses(
             
     """
     # Constant of what types of ROIs are acceptible for analysis
-    ROI_TYPES = ["Soma", "Spine", "Dendrite"]
+    if ROI_types is None:
+        ROI_TYPES = ["Soma", "Spine", "Dendrite"]
+    else:
+        ROI_TYPES = ROI_types
 
     # Pull out some important variable from the data
     sampling_rate = imaging_data.parameters["Sampling Rate"]
@@ -156,6 +158,7 @@ def classify_opto_responses(
         mouse_id=behavior_data.mouse_id,
         session=behavior_data.sess_name,
         date=behavior_data.date,
+        ROI_types=ROI_types,
         ROI_ids=ROI_ids,
         imaging_parameters=imaging_data.parameters,
         analysis_settings=analysis_settings,
@@ -176,7 +179,14 @@ def classify_opto_responses(
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         # Set filename
-        save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_opto_response"
+        if ROI_types is None:
+            save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_opto_response"
+        else:
+            if len(ROI_types) > 1:
+                sep = "_"
+                save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_{sep.join(ROI_types)}_opto_response"
+            else:
+                save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_{ROI_types[0]}_opto_response"
         # Save the data as a pickle file
         save_pickle(save_name, opto_response_output, save_path)
 
@@ -200,6 +210,7 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
     # first test the different datasets have the same imaging and analysis parameters
     first_sampling_rate = data[0].imaging_parameters["Sampling Rate"]
     first_settings = data[0].analysis_settings
+    first_ROI_types = data[0].ROI_types
 
     for dataset in data[1:]:
         if dataset.imaging_parameters["Sampling Rate"] != first_sampling_rate:
@@ -210,6 +221,10 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
             return print(
                 f"{dataset.mouse_id}_{dataset.session}_{dataset.date} has a different analysis settings"
             )
+        if dataset.ROI_types != first_ROI_types:
+            return print(
+                f"{dataset.mouse_id}_{dataset.session}_{dataset.date} has a different ROI types"
+            )
 
     # Start grouping the datasets
 
@@ -219,6 +234,7 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
     dates = [x.date for x in data]
     imaging_parameters = [x.imaging_parameters for x in data]
     analysis_settings = [x.analysis_settings for x in data]
+    ROI_types = first_ROI_types
     dFoF = [x.dFoF for x in data]
     stims = [x.stims for x in data]
 
@@ -251,6 +267,7 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
         session=sessions,
         date=dates,
         ROI_ids=new_ROIs,
+        ROI_types=ROI_types,
         imaging_parameters=imaging_parameters,
         analysis_settings=analysis_settings,
         dFoF=dFoF,
@@ -280,6 +297,7 @@ class Opto_Repsonses:
     session: str  # If data is grouped this will be a list
     date: str  # If data is grouped this will be a list
     ROI_ids: list
+    ROI_types: list
     imaging_parameters: dict  # If data is grouped this will be a list
     analysis_settings: dict  # If data is grouped this will be a list
     dFoF: np.array  # If data is grouped this will be a list
@@ -304,6 +322,7 @@ class Opto_Repsonses:
                                 zeroed - bool
                                 sort - bool
                                 center - int
+                                seperate ROIs - bool
                 
                 save - boolean specifying if you wish to save the figures
         """
@@ -315,6 +334,7 @@ class Opto_Repsonses:
                 "zeroed": False,
                 "sort": False,
                 "center": None,
+                "seperate ROIs": False,
             }
         if figsizes is None:
             figsizes = {
@@ -337,6 +357,12 @@ class Opto_Repsonses:
         # Set up data names for plotting and saving purposes
         if multi_mice:
             data_name = self.group_name
+            if self.ROI_types is not None:
+                if len(self.ROI_types) > 1:
+                    sep = "_"
+                    data_name = data_name + f"_{sep.join(self.ROI_types)}"
+                else:
+                    data_name = data_name + "_" + self.ROI_types[0]
             # Should all be the same
             z_score = self.analysis_settings[0]["z_score"]
             sampling_rate = self.imaging_parameters[0]["Sampling Rate"]
@@ -345,6 +371,12 @@ class Opto_Repsonses:
 
         else:
             data_name = f"{self.mouse_id}_{self.session}_{self.date}"
+            if self.ROI_types is not None:
+                if len(self.ROI_types) > 1:
+                    sep = "_"
+                    data_name = data_name + f"_{sep.join(self.ROI_types)}"
+                else:
+                    data_name = data_name + "_" + self.ROI_types[0]
             z_score = self.analysis_settings["z_score"]
             sampling_rate = self.imaging_parameters["Sampling Rate"]
             method = self.analysis_settings["method"]
