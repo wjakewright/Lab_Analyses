@@ -25,7 +25,6 @@ def classify_opto_responses(
     vis_window=[-2, 3],
     stim_len=1,
     processed_dFoF=False,
-    z_score=False,
     save=False,
 ):
     """Function to determine if ROIs display significant chagnes in activity upon optogenetic
@@ -54,8 +53,6 @@ def classify_opto_responses(
                         Default is set to 1
 
             processed_dFoF - boolean specifying to use the processed dFoF instead of dFoF
-
-            z_score - boolean specifying if you wish to z_score the data
                         
             save - boolean specifying if you wish to save the output or not
 
@@ -87,7 +84,7 @@ def classify_opto_responses(
         for i in behavior_frames:
             stims.append(i.states.iti2)
         # Determine stimulation length from the iti durations
-        stim_len = np.nanmedian([x[0] - x[1] for x in stims])
+        stim_len = np.nanmedian([x[1] - x[0] for x in stims])
     else:
         return print("Only coded for pulsed trials right now")
     ## Check stimulation intervals are within imaging period
@@ -114,17 +111,9 @@ def classify_opto_responses(
 
     dFoF = dFoF[:, 1:]  # Getting rid of the initialized zeros
 
-    if z_score is True:
-        dFoF = data_utils.z_score(dFoF)
+    z_dFoF = data_utils.z_score(dFoF)
 
     # Start analyzing the data
-    befores, afters = data_utils.get_before_after_means(
-        activity=dFoF,
-        timestamps=stims,
-        window=window,
-        sampling_rate=sampling_rate,
-        offset=False,
-    )
     new_stims = [i[0] for i in stims]
     roi_stims, roi_means = data_utils.get_trace_mean_sem(
         activity=dFoF,
@@ -133,10 +122,19 @@ def classify_opto_responses(
         window=vis_window,
         sampling_rate=sampling_rate,
     )
+
+    z_roi_stims, z_roi_means = data_utils.get_trace_mean_sem(
+        activity=z_dFoF,
+        ROI_ids=ROI_ids,
+        timestamps=new_stims,
+        window=vis_window,
+        sampling_rate=sampling_rate,
+    )
+
     # roi_stims = list(roi_stims.values())
     # roi_means = list(roi_means.values())
     results_dict, results_df = test_utils.response_testing(
-        imaging=dFoF,
+        imaging=z_dFoF,
         ROI_ids=ROI_ids,
         timestamps=stims,
         window=window,
@@ -151,7 +149,6 @@ def classify_opto_responses(
         "vis_window": vis_window,
         "processed": processed_dFoF,
         "stim length": stim_len,
-        "z_score": z_score,
     }
     results = {"dict": results_dict, "df": results_df}
     opto_response_output = Opto_Repsonses(
@@ -163,9 +160,12 @@ def classify_opto_responses(
         imaging_parameters=imaging_data.parameters,
         analysis_settings=analysis_settings,
         dFoF=dFoF,
+        z_dFoF=z_dFoF,
         stims=stims,
         roi_stims=roi_stims,
         roi_mean_sems=roi_means,
+        z_roi_stims=z_roi_stims,
+        z_roi_mean_sems=z_roi_means,
         results=results,
     )
 
@@ -180,13 +180,15 @@ def classify_opto_responses(
             os.makedirs(save_path)
         # Set filename
         if ROI_types is None:
-            save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_opto_response"
+            save_name = (
+                f"{behavior_data.mouse_id}_{behavior_data.date}_allROIs_opto_response"
+            )
         else:
             if len(ROI_types) > 1:
                 sep = "_"
-                save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_{sep.join(ROI_types)}_opto_response"
+                save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{sep.join(ROI_types)}_opto_response"
             else:
-                save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{behavior_data.date}_{ROI_types[0]}_opto_response"
+                save_name = f"{behavior_data.mouse_id}_{behavior_data.date}_{ROI_types[0]}_opto_response"
         # Save the data as a pickle file
         save_pickle(save_name, opto_response_output, save_path)
 
@@ -236,6 +238,7 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
     analysis_settings = [x.analysis_settings for x in data]
     ROI_types = first_ROI_types
     dFoF = [x.dFoF for x in data]
+    z_dFoF = [x.z_dFoF for x in data]
     stims = [x.stims for x in data]
 
     # Generate new ROIs
@@ -249,9 +252,15 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
     roi_stims = [list(x.roi_stims.values()) for x in data]
     group_roi_stims = [y for x in roi_stims for y in x]
     group_roi_stim_epochs = dict(zip(new_ROIs, group_roi_stims))
+    z_roi_stims = [list(x.z_roi_stims.values()) for x in data]
+    z_group_roi_stims = [y for x in z_roi_stims for y in x]
+    z_group_roi_stim_epochs = dict(zip(new_ROIs, z_group_roi_stims))
     roi_mean_sems = [list(x.roi_mean_sems.values()) for x in data]
     group_roi_means = [y for x in roi_mean_sems for y in x]
     group_roi_mean_sems = dict(zip(new_ROIs, group_roi_means))
+    z_roi_mean_sems = [list(x.z_roi_mean_sems.values()) for x in data]
+    z_group_roi_means = [y for x in z_roi_mean_sems for y in x]
+    z_group_roi_mean_sems = dict(zip(new_ROIs, z_group_roi_means))
     results = [x.results["dict"] for x in data]
     results_values = [list(result.values()) for result in results]
     group_results_values = [y for x in results_values for y in x]
@@ -271,9 +280,12 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
         imaging_parameters=imaging_parameters,
         analysis_settings=analysis_settings,
         dFoF=dFoF,
+        z_dFoF=z_dFoF,
         stims=stims,
         roi_stims=group_roi_stim_epochs,
         roi_mean_sems=group_roi_mean_sems,
+        z_roi_stims=z_group_roi_stim_epochs,
+        z_roi_mean_sems=z_group_roi_mean_sems,
         results=group_results,
         group_name=group_name,
     )
@@ -282,9 +294,22 @@ def group_opto_responses(data, group_name, save=False, save_path=None):
         save_path = QFileDialog.getSaveFileName("Save Directory")[0]
 
     if save is True:
+        if ROI_types is None:
+            roi = "allROIs"
+        else:
+            if len(ROI_types) > 1:
+                sep = "_"
+                roi = sep.join(ROI_types)
+            else:
+                roi = ROI_types[0]
+
+        save_path = os.path.join(save_path, roi)
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
-        save_name = group_name
+        save_name = group_name + "_opto_responses"
+
+        # Save the data as a pickle file
+
         save_pickle(save_name, grouped_responses, save_path)
 
     return grouped_responses
@@ -301,9 +326,12 @@ class Opto_Repsonses:
     imaging_parameters: dict  # If data is grouped this will be a list
     analysis_settings: dict  # If data is grouped this will be a list
     dFoF: np.array  # If data is grouped this will be a list
+    z_dFoF: np.array
     stims: list
     roi_stims: list
     roi_mean_sems: list
+    z_roi_stims: list
+    z_roi_mean_sems: list
     results: dict
     group_name: str = ""  # Filled in if data are grouped together
 
@@ -364,7 +392,6 @@ class Opto_Repsonses:
                 else:
                     data_name = data_name + "_" + self.ROI_types[0]
             # Should all be the same
-            z_score = self.analysis_settings[0]["z_score"]
             sampling_rate = self.imaging_parameters[0]["Sampling Rate"]
             method = self.analysis_settings[0]["method"]
             vis_window = self.analysis_settings[0]["vis_window"]
@@ -377,7 +404,6 @@ class Opto_Repsonses:
                     data_name = data_name + f"_{sep.join(self.ROI_types)}"
                 else:
                     data_name = data_name + "_" + self.ROI_types[0]
-            z_score = self.analysis_settings["z_score"]
             sampling_rate = self.imaging_parameters["Sampling Rate"]
             method = self.analysis_settings["method"]
             vis_window = self.analysis_settings["vis_window"]
@@ -388,7 +414,7 @@ class Opto_Repsonses:
                 plotting.plot_session_activity(
                     dataset,
                     self.stims[i],
-                    self.analysis_settings[i]["z_score"],
+                    zscore=False,
                     figsize=figsizes["fig1"],
                     title=parameters["title"],
                     save=save,
@@ -399,7 +425,7 @@ class Opto_Repsonses:
             plotting.plot_session_activity(
                 self.dFoF,
                 self.stims,
-                z_score,
+                zscore=False,
                 figsize=figsizes["fig1"],
                 title=parameters["title"],
                 save=save,
@@ -409,9 +435,9 @@ class Opto_Repsonses:
 
         # Plot the trial heatmaps
         plotting.plot_trial_heatmap(
-            self.roi_stims,
-            z_score,
-            sampling_rate,
+            self.z_roi_stims,
+            zscore=True,
+            sampling_rate=sampling_rate,
             figsize=figsizes["fig2"],
             title=parameters["title"],
             cmap=parameters["cmap"],
@@ -439,9 +465,9 @@ class Opto_Repsonses:
 
         # Plot the mean heatmap
         plotting.plot_mean_heatmap(
-            self.roi_mean_sems,
-            z_score,
-            sampling_rate,
+            self.z_roi_mean_sems,
+            zscore=True,
+            sampling_rate=sampling_rate,
             figsize=figsizes["fig4"],
             title=parameters["title"],
             cmap=parameters["cmap"],
