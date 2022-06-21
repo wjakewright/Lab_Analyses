@@ -504,5 +504,5 @@ def plot_power_curve(
             save_name = name
         else:
             save_name = os.path.join(save_path, name)
-        fig.savefig(save_name + " Power Curve.pdf")
+        fig.savefig(save_name + "_Power Curve.pdf")
 
