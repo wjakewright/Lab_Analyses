@@ -22,6 +22,7 @@ def analyze_mouse_lever_behavior(
     save_suffix=None,
     reanalyze=False,
     ignore_dir=(),
+    press_len=3,
 ):
     """Function to analyze the lever press of all the sessions for a single
         mouse
@@ -44,6 +45,8 @@ def analyze_mouse_lever_behavior(
         reanalyze - boolean specifying if this is to reanalyze data
 
         ignore_dir - tuple of strings specifying directories/days to ignore for analysis
+
+        press_len - float specifying how long of the lever press you wish to correlate
 
     OUTPUT PARAMETERS
 
@@ -170,7 +173,7 @@ def analyze_mouse_lever_behavior(
             mouse_lever_data.fraction_ITI_moving.append(np.nan)
 
     mouse_lever_data.correlation_matrix = correlate_lever_press(
-        mouse_lever_data.corr_movements
+        mouse_lever_data.corr_movements, length=press_len
     )
     mouse_lever_data.within_sess_corr = mouse_lever_data.correlation_matrix.diagonal()
     mouse_lever_data.across_sess_corr = mouse_lever_data.correlation_matrix.diagonal(
@@ -196,10 +199,16 @@ def analyze_mouse_lever_behavior(
     return mouse_lever_data
 
 
-def correlate_lever_press(movement_matrices):
-    """Helper function to correlate movements within and across sessions for a single mouse"""
+def correlate_lever_press(movement_matrices, length):
+    """Helper function to correlate movements within and across sessions for a single mouse
+    
+        INPUT PARAMETERS
+            movement_matricies - 2d np.array of movements
+        
+            length - float specifying how long of the press you wish to correlate"""
 
     # Initialize the correlation matrix
+    length = int(length * 1000)
     correlation_matrix = np.zeros((len(movement_matrices), len(movement_matrices)))
     correlation_matrix[:] = np.nan
 
@@ -210,7 +219,7 @@ def correlate_lever_press(movement_matrices):
         for j_idx, j in enumerate(movement_matrices):
             if type(j) is not np.ndarray:
                 continue
-            corr = correlate_btw_sessions(i, j)
+            corr = correlate_btw_sessions(i, j, length)
             if i_idx == j_idx:
                 correlation_matrix[i_idx, j_idx] = corr
             else:
@@ -220,7 +229,7 @@ def correlate_lever_press(movement_matrices):
     return correlation_matrix
 
 
-def correlate_btw_sessions(A, B):
+def correlate_btw_sessions(A, B, length):
     """Helper function to perform pairwise correlations between movements from two
         different sessions. This is a vectorized approach for faster run time
         
@@ -235,6 +244,8 @@ def correlate_btw_sessions(A, B):
     
     """
     # Transpose movement rows to columns
+    A = A[:, :length]
+    B = B[:, :length]
     A = A.T
     B = B.T
 
