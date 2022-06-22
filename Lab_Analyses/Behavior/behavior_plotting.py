@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from Lab_Analyses.Utilities import utilities as utils
+from Lab_Analyses.Utilities import data_utilities as utils
 
 sns.set()
 sns.set_style("ticks")
@@ -147,6 +147,7 @@ def plot_mean_sem_line_plot(
     mean,
     sem,
     individual,
+    plot_ind=True,
     title=None,
     xtitle=None,
     ytitle=None,
@@ -169,6 +170,8 @@ def plot_mean_sem_line_plot(
             
             individual - 2d np.array containing values for each mouse in rows
             
+            plot_ind - boolean of whether or not to plot individual mice
+
             title - string specifying the name of the title
             
             xtitle - string specifying the name of the x axis
@@ -197,8 +200,9 @@ def plot_mean_sem_line_plot(
     ind = pd.DataFrame(individual)
 
     # Plot individual data
-    for col in ind.columns:
-        plt.plot(sessions, ind[col], color=color, linewidth=0.5, alpha=0.3)
+    if plot_ind is True:
+        for col in ind.columns:
+            plt.plot(sessions, ind[col], color=color, linewidth=0.5, alpha=0.3)
 
     # Plot mean and sem
     plt.errorbar(
@@ -241,6 +245,7 @@ def plot_within_session_corr(
     mean,
     sem,
     individual,
+    plot_ind=True,
     ylim=None,
     figsize=(6, 5),
     color="mediumblue",
@@ -260,6 +265,7 @@ def plot_within_session_corr(
         mean,
         sem,
         individual,
+        plot_ind=plot_ind,
         title=title,
         xtitle=xtitle,
         ytitle=ytitle,
@@ -277,6 +283,7 @@ def plot_across_session_corr(
     mean,
     sem,
     individual,
+    plot_ind=True,
     ylim=None,
     figsize=(6, 5),
     color="mediumblue",
@@ -298,6 +305,7 @@ def plot_across_session_corr(
         mean,
         sem,
         individual,
+        plot_ind=plot_ind,
         title=title,
         xtitle=xtitle,
         ytitle=ytitle,
@@ -315,6 +323,7 @@ def plot_success_rate(
     mean,
     sem,
     individual,
+    plot_ind=True,
     ylim=None,
     figsize=(6, 5),
     color="mediumblue",
@@ -336,6 +345,7 @@ def plot_success_rate(
         mean,
         sem,
         individual,
+        plot_ind=plot_ind,
         title=title,
         xtitle=xtitle,
         ytitle=ytitle,
@@ -353,6 +363,7 @@ def plot_cue_to_reward(
     mean,
     sem,
     individual,
+    plot_ind=True,
     ylim=None,
     figsize=(6, 5),
     color="mediumblue",
@@ -374,6 +385,7 @@ def plot_cue_to_reward(
         mean,
         sem,
         individual,
+        plot_ind=plot_ind,
         title=title,
         xtitle=xtitle,
         ytitle=ytitle,
@@ -391,6 +403,7 @@ def plot_movement_reaction_time(
     mean,
     sem,
     individual,
+    plot_ind=True,
     ylim=None,
     figsize=(6, 5),
     color="mediumblue",
@@ -412,6 +425,7 @@ def plot_movement_reaction_time(
         mean,
         sem,
         individual,
+        plot_ind=plot_ind,
         title=title,
         xtitle=xtitle,
         ytitle=ytitle,
