@@ -47,10 +47,8 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
         start = boundary_frames[i]
         stop = boundary_frames[i + 1]
         split = active_lever[start:stop]
-        print(len(split))
         active_lever_splits.append(np.array(split))
     active_lever_splits.append(active_lever[boundary_frames[-1] :])
-    print(np.sum([len(x) for x in active_lever_splits]))
 
     # Analyze each ROI
     for i in range(dFoF.shape[1]):
