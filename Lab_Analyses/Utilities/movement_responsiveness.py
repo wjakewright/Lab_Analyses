@@ -43,7 +43,6 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
     active_lever_splits = []
     active_lever_splits.append(active_lever[: boundary_frames[0]])
     for i, _ in enumerate(boundary_frames[1:]):
-
         start = boundary_frames[i]
         stop = boundary_frames[i + 1]
         split = active_lever[start:stop]
@@ -64,7 +63,6 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
                 active_lever_splits, len(active_lever_splits)
             )
             shuffled_active_lever = np.concatenate((shuffled_splits))
-            shuffled_active_lever = shuffled_active_lever
             shuffled_activity.append(np.dot(activity, shuffled_active_lever))
 
         # Assess significance
