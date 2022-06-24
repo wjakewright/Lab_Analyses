@@ -41,23 +41,32 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
     boundary_frames = np.diff(np.concatenate((pad, active_lever, pad))) != 0
     boundary_frames = np.nonzero(boundary_frames)[0]
     active_lever_splits = []
-    for i in boundary_frames[1:]:
-        start = boundary_frames[i - 1]
-        stop = boundary_frames[i]
-        split = active_lever[start : stop + 1]
-        active_lever_splits.append(split)
+    active_lever_splits.append(active_lever[: boundary_frames[0]])
+    for i, _ in enumerate(boundary_frames[1:]):
+
+        start = boundary_frames[i]
+        stop = boundary_frames[i + 1]
+        split = active_lever[start:stop]
+        print(len(split))
+        active_lever_splits.append(np.array(split))
+    active_lever_splits.append(active_lever[boundary_frames[-1] :])
+    print(np.sum([len(x) for x in active_lever_splits]))
 
     # Analyze each ROI
     for i in range(dFoF.shape[1]):
-        activity = dFoF[:, i].reshape(-1, 1)  # Make it a column vector
+        activity = dFoF[:, i]
+        active_lever = active_lever
         movement_activity = np.dot(activity, active_lever)
 
         # Perform shuffles
         shuffled_activity = []
         for j in range(permutations):
             # Shuffle the movement epochs
-            shuffled_splits = random.shuffle(active_lever_splits)
+            shuffled_splits = random.sample(
+                active_lever_splits, len(active_lever_splits)
+            )
             shuffled_active_lever = np.concatenate((shuffled_splits))
+            shuffled_active_lever = shuffled_active_lever
             shuffled_activity.append(np.dot(activity, shuffled_active_lever))
 
         # Assess significance
