@@ -32,7 +32,7 @@ def event_detection(dFoF, threshold, sampling_rate):
     #### Important for silent ROIs
     LOWER_THRESH = 1
     LOWER_LIMIT = 0.2
-    SEC_TO_SMOOTH = 1
+    SEC_TO_SMOOTH = 0.5
 
     smooth_window = int(sampling_rate * SEC_TO_SMOOTH)
     # Make sure smooth window is odd
@@ -95,8 +95,9 @@ def event_detection(dFoF, threshold, sampling_rate):
             to_exclude.append(any(x <= 0) or any(x > len(roi)))
 
         # Refine start times of activity when dFoF goes above high thresh
+        thresh_low_high_smooth_idx = np.array(thresh_low_high_smooth_idx, dtype=object)
         thresh_low_high_raw_idx = []
-        for idx in np.array(thresh_low_high_smooth_idx)[[not x for x in to_exclude]]:
+        for idx in thresh_low_high_smooth_idx[[not x for x in to_exclude]]:
             thresh_low_high_raw_idx.append(refine_start_times(idx, roi, high_thresh))
 
         # Exlude periods before and after the imaging session
@@ -105,10 +106,16 @@ def event_detection(dFoF, threshold, sampling_rate):
             to_exclude_2.append(any(x <= 0) or any(x > len(roi)))
         for exclude in to_exclude_2:
             thresh_low_high_raw_idx[exclude] = np.array([])
-        thresh_low_high_raw_idx = np.concatenate(thresh_low_high_raw_idx).astype(int)
+        try:
+            thresh_low_high_raw_idx = np.concatenate(thresh_low_high_raw_idx).astype(
+                int
+            )
+        except ValueError:
+            thresh_low_high_raw_idx = []
 
         # Find continuous active portions
         active_trace = np.zeros(len(roi))
+
         active_trace[thresh_low_high_raw_idx] = 1
 
         # Floor activity trace during inactive portions
@@ -137,7 +144,10 @@ def find_low_high_transitions(start_idx, stop_idx, thresh_low_start):
 def refine_start_times(idx, trace, high_thresh):
     """Helper function to help refine start times when dFoF goes above high thresh"""
     start = idx[0]
-    u1 = np.nonzero(trace[idx[0] :] > high_thresh)[0][0]
+    try:
+        u1 = np.nonzero(trace[idx[0] :] > high_thresh)[0][0]
+    except IndexError:
+        u1 = 0
     try:
         u2 = np.nonzero(trace[start + u1 : 0 : -1] < high_thresh)[0][0]
     except IndexError:
