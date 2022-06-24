@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 
-def movement_responsiveness(dFoF, active_lever, permutations=10000):
+def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=97.5):
     """Function to determine if ROIs display movement related activity
         
         INPUT PARAMTERS
@@ -15,13 +15,25 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000):
             
             permutations - int specifying how many shuffles of the data to perform
                             Default is set to 10,000 shuffles
+
+            percentile - float specifying what percentile you are using as a cutoff
+                        Default is 97.5     
+
         OUTPUT PARAMETERS
+            movement_rois - boolean list indicating if an roi is movement responsive
+
+            silent_rois - boolean list indicatinf if an roi is movement silent
+
+            movement_activities - dict with lists containing the Real and Shuffled
+                                activities of each ROI as well as the Percentile
+                                bounds
     
     """
 
     # Setup outputs
-    movement_related = []
-    movement_activities = {"Real": [], "Shuffled": []}
+    movement_rois = []
+    silent_rois = []
+    movement_activities = {"Real": [], "Shuffled": [], "Percentile": []}
 
     # Get the movement durations and inter-movement durations for shuffling
     ## Get the starts and stops of each movement
@@ -49,3 +61,23 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000):
             shuffled_activity.append(np.dot(activity, shuffled_active_lever))
 
         # Assess significance
+        upper = np.percentile(shuffled_activity, percentile)
+        lower = np.percentile(shuffled_activity, 100 - percentile)
+
+        if movement_activity > upper:
+            move_roi = True
+            quiet_roi = False
+        elif movement_activity < lower:
+            move_roi = False
+            quite_roi = True
+        else:
+            move_roi = False
+            quiet_roi = False
+
+        movement_rois.append(move_roi)
+        silent_rois.append(quiet_roi)
+        movement_activities["Real"].append(movement_activity)
+        movement_activities["Shuffled"].append(shuffled_activity)
+        movement_activities["Percentile"].append((lower, upper))
+
+    return movement_rois, silent_rois, movement_activities
