@@ -83,6 +83,8 @@ def align_lever_behavior(behavior_data, imaging_data, save):
     fluorescence = []
     dFoF = []
     processed_dFoF = []
+    activity_trace = []
+    floored_trace = []
     spikes = []
 
     # Go through each trial
@@ -263,6 +265,18 @@ def align_lever_behavior(behavior_data, imaging_data, save):
             )
             processed_dFoF.append(pdfof)
 
+        if imaging_data.activity_trace:
+            a_trace = align_activity(
+                imaging_data.activity_trace, behavior_data.behavior_frames[i]
+            )
+            activity_trace.append(a_trace)
+
+        if imaging_data.floored_trace:
+            f_trace = align_activity(
+                imaging_data.floored_trace, behavior_data.behavior_frames[i]
+            )
+            floored_trace.append(f_trace)
+
         if imaging_data.deconvolved_spikes:
             deconv = align_activity(
                 imaging_data.deconvolved_spikes, behavior_data.behavior_frames[i]
@@ -289,6 +303,8 @@ def align_lever_behavior(behavior_data, imaging_data, save):
         fluorescence=fluorescence,
         dFoF=dFoF,
         processed_dFoF=processed_dFoF,
+        activity_trace=activity_trace,
+        floored_trace=floored_trace,
         spikes=spikes,
         imaging_parameters=imaging_data.parameters,
         ROI_ids=imaging_data.ROI_ids,
@@ -379,6 +395,8 @@ class Trial_Aligned_Data:
     fluorescence: list
     dFoF: list
     processed_dFoF: list
+    activity_trace: list
+    floored_trace: list
     spikes: list
     imaging_parameters: dict
     ROI_ids: dict
