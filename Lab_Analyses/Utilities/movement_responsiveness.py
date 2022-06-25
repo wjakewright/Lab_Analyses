@@ -1,5 +1,6 @@
 """Module for determining if an ROI displays movement-related activity"""
 
+import itertools
 import random
 
 import numpy as np
@@ -41,13 +42,28 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
     boundary_frames = np.diff(np.concatenate((pad, active_lever, pad))) != 0
     boundary_frames = np.nonzero(boundary_frames)[0]
     active_lever_splits = []
-    active_lever_splits.append(active_lever[: boundary_frames[0]])
+    inactive_lever_splits = []
+    # Get the start of the session first
+    trial_start = active_lever[: boundary_frames[0]]
+    if np.sum(trial_start):
+        active_lever_splits.append(trial_start)
+    else:
+        inactive_lever_splits.append(trial_start)
+    # Get the middle of the session
     for i, _ in enumerate(boundary_frames[1:]):
         start = boundary_frames[i]
         stop = boundary_frames[i + 1]
         split = active_lever[start:stop]
-        active_lever_splits.append(np.array(split))
-    active_lever_splits.append(active_lever[boundary_frames[-1] :])
+        if np.sum(split):
+            active_lever_splits.append(np.array(split))
+        else:
+            inactive_lever_splits.append(np.array(split))
+    # Get the end of the session
+    trial_end = active_lever[boundary_frames[-1] :]
+    if np.sum(trial_end):
+        active_lever_splits.append(trial_end)
+    else:
+        inactive_lever_splits.append(trial_end)
 
     # Analyze each ROI
     for i in range(dFoF.shape[1]):
@@ -59,10 +75,23 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
         shuffled_activity = []
         for j in range(permutations):
             # Shuffle the movement epochs
-            shuffled_splits = random.sample(
+            shuffled_active_splits = random.sample(
                 active_lever_splits, len(active_lever_splits)
             )
-            shuffled_active_lever = np.concatenate((shuffled_splits))
+            shuffled_inactive_splits = random.sample(
+                inactive_lever_splits, len(inactive_lever_splits)
+            )
+            shuffled_active_lever = [
+                x
+                for x in itertools.chain.from_iterable(
+                    itertools.zip_longest(
+                        shuffled_inactive_splits, shuffled_active_splits
+                    )
+                )
+                if type(x) == np.ndarray
+            ]
+            shuffled_active_lever = np.concatenate((shuffled_active_lever))
+
             shuffled_activity.append(np.dot(activity, shuffled_active_lever))
 
         # Assess significance
