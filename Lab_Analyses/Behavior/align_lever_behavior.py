@@ -11,7 +11,7 @@ from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
-def align_lever_behavior(behavior_data, imaging_data, save):
+def align_lever_behavior(behavior_data, imaging_data, save=False):
     """Function to align lever traces with the activity traces for each trial
         
         INPUT PARAMETERS
@@ -248,14 +248,12 @@ def align_lever_behavior(behavior_data, imaging_data, save):
         # Check what type of activity data is included in imaging data file
 
         if imaging_data.fluorescence:
-            print("getting fluorescence")
             fluo = align_activity(
                 imaging_data.fluorescence, behavior_data.behavior_frames[i]
             )
             fluorescence.append(fluo)
 
         if imaging_data.dFoF:
-            print("getting dFoF")
             dfof = align_activity(imaging_data.dFoF, behavior_data.behavior_frames[i])
             dFoF.append(dfof)
 
@@ -352,20 +350,24 @@ def align_activity(activity, behavior_frames):
     end = int(behavior_frames.states.state_0[1, 0])
 
     # initialize output dictionary
-    trial_activity = {}
+    if type(activity) == dict:
+        trial_activity = {}
 
-    # go through each roi type
-    for key, value in activity.items():
-        if key != "Dendrite Poly":
-            # Slicing the start and end of the trial
-            trial = value[start:end, :]
-        else:
-            trial = []
-            for poly in value:
-                trial_poly = poly[start : end + 1, :]
-                trial.append(trial_poly)
+        # go through each roi type
+        for key, value in activity.items():
+            if type(value) == np.ndarray:
+                # Slicing the start and end of the trial
+                trial = value[start:end, :]
+            else:
+                trial = []
+                for poly in value:
+                    trial_poly = poly[start : end + 1, :]
+                    trial.append(trial_poly)
 
-        trial_activity[key] = trial
+            trial_activity[key] = trial
+
+    elif type(activity) == np.ndarray:
+        trial_activity = activity[start:end, :]
 
     return trial_activity
 
