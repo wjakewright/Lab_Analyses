@@ -11,7 +11,7 @@ from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
-def align_lever_behavior(behavior_data, imaging_data, save=False):
+def align_lever_behavior(behavior_data, imaging_data, save=None):
     """Function to align lever traces with the activity traces for each trial
         
         INPUT PARAMETERS
@@ -21,7 +21,7 @@ def align_lever_behavior(behavior_data, imaging_data, save=False):
             imaging_data - dataclass containing the Activity_Output with activity 
                             data in it. Output from Activity_Viewer
 
-            save - boolean to specify whether to save the output or not
+            save - str specifying which data you wish to save. Default is none
 
         OUTPUT PARAMETERS
             aligned_data - dataclass containing 
@@ -247,9 +247,9 @@ def align_lever_behavior(behavior_data, imaging_data, save=False):
         ########### ACTIVITY SECTION ##############
         # Check what type of activity data is included in imaging data file
 
-        if imaging_data.fluorescence:
+        if imaging_data.processed_fluorescence:
             fluo = align_activity(
-                imaging_data.fluorescence, behavior_data.behavior_frames[i]
+                imaging_data.processed_fluorescence, behavior_data.behavior_frames[i]
             )
             fluorescence.append(fluo)
 
@@ -282,8 +282,8 @@ def align_lever_behavior(behavior_data, imaging_data, save=False):
             spikes.append(deconv)
 
     ############ OUTPUT SECTION ###############
-    # Generate the output dataclass
-    aligned_data = Trial_Aligned_Data(
+    # Generate the output dataclasses
+    aligned_behavior_data = Trial_Aligned_Behavior(
         mouse_id=behavior_data.mouse_id,
         session=behavior_data.sess_name,
         date=behavior_data.date,
@@ -298,19 +298,32 @@ def align_lever_behavior(behavior_data, imaging_data, save=False):
         rewarded_movement_force=rewarded_movement_force,
         binary_cue=binary_cue_list,
         result_delivery=result_delivery_list,
-        fluorescence=fluorescence,
+    )
+
+    aligned_activity_data = Trial_Aligned_Activity(
+        mouse_id=behavior_data.mouse_id,
+        session=behavior_data.sess_name,
+        date=behavior_data.date,
+        imaging_parameters=imaging_data.parameters,
+        ROI_ids=imaging_data.ROI_ids,
+        ROI_flags=imaging_data.ROI_flags,
+        ROI_positions=imaging_data.ROI_positions,
+        processed_fluorescence=fluorescence,
         dFoF=dFoF,
         processed_dFoF=processed_dFoF,
         activity_trace=activity_trace,
         floored_trace=floored_trace,
         spikes=spikes,
-        imaging_parameters=imaging_data.parameters,
-        ROI_ids=imaging_data.ROI_ids,
-        ROI_flags=imaging_data.ROI_flags,
+        spine_pixel_intensity=imaging_data.spine_pixel_intensity,
+        dend_segment_intensity=imaging_data.dend_segment_intensity,
+        spine_volume=imaging_data.spine_volume,
+        corrected_spine_pixel_intensity=imaging_data.corrected_spine_pixel_intensity,
+        corrected_dend_segment_intensity=imaging_data.corrected_dend_segment_intensity,
+        corrected_spine_volume=imaging_data.corrected_spine_volume,
     )
 
     # save data if specified
-    if save is True:
+    if save:
         # Set up the save path
         initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
         save_path = os.path.join(
@@ -321,12 +334,27 @@ def align_lever_behavior(behavior_data, imaging_data, save=False):
         )
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
-        # Make the filename
-        save_name = f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_data"
-        # Save data as pickle
-        save_pickle(save_name, aligned_data, save_path)
+        if save == "behavior":
+            save_name = (
+                f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_behavior"
+            )
+            save_pickle(save_name, aligned_behavior_data, save_path)
+        elif save == "imaging":
+            save_name = (
+                f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_activity"
+            )
+            save_pickle(save_name, aligned_activity_data, save_path)
+        else:
+            i_name = (
+                f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_activity"
+            )
+            b_name = (
+                f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_behavior"
+            )
+            save_pickle(i_name, aligned_activity_data, save_path)
+            save_pickle(b_name, aligned_behavior_data, save_path)
 
-    return aligned_data
+    return aligned_behavior_data, aligned_activity_data
 
 
 def align_activity(activity, behavior_frames):
@@ -376,8 +404,8 @@ def align_activity(activity, behavior_frames):
 
 
 @dataclass
-class Trial_Aligned_Data:
-    """Dataclass to contain all the lever data for each trial.
+class Trial_Aligned_Behavior:
+    """Dataclass to contain all the lever behavior data for each trial.
         Includes it in terms of original sampling and in terms of image frames"""
 
     mouse_id: str
@@ -394,13 +422,30 @@ class Trial_Aligned_Data:
     rewarded_movement_force: list
     binary_cue: list
     result_delivery: list
-    fluorescence: list
+
+
+@dataclass
+class Trial_Aligned_Activity:
+    """Dataclass to contain all the relevant activity data that has been 
+        aligned to each trial"""
+
+    mouse_id: str
+    session: str
+    date: str
+    imaging_parameters: dict
+    ROI_ids: dict
+    ROI_flags: dict
+    ROI_positions: dict
+    processed_fluorescence: list
     dFoF: list
     processed_dFoF: list
     activity_trace: list
     floored_trace: list
     spikes: list
-    imaging_parameters: dict
-    ROI_ids: dict
-    ROI_flags: dict
+    spine_pixel_intensity: list
+    dend_segment_intensity: list
+    spine_volume: list
+    corrected_spine_pixel_intensity: list
+    corrected_dend_segment_intensity: list
+    corrected_spine_volume: list
 
