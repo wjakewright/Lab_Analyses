@@ -211,3 +211,14 @@ def diff_sorting(data, length, sampling_rate):
     sorted_data = sorted_data.drop(columns=["Diffs"])
 
     return sorted_data
+
+
+def join_dictionaries(dict_list):
+    """Function to join a list of dictionaries with the same keys into a single
+        contiuous dictionary"""
+    new_dict = dict_list[0]
+    for d in dict_list[1:]:
+        for key, value in d.items():
+            new_dict[key] = np.concatenate((new_dict[key], value))
+
+    return new_dict
