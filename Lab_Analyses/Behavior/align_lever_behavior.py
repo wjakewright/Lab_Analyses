@@ -11,7 +11,12 @@ from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
-def align_lever_behavior(behavior_data, imaging_data, save=None):
+def align_lever_behavior(
+    behavior_data,
+    imaging_data,
+    save=None,
+    save_suffix={"behavior": None, "imaging": None},
+):
     """Function to align lever traces with the activity traces for each trial
         
         INPUT PARAMETERS
@@ -22,6 +27,9 @@ def align_lever_behavior(behavior_data, imaging_data, save=None):
                             data in it. Output from Activity_Viewer
 
             save - str specifying which data you wish to save. Default is none
+
+            save_suffix - dict for additional name information for behavior and/or
+                        imaging datasets
 
         OUTPUT PARAMETERS
             aligned_data - dataclass containing 
@@ -334,23 +342,30 @@ def align_lever_behavior(behavior_data, imaging_data, save=None):
         )
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
-        if save == "behavior":
-            save_name = (
+
+        if save_suffix["behavior"]:
+            b_name = f"{behavior_data.mouse_id}_{behavior_data.sess_name}_{save_suffix['behavior']}_aligned_behavior"
+
+        else:
+            b_name = (
                 f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_behavior"
             )
-            save_pickle(save_name, aligned_behavior_data, save_path)
-        elif save == "imaging":
-            save_name = (
-                f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_activity"
-            )
-            save_pickle(save_name, aligned_activity_data, save_path)
+
+        if save_suffix["imaging"]:
+            i_name = f"{behavior_data.mouse_id}_{behavior_data.sess_name}_{save_suffix['imaging']}_aligned_activity"
+
         else:
             i_name = (
                 f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_activity"
             )
-            b_name = (
-                f"{behavior_data.mouse_id}_{behavior_data.sess_name}_aligned_behavior"
-            )
+
+        if save == "behavior":
+            save_pickle(b_name, aligned_behavior_data, save_path)
+
+        elif save == "imaging":
+            save_pickle(i_name, aligned_activity_data, save_path)
+
+        else:
             save_pickle(i_name, aligned_activity_data, save_path)
             save_pickle(b_name, aligned_behavior_data, save_path)
 
