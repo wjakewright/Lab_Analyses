@@ -237,7 +237,7 @@ def align_lever_behavior(
                 behavior_data.behavior_frames[i].states.punish[0] - start_trial_frames
             )
             result_end = int(
-                behavior_data.behavior_frames[i].states.punish[0] - start_trial_frames
+                behavior_data.behavior_frames[i].states.punish[1] - start_trial_frames
             )
 
             result_delivery = np.zeros(num_frames)
