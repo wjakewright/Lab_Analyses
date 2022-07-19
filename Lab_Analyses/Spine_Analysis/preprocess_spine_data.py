@@ -1,6 +1,7 @@
 """Module to handle initial processing of spine activity data sets"""
 
 import os
+import re
 
 import numpy as np
 from Lab_Analyses.Behavior.align_lever_behavior import align_lever_behavior
@@ -78,3 +79,22 @@ def preprocess_dual_spine_data(
                 structural_data = load_pickle([structural_fname])[0]
             else:
                 structural_data = None
+
+            # Get the matching behavioral data
+            day = re.search("[0-9]{6}", os.path.basename(GluSnFr_fname)).group()
+            matched_b_path = os.path.join(behavior_path, day)
+            b_fnames = next(os.walk(matched_b_path))[2]
+            b_fname = [x for x in b_fnames if "processed_lever_data" in x][0]
+            b_fname = os.path.join(matched_b_path, b_fname)
+            behavior_data = load_pickle([b_fname])[0]
+            # rewrite the session name (which is by default the date)
+            behavior_data.sess_name = period
+
+            # Align the data
+            aligned_behavior, aligned_GluSnFr = align_lever_behavior(
+                behavior_data, GluSnFr_data, save="both"
+            )
+            _, aligned_Calcium = align_lever_behavior(
+                behavior_data, Calcium_data, save="imaging"
+            )
+
