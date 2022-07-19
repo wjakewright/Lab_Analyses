@@ -92,9 +92,15 @@ def preprocess_dual_spine_data(
 
             # Align the data
             aligned_behavior, aligned_GluSnFr = align_lever_behavior(
-                behavior_data, GluSnFr_data, save="both"
+                behavior_data,
+                GluSnFr_data,
+                save="both",
+                save_suffix={"behavior": None, "imaging": "GluSnFr"},
             )
             _, aligned_Calcium = align_lever_behavior(
-                behavior_data, Calcium_data, save="imaging"
+                behavior_data,
+                Calcium_data,
+                save="imaging",
+                save_suffix={"behavior": None, "imaging": "Calcium"},
             )
 
