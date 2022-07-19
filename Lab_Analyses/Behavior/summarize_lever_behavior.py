@@ -66,6 +66,9 @@ def summarize_lever_behavior(file, save=False, save_suffix=None):
     MIN_MOVE_NUM = 0
     MIN_T = 3001
 
+    if file is None:
+        return None
+
     # Smooth lick data if any is present
     if "Lick" in file.xsg_data.channels.keys():
         file.lick_data_smooth = smooth_lick_data(licks=file.xsg_data.channels["Lick"])
