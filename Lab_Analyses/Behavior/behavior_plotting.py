@@ -128,6 +128,7 @@ def plot_movement_corr_matrix(
         cbar_kws={"label": "Correlation", "orientation": "vertical"},
         xticklabels=2,
         yticklabels=2,
+        vmin=0,
     )
 
     # Set plot edges
