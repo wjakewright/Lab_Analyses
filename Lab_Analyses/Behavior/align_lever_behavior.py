@@ -15,6 +15,7 @@ def align_lever_behavior(
     behavior_data,
     imaging_data,
     save=None,
+    save_path=None,
     save_suffix={"behavior": None, "imaging": None},
 ):
     """Function to align lever traces with the activity traces for each trial
@@ -133,7 +134,7 @@ def align_lever_behavior(
         # Get start and end of trials in behavior frames
         start_trial_frames = int(behavior_data.behavior_frames[i].states.state_0[0, 1])
         end_trial_frames = int(behavior_data.behavior_frames[i].states.state_0[1, 0])
-        num_frames = len(np.arange(start_trial_frames, end_trial_frames))
+        num_frames = len(np.arange(start_trial_frames, end_trial_frames + 1))
 
         # Get the time of the trial frames
         times = behavior_data.frame_times[start_trial_frames : end_trial_frames + 1]
@@ -333,13 +334,17 @@ def align_lever_behavior(
     # save data if specified
     if save:
         # Set up the save path
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
-        save_path = os.path.join(
-            initial_path,
-            behavior_data.mouse_id,
-            "aligned_data",
-            behavior_data.sess_name,
-        )
+        if save_path is None:
+            initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+            save_path = os.path.join(
+                initial_path,
+                behavior_data.mouse_id,
+                "aligned_data",
+                behavior_data.sess_name,
+            )
+        else:
+            save_path = save_path
+
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
@@ -400,7 +405,7 @@ def align_activity(activity, behavior_frames):
         for key, value in activity.items():
             if type(value) == np.ndarray:
                 # Slicing the start and end of the trial
-                trial = value[start:end, :]
+                trial = value[start : end + 1, :]
             else:
                 trial = []
                 for poly in value:
@@ -410,7 +415,7 @@ def align_activity(activity, behavior_frames):
             trial_activity[key] = trial
 
     elif type(activity) == np.ndarray:
-        trial_activity = activity[start:end, :]
+        trial_activity = activity[start : end + 1, :]
 
     return trial_activity
 
