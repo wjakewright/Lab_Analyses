@@ -103,7 +103,7 @@ def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=9
             quiet_roi = False
         elif movement_activity < lower:
             move_roi = False
-            quite_roi = True
+            quiet_roi = True
         else:
             move_roi = False
             quiet_roi = False
