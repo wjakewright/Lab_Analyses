@@ -2,12 +2,13 @@
 
 import os
 import re
+from dataclasses import dataclass
 
 import numpy as np
 from Lab_Analyses.Behavior.align_lever_behavior import align_lever_behavior
+from Lab_Analyses.Utilities.data_utilities import join_dictionaries
 from Lab_Analyses.Utilities.movement_responsiveness import movement_responsiveness
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
-from yaml import load
 
 
 def preprocess_dual_spine_data(
@@ -34,6 +35,11 @@ def preprocess_dual_spine_data(
     """
     if len(channels) != 2:
         return "Need to have at least two channels specified"
+
+    if save:
+        align_save = ("both", "imaging")
+    else:
+        align_save = (None, None)
 
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
     mouse_path = os.path.join(initial_path, mouse_id)
@@ -90,17 +96,106 @@ def preprocess_dual_spine_data(
             # rewrite the session name (which is by default the date)
             behavior_data.sess_name = period
 
+            align_save_path = os.path.join(mouse_path, "aligned_data", FOV, period)
             # Align the data
             aligned_behavior, aligned_GluSnFr = align_lever_behavior(
                 behavior_data,
                 GluSnFr_data,
-                save="both",
+                save=align_save[0],
+                save_path=align_save_path,
                 save_suffix={"behavior": None, "imaging": "GluSnFr"},
             )
             _, aligned_Calcium = align_lever_behavior(
                 behavior_data,
                 Calcium_data,
-                save="imaging",
+                save=align_save[1],
+                save_path=align_save_path,
                 save_suffix={"behavior": None, "imaging": "Calcium"},
             )
+
+            # Group the data together
+            ## Initialize output
+            dual_spine_data = Dual_Channel_Spine_Data(
+                mouse_id=aligned_behavior.mouse_id,
+                session=period,
+                date=aligned_behavior.date,
+                time=np.concatenate(aligned_behavior.trial_time),
+                lever_force_resample=np.concatenate(
+                    aligned_behavior.lever_force_resample_frames
+                ),
+                lever_force_smooth=np.concatenate(
+                    aligned_behavior.lever_force_smooth_frames
+                ),
+                lever_velocity_envelope=np.concatenate(
+                    aligned_behavior.lever_velocity_envelope_frames
+                ),
+                lever_active=np.concatenate(aligned_behavior.lever_active_frames),
+                rewarded_movement_force=np.concatenate(
+                    aligned_behavior.rewarded_movement_force
+                ),
+                rewarded_movement_binary=np.concatenate(
+                    aligned_behavior.rewarded_movement_binary
+                ),
+                binary_cue=np.concatenate(aligned_behavior.binary_cue),
+                reward_delivery=np.array([]),
+                punish_deliver=np.array([]),
+                spine_ids=aligned_GluSnFr.ROI_ids["Spine"],
+                spine_flags=aligned_GluSnFr.ROI_flags["Spine"],
+                spine_positions=aligned_GluSnFr.ROI_positions["Spine"],
+                spine_GluSnFr_dFoF=np.array([]),
+                spine_GluSnFr_processed_dFoF=np.array([]),
+                spine_GluSnFr_activity=np.array([]),
+                spine_GluSnFr_floored=np.array([]),
+                spine_calcium_dFoF=np.array([]),
+                spine_calcium_processed_dFoF=np.array([]),
+                spine_calcium_activity=np.array([]),
+                spine_calcium_floored=np.array([]),
+                global_calcium_dFoF=np.array([]),
+                global_calcium_processed_dFoF=np.array([]),
+                global_calcium_activity=np.array([]),
+                global_calcium_floored=np.array([]),
+                spine_volume=aligned_GluSnFr.spine_volume,
+                corrected_spine_volume=aligned_GluSnFr.corrected_spine_volume,
+            )
+
+            # Start filling in the missing data
+
+
+#################### DATACLASSES #########################
+@dataclass
+class Dual_Channel_Spine_Data:
+    """Dataclass to contain all the relevant behavioral and activity data
+        for a single imaging session. Contains both GluSnFR and calcium  
+        activity data together"""
+
+    mouse_id: str
+    session: str
+    date: str
+    time: np.ndarray
+    lever_force_resample: np.ndarray
+    lever_force_smooth: np.ndarray
+    lever_velocity_envelope: np.ndarray
+    lever_active: np.ndarray
+    rewarded_movement_force: np.ndarray
+    rewarded_movement_binary: np.ndarray
+    binary_cue: np.ndarray
+    reward_delivery: np.ndarray
+    punish_delivery: np.ndarray
+    spine_ids: list
+    spine_flags: list
+    spine_positions: list
+    spine_GluSnFr_dFoF: np.ndarray
+    spine_GluSnFr_processed_dFoF: np.ndarray
+    spine_GluSnFr_activity: np.ndarray
+    spine_GluSnFr_floored: np.ndarray
+    spine_calcium_dFoF: np.ndarray
+    spine_calcium_processed_dFoF: np.ndarray
+    spine_calcium_activity: np.ndarray
+    spine_calcium_floored: np.ndarray
+    global_calcium_dFoF: np.ndarray
+    global_calcium_processed_dFoF: np.ndarray
+    global_calcium_activity: np.ndarray
+    global_calcium_floored: np.ndarray
+    spine_volume: list
+    corrected_spine_volume: list
 
