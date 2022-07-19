@@ -174,8 +174,11 @@ def get_move_start_offset(w, x, y, z, thresh_run):
     u_padded = np.pad(u, (npad // 2, npad - npad // 2), mode="constant")
     conv = np.convolve(u_padded, v, "valid")
     flr = np.floor(thresh_run / 2)
-    find = np.nonzero(conv >= thresh_run)[0][0]
-    end = find - flr
+    try:
+        find = np.nonzero(conv >= thresh_run)[0][0]
+        end = find - flr
+    except IndexError:
+        return np.array([])
     result = np.arange(z, z + end + 2)
 
     return result
@@ -189,8 +192,11 @@ def get_move_stop_offset(w, x, y, z, thresh_run):
     u_padded = np.pad(u, (npad // 2, npad - npad // 2), mode="constant")
     conv = np.convolve(u_padded, v, "valid")
     flr = np.floor(thresh_run / 2)
-    find = np.nonzero(conv >= thresh_run)[0][0]
-    end = z - find + flr - 1  # weird indexing issue
+    try:
+        find = np.nonzero(conv >= thresh_run)[0][0]
+        end = z - find + flr - 1  # weird indexing issue
+    except IndexError:
+        return np.array([])
     result = np.arange(end, z + 1)
 
     return result
