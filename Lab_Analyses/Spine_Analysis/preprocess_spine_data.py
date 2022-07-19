@@ -2,6 +2,7 @@
 
 import os
 import re
+from copy import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -159,6 +160,18 @@ def preprocess_dual_spine_data(
             )
 
             # Start filling in the missing data
+            ## Reward and punish information
+            reward_delivery = copy(aligned_behavior.result_delivery)
+            for i, outcome in enumerate(aligned_behavior.result):
+                if outcome == 0:
+                    reward_delivery[i] = np.zeros(len(reward_delivery[i]))
+            punish_delivery = copy(aligned_behavior.result_delivery)
+            for i, outcome in enumerate(aligned_behavior.result):
+                if outcome == 1:
+                    punish_delivery[i] = np.zeros(len(punish_delivery[i]))
+
+            dual_spine_data.reward_delivery = np.concatenate(reward_delivery)
+            dual_spine_data.punish_delivery = np.concatenate(punish_delivery)
 
 
 #################### DATACLASSES #########################
