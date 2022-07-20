@@ -242,6 +242,10 @@ def align_lever_behavior(
 
             result_delivery = np.zeros(num_frames)
             result_delivery[result_start : result_end + 1] = 1
+            rwd_movement_binary = np.zeros(num_frames)
+            rwd_movement_force = np.zeros(num_frames)
+            rewarded_movement_binary.append(rwd_movement_binary)
+            rewarded_movement_force.append(rwd_movement_force)
 
         ## Append all the behavioral results
         trial_time.append(times)
