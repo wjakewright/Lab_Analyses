@@ -50,6 +50,7 @@ def organize_dual_spine_data(
     # Get the number of FOVs imaged for this mouse
     FOVs = next(os.walk(imaging_path))[1]
 
+    FOV_data = {}
     # Preprocess each FOV seperately
     for FOV in FOVs:
         FOV_path = os.path.join(imaging_path, FOV)
@@ -274,7 +275,7 @@ def organize_dual_spine_data(
                 s_day = re.search(
                     "[0-9]{6}", os.path.basename(structural_fname)
                 ).group()
-                structural_data = Structural_Spine_Data(
+                structural_output = Structural_Spine_Data(
                     mouse_id=aligned_behavior.mouse_id,
                     session=period,
                     date=s_day,
@@ -288,6 +289,32 @@ def organize_dual_spine_data(
                     corrected_dend_segment_intensity=structural_data.corrected_dend_segment_intensity,
                     corrected_spine_volume=structural_data.corrected_spine_volume,
                 )
+
+            # Store the period data
+            if structural:
+                period_data[period] = (dual_spine_data, structural_output)
+            else:
+                period_data[period] = dual_spine_data
+
+            # Save section
+            if save:
+                # Setup the save path
+                save_path = os.path.join(mouse_path, "spine_data", FOV)
+                if not os.path.isdir(save_path):
+                    os.makedirs(save_path)
+                # Make the file name and save
+                fname = f"{dual_spine_data.mouse_id}_{FOV}_{period}_dual_spine_data"
+                save_pickle(fname, dual_spine_data, save_path)
+
+                # save structural data if present
+                if structural:
+                    sname = f"{structural_output.mouse_id}_{FOV}_{period}_followup_structure"
+                    save_pickle(sname, structural_output, save_path)
+
+        # Store the FOV data
+        FOV_data[FOV] = period_data
+
+    return FOV_data
 
 
 #################### DATACLASSES #########################
