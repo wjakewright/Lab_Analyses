@@ -142,6 +142,7 @@ def preprocess_dual_spine_data(
                 punish_deliver=np.array([]),
                 spine_ids=aligned_GluSnFr.ROI_ids["Spine"],
                 spine_flags=aligned_GluSnFr.ROI_flags["Spine"],
+                spine_grouping=[],
                 spine_positions=aligned_GluSnFr.ROI_positions["Spine"],
                 spine_GluSnFr_dFoF=np.array([]),
                 spine_GluSnFr_processed_dFoF=np.array([]),
@@ -157,6 +158,7 @@ def preprocess_dual_spine_data(
                 global_calcium_floored=np.array([]),
                 spine_volume=aligned_GluSnFr.spine_volume,
                 corrected_spine_volume=aligned_GluSnFr.corrected_spine_volume,
+                artifact_frames=aligned_GluSnFr.imaging_parameters["Artifact Frames"],
             )
 
             # Start filling in the missing data
@@ -172,6 +174,96 @@ def preprocess_dual_spine_data(
 
             dual_spine_data.reward_delivery = np.concatenate(reward_delivery)
             dual_spine_data.punish_delivery = np.concatenate(punish_delivery)
+
+            ## Activity
+            spine_grouping = aligned_GluSnFr.imaging_parameters["Spine Groupings"]
+            if not spine_grouping:
+                spine_grouping = list(
+                    range(len(aligned_GluSnFr.dFoF["Spine"].shape[1]))
+                )
+            dual_spine_data.spine_grouping = spine_grouping
+
+            GluSnFr_dFoF = join_dictionaries(aligned_GluSnFr.dFoF)
+            GluSnFr_processed_dFoF = join_dictionaries(aligned_GluSnFr.processed_dFoF)
+            GluSnFr_activity = join_dictionaries(aligned_GluSnFr.activity_trace)
+            GluSnFr_floored = join_dictionaries(aligned_GluSnFr.floored_trace)
+            calcium_dFoF = join_dictionaries(aligned_Calcium.dFoF)
+            calcium_processed_dFoF = join_dictionaries(aligned_Calcium.processed_dFoF)
+            calcium_activity = join_dictionaries(aligned_Calcium.activity_trace)
+            calcium_floored = join_dictionaries(aligned_Calcium.floored_trace)
+
+            dual_spine_data.spine_GluSnFr_dFoF = GluSnFr_dFoF["Spine"]
+            dual_spine_data.spine_GluSnFr_processed_dFoF = GluSnFr_processed_dFoF[
+                "Spine"
+            ]
+            dual_spine_data.spine_GluSnFr_activity = GluSnFr_activity["Spine"]
+            dual_spine_data.spine_GluSnFr_floored = GluSnFr_floored["Spine"]
+            dual_spine_data.spine_calcium_dFoF = calcium_dFoF["Spine"]
+            dual_spine_data.spine_calcium_processed_dFoF = calcium_processed_dFoF[
+                "Spine"
+            ]
+            dual_spine_data.spine_calcium_activity = calcium_activity["Spine"]
+            dual_spine_data.spine_calcium_floored = calcium_floored["Spine"]
+            dual_spine_data.global_calcium_dFoF = calcium_dFoF["Dendrite"]
+            dual_spine_data.global_calcium_processed_dFoF = calcium_processed_dFoF[
+                "Dendrite"
+            ]
+            dual_spine_data.global_calcium_activity = calcium_activity["Dendrite"]
+            dual_spine_data.global_calcium_floored = calcium_floored["Dendrite"]
+
+            # Add movement-related information
+            (
+                movement_spines,
+                silent_spines,
+                spine_move_activity,
+            ) = movement_responsiveness(
+                dual_spine_data.spine_GluSnFr_processed_dFoF,
+                dual_spine_data.lever_active,
+            )
+            (
+                reward_movement_spines,
+                reward_silent_spines,
+                reward_spine_activity,
+            ) = movement_responsiveness(
+                dual_spine_data.spine_GluSnFr_processed_dFoF,
+                dual_spine_data.rewarded_movement_binary,
+            )
+
+            (
+                movement_dendrites,
+                silent_dendrites,
+                dendrite_move_activity,
+            ) = movement_responsiveness(
+                dual_spine_data.global_calcium_processed_dFoF,
+                dual_spine_data.lever_active,
+            )
+            (
+                reward_movement_dendrites,
+                reward_silent_dendrties,
+                reward_dendrite_activity,
+            ) = movement_responsiveness(
+                dual_spine_data.global_calcium_processed_dFoF,
+                dual_spine_data.rewarded_movement_binary,
+            )
+
+            if structural:
+                s_day = re.search(
+                    "[0-9]{6}", os.path.basename(structural_fname)
+                ).group()
+                structural_data = Structural_Spine_Data(
+                    mouse_id=aligned_behavior.mouse_id,
+                    session=period,
+                    date=s_day,
+                    spine_ids=structural_data.ROI_ids["Spine"],
+                    spine_flags=structural_data.ROI_flags["Spine"],
+                    spine_positions=structural_data.ROI_positions["Spine"],
+                    spine_pixel_intensity=structural_data.spine_pixel_intensity,
+                    dend_segment_intensity=structural_data.dend_segment_intensity,
+                    spine_volume=structural_data.spine_volume,
+                    corrected_spine_pixel_intensity=structural_data.corrected_spine_pixel_intensity,
+                    corrected_dend_segment_intensity=structural_data.corrected_dend_segment_intensity,
+                    corrected_spine_volume=structural_data.corrected_spine_volume,
+                )
 
 
 #################### DATACLASSES #########################
@@ -196,6 +288,7 @@ class Dual_Channel_Spine_Data:
     punish_delivery: np.ndarray
     spine_ids: list
     spine_flags: list
+    spine_grouping: list
     spine_positions: list
     spine_GluSnFr_dFoF: np.ndarray
     spine_GluSnFr_processed_dFoF: np.ndarray
@@ -210,5 +303,24 @@ class Dual_Channel_Spine_Data:
     global_calcium_activity: np.ndarray
     global_calcium_floored: np.ndarray
     spine_volume: list
+    corrected_spine_volume: list
+    artifact_frames: list
+
+
+@dataclass
+class Structural_Spine_Data:
+    """Dataclass for storing only structural related information"""
+
+    mouse_id: str
+    session: str
+    date: str
+    spine_ids: list
+    spine_flags: list
+    spine_positions: list
+    spine_pixel_intensity: list
+    dend_segment_intensity: list
+    spine_volume: list
+    corrected_spine_pixel_intensity: list
+    corrected_dend_segment_intensity: list
     corrected_spine_volume: list
 
