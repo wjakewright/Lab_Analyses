@@ -219,6 +219,10 @@ def join_dictionaries(dict_list):
     new_dict = dict_list[0]
     for d in dict_list[1:]:
         for key, value in d.items():
-            new_dict[key] = np.concatenate((new_dict[key], value))
+            if type(value) != list:
+                new_dict[key] = np.concatenate((new_dict[key], value))
+            else:
+                for i, v in enumerate(value):
+                    new_dict[key][i] = np.concatenate((new_dict[key][i], v))
 
     return new_dict
