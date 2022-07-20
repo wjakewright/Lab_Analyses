@@ -12,7 +12,7 @@ from Lab_Analyses.Utilities.movement_responsiveness import movement_responsivene
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
-def preprocess_dual_spine_data(
+def organize_dual_spine_data(
     mouse_id,
     channels={"GluSnFr": "GreenCh", "Calcium": "RedCh"},
     save=False,
@@ -152,12 +152,24 @@ def preprocess_dual_spine_data(
                 spine_calcium_processed_dFoF=np.array([]),
                 spine_calcium_activity=np.array([]),
                 spine_calcium_floored=np.array([]),
-                global_calcium_dFoF=np.array([]),
-                global_calcium_processed_dFoF=np.array([]),
-                global_calcium_activity=np.array([]),
-                global_calcium_floored=np.array([]),
+                dendrite_calcium_dFoF=np.array([]),
+                dendrite_calcium_processed_dFoF=np.array([]),
+                dendrite_calcium_activity=np.array([]),
+                dendrite_calcium_floored=np.array([]),
                 spine_volume=aligned_GluSnFr.spine_volume,
                 corrected_spine_volume=aligned_GluSnFr.corrected_spine_volume,
+                movement_spines=[],
+                reward_movement_spines=[],
+                silent_spines=[],
+                reward_silent_spines=[],
+                spine_movement_activity={},
+                spine_reward_activity={},
+                movement_dendrites=[],
+                reward_movement_dendrites=[],
+                silent_dendrites=[],
+                reward_silent_dendrites=[],
+                dendrite_movement_activity={},
+                dendrite_reward_activity={},
                 artifact_frames=aligned_GluSnFr.imaging_parameters["Artifact Frames"],
             )
 
@@ -204,12 +216,12 @@ def preprocess_dual_spine_data(
             ]
             dual_spine_data.spine_calcium_activity = calcium_activity["Spine"]
             dual_spine_data.spine_calcium_floored = calcium_floored["Spine"]
-            dual_spine_data.global_calcium_dFoF = calcium_dFoF["Dendrite"]
-            dual_spine_data.global_calcium_processed_dFoF = calcium_processed_dFoF[
+            dual_spine_data.dendrite_calcium_dFoF = calcium_dFoF["Dendrite"]
+            dual_spine_data.dendrite_calcium_processed_dFoF = calcium_processed_dFoF[
                 "Dendrite"
             ]
-            dual_spine_data.global_calcium_activity = calcium_activity["Dendrite"]
-            dual_spine_data.global_calcium_floored = calcium_floored["Dendrite"]
+            dual_spine_data.dendrite_calcium_activity = calcium_activity["Dendrite"]
+            dual_spine_data.dendrite_calcium_floored = calcium_floored["Dendrite"]
 
             # Add movement-related information
             (
@@ -239,12 +251,24 @@ def preprocess_dual_spine_data(
             )
             (
                 reward_movement_dendrites,
-                reward_silent_dendrties,
+                reward_silent_dendrites,
                 reward_dendrite_activity,
             ) = movement_responsiveness(
                 dual_spine_data.global_calcium_processed_dFoF,
                 dual_spine_data.rewarded_movement_binary,
             )
+            dual_spine_data.movement_spines = movement_spines
+            dual_spine_data.silent_spines = silent_spines
+            dual_spine_data.spine_movement_activity = spine_move_activity
+            dual_spine_data.reward_movement_spines = reward_movement_spines
+            dual_spine_data.reward_silent_spines = reward_silent_spines
+            dual_spine_data.spine_reward_activity = reward_spine_activity
+            dual_spine_data.movement_dendrites = movement_dendrites
+            dual_spine_data.silent_dendrites = silent_dendrites
+            dual_spine_data.dendrite_movement_activity = dendrite_move_activity
+            dual_spine_data.reward_movement_dendrites = reward_movement_dendrites
+            dual_spine_data.reward_silent_dendrites = reward_silent_dendrites
+            dual_spine_data.dendrite_reward_activity = reward_dendrite_activity
 
             if structural:
                 s_day = re.search(
@@ -298,12 +322,24 @@ class Dual_Channel_Spine_Data:
     spine_calcium_processed_dFoF: np.ndarray
     spine_calcium_activity: np.ndarray
     spine_calcium_floored: np.ndarray
-    global_calcium_dFoF: np.ndarray
-    global_calcium_processed_dFoF: np.ndarray
-    global_calcium_activity: np.ndarray
-    global_calcium_floored: np.ndarray
+    dendrite_calcium_dFoF: np.ndarray
+    dendrite_calcium_processed_dFoF: np.ndarray
+    dendrite_calcium_activity: np.ndarray
+    dendrite_calcium_floored: np.ndarray
     spine_volume: list
     corrected_spine_volume: list
+    movement_spines: list
+    reward_movement_spines: list
+    silent_spines: list
+    reward_silent_spines: list
+    spine_movement_activity: dict
+    spine_reward_activity: dict
+    movement_dendrites: list
+    reward_movement_dendrites: list
+    silent_dendrites: list
+    reward_silent_dendrites: list
+    dendrite_movement_activity: dict
+    dendrite_reward_activity: dict
     artifact_frames: list
 
 
