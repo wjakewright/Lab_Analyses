@@ -117,6 +117,8 @@ def organize_dual_spine_data(
 
             # Group the data together
             ## Initialize output
+            print(len(aligned_behavior.lever_active_frames))
+            print(len(aligned_GluSnFr.processed_dFoF))
             dual_spine_data = Dual_Channel_Spine_Data(
                 mouse_id=aligned_behavior.mouse_id,
                 session=period,
@@ -140,7 +142,7 @@ def organize_dual_spine_data(
                 ),
                 binary_cue=np.concatenate(aligned_behavior.binary_cue),
                 reward_delivery=np.array([]),
-                punish_deliver=np.array([]),
+                punish_delivery=np.array([]),
                 spine_ids=aligned_GluSnFr.ROI_ids["Spine"],
                 spine_flags=aligned_GluSnFr.ROI_flags["Spine"],
                 spine_grouping=[],
@@ -191,9 +193,7 @@ def organize_dual_spine_data(
             ## Activity
             spine_grouping = aligned_GluSnFr.imaging_parameters["Spine Groupings"]
             if not spine_grouping:
-                spine_grouping = list(
-                    range(len(aligned_GluSnFr.dFoF["Spine"].shape[1]))
-                )
+                spine_grouping = list(range(aligned_GluSnFr.dFoF[0]["Spine"].shape[1]))
             dual_spine_data.spine_grouping = spine_grouping
 
             GluSnFr_dFoF = join_dictionaries(aligned_GluSnFr.dFoF)
@@ -247,7 +247,7 @@ def organize_dual_spine_data(
                 silent_dendrites,
                 dendrite_move_activity,
             ) = movement_responsiveness(
-                dual_spine_data.global_calcium_processed_dFoF,
+                dual_spine_data.dendrite_calcium_processed_dFoF,
                 dual_spine_data.lever_active,
             )
             (
@@ -255,7 +255,7 @@ def organize_dual_spine_data(
                 reward_silent_dendrites,
                 reward_dendrite_activity,
             ) = movement_responsiveness(
-                dual_spine_data.global_calcium_processed_dFoF,
+                dual_spine_data.dendrite_calcium_processed_dFoF,
                 dual_spine_data.rewarded_movement_binary,
             )
             dual_spine_data.movement_spines = movement_spines
