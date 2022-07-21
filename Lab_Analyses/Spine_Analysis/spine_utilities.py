@@ -89,3 +89,24 @@ def find_stable_spines(spine_flag_list):
     stable_spines = np.prod(np.vstack(daily_stable_spines), axis=0)
 
     return stable_spines
+
+
+def find_spine_classes(spine_flags, spine_class):
+    """Function to find specific types of spines based on their flags
+        INPUT PARAMETERS
+            spine_flag_list - list of all the spine flags for all the spine ROIs
+            
+            spine_class - str specifying what type of spine you want to finde
+
+        OUTPUT PARAMETERS
+            classed_spines - boolean array of whether or not each spine is stable
+    """
+    # Initialize output
+    classed_spines = [False for x in spine_flags]
+
+    # find the speicific spine classes
+    for i, spine in enumerate(spine_flags):
+        if spine_class in spine:
+            classed_spines[i] = True
+
+    return classed_spines
