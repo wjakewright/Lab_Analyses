@@ -69,7 +69,7 @@ def find_stable_spines(spine_flag_list):
             spine_flag_list - list of all the spine flags for all the spine ROIs
             
         OUTPUT PARAMETERS
-            stable_spines - list of indexes
+            stable_spines - boolean array of whether or not each spine is stable
     """
     # find stable spines for each day
     daily_stable_spines = []
@@ -86,6 +86,6 @@ def find_stable_spines(spine_flag_list):
     # find spines stable across all days
     ### Make all spines the same length
     daily_stable_spines = pad_spine_data(daily_stable_spines, False)
-    stable_spines = np.nonzero(np.prod(np.vstack(daily_stable_spines), axis=0))[0]
+    stable_spines = np.prod(np.vstack(daily_stable_spines), axis=0)
 
     return stable_spines
