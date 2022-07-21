@@ -51,3 +51,35 @@ def calculate_volume_change(data_list, days=None):
         relative_corrected_volume[day] = rel_corr_vol
 
     return relative_volume, relative_corrected_volume
+
+
+def classify_plasticity(relative_volumes, threshold=0.25):
+    """Function to classify if spines have undergone plasticity
+    
+        INPUT PARAMETERS
+            relative_volumes - list of relative volume changes for each spine
+            
+            threshold - float specifying what is the cutoff threshold
+        
+        OUTPUT PARAMETERS
+            potentiated_spines - boolean list of spines classified as potentiated
+            
+            depressed_spines - boolean list of spines classified as depressed
+            
+            stable_spines - boolean list of spines that are stable
+    """
+    # Initialize outputs
+    stable_spines = [False for x in relative_volumes]
+    potentiated_spines = [False for x in relative_volumes]
+    depressed_spines = [False for x in relative_volumes]
+
+    # classify each spine
+    for i, spine in enumerate(relative_volumes):
+        if spine >= 1 + threshold:
+            potentiated_spines[i] = True
+        elif spine <= 1 - threshold:
+            depressed_spines[i] = True
+        else:
+            stable_spines[i] = True
+
+    return potentiated_spines, depressed_spines, stable_spines
