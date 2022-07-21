@@ -34,6 +34,8 @@ def organize_dual_spine_data(
             structural - boolean specifying if there is seperate structural data
                         to include
     """
+
+    print(f"----------------------------------\nAnalyzing Mouse {mouse_id}")
     if len(channels) != 2:
         return "Need to have at least two channels specified"
 
@@ -53,6 +55,7 @@ def organize_dual_spine_data(
     FOV_data = {}
     # Preprocess each FOV seperately
     for FOV in FOVs:
+        print(f"- Preprocessing {FOV}")
         FOV_path = os.path.join(imaging_path, FOV)
         # Get the different imaging session periods
         periods = next(os.walk(FOV_path))[1]
@@ -62,6 +65,7 @@ def organize_dual_spine_data(
         # Preprocess each imaging period
         period_data = {}
         for period in periods:
+            print(f"-- {period}")
             period_path = os.path.join(FOV_path, period)
             fnames = next(os.walk(period_path))[2]
             fnames = [x for x in fnames if "imaging_data" in x]
@@ -100,6 +104,7 @@ def organize_dual_spine_data(
 
             align_save_path = os.path.join(mouse_path, "aligned_data", FOV, period)
             # Align the data
+            print("----- aligning data")
             aligned_behavior, aligned_GluSnFr = align_lever_behavior(
                 behavior_data,
                 GluSnFr_data,
@@ -117,8 +122,6 @@ def organize_dual_spine_data(
 
             # Group the data together
             ## Initialize output
-            print(len(aligned_behavior.lever_active_frames))
-            print(len(aligned_GluSnFr.processed_dFoF))
             dual_spine_data = Dual_Channel_Spine_Data(
                 mouse_id=aligned_behavior.mouse_id,
                 session=period,
@@ -225,6 +228,7 @@ def organize_dual_spine_data(
             dual_spine_data.dendrite_calcium_floored = calcium_floored["Dendrite"]
 
             # Add movement-related information
+            print("----- analyzing movement responses")
             (
                 movement_spines,
                 silent_spines,
