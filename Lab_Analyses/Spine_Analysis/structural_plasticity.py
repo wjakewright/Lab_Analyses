@@ -83,3 +83,4 @@ def classify_plasticity(relative_volumes, threshold=0.25):
             stable_spines[i] = True
 
     return potentiated_spines, depressed_spines, stable_spines
+
