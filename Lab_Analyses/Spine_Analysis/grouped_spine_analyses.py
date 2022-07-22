@@ -18,6 +18,7 @@ def grouped_longitudinal_spine_volume(
     followup=False,
     corrected=True,
     threshold=0.25,
+    exclude=None,
 ):
     """Function to handle the longitudinal spine volume analysis across all mcie
     
@@ -32,6 +33,8 @@ def grouped_longitudinal_spine_volume(
             corrected - boolean of whether or not to use the corrected volume estimates
 
             threshold - float specifying threshold for plasticity classification
+
+            exclude - str specifying spine types to exclude from analysis
                         
         OUTPUT PARAMETERS
             
@@ -78,7 +81,7 @@ def grouped_longitudinal_spine_volume(
                     for sub in [temp_data, followup_datasets]
                 ]
                 pre_days = [f"Pre {day}" for day in days]
-                post_days = [f"Pose {day}" for day in days]
+                post_days = [f"Post {day}" for day in days]
                 used_days = [
                     sub[item]
                     for item in range(len(post_days))
@@ -87,24 +90,28 @@ def grouped_longitudinal_spine_volume(
 
             # Calculate the volumes
             if corrected:
-                _, volumes = calculate_volume_change(datasets, used_days)
+                _, volumes, spine_idxs = calculate_volume_change(
+                    datasets, used_days, exclude=exclude
+                )
             else:
-                volumes, _ = calculate_volume_change(datasets, used_days)
+                volumes, _, spine_idxs = calculate_volume_change(
+                    datasets, used_days, exclude=exclude
+                )
 
             # Store data for this FOV
             for key, value in volumes.items():
                 mouse_data[key].append(value)
 
         # Merge FOV data for this mouse
-
+        merged_data = {}
         for key, value in mouse_data.items():
             if len(value) == 1:
-                mouse_data[key] = value[0]
+                merged_data[key] = value[0]
                 continue
-            mouse_data[key] = np.concatenate(value)
+            merged_data[key] = np.concatenate(value)
 
         # Store data for this mouse
-        for key, value in mouse_data.items():
+        for key, value in merged_data.items():
             grouped_data[key].append(value)
 
     # get mean volume change for each mouse
