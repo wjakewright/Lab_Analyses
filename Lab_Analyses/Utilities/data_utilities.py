@@ -72,6 +72,44 @@ def get_before_after_means(
     return all_befores, all_afters
 
 
+def get_before_during_means(activity, timestamps, window, sampling_rate):
+    """Function to get the before and during behavioral event
+    
+        INPUT PARAMETERS
+            activity - np.array of neural activity, with each column representing ROI
+            
+            timestamps - list of tuples with the onset and offest of each behavioral event
+            
+            window - int specifying the timewindow before the behavioral event 
+                    to use as the baseline in seconds
+                    
+            sampling_rate - float specifying what the imaging rate was
+
+        OUTPUT PARAMETERS
+            all_befores - list containing all the before means (np.array) for each ROI
+            
+            all_durings - list containing all the during means (np.array) for each ROI
+            
+    """
+    # Get the before time in frames
+    before_f = int(window * sampling_rate)
+
+    all_befores = []
+    all_durings = []
+    # Get before and after values
+    for i in range(activity.shape[1]):
+        d = activity[:, i]
+        before_values = []
+        during_values = []
+        for stamp in timestamps:
+            before_values.append(np.mean(d[stamp[0] - before_f : stamp[0]]))
+            during_values.append(np.mean(d[stamp[0] : stamp[1]]))
+        all_befores.append(np.array(before_values))
+        all_durings.append(np.array(during_values))
+
+    return all_befores, all_durings
+
+
 def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
     """Function to get the mean and sem of neural activity around behavioral events
         
