@@ -1,6 +1,9 @@
 """Module containing some regularly used functions for spine analysis"""
 
+import os
+
 import numpy as np
+from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
 
 def pad_spine_data(spine_data_list, pad_value=np.nan):
@@ -110,3 +113,59 @@ def find_spine_classes(spine_flags, spine_class):
             classed_spines[i] = True
 
     return classed_spines
+
+
+def load_spine_datasets(mouse_id, days, followup):
+    """Function to handle loading all the spine datasets for a mouse
+    
+        INPUT PARAMETERS
+            mouse_id - str specifying which mouse to load
+            
+            days - list of strings specifying which days to load. Used
+                    to search filenames
+                    
+            followup - boolean of whether or not to also load followup data
+    """
+
+    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+
+    data_path = os.path.join(initial_path, mouse_id, "spine_data")
+    FOVs = next(os.walk(data_path))[1]
+
+    mouse_data = {}
+    for FOV in FOVs:
+        FOV_path = os.path.join(data_path, FOV)
+        datasets = []
+        fnames = next(os.walk(FOV_path))[2]
+        for day in days:
+            load_name = [x for x in fnames if day in x and "followup not in x"][0]
+            data = load_pickle([load_name], path=FOV_path)[0]
+            datasets.append(data)
+        used_days = list(days)
+        # Add followup data if specified
+        if followup:
+            followup_datasets = []
+            for day in days:
+                followup_name = [x for x in fnames if day in x and "followup" in x][0]
+                followup_data = load_pickle([followup_name], path=FOV_path)[0]
+                followup_datasets.append(followup_data)
+            datasets = [
+                sub[item]
+                for item in range(len(followup_datasets))
+                for sub in [datasets, followup_datasets]
+            ]
+            pre_days = [f"Pre {day}" for day in days]
+            post_days = [f"Post {day}" for day in days]
+            used_days = [
+                sub[item]
+                for item in range(len(post_days))
+                for sub in [pre_days, post_days]
+            ]
+        FOV_data = {}
+        for data, day in zip(datasets, used_days):
+            FOV_data[day] = data
+
+        mouse_data[day] = FOV_data
+
+    return mouse_data
+
