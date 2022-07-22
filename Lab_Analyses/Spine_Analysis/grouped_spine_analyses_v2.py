@@ -127,8 +127,7 @@ def movement_spine_volume(
             rewarded - boolean specifying if you wish to looked at reward movement spines
             
     """
-    movement_volumes = defaultdict(list)
-    activity_volumes = defaultdict(list)
+    grouped_data = defaultdict(list)
     for mouse in mice_list:
         mouse_datasets = load_spine_datasets(mouse, [day], followup=True)
         mouse_data = defaultdict(list)
@@ -159,3 +158,51 @@ def movement_spine_volume(
             # Refine idxs to only those analyzed
             movement_idxs = movement_idxs[spine_idxs]
             spine_activity = spine_activity[spine_idxs]
+
+            mouse_data["volumes"].append(volumes)
+            mouse_data["move_idx"].append(movement_idxs)
+            mouse_data["activity"].append(spine_activity)
+
+        # Merge FOVs for this mouse
+        for key, value in mouse_data.items():
+            if len(value) == 1:
+                mouse_data[key] = value[0]
+                continue
+            mouse_data[key] = np.concatenate(value)
+
+        # Store data for this mouse
+        for key, value in mouse_data.items():
+            grouped_data[key].append(value)
+
+    # Merged data across mice
+    total_data = {}
+    for key, value in grouped_data.items():
+        total_data[key] = np.concatenate(value)
+
+    # Get all the volumes for movement and nonmovment spines
+    movement_volumes = {"movement": [], "nonmovement": []}
+    move_vol = total_data["volumes"][total_data["move_idx"]]
+    non_idx = [not x for x in total_data["move_idx"]]
+    non_move_vol = total_data["volumes"][non_idx]
+    movement_volumes["movement"] = move_vol
+    movement_volumes["nonmovement"] = non_move_vol
+
+    # Get means and percentages for each mouse
+    mouse_means = {"movement": [], "nonmovement": []}
+    mouse_potentiated = {"movement": [], "nonmovement": []}
+    mouse_depressed = {"movement": [], "nonmovement": []}
+
+    for vol, move in zip(grouped_data["volumes"], grouped_data["move_idx"]):
+        non_idx = [not x for x in move]
+        move_vols = vol[move]
+        non_move_vols = vol[non_idx]
+        move_pot, move_dep, _ = classify_plasticity(move_vols, threshold)
+        non_pot, non_dep, _ = classify_plasticity(non_move_vols, threshold)
+        mouse_means["movement"].append(np.mean(move_vols))
+        mouse_means["nonmovement"].append(np.mean(non_move_vols))
+        mouse_potentiated["movement"].append(sum(move_pot) / len(move_pot))
+        mouse_potentiated["nonmovement"].append(sum(non_pot) / len(non_pot))
+        mouse_depressed["movement"].append(sum(move_dep) / len(move_dep))
+        mouse_depressed["nonmovement"].append(sum(non_dep) / len(non_dep))
+
+    return total_data, movement_volumes, mouse_means, mouse_potentiated, mouse_depressed
