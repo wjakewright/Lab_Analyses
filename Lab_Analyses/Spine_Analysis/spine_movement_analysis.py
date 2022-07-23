@@ -63,6 +63,15 @@ def spine_movement_activity(
     movement_diff = np.insert(np.diff(movement), 0, 0, axis=0)
     movement_onsets = np.nonzero(movement_diff == 1)[0]
     movement_offsets = np.nonzero(movement_diff == -1)[0]
+
+    ## made sure onsets and offsets are the same length
+    if len(movement_onsets) > len(movement_offsets):
+        # Drop last onset if there is no offset
+        movement_onsets = movement_onsets[:-1]
+    elif len(movement_onsets) < len(movement_offsets):
+        # Drop first offest if there is no onset for it
+        movement_offsets = movement_offsets[1:]
+
     timestamps = []
     for onset, offset in zip(movement_onsets, movement_offsets):
         stamp = (onset, offset)
@@ -78,6 +87,12 @@ def spine_movement_activity(
             else:
                 refined_idxs.append(True)
             continue
+        # remove movements that go beyond activity window at end
+        if i == len(timestamps) - 1:
+            if stamp[0] + before_window >= len(activity[:, 0]):
+                refined_idxs.append(False)
+                continue
+
         # remove movements with another movement 1s before
         if stamp[0] - before_window <= timestamps[i - 1][1]:
             refined_idxs.append(False)
