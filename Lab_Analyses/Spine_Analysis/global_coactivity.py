@@ -52,8 +52,10 @@ def global_coactivity_analysis(data, sampling_rate=60):
     for id in spine_ids:
         coactivity_mean_trace[id] = None
 
+    dend_mean_sem = []
+
     # Now process spines for each parrent dendrite
-    for i in range(dendrite_activity):
+    for i in range(dendrite_activity.shape[1]):
         spines = spine_groupings[i]
         s_ids = np.array(spine_ids)[spines]
         s_dFoF = spine_dFoF[:, spines]
@@ -68,7 +70,7 @@ def global_coactivity_analysis(data, sampling_rate=60):
             global_correlation[spines[j]] = corr
             # Coactivity rate
             coactivity_freq, spine_frac, dend_frac = get_coactivity_freq(
-                s_activity[:, j], d_activity
+                s_activity[:, j], d_activity, sampling_rate=sampling_rate
             )
             coactivity_rate[spines[j]] = coactivity_freq
             spine_fraction_coactive[spines[j]] = spine_frac
@@ -111,6 +113,16 @@ def global_coactivity_analysis(data, sampling_rate=60):
         for key, value in mean_sems.items():
             coactivity_mean_trace[key] = value
 
+        # get dend mean sem trace
+        _, d_mean_sems = d_utils.get_trace_mean_sem(
+            d_dFoF.reshape(-1, 1),
+            [f"Dendrite {i}"],
+            epoch_timestamps,
+            window=(-2, 2),
+            sampling_rate=sampling_rate,
+        )
+        dend_mean_sem.append(d_mean_sems[f"Dendrite {i}"])
+
         # Determine which spines are significantly coactive
         sig_spines, _, _ = movement_responsiveness(s_dFoF, d_activity,)
         for j, sig in enumerate(sig_spines):
@@ -124,6 +136,7 @@ def global_coactivity_analysis(data, sampling_rate=60):
         coactive_amplitude,
         coactive_spines,
         coactivity_mean_trace,
+        dend_mean_sem,
     )
 
 
@@ -152,7 +165,6 @@ def get_coactivity_freq(spine, dendrite, sampling_rate):
 
     # Get coactivity binary trace
     coactivity_binary = spine * dendrite
-
     # Count how many co-activity events
     events = np.nonzero(np.diff(coactivity_binary) == 1)[0]
     event_num = len(events)
@@ -161,9 +173,9 @@ def get_coactivity_freq(spine, dendrite, sampling_rate):
     event_freq = event_num / duration
 
     # Normalize frequency based on spine and dendrite activity
-    spine_event_freq = np.nonzero(np.diff(spine) == 1)[0] / duration
-    dend_event_freq = np.nonzero(np.diff(dendrite) == 1)[0] / duration
-    geo_mean = stats(np.array(spine_event_freq, dend_event_freq))
+    spine_event_freq = len(np.nonzero(np.diff(spine) == 1)[0]) / duration
+    dend_event_freq = len(np.nonzero(np.diff(dendrite) == 1)[0]) / duration
+    geo_mean = stats.gmean([spine_event_freq, dend_event_freq])
     coactivity_freq = event_freq / geo_mean
 
     # get spine and dend frac
