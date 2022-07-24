@@ -122,22 +122,23 @@ def label_video(
         processed_tifs = None
 
         # Add the labels
-        for label in labels:
-            a = int(label[0]) - frame_tracker
-            b = int(label[1]) - frame_tracker
-            im_range = range(len(avg_tifs))
-            if a in im_range and b in im_range:
-                print(f"{a} to {b}")
-                avg_tifs[a : b + 1, -50:-1, -50:-1, 0] = 255
-                avg_tifs[a : b + 1, -50:-1, -50:-1, 1:2] = 1
-            elif b in im_range and a not in im_range:
-                print(f"{a} to {b}")
-                avg_tifs[0 : b + 1, -50:-1, -50:-1, 0] = 255
-                avg_tifs[0 : b + 1, -50:-1, -50:-1, 1:2] = 1
-            elif a in im_range and b not in im_range:
-                print(f"{a} to {b}")
-                avg_tifs[a:-1, -50:-1, -50:-1, 0] = 255
-                avg_tifs[a:-1, -50:-1, -50:-1, 1:2] = 1
+        if labels:
+            for label in labels:
+                a = int(label[0]) - frame_tracker
+                b = int(label[1]) - frame_tracker
+                im_range = range(len(avg_tifs))
+                if a in im_range and b in im_range:
+                    print(f"{a} to {b}")
+                    avg_tifs[a : b + 1, -50:-1, -50:-1, 0] = 255
+                    avg_tifs[a : b + 1, -50:-1, -50:-1, 1:2] = 1
+                elif b in im_range and a not in im_range:
+                    print(f"{a} to {b}")
+                    avg_tifs[0 : b + 1, -50:-1, -50:-1, 0] = 255
+                    avg_tifs[0 : b + 1, -50:-1, -50:-1, 1:2] = 1
+                elif a in im_range and b not in im_range:
+                    print(f"{a} to {b}")
+                    avg_tifs[a:-1, -50:-1, -50:-1, 0] = 255
+                    avg_tifs[a:-1, -50:-1, -50:-1, 1:2] = 1
 
         # Update how many frames have been prrocessed
         frame_tracker = frame_tracker + (np.shape(curr_file)[0])
