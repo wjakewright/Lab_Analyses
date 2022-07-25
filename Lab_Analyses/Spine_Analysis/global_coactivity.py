@@ -1,5 +1,6 @@
 """Module for analyzing the co-activity of spines with global activity"""
 
+from itertools import compress
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
@@ -49,14 +50,19 @@ def global_coactivity_analysis(data, sampling_rate=60):
     coactive_amplitude = np.zeros(spine_activity.shape[1])
     coactive_spines = np.zeros(spine_activity.shape[1])
     coactivity_mean_trace = {}
+    coactivity_epoch_trace = {}
     for id in spine_ids:
         coactivity_mean_trace[id] = None
+        coactivity_epoch_trace[id] = None
 
     dend_mean_sem = []
 
     # Now process spines for each parrent dendrite
     for i in range(dendrite_activity.shape[1]):
-        spines = spine_groupings[i]
+        if type(spine_groupings[i]) == list:
+            spines = spine_groupings[i]
+        else:
+            spines = spine_groupings
         s_ids = np.array(spine_ids)[spines]
         s_dFoF = spine_dFoF[:, spines]
         s_activity = spine_activity[:, spines]
@@ -91,6 +97,24 @@ def global_coactivity_analysis(data, sampling_rate=60):
         timestamps = []
         for onset, offset in zip(dend_onsets, dend_offsets):
             timestamps.append((onset, offset))
+        # refine timestamps
+        refined_idxs = []
+        for i, stamp in enumerate(timestamps):
+            if i == 0:
+                if stamp[0] - 120 < 0:
+                    refined_idxs.append(False)
+                else:
+                    refined_idxs.append(True)
+                continue
+            if i == len(timestamps) - 1:
+                if stamp[0] + 120 >= len(s_dFoF[:, 0]):
+                    refined_idxs.append(False)
+                else:
+                    refined_idxs.append(True)
+                continue
+
+            refined_idxs.append(True)
+        timestamps = list(compress(timestamps, refined_idxs))
         # Get mean activity before and during each dend activity event
         all_befores, all_durings = d_utils.get_before_during_means(
             s_dFoF, timestamps, window=1, sampling_rate=sampling_rate,
@@ -103,7 +127,7 @@ def global_coactivity_analysis(data, sampling_rate=60):
 
         # Get the mean sem traces
         epoch_timestamps = [x[0] for x in timestamps]
-        _, mean_sems = d_utils.get_trace_mean_sem(
+        epoch_trace, mean_sems = d_utils.get_trace_mean_sem(
             s_dFoF,
             s_ids,
             epoch_timestamps,
@@ -112,6 +136,8 @@ def global_coactivity_analysis(data, sampling_rate=60):
         )
         for key, value in mean_sems.items():
             coactivity_mean_trace[key] = value
+        for key, value in epoch_trace.items():
+            coactivity_epoch_trace[key] = value
 
         # get dend mean sem trace
         _, d_mean_sems = d_utils.get_trace_mean_sem(
@@ -124,7 +150,10 @@ def global_coactivity_analysis(data, sampling_rate=60):
         dend_mean_sem.append(d_mean_sems[f"Dendrite {i}"])
 
         # Determine which spines are significantly coactive
-        sig_spines, _, _ = movement_responsiveness(s_dFoF, d_activity,)
+        if sum(d_activity):
+            sig_spines, _, _ = movement_responsiveness(s_dFoF, d_activity,)
+        else:
+            sig_spines = [False for x in range(s_dFoF.shape[1])]
         for j, sig in enumerate(sig_spines):
             coactive_spines[spines[j]] = sig
 
@@ -135,6 +164,7 @@ def global_coactivity_analysis(data, sampling_rate=60):
         dend_fraction_coactive,
         coactive_amplitude,
         coactive_spines,
+        coactivity_epoch_trace,
         coactivity_mean_trace,
         dend_mean_sem,
     )
@@ -179,8 +209,14 @@ def get_coactivity_freq(spine, dendrite, sampling_rate):
     coactivity_freq = event_freq / geo_mean
 
     # get spine and dend frac
-    spine_frac_coactive = event_freq / spine_event_freq
-    dend_frac_coactive = event_freq / dend_event_freq
+    try:
+        spine_frac_coactive = event_freq / spine_event_freq
+    except ZeroDivisionError:
+        spine_frac_coactive = 0
+    try:
+        dend_frac_coactive = event_freq / dend_event_freq
+    except ZeroDivisionError:
+        dend_frac_coactive = 0
 
     return coactivity_freq, spine_frac_coactive, dend_frac_coactive
 
