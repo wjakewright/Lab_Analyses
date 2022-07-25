@@ -229,14 +229,14 @@ def coactivity_spine_volume(
             exclude - str specifying spine type to exclude from analysis
     """
 
-    grouped_data = defaultdict(list)
+    grouped_data = {}
     merged_group_data = defaultdict(list)
     for mouse in mice_list:
         print(mouse)
         mouse_datasets = load_spine_datasets(mouse, [day], followup=True)
-        mouse_data = defaultdict(list)
+        mouse_data = {}
 
-        for data in mouse_datasets.values():
+        for FOV, data in mouse_datasets.items():
             keys = list(data.keys())
             datasets = list(data.values())
 
@@ -291,38 +291,43 @@ def coactivity_spine_volume(
             coactivity_mean_trace = [coactivity_mean_trace[i] for i in spine_idxs]
 
             # store values
-            mouse_data["volumes"].append(volumes)
-            mouse_data["potentiated"].append(potentiated)
-            mouse_data["depressed"].append(depressed)
-            mouse_data["correlation"].append(global_correlation)
-            mouse_data["coactivity_rate"].append(coactivity_rate)
-            mouse_data["spine fraction"].append(spine_fraction_coactive)
-            mouse_data["dend fraction"].append(dend_fraction_coactive)
-            mouse_data["coactive amplitude"].append(coactive_amplitude)
-            mouse_data["coactive spines"].append(coactive_spines)
-            mouse_data["epoch traces"].append(coactivity_epoch_trace)
-            mouse_data["mean traces"].append(coactivity_mean_trace)
-            mouse_data["dend traces"].append(dend_mean_sem)
-            mouse_data["grouping"].append(groupings)
+            FOV_data = {}
+            FOV_data["volumes"] = volumes
+            FOV_data["potentiated"] = potentiated
+            FOV_data["depressed"] = depressed
+            FOV_data["correlation"] = global_correlation
+            FOV_data["coactivity_rate"] = coactivity_rate
+            FOV_data["spine fraction"] = spine_fraction_coactive
+            FOV_data["dend fraction"] = dend_fraction_coactive
+            FOV_data["coactive amplitude"] = coactive_amplitude
+            FOV_data["coactive spines"] = coactive_spines
+            FOV_data["epoch traces"] = coactivity_epoch_trace
+            FOV_data["mean traces"] = coactivity_mean_trace
+            FOV_data["dend traces"] = dend_mean_sem
+            FOV_data["grouping"] = groupings
+            mouse_data[FOV] = FOV_data
 
         # Merge mouse data across FOVs
+        m_mouse_data = defaultdict(list)
+        for value in mouse_data.values():
+            for key, v in value.items():
+                if (
+                    key == "grouping"
+                    or key == "dend traces"
+                    or key == "mean traces"
+                    or key == "epoch traces"
+                ):
+                    continue
+                m_mouse_data[key].append(v)
         merged_mouse_data = {}
-        for key, value in mouse_data.items():
-            if (
-                key == "grouping"
-                or key == "dend traces"
-                or key == "mean traces"
-                or key == "epoch traces"
-            ):
-                continue
+        for key, value in m_mouse_data.items():
             if len(value) == 1:
                 merged_mouse_data[key] = value[0]
                 continue
             merged_mouse_data[key] = np.concatenate(value)
 
         # store data for this mouse
-        for key, value in mouse_data.items():
-            grouped_data[key].append(value)
+        grouped_data[mouse] = mouse_data
         for key, value in merged_mouse_data.items():
             merged_group_data[key].append(value)
 
