@@ -91,7 +91,9 @@ def spine_movement_activity(
         if i == len(timestamps) - 1:
             if stamp[0] + before_window >= len(activity[:, 0]):
                 refined_idxs.append(False)
-                continue
+            else:
+                refined_idxs.append(True)
+            continue
 
         # remove movements with another movement 1s before
         if stamp[0] - before_window <= timestamps[i - 1][1]:
