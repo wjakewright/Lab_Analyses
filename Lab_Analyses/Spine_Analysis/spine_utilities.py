@@ -165,7 +165,7 @@ def load_spine_datasets(mouse_id, days, followup):
         for data, day in zip(datasets, used_days):
             FOV_data[day] = data
 
-        mouse_data[day] = FOV_data
+        mouse_data[FOV] = FOV_data
 
     return mouse_data
 
