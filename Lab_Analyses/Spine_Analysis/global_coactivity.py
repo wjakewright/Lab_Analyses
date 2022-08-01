@@ -3,9 +3,11 @@
 from itertools import compress
 
 import numpy as np
+import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.movement_responsiveness import movement_responsiveness
+from Lab_Analyses.Utilities.movement_responsiveness import \
+    movement_responsiveness
 from scipy import stats
 
 
@@ -219,4 +221,98 @@ def get_coactivity_freq(spine, dendrite, sampling_rate):
         dend_frac_coactive = 0
 
     return coactivity_freq, spine_frac_coactive, dend_frac_coactive
+
+
+def find_activity_onset(spine_means, dend_mean, sampling_rate):
+    """Function to find the activity onset for spines and their parent dendrite. 
+        Also returns the difference relative to dendrite onset
+        
+        INPUT PARMAETERS
+            spine_means - np.array of the mean traces for each spine, with each column
+                          corresponding to each spine
+                          
+            dend_mean - np.array of the mean trace of the parent dendrite
+
+            sampling_rate - int or float of the imaging rate
+            
+        OUTPUT PARAMETERS
+    
+    """
+    DISTANCE = 0.5 * sampling_rate  ## minimum distance of 0.5 seconds
+
+    # Get the onset for the dendrite first
+    dend_med = np.median(dend_mean)
+    dend_std = np.std(dend_mean)
+    dend_h = dend_med + dend_std
+    dend_peaks, dend_props = sysignal.find_peaks(
+        dend_mean, height=dend_h, distance=DISTANCE
+    )
+    dend_amps = dend_props["peak_heights"]
+    # get the max peak
+    dend_peak = dend_peaks[np.argmax(dend_amps)]
+    dend_amp = np.max(dend_amps)
+    # Get the offset of the rise phase
+    dend_peak_trace = dend_mean[:dend_peak]
+    dend_offset = np.where(dend_peak_trace < 0.75 * dend_amp)[0][-1]
+    # Get the trace velocity
+    dend_search_trace = dend_mean[:dend_offset]
+    dend_deriv = np.gradient(dend_mean)[:dend_offset]
+    # Find where velocity goes to zero or below
+    dend_below_zero = dend_deriv <= 0
+    if sum(dend_below_zero):
+        dend_onset = np.nonzero(dend_below_zero)[0][-1]
+    # If derivative doesn't go below zero, find where it goes below median
+    else:
+        try:
+            dend_onset = np.where(dend_search_trace < dend_med)[0][-1]
+        except:
+            dend_onset = 0
+
+    # Get the absolute and relative onsets for each spine now
+    spine_onsets = np.zeros(spine_means.shape[1])
+    spine_relative_onsets = np.zeros(spine_means.shape[1])
+    for i in range(spine_means.shape[1]):
+        spine = spine_means[:, i]
+        spine_med = np.median(spine)
+        spine_std = np.std(spine)
+        spine_h = spine_med + spine_std
+        spine_peaks, spine_props = sysignal.find_peaks(
+            spine, height=spine_h, distance=DISTANCE
+        )
+        spine_amps = spine_props["peak_heights"]
+        # Get the main peak
+        if len(spine_peaks) > 1:
+            peak_score = []
+            for peak, amp in zip(spine_peaks, spine_amps):
+                score = (1 / np.absolute(peak - dend_onset)) * amp
+                peak_score.append(score)
+            peak_idx = np.argmax(peak_score)
+            spine_peak = spine_peaks[peak_idx]
+            spine_amp = spine_amps[peak_idx]
+        else:
+            spine_peak = spine_peaks[0]
+            spine_amp = spine_amps[0]
+
+        # Get the offset of the rise phase
+        spine_peak_trace = spine[:spine_peak]
+        spine_offset = np.where(spine_peak_trace < 0.75 * spine_amp)[0][-1]
+        # Get the trace velocity
+        spine_search_trace = spine[:spine_offset]
+        spine_deriv = np.gradient(spine)[:spine_offset]
+        # Find where velocity goes to zero or below
+        spine_below_zero = spine_deriv <= 0
+        if sum(spine_below_zero):
+            spine_onset = np.nonzero(spine_below_zero)[0][-1]
+        # If derivative doesn't go below zero, find where it goes below median
+        else:
+            try:
+                spine_onset = np.where(spine_search_trace < spine_med)[0][-1]
+            except:
+                spine_onset = 0
+        # Store values
+        spine_onsets[i] = spine_onset
+        # relative onset is in terms of seconds
+        rel_onset = (spine_onset - dend_onset) / sampling_rate
+        spine_relative_onsets[i] = rel_onset
+
 
