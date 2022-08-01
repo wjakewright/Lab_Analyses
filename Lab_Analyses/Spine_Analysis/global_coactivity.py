@@ -6,8 +6,7 @@ import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.movement_responsiveness import \
-    movement_responsiveness
+from Lab_Analyses.Utilities.movement_responsiveness import movement_responsiveness
 from scipy import stats
 
 
@@ -315,4 +314,5 @@ def find_activity_onset(spine_means, dend_mean, sampling_rate):
         rel_onset = (spine_onset - dend_onset) / sampling_rate
         spine_relative_onsets[i] = rel_onset
 
+    return spine_onsets, spine_relative_onsets, dend_onset
 
