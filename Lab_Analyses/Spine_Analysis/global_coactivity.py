@@ -55,8 +55,11 @@ def global_coactivity_analysis(data, sampling_rate=60):
     for id in spine_ids:
         coactivity_mean_trace[id] = None
         coactivity_epoch_trace[id] = None
+    spine_onsets = np.zeros(spine_activity.shape[1])
+    relative_onsets = np.zeros(spine_activity.shape[1])
 
     dend_mean_sem = []
+    dend_onsets = []
 
     # Now process spines for each parrent dendrite
     for i in range(dendrite_activity.shape[1]):
@@ -150,6 +153,18 @@ def global_coactivity_analysis(data, sampling_rate=60):
         )
         dend_mean_sem.append(d_mean_sems[f"Dendrite {i}"])
 
+        # Get the onsets
+        means = [x[0].reshape(-1, 1) for x in mean_sems]
+        means = np.concatenate(means, axis=1)
+        d_means = d_mean_sems[0]
+        s_onsets, r_onsets, d_onsets = find_activity_onset(
+            means, d_means, sampling_rate
+        )
+        dend_onsets.append(d_onsets)
+        for j in range(len(s_onsets)):
+            spine_onsets[spines[j]] = s_onsets[j]
+            relative_onsets[spines[j]] = r_onsets[j]
+
         # Determine which spines are significantly coactive
         if sum(d_activity):
             sig_spines, _, _ = movement_responsiveness(s_dFoF, d_activity,)
@@ -168,6 +183,9 @@ def global_coactivity_analysis(data, sampling_rate=60):
         coactivity_epoch_trace,
         coactivity_mean_trace,
         dend_mean_sem,
+        spine_onsets,
+        relative_onsets,
+        dend_onsets,
     )
 
 
