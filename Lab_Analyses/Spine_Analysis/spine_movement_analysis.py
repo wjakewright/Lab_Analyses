@@ -10,6 +10,7 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
+from scipy import stats
 
 
 def spine_movement_activity(
@@ -171,7 +172,11 @@ def assess_movement_quality(
         lever_trace = spine_data.lever_force_smooth
 
     activity = getattr(spine_data, activity_type)
-    spine_ids = spine_data.spine_ids
+
+    if exclude:
+        exclude_spines = find_spine_classes(spine_data.spine_flags, exclude)
+        exclude_spines = np.array([not x for x in exclude_spines])
+        activity = activity[:, exclude_spines]
 
     # Get onsets and offsets of the movements
     movement_diff = np.insert(np.diff(lever_active), 0, 0, axis=0)
@@ -189,6 +194,8 @@ def assess_movement_quality(
     for onset, offset in zip(movement_onsets, movement_offsets):
         move_idxs.append((onset, offset))
 
+    movement_correlations = []
+    mean_spine_movements = []
     # Assess the movements for each spine
     for i in range(activity.shape[1]):
         spine_trace = activity[:, i]
@@ -200,4 +207,18 @@ def assess_movement_quality(
                 spine_movements.append(spine_move)
             else:
                 continue
+
+        # Average the movements
+        spine_movements = np.array(spine_movements)
+        mean_movement = np.nanmean(spine_movements, axis=0)
+        mean_spine_movements.append(mean_movement)
+        # Correlate with the learned movement
+        move_corr = stats.pearsonr(learned_movement, mean_movement).statistic
+        movement_correlations.append(move_corr)
+
+    # convert outputs to arrays
+    movement_correlations = np.array(movement_correlations)
+    mean_spine_movements = np.array(mean_spine_movements).T
+
+    return mean_spine_movements, movement_correlations
 
