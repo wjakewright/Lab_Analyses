@@ -1,9 +1,11 @@
 """Module to handle some of the movement analysis for the spine activity data"""
 
 import os
+from fractions import Fraction
 from itertools import compress
 
 import numpy as np
+import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     load_spine_datasets,
@@ -153,7 +155,7 @@ def assess_movement_quality(
     load_path = os.path.join(behavior_path, final_day)
     fnames = next(os.walk(load_path))[2]
     fname = [x for x in fnames if "summarized_lever_data" in x]
-    learned_file = load_pickle([fname], load_path)[0]
+    learned_file = load_pickle(fname, load_path)[0]
     learned_movement = learned_file.movement_avg
 
     # Remove the baseline period
@@ -161,7 +163,12 @@ def assess_movement_quality(
     baseline_len = len(learned_movement) - corr_len
     learned_movement = learned_movement[baseline_len:]
 
-    move_duration = len(learned_movement)
+    # Need to down sample the learrned movement now to match the imaging rate
+    frac = Fraction(sampling_rate / 1000).limit_denominator()
+    n = frac.numerator
+    d = frac.denominator
+    learned_move_resample = sysignal.resample_poly(learned_movement, n, d)
+    move_duration = len(learned_move_resample)
 
     # Get relevant data from spine data
     if rewarded:
@@ -201,24 +208,25 @@ def assess_movement_quality(
         spine_trace = activity[:, i]
         spine_movements = []
         for movement in move_idxs:
-            spine_epoch = spine_trace[movement[0] : movement[1] + 1]
+            spine_epoch = spine_trace[movement[0] : movement[1]]
             if sum(spine_epoch):
-                spine_move = lever_trace[movement[0] : move_duration + 1]
+                spine_move = lever_trace[movement[0] : movement[0] + move_duration]
                 spine_movements.append(spine_move)
+
             else:
                 continue
 
         # Average the movements
-        spine_movements = np.array(spine_movements)
+        spine_movements = np.stack(spine_movements, axis=0)
         mean_movement = np.nanmean(spine_movements, axis=0)
         mean_spine_movements.append(mean_movement)
         # Correlate with the learned movement
-        move_corr = stats.pearsonr(learned_movement, mean_movement).statistic
+        move_corr = stats.pearsonr(learned_move_resample, mean_movement)[0]
         movement_correlations.append(move_corr)
 
     # convert outputs to arrays
     movement_correlations = np.array(movement_correlations)
     mean_spine_movements = np.array(mean_spine_movements).T
 
-    return mean_spine_movements, movement_correlations
+    return mean_spine_movements, movement_correlations, learned_move_resample
 
