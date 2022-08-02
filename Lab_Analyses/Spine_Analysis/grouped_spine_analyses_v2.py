@@ -252,6 +252,9 @@ def coactivity_spine_volume(
                 coactivity_epoch_trace,
                 coactivity_mean_trace,
                 dend_mean_sem,
+                spine_onsets,
+                relative_onsets,
+                dend_onsets,
             ) = global_coactivity_analysis(datasets[0], sampling_rate=60)
 
             # convert coactivity_mean_trace dict to list
@@ -280,6 +283,8 @@ def coactivity_spine_volume(
             dend_fraction_coactive = dend_fraction_coactive[spine_idxs]
             coactive_amplitude = coactive_amplitude[spine_idxs]
             coactive_spines = coactive_spines[spine_idxs]
+            spine_onsets = spine_onsets[spine_idxs]
+            relative_onsets[spine_idxs]
             groupings = []
             if type(spine_groupings[0]) == list:
                 for grouping in spine_groupings:
@@ -304,6 +309,9 @@ def coactivity_spine_volume(
             FOV_data["epoch traces"] = coactivity_epoch_trace
             FOV_data["mean traces"] = coactivity_mean_trace
             FOV_data["dend traces"] = dend_mean_sem
+            FOV_data["spine onsets"] = spine_onsets
+            FOV_data["relative_onsets"] = relative_onsets
+            FOV_data["dend onsets"] = dend_onsets
             FOV_data["grouping"] = groupings
             mouse_data[FOV] = FOV_data
 
@@ -316,6 +324,8 @@ def coactivity_spine_volume(
                     or key == "dend traces"
                     or key == "mean traces"
                     or key == "epoch traces"
+                    or key == "spine onsets"
+                    or key == "dend onsets"
                 ):
                     continue
                 m_mouse_data[key].append(v)
