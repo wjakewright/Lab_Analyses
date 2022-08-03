@@ -205,11 +205,12 @@ def assess_movement_quality(
         move_idxs.append((onset, offset))
 
     movement_correlations = []
+    spine_movements = []
     mean_spine_movements = []
     # Assess the movements for each spine
     for i in range(activity.shape[1]):
         spine_trace = activity[:, i]
-        spine_movements = []
+        all_spine_movements = []
         for movement in move_idxs:
             spine_epoch = spine_trace[movement[0] : movement[1]]
             if sum(spine_epoch):
@@ -221,13 +222,19 @@ def assess_movement_quality(
 
         # Average the movements
         try:
-            spine_movements = np.stack(spine_movements, axis=0)
-            mean_movement = np.nanmean(spine_movements, axis=0)
+            s_movements = np.stack(all_spine_movements, axis=0)
+            spine_movements.append(s_movements)
+            mean_movement = np.nanmean(s_movements, axis=0)
             mean_spine_movements.append(mean_movement)
             # Correlate with the learned movement
-            move_corr = stats.pearsonr(learned_move_resample, mean_movement)[0]
+            corrs = []
+            for m in range(s_movements.shape[0]):
+                corr = stats.pearsonr(learned_move_resample, s_movements[m, :])[0]
+                corrs.append(corr)
+            move_corr = np.nanmedian(corrs)
             movement_correlations.append(move_corr)
         except ValueError:
+            spine_movements.append(np.zeros(corr_duration))
             mean_spine_movements.append(np.zeros(corr_duration))
             movement_correlations.append(np.nan)
 
@@ -235,5 +242,10 @@ def assess_movement_quality(
     movement_correlations = np.array(movement_correlations)
     mean_spine_movements = np.array(mean_spine_movements).T
 
-    return mean_spine_movements, movement_correlations, learned_move_resample
+    return (
+        spine_movements,
+        mean_spine_movements,
+        movement_correlations,
+        learned_move_resample,
+    )
 
