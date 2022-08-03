@@ -157,6 +157,7 @@ def assess_movement_quality(
     fname = [x for x in fnames if "summarized_lever_data" in x]
     learned_file = load_pickle(fname, load_path)[0]
     learned_movement = learned_file.movement_avg
+    learned_movement = learned_movement - learned_movement[0]
 
     # Remove the baseline period
     corr_len = learned_file.corr_matrix.shape[1]
@@ -168,7 +169,9 @@ def assess_movement_quality(
     n = frac.numerator
     d = frac.denominator
     learned_move_resample = sysignal.resample_poly(learned_movement, n, d)
-    move_duration = len(learned_move_resample)
+    # move_duration = len(learned_move_resample)
+    corr_duration = 60
+    learned_move_resample = learned_move_resample[:corr_duration]
 
     # Get relevant data from spine data
     if rewarded:
@@ -210,19 +213,23 @@ def assess_movement_quality(
         for movement in move_idxs:
             spine_epoch = spine_trace[movement[0] : movement[1]]
             if sum(spine_epoch):
-                spine_move = lever_trace[movement[0] : movement[0] + move_duration]
+                spine_move = lever_trace[movement[0] : movement[0] + corr_duration]
                 spine_movements.append(spine_move)
 
             else:
                 continue
 
         # Average the movements
-        spine_movements = np.stack(spine_movements, axis=0)
-        mean_movement = np.nanmean(spine_movements, axis=0)
-        mean_spine_movements.append(mean_movement)
-        # Correlate with the learned movement
-        move_corr = stats.pearsonr(learned_move_resample, mean_movement)[0]
-        movement_correlations.append(move_corr)
+        try:
+            spine_movements = np.stack(spine_movements, axis=0)
+            mean_movement = np.nanmean(spine_movements, axis=0)
+            mean_spine_movements.append(mean_movement)
+            # Correlate with the learned movement
+            move_corr = stats.pearsonr(learned_move_resample, mean_movement)[0]
+            movement_correlations.append(move_corr)
+        except ValueError:
+            mean_spine_movements.append(np.zeros(corr_duration))
+            movement_correlations.append(np.nan)
 
     # convert outputs to arrays
     movement_correlations = np.array(movement_correlations)
