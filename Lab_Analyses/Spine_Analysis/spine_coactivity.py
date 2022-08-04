@@ -22,6 +22,12 @@ def spine_coactivity_analysis(
                              the same dendrite
             
             bin_size - int or float specifying the distance to bin over
+
+        OUTPUT PARAMETERS
+            coactivity_matrix - np.array of the normalized coactivity for each spine (columns)
+                                over the binned distances (rows)
+            
+            position_bins - np.array of the distances data were binned over
             
     """
     # Set up the position bins
