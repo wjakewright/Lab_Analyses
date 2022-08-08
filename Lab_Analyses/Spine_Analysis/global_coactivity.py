@@ -10,11 +10,16 @@ from Lab_Analyses.Utilities.movement_responsiveness import movement_responsivene
 from scipy import stats
 
 
-def global_coactivity_analysis(data, sampling_rate=60):
+def global_coactivity_analysis(data, movements=None, sampling_rate=60):
     """Function to analyze spine co-activity with global dendritic activity
     
         INPUT PARAMETERS
             data -  spind_data object. (e.g., Dual_Channel_Spine_Data)
+
+            movements - str specifying if you want on analyze only during movements and of
+                        different types of movements. Accepts "all", "rewarded", "unrewarded", 
+                        and "nonmovement".
+                        Default is None, analyzing the entire imaging period
             
             sampling_rate -  int or float specifying what the imaging rate
             
@@ -43,6 +48,18 @@ def global_coactivity_analysis(data, sampling_rate=60):
     dendrite_dFoF = data.dendrite_calcium_processed_dFoF
     dendrite_activity = data.dendrite_calcium_activity
 
+    # Get the specified movement data
+    if movements == "all":
+        movement = data.lever_active
+    elif movements == "rewarded":
+        movement = data.rewarded_movement_binary
+    elif movements == "unrewarded":
+        movement = data.lever_active - data.rewarded_movement_binary
+    elif movements == "nonmovement":
+        movement = np.absolute(data.lever_active - 1)
+    else:
+        movement = None
+
     # Set up some of my output variables
     global_correlation = np.zeros(spine_activity.shape[1])
     coactivity_rate = np.zeros(spine_activity.shape[1])
@@ -63,6 +80,7 @@ def global_coactivity_analysis(data, sampling_rate=60):
 
     # Now process spines for each parrent dendrite
     for i in range(dendrite_activity.shape[1]):
+        # Get the spines along this dendrite
         if type(spine_groupings[i]) == list:
             spines = spine_groupings[i]
         else:
@@ -73,11 +91,22 @@ def global_coactivity_analysis(data, sampling_rate=60):
         d_dFoF = dendrite_dFoF[:, i]
         d_activity = dendrite_activity[:, i]
 
+        # Correct the activity matrices for only movement periods if specified
+        if movement:
+            s_activity = (s_activity.T * movement).T
+            d_activity = (d_activity.T * movement).T
+
         # analyze each spine
         for j in range(s_dFoF.shape[1]):
             # Correlation
-            corr, _ = stats.pearsonr(s_dFoF[:, j], d_dFoF)
+            if movement:
+                # Correlate only the specified movement periods
+                move_idxs = np.where(movement == 1)[0]
+                corr, _ = stats.pearsonr(s_dFoF[move_idxs, j], d_dFoF[move_idxs])
+            else:
+                corr, _ = stats.pearsonr(s_dFoF[:, j], d_dFoF)
             global_correlation[spines[j]] = corr
+
             # Coactivity rate
             coactivity_freq, spine_frac, dend_frac = get_coactivity_freq(
                 s_activity[:, j], d_activity, sampling_rate=sampling_rate
