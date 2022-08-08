@@ -89,6 +89,7 @@ def plot_movement_corr_matrix(
     cmap=None,
     figsize=(7, 6),
     save=False,
+    limits=None,
     save_path=None,
 ):
     """Function to plot a heatmap of the average movement correlations 
@@ -118,7 +119,10 @@ def plot_movement_corr_matrix(
     # Set cmap
     if cmap is None:
         cmap = "hot"
-
+    if limits is None:
+        limits = (None, None)
+    else:
+        limits = limits
     # Plot the heatmap
     fig = plt.figure(figsize=figsize)
     fig.suptitle(title)
@@ -128,7 +132,8 @@ def plot_movement_corr_matrix(
         cbar_kws={"label": "Correlation", "orientation": "vertical"},
         xticklabels=2,
         yticklabels=2,
-        vmin=0,
+        vmin=limits[0],
+        vmax=limits[1],
     )
 
     # Set plot edges

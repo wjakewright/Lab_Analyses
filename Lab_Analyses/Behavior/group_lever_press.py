@@ -215,6 +215,7 @@ class Group_Lever_Press:
                 "reaction_time": None,
                 "within": None,
                 "across": None,
+                "cmap": None,
             }
         for key in plot_keys:
             if key not in colors.keys():
@@ -261,6 +262,7 @@ class Group_Lever_Press:
                 title="Average Movement Correlation",
                 cmap=colors["cmap"],
                 save=save,
+                limits=ylims["cmap"],
                 save_path=save_path,
             )
             bplot.plot_within_session_corr(
@@ -329,6 +331,7 @@ class Group_Lever_Press:
                         title="Average Movement Correlation",
                         cmap=colors["cmap"],
                         save=save,
+                        limits=ylims["cmap"],
                         save_path=save_path,
                     )
                 elif x == "within correlation":
