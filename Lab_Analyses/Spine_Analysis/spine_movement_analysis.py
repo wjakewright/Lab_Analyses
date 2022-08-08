@@ -128,6 +128,7 @@ def spine_movement_activity(
 def assess_movement_quality(
     spine_data,
     activity_type="spine_GluSnFr_activity",
+    coactivity=False,
     exclude=None,
     sampling_rate=60,
     rewarded=False,
@@ -140,6 +141,9 @@ def assess_movement_quality(
             
             activity_type - str specifying what type of activity you wish to use. Must match the 
                             field name of the data object 
+
+            coactivity - boolean specifying if you wish to analyze only coactive periods
+                        Default is False
             
             exclude - string specifying types of spines you wish to exlude from analysis
             
@@ -181,7 +185,12 @@ def assess_movement_quality(
         lever_active = spine_data.lever_active
         lever_trace = spine_data.lever_force_smooth
 
-    activity = getattr(spine_data, activity_type)
+    if coactivity is False:
+        activity = getattr(spine_data, activity_type)
+    else:
+        s_activity = getattr(spine_data, activity_type)
+        d_activity = spine_data.dendrite_calcium_activity
+        activity = s_activity * d_activity
 
     if exclude:
         exclude_spines = find_spine_classes(spine_data.spine_flags, exclude)
