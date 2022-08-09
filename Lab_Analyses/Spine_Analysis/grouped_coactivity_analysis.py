@@ -4,11 +4,16 @@ from dataclasses import dataclass
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.global_coactivity import global_coactivity_analysis
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
+    assess_movement_quality,
+    spine_movement_activity,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import load_spine_datasets
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
 )
+from Lab_Analyses.Utilities import data_utilities as d_utils
 
 
 def grouped_coactivity_analysis(
@@ -135,3 +140,36 @@ def short_term_coactivity_analysis(
             ) - reward_movement_spines.astype(int)
             nonreward_movement_spines[nonreward_movement_spines == -1] = 0
             nonreward_movement_spines = nonreward_movement_spines.astype(bool)
+
+            # Assess movement activity
+            all_befores, all_durings, _, movement_traces = spine_movement_activity(
+                datasets[0],
+                activity_type="spine_GluSnFr_processed_dFoF",
+                exclude=None,
+                sampling_rate=60,
+                rewarded=False,
+            )
+            (
+                rwd_befores,
+                rwd_durings,
+                _,
+                reward_movement_traces,
+            ) = spine_movement_activity(
+                data=datasets[0],
+                activity_type="spine_GluSnFr_processed_dFoF",
+                exclude=None,
+                sampling_rate=60,
+                rewarded=True,
+            )
+            movement_amps = [
+                np.nanmean(before - after)
+                for before, after in zip(all_befores, all_durings)
+            ]
+            reward_movement_amps = [
+                np.nanmean(rwd_before - rwd_after)
+                for rwd_before, rwd_after in zip(rwd_befores, rwd_durings)
+            ]
+            movement_traces = list(movement_traces.values())
+            reward_movement_traces = list(reward_movement_traces)
+
+            # Assess movement quality
