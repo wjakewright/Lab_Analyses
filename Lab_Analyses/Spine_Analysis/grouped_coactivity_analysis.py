@@ -3,18 +3,18 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
-from Lab_Analyses.Spine_Analysis.global_coactivity import global_coactivity_analysis
+from Lab_Analyses.Spine_Analysis.global_coactivity import \
+    global_coactivity_analysis
 from Lab_Analyses.Spine_Analysis.spine_utilities import load_spine_datasets
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
-    calculate_volume_change,
-    classify_plasticity,
-)
+    calculate_volume_change, classify_plasticity)
 
 
 def grouped_coactivity_analysis(
     mice_list,
     days=("Early", "Middle", "Late"),
     followup=False,
+    movement_epochs=None,
     corrected=True,
     threshold=0.5,
     exclude="Shaft Spine",
@@ -31,6 +31,11 @@ def grouped_coactivity_analysis(
             followup - boolean specifying if you want to include followup imaging sessions
                         in the analysis. This will influence the short term analyses. 
             
+            movements - str specifying if you want on analyze only during movements and of
+                        different types of movements. Accepts "all", "rewarded", "unrewarded", 
+                        and "nonmovement".
+                        Default is None, analyzing the entire imaging period
+            
             corrected - boolean of whether or not to use the corrected volume estimates
             
             threshold - float specifying threshold for plasticity classification
@@ -46,7 +51,7 @@ def grouped_coactivity_analysis(
         for day in days:
             print(f"- {day}")
             short_term_data = short_term_coactivity_analysis(
-                mice_list, day, corrected, threshold, exclude
+                mice_list, day, corrected, movement_epochs, threshold, exclude
             )
             final_datasets[day] = short_term_data
     else:
@@ -54,19 +59,56 @@ def grouped_coactivity_analysis(
             day = [days[i], days[i + 1]]
             print(f"- {day[1]}")
             short_term_data = short_term_coactivity_analysis(
-                mice_list, day, corrected, threshold, exclude
+                mice_list, day, corrected, movement_epochs, threshold, exclude
             )
             final_datasets[day[1]] = short_term_data
 
 
-def short_term_coactivity_analysis(mice_list, day, corrected, threhold, exclude):
+def short_term_coactivity_analysis(
+    mice_list, day, movement_epochs, corrected, threhold, exclude
+):
     """Function to handle the short term analysis of coactivity datasets"""
 
     grouped_data = defaultdict(list)
 
+    # Analyze each mouse seperately
     for mouse in mice_list:
         print(f"--- {mouse}")
         if type(day) == str:
             mouse_datasets = load_spine_datasets(mouse, [day], followup=True)
         elif type(day) == list:
             mouse_datasets = load_spine_datasets(mouse, day, followup=False)
+        # Analyze each FOV seperately
+        for FOV, data in mouse_datasets.items():
+            keys = list(data.keys())
+            datasets = list(data.values())
+            # Get the spine groupings with parent dendrite
+            spine_groupings = datasets[0].spine_grouping
+            if type(spine_groupings[0]) != list:
+                spine_groupings = [spine_groupings]
+            # Get the coactivity data
+            (
+                global_correlation,
+                coactivity_rate,
+                spine_fraction_coactive,
+                dend_fraction_coactive,
+                coactive_amplitude,
+                coactive_spines,
+                coactivity_epoch_traces,
+                coactivity_mean_traces,
+                dend_mean_sems,
+                spine_onsets,
+                relative_onsets,
+                dend_onsets,
+            ) = global_coactivity_analysis(datasets[0], sampling_rate=60)
+
+            # convert coactivity trace data to lists
+            coactivity_mean_traces = list(coactivity_mean_traces.values())
+            coactivity_epoch_traces = list(coactivity_epoch_traces.values())
+            ## duplicate the dendrite traces to match with their children spines
+            dend_mean_traces = list(np.zeros(len(coactivity_mean_traces)))
+            for i, grouping in enumerate(spine_groupings):
+                for g in grouping:
+                    dend_mean_traces[g] = dend_mean_sems[i]
+
+
