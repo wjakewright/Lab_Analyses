@@ -80,12 +80,13 @@ def short_term_coactivity_analysis(
     # Analyze each mouse seperately
     for mouse in mice_list:
         print(f"--- {mouse}")
+        mouse_data = defaultdict(list)
         if type(day) == str:
             mouse_datasets = load_spine_datasets(mouse, [day], followup=True)
         elif type(day) == list:
             mouse_datasets = load_spine_datasets(mouse, day, followup=False)
         # Analyze each FOV seperately
-        for FOV, data in mouse_datasets.items():
+        for data in mouse_datasets.values():
             keys = list(data.keys())
             datasets = list(data.values())
             # Get the spine groupings with parent dendrite
