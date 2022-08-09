@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.global_coactivity import global_coactivity_analysis
+from Lab_Analyses.Spine_Analysis.spine_coactivity import spine_coactivity_analysis
 from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
     assess_movement_quality,
     spine_movement_activity,
@@ -13,7 +14,6 @@ from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
 )
-from Lab_Analyses.Utilities import data_utilities as d_utils
 
 
 def grouped_coactivity_analysis(
@@ -199,4 +199,21 @@ def short_term_coactivity_analysis(
                 sampling_rate=60,
                 reawrded=False,
             )
+
+            # Assess spine coactivity
+            spine_coactivity_mat = spine_coactivity_analysis(
+                datasets[0].spine_GluSnFr_activity,
+                datasets[0].spine_positions,
+                spine_grouping=spine_groupings,
+                bin_size=5,
+                sampling_rate=60,
+            )
+            # Look at only nearby spine coactivity
+            spine_coactivity = []
+            for i in range(spine_coactivity_mat.shape[1]):
+                spine_coactivity.append(
+                    np.mean(spine_coactivity_mat[0, i], spine_coactivity_mat[1, i])
+                )
+
+            # Remove all non-stable spines from varibles
 
