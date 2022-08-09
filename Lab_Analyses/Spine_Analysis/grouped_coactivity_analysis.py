@@ -3,11 +3,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
-from Lab_Analyses.Spine_Analysis.global_coactivity import \
-    global_coactivity_analysis
+from Lab_Analyses.Spine_Analysis.global_coactivity import global_coactivity_analysis
 from Lab_Analyses.Spine_Analysis.spine_utilities import load_spine_datasets
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
+    calculate_volume_change,
+    classify_plasticity,
+)
 
 
 def grouped_coactivity_analysis(
@@ -65,7 +66,7 @@ def grouped_coactivity_analysis(
 
 
 def short_term_coactivity_analysis(
-    mice_list, day, movement_epochs, corrected, threhold, exclude
+    mice_list, day, movement_epochs, corrected, threshold, exclude
 ):
     """Function to handle the short term analysis of coactivity datasets"""
 
@@ -100,7 +101,9 @@ def short_term_coactivity_analysis(
                 spine_onsets,
                 relative_onsets,
                 dend_onsets,
-            ) = global_coactivity_analysis(datasets[0], sampling_rate=60)
+            ) = global_coactivity_analysis(
+                datasets[0], movement_epochs, sampling_rate=60
+            )
 
             # convert coactivity trace data to lists
             coactivity_mean_traces = list(coactivity_mean_traces.values())
@@ -111,4 +114,24 @@ def short_term_coactivity_analysis(
                 for g in grouping:
                     dend_mean_traces[g] = dend_mean_sems[i]
 
+            # get spine volumes
+            if corrected:
+                _, volumes, spine_idxs = calculate_volume_change(
+                    datasets, keys, exclude=exclude,
+                )
+            else:
+                volumes, _, spine_idxs = calculate_volume_change(
+                    datasets, keys, exclude=exclude,
+                )
+            # Use only the post volumes
+            volumes = volumes[keys[1]]
 
+            # Classify the plasticity
+            potentiated, depressed, stable = classify_plasticity(volumes, threshold)
+            movement_spines = np.array(datasets[0].movement_spines)
+            reward_movement_spines = np.array(datasets[0].reward_movement_spines)
+            nonreward_movement_spines = movement_spines.astype(
+                int
+            ) - reward_movement_spines.astype(int)
+            nonreward_movement_spines[nonreward_movement_spines == -1] = 0
+            nonreward_movement_spines = nonreward_movement_spines.astype(bool)
