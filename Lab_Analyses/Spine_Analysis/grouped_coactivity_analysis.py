@@ -173,3 +173,30 @@ def short_term_coactivity_analysis(
             reward_movement_traces = list(reward_movement_traces)
 
             # Assess movement quality
+            (
+                spine_movements,
+                _,
+                spine_movement_correlations,
+                learned_movement,
+            ) = assess_movement_quality(
+                datasets[0],
+                activity_type="spine_GluSnFr_activity",
+                coactivity=False,
+                exclude=None,
+                sampling_rate=60,
+                rewarded=False,
+            )
+            (
+                coactive_movements,
+                _,
+                coactive_movement_correlations,
+                _,
+            ) = assess_movement_quality(
+                datasets[0],
+                activity_type="spine_GluSnFr_activity",
+                coactivity=True,
+                exclude=None,
+                sampling_rate=60,
+                reawrded=False,
+            )
+
