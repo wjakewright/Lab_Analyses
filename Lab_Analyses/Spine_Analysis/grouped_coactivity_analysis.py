@@ -14,16 +14,19 @@ from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
 )
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def grouped_coactivity_analysis(
     mice_list,
     days=("Early", "Middle", "Late"),
-    followup=False,
+    followup=True,
     movement_epochs=None,
     corrected=True,
     threshold=0.5,
     exclude="Shaft Spine",
+    save=False,
+    save_path=None,
 ):
     """Function to handle the activity and structural analysis of dual spine imaging datasets
         across all mice and all FOVs. Analyzes both short term changes as well as across the 
@@ -37,21 +40,26 @@ def grouped_coactivity_analysis(
             followup - boolean specifying if you want to include followup imaging sessions
                         in the analysis. This will influence the short term analyses. 
             
-            movements - str specifying if you want on analyze only during movements and of
-                        different types of movements. Accepts "all", "rewarded", "unrewarded", 
-                        and "nonmovement".
-                        Default is None, analyzing the entire imaging period
+            movement_epochs - str specifying if you want on analyze only during movements and of
+                            different types of movements. Accepts "all", "rewarded", "unrewarded", 
+                            and "nonmovement".
+                            Default is None, analyzing the entire imaging period
             
             corrected - boolean of whether or not to use the corrected volume estimates
             
             threshold - float specifying threshold for plasticity classification
             
             exclude - str specifying spine types to exclude from analysis
+
+            save - boolen specifying whether to save the data or not
+
+            save_path - str specifying where to save the data
             
         OUTPUT PARAMETERS
     """
 
-    final_datasets = {}
+    # Perform short term analyses
+    short_term_datasets = {}
     print("Analyzing short term data")
     if followup:
         for day in days:
@@ -59,7 +67,7 @@ def grouped_coactivity_analysis(
             short_term_data = short_term_coactivity_analysis(
                 mice_list, day, corrected, movement_epochs, threshold, exclude
             )
-            final_datasets[day] = short_term_data
+            short_term_datasets[day] = short_term_data
     else:
         for i in len(days[:-1]):
             day = [days[i], days[i + 1]]
@@ -67,7 +75,14 @@ def grouped_coactivity_analysis(
             short_term_data = short_term_coactivity_analysis(
                 mice_list, day, corrected, movement_epochs, threshold, exclude
             )
-            final_datasets[day[1]] = short_term_data
+            short_term_datasets[day[1]] = short_term_data
+
+    # Perform longitudinal analyses
+
+    # Save section
+    if save:
+        # setup the save path
+        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped"
 
 
 def short_term_coactivity_analysis(
@@ -86,7 +101,7 @@ def short_term_coactivity_analysis(
         elif type(day) == list:
             mouse_datasets = load_spine_datasets(mouse, day, followup=False)
         # Analyze each FOV seperately
-        for data in mouse_datasets.values():
+        for FOV, data in mouse_datasets.items():
             keys = list(data.keys())
             datasets = list(data.values())
             # Get the spine groupings with parent dendrite
@@ -106,7 +121,7 @@ def short_term_coactivity_analysis(
                 dend_mean_sems,
                 spine_onsets,
                 relative_onsets,
-                dend_onsets,
+                d_onsets,
             ) = global_coactivity_analysis(
                 datasets[0], movement_epochs, sampling_rate=60
             )
@@ -116,9 +131,11 @@ def short_term_coactivity_analysis(
             coactivity_epoch_traces = list(coactivity_epoch_traces.values())
             ## duplicate the dendrite traces to match with their children spines
             dend_mean_traces = list(np.zeros(len(coactivity_mean_traces)))
+            dend_onsets = np.zeros(len(spine_onsets))
             for i, grouping in enumerate(spine_groupings):
                 for g in grouping:
                     dend_mean_traces[g] = dend_mean_sems[i]
+                    dend_onsets[g] = d_onsets[i]
 
             # get spine volumes
             if corrected:
@@ -141,6 +158,14 @@ def short_term_coactivity_analysis(
             ) - reward_movement_spines.astype(int)
             nonreward_movement_spines[nonreward_movement_spines == -1] = 0
             nonreward_movement_spines = nonreward_movement_spines.astype(bool)
+            movement_dendrites = np.zeros(len(movement_spines))
+            reward_movement_dendrites = np.zeros(len(reward_movement_spines))
+            for i, grouping in enumerate(spine_groupings):
+                for g in grouping:
+                    movement_dendrites[g] = datasets[0].movement_dendrites[i]
+                    reward_movement_dendrites[g] = datasets[
+                        0
+                    ].reward_movement_dendrites[i]
 
             # Assess movement activity
             all_befores, all_durings, _, movement_traces = spine_movement_activity(
@@ -170,6 +195,8 @@ def short_term_coactivity_analysis(
                 np.nanmean(rwd_before - rwd_after)
                 for rwd_before, rwd_after in zip(rwd_befores, rwd_durings)
             ]
+            movement_amps = np.array(movement_amps)
+            reward_movement_amps = np.array(reward_movement_amps)
             movement_traces = list(movement_traces.values())
             reward_movement_traces = list(reward_movement_traces)
 
@@ -215,6 +242,178 @@ def short_term_coactivity_analysis(
                 spine_coactivity.append(
                     np.mean(spine_coactivity_mat[0, i], spine_coactivity_mat[1, i])
                 )
+            spine_coactivity = np.array(spine_coactivity)
 
             # Remove all non-stable spines from varibles
+            global_correlation = global_correlation[spine_idxs]
+            coactivity_rate = coactivity_rate[spine_idxs]
+            spine_fraction_coactive = spine_fraction_coactive[spine_idxs]
+            dend_fraction_coactive = dend_fraction_coactive[spine_idxs]
+            coactive_amplitude = coactive_amplitude[spine_idxs]
+            coactive_spines = coactive_spines[spine_idxs]
+            coactivity_epoch_traces = [coactivity_epoch_traces[i] for i in spine_idxs]
+            coactivity_mean_traces = [coactivity_mean_traces[i] for i in spine_idxs]
+            dend_mean_traces = [dend_mean_traces[i] for i in spine_idxs]
+            spine_onsets = spine_onsets[spine_idxs]
+            relative_onsets = relative_onsets[spine_idxs]
+            dend_onsets = dend_onsets[spine_idxs]
+            movement_spines = movement_spines[spine_idxs]
+            reward_movement_spines = reward_movement_spines[spine_idxs]
+            nonreward_movement_spines = nonreward_movement_spines[spine_idxs]
+            movement_dendrites = movement_dendrites[spine_idxs]
+            reward_movement_dendrites = reward_movement_dendrites[spine_idxs]
+            movement_amps = movement_amps[spine_idxs]
+            reward_movement_amps = reward_movement_amps[spine_idxs]
+            movement_traces = [movement_traces[i] for i in spine_idxs]
+            reward_movement_traces = [reward_movement_traces[i] for i in spine_idxs]
+            spine_movements = [spine_movements[i] for i in spine_idxs]
+            spine_movement_correlations = spine_movement_correlations[spine_idxs]
+            coactive_movements = [coactive_movements[i] for i in spine_idxs]
+            coactive_movement_correlations = coactive_movement_correlations[spine_idxs]
+            spine_coactivity = spine_coactivity[spine_idxs]
+
+            # Store variables in mouse_data dictionary
+            mouse_data["global correlation"].append(global_correlation)
+            mouse_data["coactivity rate"].append(coactivity_rate)
+            mouse_data["spine fraction coactive"].append(spine_fraction_coactive)
+            mouse_data["dend fraction coactive"].append(dend_fraction_coactive)
+            mouse_data["coactive amplitude"].append(coactive_amplitude)
+            mouse_data["coactive spines"].append(coactive_spines)
+            mouse_data["coactivity epoch traces"].append(coactivity_epoch_traces)
+            mouse_data["coactivity mean traces"].append(coactivity_mean_traces)
+            mouse_data["dend mean traces"].append(dend_mean_traces)
+            mouse_data["spine onsets"].append(spine_onsets)
+            mouse_data["relative onsets"].append(relative_onsets)
+            mouse_data["dend onsets"].append(dend_onsets)
+            mouse_data["movement spines"].append(movement_spines)
+            mouse_data["reward movement spines"].append(reward_movement_spines)
+            mouse_data["nonreward movement spines"].append(nonreward_movement_spines)
+            mouse_data["movement dendrites"].append(movement_dendrites)
+            mouse_data["reward movement dendrites"].append(reward_movement_dendrites)
+            mouse_data["movement amps"].append(movement_amps)
+            mouse_data["reward movement amps"].append(reward_movement_amps)
+            mouse_data["movement traces"].append(movement_traces)
+            mouse_data["reward movement traces"].append(reward_movement_traces)
+            mouse_data["spine movements"].append(spine_movements)
+            mouse_data["spine movement correlations"].append(
+                spine_movement_correlations
+            )
+            mouse_data["coactive_movements"].append(coactive_movements)
+            mouse_data["coactive movement correlations"].append(
+                coactive_movement_correlations
+            )
+            mouse_data["spine coactivity"].append(spine_coactivity)
+            mouse_data["volumes"].append(volumes)
+            mouse_data["potentiated"].append(potentiated)
+            mouse_data["depressed"].append(depressed)
+            mouse_data["stable"].append(stable)
+            learned_movements = [
+                learned_movement for i in range(len(global_correlation))
+            ]
+            mouse_data["leaned movement"].append(learned_movements)
+            fovs = [FOV for i in range(len(global_correlation))]
+            ids = [mouse for i in range(len(global_correlation))]
+            mouse_data["FOV"].append(fovs)
+            mouse_data["mouse_id"].append(ids)
+
+        # Merge FOVs for this mouse
+        for key, value in mouse_data.items():
+            if len(value) == 1:
+                mouse_data[key] = value[0]
+                continue
+            if type(value) == np.ndarray:
+                mouse_data[key] = np.concatenate(value)
+            elif type(value) == list:
+                mouse_data[key] = [y for x in value for y in x]
+
+        # Store data for this mouse
+        for key, value in mouse_data.items():
+            grouped_data[key].append(value)
+
+    # Merge data across mice
+    for key, value in grouped_data.items():
+        if type(value) == np.ndarray:
+            grouped_data[key] = np.concatenate(value)
+        elif type(value) == list:
+            grouped_data[key] = [y for x in value for y in x]
+
+    # Store data in dataclass for output
+    short_term_coactivity_data = Short_Term_Coactivity_Volume_Data(
+        mouse_ids=mouse_data["mouse_id"],
+        FOVs=mouse_data["FOV"],
+        volumes=mouse_data["volumes"],
+        potentiated_spines=mouse_data["potentiated"],
+        depressed_spines=mouse_data["depressed"],
+        stable_spines=mouse_data["stable"],
+        global_correlation=mouse_data["global correlation"],
+        coactivity_rate=mouse_data["coactivity rate"],
+        spine_fraction_coactive=mouse_data["spine fraction coactive"],
+        dendrite_fraction_coactive=mouse_data["dend fraction coactive"],
+        coactive_spines=mouse_data["coactive spines"],
+        coactive_amplitude=mouse_data["coactive amplitude"],
+        coactivity_epoch_traces=mouse_data["coactivity epoch traces"],
+        coactivity_mean_traces=mouse_data["coactivity mean traces"],
+        dendrite_mean_traces=mouse_data["dend mean traces"],
+        spine_onsets=mouse_data["spine onsets"],
+        dendrite_onsets=mouse_data["dend onsets"],
+        relative_spine_onsets=mouse_data["relative onsets"],
+        movement_spines=mouse_data["movement spines"],
+        reward_movement_spines=mouse_data["reward movement spines"],
+        nonreward_movement_spines=mouse_data["nonreward movement spines"],
+        movement_dendrites=mouse_data["movement dendrites"],
+        reward_movement_dendrites=mouse_data["reward movement dendrites"],
+        movement_amps=mouse_data["movement amps"],
+        reward_movement_amps=mouse_data["reward movement amps"],
+        movement_traces=mouse_data["movement traces"],
+        reward_movement_traces=mouse_data["reward movement traces"],
+        spine_lever_movements=mouse_data["spine movements"],
+        spine_movement_correlations=mouse_data["spine movement correlations"],
+        coactive_lever_movements=mouse_data["coactive movements"],
+        coactive_movement_correlations=mouse_data["coactive movement correlations"],
+        learned_movements=mouse_data["learned movement"],
+        spine_coactivity=mouse_data["spine coactivity"],
+    )
+
+    return short_term_coactivity_data
+
+
+################# DATACLASSES ###################
+@dataclass
+class Short_Term_Coactivity_Volume_Data:
+    """Dataclass for storing the short term coactivity volume
+        analyzed data"""
+
+    mouse_ids: list
+    FOVs: list
+    volumes: np.ndarray
+    potentiated_spines: np.ndarray
+    depressed_spines: np.ndarray
+    stable_spines: np.ndarray
+    global_correlation: np.ndarray
+    coactivity_rate: np.ndarray
+    spine_fraction_coactive: np.ndarray
+    dendrite_fraction_coactive: np.ndarray
+    coactive_spines: np.ndarray
+    coactive_amplitude: np.ndarray
+    coactivity_epoch_traces: list
+    coactivity_mean_traces: list
+    dendrite_mean_traces: list
+    spine_onsets: np.ndarray
+    dendrite_onsets: np.ndarray
+    relative_spine_onsets: np.ndarray
+    movement_spines: np.ndarray
+    reward_movement_spines: np.ndarray
+    nonreward_movement_spines: np.ndarray
+    movement_dendrites: np.ndarray
+    reward_movement_dendrites: np.ndarray
+    movement_amps: np.ndarray
+    reward_movement_amps: np.ndarray
+    movement_traces: list
+    reward_movement_traces: list
+    spine_lever_movements: list
+    spine_movement_correlations: np.ndarray
+    coactive_lever_movements: list
+    coactive_movement_correlations: np.ndarray
+    learned_movements: list
+    spine_coactivity: np.ndarray
 
