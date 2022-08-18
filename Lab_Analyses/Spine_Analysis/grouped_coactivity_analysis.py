@@ -25,7 +25,8 @@ def grouped_coactivity_analysis(
     corrected=True,
     threshold=0.5,
     exclude="Shaft Spine",
-    save=False,
+    save_short=False,
+    save_long=False,
     save_path=None,
 ):
     """Function to handle the activity and structural analysis of dual spine imaging datasets
@@ -51,7 +52,9 @@ def grouped_coactivity_analysis(
             
             exclude - str specifying spine types to exclude from analysis
 
-            save - boolen specifying whether to save the data or not
+            save_short - boolen specifying whether to save the short term data
+
+            save_long - boolean specifying whether to save the long term data
 
             save_path - str specifying where to save the data
             
@@ -60,7 +63,7 @@ def grouped_coactivity_analysis(
 
     # Perform short term analyses
     short_term_datasets = {}
-    print("Analyzing short term data")
+    print("Performing short term analysis")
     if followup:
         for day in days:
             print(f"- {day}")
@@ -78,11 +81,44 @@ def grouped_coactivity_analysis(
             short_term_datasets[day[1]] = short_term_data
 
     # Perform longitudinal analyses
+    print("Performing longitudinal analysis")
+    longitudinal_dataset = longitudinal_coactivity_analysis(
+        mice_list, days, corrected, threshold, exclude
+    )
 
     # Save section
-    if save:
-        # setup the save path
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped"
+    if save_path is None:
+        save_path = r"C:\Users\Desktop\Analyzed_data\grouped"
+    if save_short:
+        if movement_epochs is None:
+            epoch_name = "session"
+        else:
+            epoch_name = movement_epochs
+        for key, dataset in short_term_datasets.items():
+            save_name = f"{epoch_name}_{key}_short_term_coactivity_data"
+            save_pickle(save_name, dataset, save_path)
+    if save_long:
+        save_name = "longitudinal_coactivity_data"
+        save_pickle(save_name, longitudinal_dataset, save_path)
+
+    return short_term_datasets, longitudinal_dataset
+
+
+def longitudinal_coactivity_analysis(mice_list, days, corrected, theshold, exclude):
+    """Function to handle the short term"""
+
+    grouped_spine_data = defaultdict(list)
+    grouped_mice_data = defaultdict(list)
+
+    # Analyze each mouse seperately
+    for mouse in mice_list:
+        print(f"-- {mouse}")
+        mouse_data = defaultdict(list)
+        mouse_datasets = load_spine_datasets(mouse, days, followup=False)
+        # Analyze each FOV
+        for FOV, data in mouse_datasets.items():
+            keys = list(data.keys())
+            datasets = list(data.values())
 
 
 def short_term_coactivity_analysis(
