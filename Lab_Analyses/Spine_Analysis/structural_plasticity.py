@@ -101,7 +101,7 @@ def classify_plasticity(relative_volumes, threshold=0.25):
     return potentiated_spines, depressed_spines, stable_spines
 
 
-def calculate_spine_dynamics(data_list, days=None, exclude=None):
+def calculate_spine_dynamics(data_list, days=None, exclude=None, distance=10):
     """Function to calculate the spine density and rate of spine 
         generation and elimination
         
@@ -114,6 +114,9 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None):
                     Default is none, which will automatically generate labels
 
             exclude - str specifying a type of spine to exclude from the analysis
+
+            distance - int over what distance of dendrite you want to 
+                        calculate spine density over
 
         OUTPUT PARAMETERS
             spine_density - dict containing spine density for each day
@@ -132,9 +135,17 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None):
     # Get the new spines and eliminated spines for each day
     new_spine_list = []
     eliminated_spine_list = []
+    exclude_spine_list = []
     for flags in flag_list:
-        new_spine_list.append(find_spine_classes(flags, "New Spine"))
-        eliminated_spine_list.append(find_spine_classes(flags, "Eliminated Spine"))
+        new_spine_list.append(np.array(find_spine_classes(flags, "New Spine")))
+        eliminated_spine_list.append(
+            np.array(find_spine_classes(flags, "Eliminated Spine"))
+        )
+        if exclude:
+            exclude_spines = find_spine_classes(flags, exclude)
+            # Reverse values to exlude these spines
+            exclude_spines = [not x for x in exclude_spines]
+            exclude_spine_list.append(np.array(exclude_spines))
 
     # Set up outputs
     spine_density = {}
@@ -143,9 +154,16 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None):
 
     # Analyze each day
     for i, (day, dataset) in enumerate(zip(days, data_list)):
+        # Get the spine density for each dendritic segment
         groupings = dataset.spine_grouping
         if type(groupings) != list:
             groupings = [groupings]
+        densities = []
         for dendrite in groupings:
             length = dataset.spine_positions[dendrite[-1]]
+            el_spines = eliminated_spine_list[i][dendrite]
+            density = ((len(dendrite) - len(el_spines)) / length) * distance
+            densities.append(density)
+        spine_density[day] = np.nanmean(densities)
+        # Calculate fraction of new spines
 
