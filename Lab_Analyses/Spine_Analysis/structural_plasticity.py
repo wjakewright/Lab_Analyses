@@ -174,17 +174,30 @@ def calculate_spine_dynamics(data_list, days=None, distance=10):
         normalized_spine_density[key] = value / list(spine_density.values())[0]
 
     # Get the spine dynamics
-    max_len = len(flag_list[-1])
-    spine_dynamics_list = []
-    for day in flag_list:
-        dyn = np.zeros(max_len)
-        dyn[:] = np.nan
-        spine_dynamics_list.append(dyn)
-    for i, _ in enumerate(spine_dynamics_list):
-        # Add new spines
-        spine_dynamics_list[i][new_spine_list[i]] = 1
-        # Add eliminated spines
-        spine_dynamics_list[i][eliminated_spine_list[i]] = -1
-        # Add stable spines
-        spine_dynamics_list[i][stable_spine_list[i]] = 0
+    for i, day in enumerate(days):
+        # Take care of the first day
+        if i == 0:
+            fraction_new_spines[day] = 0
+            fraction_eliminated_spines[day] = 0
+            continue
+        # Get new spine fractions
+        base_num = np.sum(new_spine_list[i - 1]) + np.sum(stable_spine_list[i - 1])
+        new_s = np.sum(new_spine_list[i])
+        new_frac = new_s / base_num
+        # Get the newly eliminated spine fractions
+        prev_idx = np.nonzero(eliminated_spine_list[i - 1])[0]
+        curr_idx = np.nonzero(eliminated_spine_list[i])[0]
+        new_idx = [x for x in curr_idx if x not in prev_idx]
+        eliminated_s = len(new_idx)
+        eliminated_frac = eliminated_s / base_num
+
+        fraction_new_spines[day] = new_frac
+        fraction_eliminated_spines[day] = eliminated_frac
+
+    return (
+        spine_density,
+        normalized_spine_density,
+        fraction_new_spines,
+        fraction_eliminated_spines,
+    )
 
