@@ -121,6 +121,8 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None, distance=10):
         OUTPUT PARAMETERS
             spine_density - dict containing spine density for each day
 
+            normalized_spine_density - dict containing spine densities normalized to day 1
+
             fraction_new_spines - dict containing fraction of new spines for each day
 
             fraction_eliminated_spines - dict containing fraction of eliminated spines for each day
@@ -149,12 +151,12 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None, distance=10):
 
     # Set up outputs
     spine_density = {}
+    normalized_spine_density = {}
     fraction_new_spines = {}
     fraction_eliminated_spines = {}
 
-    # Analyze each day
+    # Get the spine densities for each day
     for i, (day, dataset) in enumerate(zip(days, data_list)):
-        # Get the spine density for each dendritic segment
         groupings = dataset.spine_grouping
         if type(groupings) != list:
             groupings = [groupings]
@@ -165,5 +167,8 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None, distance=10):
             density = ((len(dendrite) - len(el_spines)) / length) * distance
             densities.append(density)
         spine_density[day] = np.nanmean(densities)
-        # Calculate fraction of new spines
+
+    # Get normalized spine densities
+    for key, value in spine_density.items():
+        normalized_spine_density[key] = value / list(spine_density.values())[0]
 
