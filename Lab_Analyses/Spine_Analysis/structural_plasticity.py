@@ -101,7 +101,7 @@ def classify_plasticity(relative_volumes, threshold=0.25):
     return potentiated_spines, depressed_spines, stable_spines
 
 
-def calculate_spine_dynamics(data_list, days=None, exclude=None, distance=10):
+def calculate_spine_dynamics(data_list, days=None, distance=10):
     """Function to calculate the spine density and rate of spine 
         generation and elimination
         
@@ -137,17 +137,11 @@ def calculate_spine_dynamics(data_list, days=None, exclude=None, distance=10):
     # Get the new spines and eliminated spines for each day
     new_spine_list = []
     eliminated_spine_list = []
-    exclude_spine_list = []
     for flags in flag_list:
         new_spine_list.append(np.array(find_spine_classes(flags, "New Spine")))
         eliminated_spine_list.append(
             np.array(find_spine_classes(flags, "Eliminated Spine"))
         )
-        if exclude:
-            exclude_spines = find_spine_classes(flags, exclude)
-            # Reverse values to exlude these spines
-            exclude_spines = [not x for x in exclude_spines]
-            exclude_spine_list.append(np.array(exclude_spines))
 
     # Set up outputs
     spine_density = {}
