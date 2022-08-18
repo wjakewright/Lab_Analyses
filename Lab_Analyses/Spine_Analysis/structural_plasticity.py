@@ -137,11 +137,17 @@ def calculate_spine_dynamics(data_list, days=None, distance=10):
     # Get the new spines and eliminated spines for each day
     new_spine_list = []
     eliminated_spine_list = []
+    stable_spine_list = []
     for flags in flag_list:
-        new_spine_list.append(np.array(find_spine_classes(flags, "New Spine")))
-        eliminated_spine_list.append(
-            np.array(find_spine_classes(flags, "Eliminated Spine"))
-        )
+        new_spines = np.array(find_spine_classes(flags, "New Spine"))
+        new_spine_list.append(new_spines)
+        eliminated_spines = np.array(find_spine_classes(flags, "Eliminated Spine"))
+        eliminated_spine_list.append(eliminated_spines)
+        rev_new = np.array([not x for x in new_spines])
+        rev_el = np.array([not x for x in eliminated_spines])
+        stable_spines = np.array([True for x in new_spines])
+        stable_spines = stable_spines * rev_new * rev_el
+        stable_spine_list.append(stable_spines)
 
     # Set up outputs
     spine_density = {}
@@ -160,9 +166,25 @@ def calculate_spine_dynamics(data_list, days=None, distance=10):
             el_spines = eliminated_spine_list[i][dendrite]
             density = ((len(dendrite) - len(el_spines)) / length) * distance
             densities.append(density)
+        # Average across the dendrites
         spine_density[day] = np.nanmean(densities)
 
     # Get normalized spine densities
     for key, value in spine_density.items():
         normalized_spine_density[key] = value / list(spine_density.values())[0]
+
+    # Get the spine dynamics
+    max_len = len(flag_list[-1])
+    spine_dynamics_list = []
+    for day in flag_list:
+        dyn = np.zeros(max_len)
+        dyn[:] = np.nan
+        spine_dynamics_list.append(dyn)
+    for i, _ in enumerate(spine_dynamics_list):
+        # Add new spines
+        spine_dynamics_list[i][new_spine_list[i]] = 1
+        # Add eliminated spines
+        spine_dynamics_list[i][eliminated_spine_list[i]] = -1
+        # Add stable spines
+        spine_dynamics_list[i][stable_spine_list[i]] = 0
 
