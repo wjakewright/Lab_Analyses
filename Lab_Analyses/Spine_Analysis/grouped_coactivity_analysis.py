@@ -9,7 +9,10 @@ from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
     assess_movement_quality,
     spine_movement_activity,
 )
-from Lab_Analyses.Spine_Analysis.spine_utilities import load_spine_datasets
+from Lab_Analyses.Spine_Analysis.spine_utilities import (
+    find_spine_classes,
+    load_spine_datasets,
+)
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
@@ -114,11 +117,64 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, theshold, exclu
     for mouse in mice_list:
         print(f"-- {mouse}")
         mouse_data = defaultdict(list)
+        mean_mouse_data = defaultdict(list)
         mouse_datasets = load_spine_datasets(mouse, days, followup=False)
         # Analyze each FOV
         for FOV, data in mouse_datasets.items():
             keys = list(data.keys())
             datasets = list(data.values())
+
+            # Perform coactivity analysis
+            global_correlations = defaultdict(list)
+            mean_global_correlations = defaultdict(list)
+            coactivity_rates = defaultdict(list)
+            mean_coactivity_rates = defaultdict(list)
+            coactivity_amps = defaultdict()
+            mean_coactivity_amps = defaultdict()
+            mean_relative_onsets = defaultdict()
+            fraction_coactive = defaultdict()
+
+            for key, dataset in zip(keys, datasets):
+                (
+                    global_correlation,
+                    coactivity_rate,
+                    _,
+                    _,
+                    coactive_amplitudes,
+                    coactive_spines,
+                    _,
+                    _,
+                    _,
+                    _,
+                    relative_onsets,
+                    _,
+                ) = global_coactivity_analysis(
+                    dataset, movements=None, sampling_rate=60
+                )
+                # remove eliminated and excluded spines
+                el_spines = find_spine_classes(dataset.spine_flags, "Eliminated Spine")
+                el_spines = np.array([not x for x in el_spines])
+                select_spines = el_spines
+                if exclude:
+                    exclude_spines = find_spine_classes(dataset.spine_flags, exclude)
+                    exclude_spines = np.array([not x for x in exclude_spines])
+                    select_spines = select_spines * exclude_spines
+                global_correlation = global_correlation[select_spines]
+                coactivity_rate = coactivity_rate[select_spines]
+                coactive_amplitudes = coactive_amplitudes[select_spines]
+                coactive_spines = coactive_spines[select_spines]
+                relative_onsets = relative_onsets[select_spines]
+                # Store values for each day
+                global_correlations[key].append(global_correlation)
+                mean_global_correlations[key].append(np.nanmean(global_correlation))
+                coactivity_rates[key].append(coactivity_rate)
+                mean_coactivity_rates[key].append(np.nanmean(coactivity_rate))
+                coactivity_amps[key].append(coactive_amplitudes)
+                mean_coactivity_amps[key].append(np.nanmean(coactive_amplitudes))
+                mean_relative_onsets[key].append(np.nanmean(relative_onsets))
+                fraction_coactive[key].append(
+                    np.sum(coactive_spines) / len(coactive_spines)
+                )
 
 
 def short_term_coactivity_analysis(
