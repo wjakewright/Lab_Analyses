@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from dataclasses import dataclass
+from tokenize import group
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.global_coactivity import global_coactivity_analysis
@@ -240,7 +241,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
 
             # Store values
             ## Spinewise data
-            mouse_data["Relative Volume"].append(volumes)
+            mouse_data["Relative Volumes"].append(volumes)
             mouse_data["Potentiated Spines"].append(potentiated)
             mouse_data["Depressed Spines"].append(depressed)
             mouse_data["Stable Spines"].append(stable)
@@ -250,7 +251,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
             mouse_data["Movement Amplitudes"].append(movement_amps)
             mouse_data["Movement Quality"].append(spine_movement_correlations)
             ## Averaged data
-            mean_mouse_data["Relative Volume"].append(np.nanmean(volumes))
+            mean_mouse_data["Relative Volumes"].append(np.nanmean(volumes))
             mean_mouse_data["Potentiated Spines"].append(
                 np.sum(potentiated) / len(potentiated)
             )
@@ -306,6 +307,35 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
         grouped_mice_data[key] = temp_data
 
     # Store in dataclass for output
+    longitudinal_data = Longitudinal_Coactivity_Volume_Data(
+        mouse_ids=mice_list,
+        spine_relative_volume=grouped_spine_data["Relative Volumes"],
+        potentiated_spine_ids=grouped_spine_data["Potentiated Spines"],
+        depressed_spine_ids=grouped_spine_data["Depressed Spines"],
+        stable_spine_ids=grouped_spine_data["Stable Spines"],
+        spine_global_correlations=grouped_spine_data["Global Correlations"],
+        spine_coactivity_rates=grouped_spine_data["Coactivity Rates"],
+        spine_coactivity_amplitudes=grouped_spine_data["Coactivity Amplitudes"],
+        spine_movement_amplitudes=grouped_spine_data["Movement Amplitudes"],
+        spine_movement_quality=grouped_spine_data["Movement Quality"],
+        avg_relative_volume=grouped_mice_data["Relative Volumes"],
+        fraction_potentiated=grouped_mice_data["Potentiated Spines"],
+        fraction_depressed=grouped_mice_data["Depressed Spines"],
+        fraction_stable=grouped_mice_data["Stable Spines"],
+        avg_spine_density=grouped_mice_data["Spine Density"],
+        normalized_spine_density=grouped_mice_data["Normalized Spine Density"],
+        fraction_new_spines=grouped_mice_data["Fraction New Spines"],
+        fraction_eliminated_spines=grouped_mice_data["Fraction Eliminated Spines"],
+        avg_global_correlation=grouped_mice_data["Global Correlations"],
+        avg_coactivity_rates=grouped_mice_data["Coactivity Rates"],
+        avg_coactivity_amplitudes=grouped_mice_data["Coactivity Amplitudes"],
+        fraction_movement=grouped_mice_data["Fraction Movement"],
+        avg_spine_coactivity_onset=grouped_mice_data["Relative Coactivity Onsets"],
+        avg_movement_amplitudes=grouped_mice_data["Movement Amplitudes"],
+        avg_movement_quality=grouped_mice_data["Movement Quality"],
+    )
+
+    return longitudinal_data
 
 
 def short_term_coactivity_analysis(
@@ -651,7 +681,7 @@ class Longitudinal_Coactivity_Volume_Data:
     # spinewise values
     spine_relative_volume: dict
     potentiated_spine_ids: dict
-    potentiated_spine_ids: dict
+    depressed_spine_ids: dict
     stable_spine_ids: dict
     spine_global_correlations: dict
     spine_coactivity_rates: dict
@@ -664,6 +694,7 @@ class Longitudinal_Coactivity_Volume_Data:
     fraction_depressed: dict
     fraction_stable: dict
     avg_spine_density: dict
+    normalized_spine_density: dict
     fraction_new_spines: dict
     fraction_eliminated_spines: dict
     avg_global_correlation: dict
