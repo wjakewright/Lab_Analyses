@@ -1,11 +1,17 @@
 """Module to perform spine co-activity analyses"""
 
 import numpy as np
+from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from scipy import stats
 
 
 def spine_coactivity_analysis(
-    spine_activity, spine_positions, spine_grouping, bin_size=5, sampling_rate=60,
+    spine_activity,
+    spine_positions,
+    flags,
+    spine_grouping,
+    bin_size=5,
+    sampling_rate=60,
 ):
     """Function to calculate pairwise spine coactivity rate between 
         all spines along the same dendrite. Spine rates are then binned
@@ -17,6 +23,8 @@ def spine_coactivity_analysis(
             
             spine_positions - list of the corresponding spine positions along the dendrite
                               for each spine
+
+            flags - list of the spine flags
             
             spine_grouping - list with the corresponding groupings of spines on
                              the same dendrite
@@ -40,12 +48,16 @@ def spine_coactivity_analysis(
         spine_grouping = [spine_grouping]
 
     coactivity_matrix = np.zeros((bin_num, spine_activity.shape[1]))
-    print(coactivity_matrix.shape)
+
+    # find indexes of eliminated spines
+    el_spines = find_spine_classes(flags, "Eliminated Spine")
+    el_spines = np.array(el_spines)
 
     # Now iterate through each dendrite grouping
     for spines in spine_grouping:
         s_activity = spine_activity[:, spines]
         positions = np.array(spine_positions)[spines]
+        curr_el_spines = el_spines[spines]
 
         # Go through each spine
         for i in range(s_activity.shape[1]):
@@ -53,8 +65,15 @@ def spine_coactivity_analysis(
             curr_spine = s_activity[:, i]
             # Get coactivity with each other spine
             for j in range(s_activity.shape[1]):
-                # Don't compare spine to itself
+                # Don't compare spines to themselves
                 if j == i:
+                    continue
+                # Don't compare eliminated spines
+                if curr_el_spines[i] == True:
+                    current_coactivity.append(np.nan)
+                    continue
+                if curr_el_spines[j] == True:
+                    current_coactivity.append(np.nan)
                     continue
                 test_spine = s_activity[:, j]
                 co_rate = calculate_coactivity(curr_spine, test_spine, sampling_rate)
