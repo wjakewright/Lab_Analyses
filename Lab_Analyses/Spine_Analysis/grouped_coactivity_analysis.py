@@ -282,7 +282,10 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
             mouse_data[key] = temp_data
         ## Mean mouse data (Average across FOVs)
         for key, value in mean_mouse_data.items():
-            mean_mouse_data[key] = np.nanmean(value)
+            temp_data = {}
+            for day in value[0].keys():
+                temp_data[day] = np.nanmean(value)
+            mean_mouse_data[key] = temp_data
 
         # Store data in grouped dictionaries
         for key, value in mouse_data.items():
@@ -296,6 +299,13 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
         for day in value[0].keys():
             temp_data[day] = np.concatenate(list(d[day] for d in value))
         grouped_spine_data[key] = temp_data
+    for key, value in grouped_mice_data.items():
+        temp_data = {}
+        for day in value[0].keys():
+            temp_data[day] = np.array(value)
+        grouped_mice_data[key] = temp_data
+
+    # Store in dataclass for output
 
 
 def short_term_coactivity_analysis(
@@ -630,4 +640,37 @@ class Short_Term_Coactivity_Volume_Data:
     coactive_movement_correlations: np.ndarray
     learned_movements: list
     spine_coactivity: np.ndarray
+
+
+@dataclass
+class Longitudinal_Coactivity_Volume_Data:
+    """Dataclass for storing the longitudinal coactivity
+        volume data analysis"""
+
+    mouse_ids: list
+    # spinewise values
+    spine_relative_volume: dict
+    potentiated_spine_ids: dict
+    potentiated_spine_ids: dict
+    stable_spine_ids: dict
+    spine_global_correlations: dict
+    spine_coactivity_rates: dict
+    spine_coactivity_amplitudes: dict
+    spine_movement_amplitudes: dict
+    spine_movement_quality: dict
+    # mouse averaged data
+    avg_relative_volume: dict
+    fraction_potentiated: dict
+    fraction_depressed: dict
+    fraction_stable: dict
+    avg_spine_density: dict
+    fraction_new_spines: dict
+    fraction_eliminated_spines: dict
+    avg_global_correlation: dict
+    avg_coactivity_rates: dict
+    avg_coactivity_amplitudes: dict
+    fraction_movement: dict
+    avg_spine_coactivity_onset: dict
+    avg_movement_amplitudes: dict
+    avg_movement_quality: dict
 
