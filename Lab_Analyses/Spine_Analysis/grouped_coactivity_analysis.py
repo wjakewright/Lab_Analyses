@@ -14,6 +14,7 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
     load_spine_datasets,
 )
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
+    calculate_spine_dynamics,
     calculate_volume_change,
     classify_plasticity,
 )
@@ -215,11 +216,11 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
 
             # Calculate spine volumes and spine dynamics
             if corrected:
-                _, volumes, spine_idxs = calculate_volume_change(
+                _, volumes, _ = calculate_volume_change(
                     datasets, keys, exclude=exclude,
                 )
             else:
-                volumes, _, spine_idxs = calculate_volume_change(
+                volumes, _, _ = calculate_volume_change(
                     datasets, keys, exclude=exclude,
                 )
             potentiated = {}
@@ -230,6 +231,47 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
                 potentiated[key] = p
                 depressed[key] = d
                 stable[key] = s
+            (
+                spine_density,
+                normalized_spine_density,
+                fraction_new_spines,
+                fraction_eliminated_spines,
+            ) = calculate_spine_dynamics(datasets, keys, distance=10)
+
+            # Store values
+            ## Spinewise data
+            mouse_data["Relative Volume"].append(volumes)
+            mouse_data["Potentiated Spines"].append(potentiated)
+            mouse_data["Depressed Spines"].append(depressed)
+            mouse_data["Stable Spines"].append(stable)
+            mouse_data["Global Correlations"].append(global_correlations)
+            mouse_data["Coactivity Rates"].append(coactivity_rates)
+            mouse_data["Coactivity Amplitudes"].append(coactivity_amps)
+            mouse_data["Movement Amplitudes"].append(movement_amps)
+            mouse_data["Movement Quality"].append(spine_movement_correlations)
+            ## Averaged data
+            mean_mouse_data["Relative Volume"].append(np.nanmean(volumes))
+            mean_mouse_data["Potentiated Spines"].append(
+                np.sum(potentiated) / len(potentiated)
+            )
+            mean_mouse_data["Depressed Spines"].append(
+                np.sum(depressed) / len(depressed)
+            )
+            mean_mouse_data["Stable Spines"].append(np.sum(stable) / len(stable))
+            mean_mouse_data["Spine Density"].append(spine_density)
+            mean_mouse_data["Nomalized Spine Density"].append(normalized_spine_density)
+            mean_mouse_data["Fraction New Spines"].append(fraction_new_spines)
+            mean_mouse_data["Fraction Eliminated Spines"].append(
+                fraction_eliminated_spines
+            )
+            mean_mouse_data["Fraction Coactive"].append(fraction_coactive)
+            mean_mouse_data["Gobal Correlations"].append(mean_global_correlations)
+            mean_mouse_data["Coactivity Rates"].append(mean_coactivity_rates)
+            mean_mouse_data["Coactivity Amplitudes"].append(mean_coactivity_amps)
+            mean_mouse_data["Relative Coactivity Onsets"].append(relative_onsets)
+            mean_mouse_data["Fraction Movement"].append(fraction_movement)
+            mean_mouse_data["Movement Amplitudes"].append(mean_movement_amps)
+            mean_mouse_data["Movement Quality"].append(mean_spine_movement_correlations)
 
 
 def short_term_coactivity_analysis(
