@@ -273,6 +273,30 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
             mean_mouse_data["Movement Amplitudes"].append(mean_movement_amps)
             mean_mouse_data["Movement Quality"].append(mean_spine_movement_correlations)
 
+        # Condense the mouse_data dictionaries
+        ## Spinewise mouse data
+        for key, value in mouse_data.items():
+            temp_data = {}
+            for day in value[0].keys():
+                temp_data[day] = np.concatenate(list(d[day] for d in value))
+            mouse_data[key] = temp_data
+        ## Mean mouse data (Average across FOVs)
+        for key, value in mean_mouse_data.items():
+            mean_mouse_data[key] = np.nanmean(value)
+
+        # Store data in grouped dictionaries
+        for key, value in mouse_data.items():
+            grouped_spine_data[key].append(value)
+        for key, value in mean_mouse_data.items():
+            grouped_mice_data[key].append(value)
+
+    # Condense grouped spine data
+    for key, value in grouped_spine_data.items():
+        temp_data = {}
+        for day in value[0].keys():
+            temp_data[day] = np.concatenate(list(d[day] for d in value))
+        grouped_spine_data[key] = temp_data
+
 
 def short_term_coactivity_analysis(
     mice_list, day, movement_epochs, corrected, threshold, exclude
