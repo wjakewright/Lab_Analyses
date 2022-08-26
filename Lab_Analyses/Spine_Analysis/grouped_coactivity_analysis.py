@@ -107,7 +107,7 @@ def grouped_coactivity_analysis(
     return short_term_datasets, longitudinal_dataset
 
 
-def longitudinal_coactivity_analysis(mice_list, days, corrected, theshold, exclude):
+def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, exclude):
     """Function to handle the short term"""
 
     grouped_spine_data = defaultdict(list)
@@ -125,14 +125,20 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, theshold, exclu
             datasets = list(data.values())
 
             # Perform coactivity analysis
-            global_correlations = defaultdict(list)
-            mean_global_correlations = defaultdict(list)
-            coactivity_rates = defaultdict(list)
-            mean_coactivity_rates = defaultdict(list)
-            coactivity_amps = defaultdict()
-            mean_coactivity_amps = defaultdict()
-            mean_relative_onsets = defaultdict()
-            fraction_coactive = defaultdict()
+            global_correlations = {}
+            mean_global_correlations = {}
+            coactivity_rates = {}
+            mean_coactivity_rates = {}
+            coactivity_amps = {}
+            mean_coactivity_amps = {}
+            relative_onsets = {}
+            fraction_coactive = {}
+
+            fraction_movement = {}
+            movement_amps = {}
+            mean_movement_amps = {}
+            spine_movement_correlations = {}
+            mean_spine_movement_correlations = {}
 
             for key, dataset in zip(keys, datasets):
                 (
@@ -146,7 +152,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, theshold, exclu
                     _,
                     _,
                     _,
-                    relative_onsets,
+                    rel_onsets,
                     _,
                 ) = global_coactivity_analysis(
                     dataset, movements=None, sampling_rate=60
@@ -163,18 +169,67 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, theshold, exclu
                 coactivity_rate = coactivity_rate[select_spines]
                 coactive_amplitudes = coactive_amplitudes[select_spines]
                 coactive_spines = coactive_spines[select_spines]
-                relative_onsets = relative_onsets[select_spines]
+                rel_onsets = rel_onsets[select_spines]
                 # Store values for each day
-                global_correlations[key].append(global_correlation)
-                mean_global_correlations[key].append(np.nanmean(global_correlation))
-                coactivity_rates[key].append(coactivity_rate)
-                mean_coactivity_rates[key].append(np.nanmean(coactivity_rate))
-                coactivity_amps[key].append(coactive_amplitudes)
-                mean_coactivity_amps[key].append(np.nanmean(coactive_amplitudes))
-                mean_relative_onsets[key].append(np.nanmean(relative_onsets))
-                fraction_coactive[key].append(
-                    np.sum(coactive_spines) / len(coactive_spines)
+                global_correlations[key] = global_correlation
+                mean_global_correlations[key] = np.nanmean(mean_global_correlations)
+                coactivity_rates[key] = coactivity_rate
+                mean_coactivity_rates[key] = np.nanmean(coactivity_rates)
+                coactivity_amps[key] = coactive_amplitudes
+                mean_coactivity_amps[key] = np.nanmean(coactivity_amps)
+                relative_onsets[key] = np.nanmean(rel_onsets)
+                fraction_coactive[key] = np.sum(coactive_spines) / len(coactive_spines)
+
+                # Get movement variable data
+                move_spines = dataset.movement_spines
+                all_befores, all_durings, _, _ = spine_movement_activity(
+                    dataset,
+                    activity_type="spine_GluSnFr_processed_dFoF",
+                    exclude=None,
+                    sampling_rate=60,
+                    rewarded=False,
                 )
+                move_amps = [
+                    np.nanmean(before - after)
+                    for before, after in zip(all_befores, all_durings)
+                ]
+                move_amps = np.array(move_amps)
+                (_, _, spine_move_corr, _,) = assess_movement_quality(
+                    dataset,
+                    activity_type="spine_GluSnFr_activity",
+                    coactivity=False,
+                    exclude=None,
+                    sampling_rate=60,
+                    rewarded=False,
+                )
+                move_spines = move_spines[select_spines]
+                frac_move_spines = np.sum(move_spines) / len(move_spines)
+                move_amps = move_amps[select_spines]
+                spine_move_corr = spine_move_corr[select_spines]
+                # Store values
+                fraction_movement[key] = frac_move_spines
+                movement_amps[key] = move_amps
+                mean_movement_amps[key] = np.nanmean(move_amps)
+                spine_movement_correlations[key] = spine_move_corr
+                mean_spine_movement_correlations[key] = np.nanmean(spine_move_corr)
+
+            # Calculate spine volumes and spine dynamics
+            if corrected:
+                _, volumes, spine_idxs = calculate_volume_change(
+                    datasets, keys, exclude=exclude,
+                )
+            else:
+                volumes, _, spine_idxs = calculate_volume_change(
+                    datasets, keys, exclude=exclude,
+                )
+            potentiated = {}
+            depressed = {}
+            stable = {}
+            for key, value in volumes.items():
+                p, d, s = classify_plasticity(value, threshold)
+                potentiated[key] = p
+                depressed[key] = d
+                stable[key] = s
 
 
 def short_term_coactivity_analysis(
@@ -321,9 +376,10 @@ def short_term_coactivity_analysis(
             )
 
             # Assess spine coactivity
-            spine_coactivity_mat = spine_coactivity_analysis(
+            spine_coactivity_mat, _ = spine_coactivity_analysis(
                 datasets[0].spine_GluSnFr_activity,
                 datasets[0].spine_positions,
+                datasets[0].spine_flags,
                 spine_grouping=spine_groupings,
                 bin_size=5,
                 sampling_rate=60,
