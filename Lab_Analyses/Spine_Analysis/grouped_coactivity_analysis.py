@@ -176,16 +176,16 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
                 rel_onsets = rel_onsets[select_spines]
                 # Store values for each day
                 global_correlations[key] = global_correlation
-                mean_global_correlations[key] = np.nanmean(mean_global_correlations)
+                mean_global_correlations[key] = np.nanmean(global_correlation)
                 coactivity_rates[key] = coactivity_rate
-                mean_coactivity_rates[key] = np.nanmean(coactivity_rates)
+                mean_coactivity_rates[key] = np.nanmean(coactivity_rate)
                 coactivity_amps[key] = coactive_amplitudes
-                mean_coactivity_amps[key] = np.nanmean(coactivity_amps)
+                mean_coactivity_amps[key] = np.nanmean(coactive_amplitudes)
                 relative_onsets[key] = np.nanmean(rel_onsets)
                 fraction_coactive[key] = np.sum(coactive_spines) / len(coactive_spines)
 
                 # Get movement variable data
-                move_spines = dataset.movement_spines
+                move_spines = np.array(dataset.movement_spines)
                 all_befores, all_durings, _, _ = spine_movement_activity(
                     dataset,
                     activity_type="spine_GluSnFr_processed_dFoF",
@@ -227,13 +227,19 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
                     datasets, keys, exclude=exclude,
                 )
             potentiated = {}
+            mean_potentiated = {}
             depressed = {}
+            mean_depressed = {}
             stable = {}
+            mean_stable = {}
             for key, value in volumes.items():
                 p, d, s = classify_plasticity(value, threshold)
                 potentiated[key] = p
                 depressed[key] = d
                 stable[key] = s
+                mean_potentiated[key] = np.sum(p) / len(p)
+                mean_depressed[key] = np.sum(d) / len(d)
+                mean_stable[key] = np.sum(s) / len(s)
             (
                 spine_density,
                 normalized_spine_density,
@@ -253,14 +259,13 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
             mouse_data["Movement Amplitudes"].append(movement_amps)
             mouse_data["Movement Quality"].append(spine_movement_correlations)
             ## Averaged data
-            mean_mouse_data["Relative Volumes"].append(np.nanmean(volumes))
-            mean_mouse_data["Potentiated Spines"].append(
-                np.sum(potentiated) / len(potentiated)
-            )
-            mean_mouse_data["Depressed Spines"].append(
-                np.sum(depressed) / len(depressed)
-            )
-            mean_mouse_data["Stable Spines"].append(np.sum(stable) / len(stable))
+            mean_volumes = {}
+            for key, value in volumes.items():
+                mean_volumes[key] = np.nanmean(value)
+            mean_mouse_data["Relative Volumes"].append(mean_volumes)
+            mean_mouse_data["Potentiated Spines"].append(mean_potentiated)
+            mean_mouse_data["Depressed Spines"].append(mean_depressed)
+            mean_mouse_data["Stable Spines"].append(mean_stable)
             mean_mouse_data["Spine Density"].append(spine_density)
             mean_mouse_data["Nomalized Spine Density"].append(normalized_spine_density)
             mean_mouse_data["Fraction New Spines"].append(fraction_new_spines)
@@ -287,7 +292,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
         for key, value in mean_mouse_data.items():
             temp_data = {}
             for day in value[0].keys():
-                temp_data[day] = np.nanmean(value)
+                temp_data[day] = np.nanmean([d[day] for d in value])
             mean_mouse_data[key] = temp_data
 
         # Store data in grouped dictionaries
@@ -480,7 +485,7 @@ def short_term_coactivity_analysis(
                 coactivity=True,
                 exclude=None,
                 sampling_rate=60,
-                reawrded=False,
+                rewarded=False,
             )
 
             # Assess spine coactivity
@@ -496,7 +501,7 @@ def short_term_coactivity_analysis(
             spine_coactivity = []
             for i in range(spine_coactivity_mat.shape[1]):
                 spine_coactivity.append(
-                    np.mean(spine_coactivity_mat[0, i], spine_coactivity_mat[1, i])
+                    np.mean([spine_coactivity_mat[0, i], spine_coactivity_mat[1, i]])
                 )
             spine_coactivity = np.array(spine_coactivity)
 
