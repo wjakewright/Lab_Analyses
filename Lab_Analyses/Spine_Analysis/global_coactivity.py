@@ -118,17 +118,17 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
         # Get amplitude and co-activity traces
         ## Find dendrite activity preiods
         dend_diff = np.insert(np.diff(d_activity), 0, 0)
-        dend_onsets = np.nonzero(dend_diff == 1)[0]
-        dend_offsets = np.nonzero(dend_diff == -1)[0]
+        dend_on = np.nonzero(dend_diff == 1)[0]
+        dend_off = np.nonzero(dend_diff == -1)[0]
         ### Made sure onsets and offest are the same length
-        if len(dend_onsets) > len(dend_offsets):
+        if len(dend_on) > len(dend_off):
             # Drop last onset if there is no offest
-            dend_onsets = dend_onsets[:-1]
-        elif len(dend_onsets) < len(dend_offsets):
+            dend_on = dend_on[:-1]
+        elif len(dend_on) < len(dend_off):
             # Drop first offset if there is no onset for it
-            dend_offsets = dend_offsets[1:]
+            dend_off = dend_off[1:]
         timestamps = []
-        for onset, offset in zip(dend_onsets, dend_offsets):
+        for onset, offset in zip(dend_on, dend_off):
             timestamps.append((onset, offset))
         # refine timestamps
         refined_idxs = []
@@ -171,7 +171,6 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
             coactivity_mean_trace[key] = value
         for key, value in epoch_trace.items():
             coactivity_epoch_trace[key] = value
-
         # get dend mean sem trace
         _, d_mean_sems = d_utils.get_trace_mean_sem(
             d_dFoF.reshape(-1, 1),
@@ -183,9 +182,9 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
         dend_mean_sem.append(d_mean_sems[f"Dendrite {i}"])
 
         # Get the onsets
-        means = [x[0].reshape(-1, 1) for x in mean_sems]
+        means = [x[0].reshape(-1, 1) for x in mean_sems.values()]
         means = np.concatenate(means, axis=1)
-        d_means = d_mean_sems[0]
+        d_means = list(d_mean_sems.values())[0][0]
         s_onsets, r_onsets, d_onsets = find_activity_onset(
             means, d_means, sampling_rate
         )
@@ -295,9 +294,18 @@ def find_activity_onset(spine_means, dend_mean, sampling_rate):
     )
     dend_amps = dend_props["peak_heights"]
     # get the max peak
-    dend_peak = dend_peaks[np.argmax(dend_amps)]
-    dend_amp = np.max(dend_amps)
+    try:
+        dend_peak = dend_peaks[np.argmax(dend_amps)]
+    # If no dendrite activity, return nan arrays
+    except ValueError:
+        dend_onset = np.nan
+        spine_onsets = np.zeros(spine_means.shape[1])
+        spine_relative_onsets = np.zeros(spine_means.shape[1])
+        spine_onsets[:] = np.nan
+        spine_relative_onsets[:] = np.nan
+        return spine_onsets, spine_relative_onsets, dend_onset
     # Get the offset of the rise phase
+    dend_amp = np.max(dend_amps)
     dend_peak_trace = dend_mean[:dend_peak]
     dend_offset = np.where(dend_peak_trace < 0.75 * dend_amp)[0][-1]
     # Get the trace velocity
@@ -327,6 +335,10 @@ def find_activity_onset(spine_means, dend_mean, sampling_rate):
         )
         spine_amps = spine_props["peak_heights"]
         # Get the main peak
+        if len(spine_peaks) < 1:
+            spine_onsets[i] = np.nan
+            spine_relative_onsets[i] = np.nan
+            continue
         if len(spine_peaks) > 1:
             peak_score = []
             for peak, amp in zip(spine_peaks, spine_amps):
@@ -341,7 +353,12 @@ def find_activity_onset(spine_means, dend_mean, sampling_rate):
 
         # Get the offset of the rise phase
         spine_peak_trace = spine[:spine_peak]
-        spine_offset = np.where(spine_peak_trace < 0.75 * spine_amp)[0][-1]
+        try:
+            spine_offset = np.where(spine_peak_trace < 0.75 * spine_amp)[0][-1]
+        except:
+            spine_onsets[i] = np.nan
+            spine_relative_onsets[i] = np.nan
+            continue
         # Get the trace velocity
         spine_search_trace = spine[:spine_offset]
         spine_deriv = np.gradient(spine)[:spine_offset]
