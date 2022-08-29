@@ -86,5 +86,23 @@ def plot_sns_scatter_correlation(
         "alpha": s_alpha,
         "linewidth": edge_width,
     }
-    line_kws = {"linewidth": line_width}
+    line_kws = {"linewidth": line_width, "color": line_color}
 
+    # Make the plot
+    sns.regplot(x=var1, y=var2, ci=CI, scatter_kws=scatter_kws, line_kws=line_kws)
+
+    plt.xlabel(xtitle, labelpad=15)
+    if xlim:
+        plt.xlim(left=xlim[0], right=xlim[1])
+    plt.ylabel(ytitle, labelpadd=15)
+    if ylim:
+        plt.ylim(bottom=ylim[0], top=ylim[1])
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
