@@ -86,21 +86,17 @@ def spine_movement_activity(
     refined_idxs = []
     for i, stamp in enumerate(timestamps):
         # remove first movement if to early
-        if i == 0:
-            if stamp[0] - before_window < 0:
-                refined_idxs.append(False)
-            else:
-                refined_idxs.append(True)
+        if stamp[0] - before_window < 0:
+            refined_idxs.append(False)
             continue
         # remove movements that go beyond activity window at end
-        if i == len(timestamps) - 1:
-            if stamp[0] + before_window >= len(activity[:, 0]):
-                refined_idxs.append(False)
-            else:
-                refined_idxs.append(True)
+        if stamp[0] + before_window >= len(activity[:, 0]):
+            refined_idxs.append(False)
             continue
-
         # remove movements with another movement 1s before
+        if i == 0:
+            refined_idxs.append(True)
+            continue
         if stamp[0] - before_window <= timestamps[i - 1][1]:
             refined_idxs.append(False)
         else:
@@ -162,6 +158,7 @@ def assess_movement_quality(
     learned_file = load_pickle(fname, load_path)[0]
     learned_movement = learned_file.movement_avg
     learned_movement = learned_movement - learned_movement[0]
+    spine_groupings = spine_data.spine_grouping
 
     # Remove the baseline period
     corr_len = learned_file.corr_matrix.shape[1]
@@ -190,7 +187,14 @@ def assess_movement_quality(
     else:
         s_activity = getattr(spine_data, activity_type)
         d_activity = spine_data.dendrite_calcium_activity
-        activity = s_activity * d_activity
+        activity = np.zeros(s_activity.shape)
+        for d in range(d_activity.shape[1]):
+            if type(spine_groupings[d]) == list:
+                spines = spine_groupings[d]
+            else:
+                spines = spine_groupings
+            for s in spines:
+                activity[:, s] = s_activity[:, s] * d_activity[:, d]
 
     if exclude:
         exclude_spines = find_spine_classes(spine_data.spine_flags, exclude)
