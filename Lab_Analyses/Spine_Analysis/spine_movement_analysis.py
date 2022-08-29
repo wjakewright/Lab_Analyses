@@ -228,7 +228,7 @@ def assess_movement_quality(
             spine_epoch = spine_trace[movement[0] : movement[1]]
             if sum(spine_epoch):
                 spine_move = lever_trace[movement[0] : movement[0] + corr_duration]
-                spine_movements.append(spine_move)
+                all_spine_movements.append(spine_move)
 
             else:
                 continue
