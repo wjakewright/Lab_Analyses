@@ -448,11 +448,11 @@ def short_term_coactivity_analysis(
                 rewarded=True,
             )
             movement_amps = [
-                np.nanmean(before - after)
+                np.nanmean(after - before)
                 for before, after in zip(all_befores, all_durings)
             ]
             reward_movement_amps = [
-                np.nanmean(rwd_before - rwd_after)
+                np.nanmean(rwd_after - rwd_before)
                 for rwd_before, rwd_after in zip(rwd_befores, rwd_durings)
             ]
             movement_amps = np.array(movement_amps)
