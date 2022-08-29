@@ -1,7 +1,6 @@
 import os
 from collections import defaultdict
 from dataclasses import dataclass
-from tokenize import group
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.global_coactivity import global_coactivity_analysis
@@ -94,6 +93,9 @@ def grouped_coactivity_analysis(
     # Save section
     if save_path is None:
         save_path = r"C:\Users\Desktop\Analyzed_data\grouped"
+    if not os.path.isdir(save_path):
+        os.makedirs(save_path)
+
     if save_short:
         if movement_epochs is None:
             epoch_name = "session"
