@@ -158,7 +158,7 @@ def calculate_spine_dynamics(data_list, days=None, distance=10):
     # Get the spine densities for each day
     for i, (day, dataset) in enumerate(zip(days, data_list)):
         groupings = dataset.spine_grouping
-        if type(groupings) != list:
+        if type(groupings[0]) != list:
             groupings = [groupings]
         densities = []
         for dendrite in groupings:
