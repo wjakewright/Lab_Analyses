@@ -6,7 +6,8 @@ import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.movement_responsiveness import movement_responsiveness
+from Lab_Analyses.Utilities.movement_responsiveness import \
+    movement_responsiveness
 from scipy import stats
 
 
@@ -65,6 +66,8 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
     coactivity_rate = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
+    spine_frequency = np.zeros(spine_activity.shape[1])
+    dend_frequency = np.zeros(spine_activity.shape[1])
     coactive_amplitude = np.zeros(spine_activity.shape[1])
     coactive_spines = np.zeros(spine_activity.shape[1])
     coactivity_mean_trace = {}
@@ -108,12 +111,14 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
             global_correlation[spines[j]] = corr
 
             # Coactivity rate
-            coactivity_freq, spine_frac, dend_frac = get_coactivity_freq(
+            coactivity_freq, spine_frac, dend_frac, dend_freq, spine_freq = get_coactivity_freq(
                 s_activity[:, j], d_activity, sampling_rate=sampling_rate
             )
             coactivity_rate[spines[j]] = coactivity_freq
             spine_fraction_coactive[spines[j]] = spine_frac
             dend_fraction_coactive[spines[j]] = dend_frac
+            dend_frequency[spines[j]] = dend_freq
+            spine_frequency[spines[j]] = spine_freq
 
         # Get amplitude and co-activity traces
         ## Find dendrite activity preiods
@@ -206,6 +211,8 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
         coactivity_rate,
         spine_fraction_coactive,
         dend_fraction_coactive,
+        spine_frequency,
+        dend_frequency,
         coactive_amplitude,
         coactive_spines,
         coactivity_epoch_trace,
@@ -235,7 +242,10 @@ def get_coactivity_freq(spine, dendrite, sampling_rate):
             spine_frac_coactive - float of fraction of spine activity that is coactive
 
             dend_frac_coactive - float of fraction of dend activity the spine is active during
-    
+            
+            dend_freq
+
+            spine_freq
     """
     # Get the total time in secs
     duration = len(spine) / sampling_rate
@@ -265,7 +275,7 @@ def get_coactivity_freq(spine, dendrite, sampling_rate):
     except ZeroDivisionError:
         dend_frac_coactive = 0
 
-    return coactivity_freq, spine_frac_coactive, dend_frac_coactive
+    return coactivity_freq, spine_frac_coactive, dend_frac_coactive, dend_event_freq, spine_event_freq
 
 
 def find_activity_onset(spine_means, dend_mean, sampling_rate):
@@ -327,6 +337,8 @@ def find_activity_onset(spine_means, dend_mean, sampling_rate):
     spine_relative_onsets = np.zeros(spine_means.shape[1])
     for i in range(spine_means.shape[1]):
         spine = spine_means[:, i]
+        # smooth spine trace for better onset estimation
+        spine = sysignal.savgol_filter(spine, 31, 3)
         spine_med = np.median(spine)
         spine_std = np.std(spine)
         spine_h = spine_med + spine_std
