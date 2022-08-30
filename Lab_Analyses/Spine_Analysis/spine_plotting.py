@@ -216,8 +216,11 @@ def plot_swam_bar_plot(
         marker=marker,
         markerfacecolor=colors,
         ecolor=colors,
+        linestyle="",
     )
+    # Plot the points
     sns.swarmplot(data=data_df, color=colors, alpha=s_alpha)
+    # Format axes
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
     ax.set_ylabel(ytitle, labelpad=15)
@@ -225,6 +228,91 @@ def plot_swam_bar_plot(
     ax.set_xticklabels(labels=groups, labelpad=15)
 
     fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
+
+def mean_and_lines_plot(
+    data_dict,
+    figsize=(5, 5),
+    title=None,
+    xtitle=None,
+    ytitle=None,
+    m_color="mediumblue",
+    l_colors="mediumblue",
+    ylim=None,
+    l_alpha=0.5,
+    save=False,
+    save_path=None,
+):
+    """General function to plot means and individual data points over time, with
+        connecting lines
+        
+        INPUT PARAMETERS
+            data_dict - dict of data to be plotted, with each item representing 
+                        a different group
+            
+            figsize - tuple specifying the figure size
+            
+            title - str specifying the title of the figure
+            
+            xtitle - str specifying the title of the x axis
+            
+            ytitle - str specifying the title of the y axis
+            
+            m_color - str specifying the color of the mean markers
+            
+            l_colors - str or list of str specifying the colors of the individual
+                        data point lines
+            
+            ylim - tuple specifying the limits of the y axis
+            
+            l_alpha - float specifying the transparency of the individual lines
+            
+            save - boolean specifying whather or not to save the figure
+            
+            save_path - str specifying where to save the figure
+    """
+    # Make list of colors if only one is provided
+    if type(l_colors) == str:
+        l_colors = [l_colors for i in len(list(data_dict.values())[0])]
+
+    # Make the figure
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot()
+    ax.set_title(title, fontsize=10)
+    # Set up data
+    groups = list(data_dict.keys())
+    x = list(range(len(groups)))
+    data_points = list(data_dict.values())
+    data_mean = [np.nanmean(i) for i in data_points]
+    data_sems = [stats.sem(i, nan_policy="omit") for i in data_points]
+
+    # Plot means
+    ax.errorbar(
+        x,
+        data_mean,
+        data_sems,
+        color=m_color,
+        marker="o",
+        markerfacecolor=m_color,
+        ecolor=m_color,
+    )
+    # Plot the individual values
+    for i, data in enumerate(list(zip(*data_points))):
+        plt.plot(x, data, color=l_colors[i], alpha=l_alpha)
+
+    # Format axes
+    if ylim:
+        ax.set_ylim(bottom=ylim[0], top=ylim[1])
+    ax.set_ylabel(ytitle, labelpad=15)
+    ax.set_xlabel(xtitle)
+    ax.set_xticklabels(labels=groups, labelpad=15)
 
     # Save section
     if save:
