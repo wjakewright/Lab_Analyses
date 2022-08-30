@@ -150,6 +150,8 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
                     coactivity_rate,
                     _,
                     _,
+                    _,
+                    _,
                     coactive_amplitudes,
                     coactive_spines,
                     _,
@@ -374,6 +376,8 @@ def short_term_coactivity_analysis(
                 coactivity_rate,
                 spine_fraction_coactive,
                 dend_fraction_coactive,
+                spine_frequency,
+                dend_frequency,
                 coactive_amplitude,
                 coactive_spines,
                 coactivity_epoch_traces,
@@ -498,18 +502,22 @@ def short_term_coactivity_analysis(
                 sampling_rate=60,
             )
             # Look at only nearby spine coactivity
-            spine_coactivity = []
+            spine_near_coactivity = []
+            spine_all_coactivity = []
             for i in range(spine_coactivity_mat.shape[1]):
-                spine_coactivity.append(
+                spine_near_coactivity.append(
                     np.mean([spine_coactivity_mat[0, i], spine_coactivity_mat[1, i]])
                 )
-            spine_coactivity = np.array(spine_coactivity)
+                spine_all_coactivity.append(spine_coactivity_mat[:, i])
+            spine_near_coactivity = np.array(spine_near_coactivity)
 
             # Remove all non-stable spines from varibles
             global_correlation = global_correlation[spine_idxs]
             coactivity_rate = coactivity_rate[spine_idxs]
             spine_fraction_coactive = spine_fraction_coactive[spine_idxs]
             dend_fraction_coactive = dend_fraction_coactive[spine_idxs]
+            spine_frequency = spine_frequency[spine_idxs]
+            dend_frequency = dend_frequency[spine_idxs]
             coactive_amplitude = coactive_amplitude[spine_idxs]
             coactive_spines = coactive_spines[spine_idxs]
             coactivity_epoch_traces = [coactivity_epoch_traces[i] for i in spine_idxs]
@@ -531,13 +539,16 @@ def short_term_coactivity_analysis(
             spine_movement_correlations = spine_movement_correlations[spine_idxs]
             coactive_movements = [coactive_movements[i] for i in spine_idxs]
             coactive_movement_correlations = coactive_movement_correlations[spine_idxs]
-            spine_coactivity = spine_coactivity[spine_idxs]
+            spine_near_coactivity = spine_near_coactivity[spine_idxs]
+            spine_all_coactivity = [spine_all_coactivity[i] for i in spine_idxs]
 
             # Store variables in mouse_data dictionary
             mouse_data["global correlation"].append(global_correlation)
             mouse_data["coactivity rate"].append(coactivity_rate)
             mouse_data["spine fraction coactive"].append(spine_fraction_coactive)
             mouse_data["dend fraction coactive"].append(dend_fraction_coactive)
+            mouse_data["spine frequency"].append(spine_frequency)
+            mouse_data["dend frequency"].append(dend_frequency)
             mouse_data["coactive amplitude"].append(coactive_amplitude)
             mouse_data["coactive spines"].append(coactive_spines)
             mouse_data["coactivity epoch traces"].append(coactivity_epoch_traces)
@@ -563,7 +574,8 @@ def short_term_coactivity_analysis(
             mouse_data["coactive movement correlations"].append(
                 coactive_movement_correlations
             )
-            mouse_data["spine coactivity"].append(spine_coactivity)
+            mouse_data["spine near coactivity"].append(spine_near_coactivity)
+            mouse_data["spine all coactivity"].append(spine_all_coactivity)
             mouse_data["volumes"].append(volumes)
             mouse_data["potentiated"].append(potentiated)
             mouse_data["depressed"].append(depressed)
@@ -610,6 +622,8 @@ def short_term_coactivity_analysis(
         coactivity_rate=grouped_data["coactivity rate"],
         spine_fraction_coactive=grouped_data["spine fraction coactive"],
         dendrite_fraction_coactive=grouped_data["dend fraction coactive"],
+        spine_frequency=grouped_data["spine frequency"],
+        dendrite_frequency=grouped_data["dend frequency"],
         coactive_spines=grouped_data["coactive spines"],
         coactive_amplitude=grouped_data["coactive amplitude"],
         coactivity_epoch_traces=grouped_data["coactivity epoch traces"],
@@ -632,7 +646,8 @@ def short_term_coactivity_analysis(
         coactive_lever_movements=grouped_data["coactive movements"],
         coactive_movement_correlations=grouped_data["coactive movement correlations"],
         learned_movements=grouped_data["learned movement"],
-        spine_coactivity=grouped_data["spine coactivity"],
+        spine_near_coactivity=grouped_data["spine near coactivity"],
+        spine_all_coactivity=grouped_data["spine all coactivity"],
     )
 
     return short_term_coactivity_data
@@ -654,6 +669,8 @@ class Short_Term_Coactivity_Volume_Data:
     coactivity_rate: np.ndarray
     spine_fraction_coactive: np.ndarray
     dendrite_fraction_coactive: np.ndarray
+    spine_frequency: np.ndarray
+    dendrite_frequency: np.ndarray
     coactive_spines: np.ndarray
     coactive_amplitude: np.ndarray
     coactivity_epoch_traces: list
@@ -676,7 +693,8 @@ class Short_Term_Coactivity_Volume_Data:
     coactive_lever_movements: list
     coactive_movement_correlations: np.ndarray
     learned_movements: list
-    spine_coactivity: np.ndarray
+    spine_near_coactivity: np.ndarray
+    spine_all_coactivity: list
 
 
 @dataclass
