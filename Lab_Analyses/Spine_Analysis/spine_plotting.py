@@ -4,6 +4,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from scipy import stats
 
@@ -77,7 +78,7 @@ def plot_sns_scatter_correlation(
     corr, p = stats.pearsonr(var1, var2)
     # Add correlation as a subtitle
     subtitle = f"r = {corr}    p = {p}"
-    fig.title(subtitle, style="italic")
+    plt.title(subtitle, style="italic")
 
     # Set up some styles for the scatter points
     scatter_kws = {
@@ -94,7 +95,7 @@ def plot_sns_scatter_correlation(
     plt.xlabel(xtitle, labelpad=15)
     if xlim:
         plt.xlim(left=xlim[0], right=xlim[1])
-    plt.ylabel(ytitle, labelpadd=15)
+    plt.ylabel(ytitle, labelpad=15)
     if ylim:
         plt.ylim(bottom=ylim[0], top=ylim[1])
 
@@ -106,3 +107,129 @@ def plot_sns_scatter_correlation(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
+
+
+def plot_swam_bar_plot(
+    data_dict,
+    mean_type="mean",
+    err_type="sem",
+    marker="o",
+    figsize=(5, 5),
+    title=None,
+    xtitle=None,
+    ytitle=None,
+    ylim=None,
+    colors="mediumblue",
+    s_alpha=0.3,
+    save=False,
+    save_path=None,
+):
+    """General function to plot sns swarm plots with overlying mean and error
+        
+        INPUT PARAMETERS
+            data_dict - dictionary of data to be plotted. Keys will serve as x values for
+                        the different groups
+
+            mean_type - str specifying what central point you wish to plot. Accepts
+                        'mean' or 'median'
+            
+            err_type - str specifying what type of error you wish the error bars to 
+                        represent. Accepts 'sem', 'std', and 'CI'
+            
+            marker - str specifying what type of marker you wish to represent the mean
+            
+            figsize - tuple specifying the figure size
+            
+            title - str specifying the name of the title
+            
+            xtitle - str specifying the x axis label
+            
+            ytitle - str specifying the y axis label
+            
+            ylim - tuple specifying the limits of the y axis
+            
+            colors - str or list of strs specifying the colors of each plot. If only one
+                    color is given, all plots will be the same color
+                    
+            s_alpha - float specifying what level of transparency the scatter points should be
+            
+            save - boolean specifying wheather to save the figure or not
+            
+            save_path - str specifying where to save the figure
+    """
+    # Make list of colors if only one is provided
+    if type(colors) == str:
+        colors = [colors for i in len(list(data_dict.keys()))]
+
+    # Make the figure
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot()
+    ax.set_title(title, fontsize=10)
+
+    # Set up data
+    groups = list(data_dict.keys())
+    x = list(range(len(groups)))
+    data_points = list(data_dict.values())
+
+    # Calculate the appropriate means and errors
+    if mean_type == "mean":
+        data_mean = [np.nanmean(i) for i in data_points]
+    elif mean_type == "median":
+        data_mean = [np.nanmedian(i) for i in data_points]
+    else:
+        return "Only accepts mean and median for mean_type!!!"
+    if err_type == "sem":
+        data_sems = [stats.sem(i, nan_policy="omit") for i in data_points]
+    elif err_type == "std":
+        data_sems = [np.nanstd(i) for i in data_points]
+    elif err_type == "CI":
+        num_p = len(data_points[0])
+        sem1 = []
+        sem2 = []
+        if num_p <= 30:
+            for data in data_points:
+                ci = stats.t.interval(
+                    alpha=0.95,
+                    df=len(data) - 1,
+                    loc=np.nanmean(data),
+                    scale=stats.sem(data),
+                )
+                sem1.append(ci[0])
+                sem2.append(ci[1])
+        else:
+            for data in data_points:
+                ci = stats.norm.interval(
+                    alpha=0.95, loc=np.nanmean(data), scale=stats.sem(data)
+                )
+                sem1.append(ci[0])
+                sem2.append(ci[1])
+        data_sems = [np.array(sem1), np.array(sem2)]
+
+    data_df = pd.DataFrame.from_dict(data_dict)
+
+    # Plot means
+    ax.errorbar(
+        x,
+        data_mean,
+        data_sems,
+        color=colors,
+        marker=marker,
+        markerfacecolor=colors,
+        ecolor=colors,
+    )
+    sns.swarmplot(data=data_df, color=colors, alpha=s_alpha)
+    if ylim:
+        ax.set_ylim(bottom=ylim[0], top=ylim[1])
+    ax.set_ylabel(ytitle, labelpad=15)
+    ax.set_xlabel(xtitle)
+    ax.set_xticklabels(labels=groups, labelpad=15)
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
