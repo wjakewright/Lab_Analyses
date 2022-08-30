@@ -72,7 +72,7 @@ def grouped_coactivity_analysis(
         for day in days:
             print(f"- {day}")
             short_term_data = short_term_coactivity_analysis(
-                mice_list, day, corrected, movement_epochs, threshold, exclude
+                mice_list, day, movement_epochs, corrected, threshold, exclude
             )
             short_term_datasets[day] = short_term_data
     else:
@@ -80,7 +80,7 @@ def grouped_coactivity_analysis(
             day = [days[i], days[i + 1]]
             print(f"- {day[1]}")
             short_term_data = short_term_coactivity_analysis(
-                mice_list, day, corrected, movement_epochs, threshold, exclude
+                mice_list, day, movement_epochs, corrected, threshold, exclude
             )
             short_term_datasets[day[1]] = short_term_data
 
