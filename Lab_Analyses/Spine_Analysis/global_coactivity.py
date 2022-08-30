@@ -92,14 +92,14 @@ def global_coactivity_analysis(data, movements=None, sampling_rate=60):
         d_activity = dendrite_activity[:, i]
 
         # Correct the activity matrices for only movement periods if specified
-        if movement:
+        if movement is not None:
             s_activity = (s_activity.T * movement).T
             d_activity = (d_activity.T * movement).T
 
         # analyze each spine
         for j in range(s_dFoF.shape[1]):
             # Correlation
-            if movement:
+            if movement is not None:
                 # Correlate only the specified movement periods
                 move_idxs = np.where(movement == 1)[0]
                 corr, _ = stats.pearsonr(s_dFoF[move_idxs, j], d_dFoF[move_idxs])
