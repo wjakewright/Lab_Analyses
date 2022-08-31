@@ -294,7 +294,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
         for key, value in mean_mouse_data.items():
             temp_data = {}
             for day in value[0].keys():
-                temp_data[day] = np.nanmean([d[day] for d in value])
+                temp_data[day] = np.nanmean([d[day] for d in value],)
             mean_mouse_data[key] = temp_data
 
         # Store data in grouped dictionaries
@@ -312,7 +312,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
     for key, value in grouped_mice_data.items():
         temp_data = {}
         for day in value[0].keys():
-            temp_data[day] = np.array(value)
+            temp_data[day] = np.array([d[day] for d in value])
         grouped_mice_data[key] = temp_data
 
     # Store in dataclass for output
