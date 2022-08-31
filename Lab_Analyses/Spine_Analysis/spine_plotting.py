@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import statsmodels.stats.api as sm
 from scipy import stats
 
 sns.set()
@@ -109,7 +110,7 @@ def plot_sns_scatter_correlation(
         plt.savefig(fname + ".pdf")
 
 
-def plot_swam_bar_plot(
+def plot_swarm_bar_plot(
     data_dict,
     mean_type="mean",
     err_type="sem",
@@ -119,8 +120,11 @@ def plot_swam_bar_plot(
     xtitle=None,
     ytitle=None,
     ylim=None,
-    colors="mediumblue",
+    linestyle="",
+    m_colors="mediumblue",
+    s_colors="mediumblue",
     s_alpha=0.3,
+    ahlines=None,
     save=False,
     save_path=None,
 ):
@@ -147,8 +151,10 @@ def plot_swam_bar_plot(
             ytitle - str specifying the y axis label
             
             ylim - tuple specifying the limits of the y axis
+
+            m_colors - 
             
-            colors - str or list of strs specifying the colors of each plot. If only one
+            s_colors - str or list of strs specifying the colors of each plot. If only one
                     color is given, all plots will be the same color
                     
             s_alpha - float specifying what level of transparency the scatter points should be
@@ -158,13 +164,13 @@ def plot_swam_bar_plot(
             save_path - str specifying where to save the figure
     """
     # Make list of colors if only one is provided
-    if type(colors) == str:
-        colors = [colors for i in len(list(data_dict.keys()))]
+    # if type(colors) == str:
+    #    colors = [colors for i in range(len(list(data_dict.keys())))]
 
     # Make the figure
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot()
-    ax.set_title(title, fontsize=10)
+    ax.set_title(title)
 
     # Set up data
     groups = list(data_dict.keys())
@@ -187,6 +193,7 @@ def plot_swam_bar_plot(
         sem1 = []
         sem2 = []
         if num_p <= 30:
+            print("T")
             for data in data_points:
                 ci = stats.t.interval(
                     alpha=0.95,
@@ -194,38 +201,50 @@ def plot_swam_bar_plot(
                     loc=np.nanmean(data),
                     scale=stats.sem(data),
                 )
+
+                # ci = sm.DescrStatsW(data).tconfint_mean()
                 sem1.append(ci[0])
                 sem2.append(ci[1])
         else:
             for data in data_points:
                 ci = stats.norm.interval(
-                    alpha=0.95, loc=np.nanmean(data), scale=stats.sem(data)
+                    alpha=0.95,
+                    loc=np.nanmean(data),
+                    scale=stats.sem(data, nan_policy="omit"),
                 )
                 sem1.append(ci[0])
                 sem2.append(ci[1])
         data_sems = [np.array(sem1), np.array(sem2)]
+        print(data_sems)
 
-    data_df = pd.DataFrame.from_dict(data_dict)
+    data_df = pd.DataFrame.from_dict(data_dict, orient="index")
+    data_df = data_df.T
+
+    # Plot the points
+    sns.stripplot(data=data_df, palette=s_colors, alpha=s_alpha, zorder=0)
 
     # Plot means
     ax.errorbar(
         x,
         data_mean,
         data_sems,
-        color=colors,
-        marker=marker,
-        markerfacecolor=colors,
-        ecolor=colors,
-        linestyle="",
+        color=m_colors,
+        fmt=marker,
+        markerfacecolor=m_colors,
+        ecolor=m_colors,
+        linestyle=linestyle,
     )
-    # Plot the points
-    sns.swarmplot(data=data_df, color=colors, alpha=s_alpha)
+
     # Format axes
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
-    ax.set_ylabel(ytitle, labelpad=15)
+    ax.set_ylabel(ytitle)
     ax.set_xlabel(xtitle)
-    ax.set_xticklabels(labels=groups, labelpad=15)
+    ax.set_xticklabels(labels=groups)
+
+    if ahlines:
+        for line in ahlines:
+            ax.axhline(y=line, linestyle="--", linewidth=1)
 
     fig.tight_layout()
 
@@ -239,6 +258,7 @@ def plot_swam_bar_plot(
 
 def mean_and_lines_plot(
     data_dict,
+    plot_ind=True,
     figsize=(5, 5),
     title=None,
     xtitle=None,
@@ -256,6 +276,8 @@ def mean_and_lines_plot(
         INPUT PARAMETERS
             data_dict - dict of data to be plotted, with each item representing 
                         a different group
+            
+            plot_ind - boolean of whether to plot individual values or not
             
             figsize - tuple specifying the figure size
             
@@ -280,12 +302,12 @@ def mean_and_lines_plot(
     """
     # Make list of colors if only one is provided
     if type(l_colors) == str:
-        l_colors = [l_colors for i in len(list(data_dict.values())[0])]
+        l_colors = [l_colors for i in range(len(list(data_dict.values())[0]))]
 
     # Make the figure
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot()
-    ax.set_title(title, fontsize=10)
+    ax.set_title(title)
     # Set up data
     groups = list(data_dict.keys())
     x = list(range(len(groups)))
@@ -304,17 +326,82 @@ def mean_and_lines_plot(
         ecolor=m_color,
     )
     # Plot the individual values
-    for i, data in enumerate(list(zip(*data_points))):
-        plt.plot(x, data, color=l_colors[i], alpha=l_alpha)
+    if plot_ind:
+        for i, data in enumerate(list(zip(*data_points))):
+            plt.plot(x, data, color=l_colors[i], alpha=l_alpha)
 
     # Format axes
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
-    ax.set_ylabel(ytitle, labelpad=15)
+    ax.set_ylabel(ytitle)
     ax.set_xlabel(xtitle)
-    ax.set_xticklabels(labels=groups, labelpad=15)
+    ax.set_xticks(ticks=x, labels=groups)
+
+    fig.tight_layout()
 
     # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
+
+def plot_mean_activity_trace(
+    mean,
+    sem,
+    sampling_rate=60,
+    avlines=None,
+    figsize=(5, 5),
+    color="mediumblue",
+    title=None,
+    ytitle=None,
+    ylim=None,
+    save=False,
+    save_path=None,
+):
+    """Function to plot mean activity traces
+        
+        INPUT PARAMTERS
+            mean - np.array of mean trace
+            
+            sem - np.array of sem trace
+
+            sampling_rate - int specifing the imaging sampling rate
+            
+            avlines - tuple of x values for vertical lines
+            
+            color - str to specify the color
+            
+            title - str for the figure title
+            
+            ytitle - title to label the y axis
+            
+            ylim - tuple specifying the limit of the y axis
+            
+            save - boolean of whether to not save the figure
+            
+            save_path - str of where to save the figure
+            
+    """
+
+    fig = plt.figure(figsize=figsize)
+    x = np.linspace(0, len(mean) / sampling_rate, len(mean))
+    plt.plot(x, mean, color=color)
+    plt.fill_between(x, mean - sem, mean + sem, color=color, alpha=0.2)
+    if avlines:
+        for line in avlines:
+            plt.axvline(x=line / sampling_rate, linestyle="--", color="black")
+    if ylim:
+        plt.ylim(bottom=ylim[0], top=ylim[1])
+    plt.title(title)
+    plt.ylabel(ytitle)
+    plt.xlabel("Time (s)")
+    plt.xticks(
+        ticks=[0, 2, 4], labels=[0, 2, 4],
+    )
+
+    fig.tight_layout()
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
