@@ -91,9 +91,9 @@ def classify_plasticity(relative_volumes, threshold=0.25):
 
     # classify each spine
     for i, spine in enumerate(relative_volumes):
-        if spine >= 1 + threshold:
+        if spine >= (1 + threshold):
             potentiated_spines[i] = True
-        elif spine <= 1 - threshold:
+        elif spine <= (1 - threshold):
             depressed_spines[i] = True
         else:
             stable_spines[i] = True
