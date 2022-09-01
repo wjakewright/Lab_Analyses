@@ -119,7 +119,7 @@ def total_coactivity_analysis(
         # Refine activity matrices for only movement epochs if specified
         if movement is not None:
             s_activity = (s_activity.T * movement).T
-            d_activity = (d_activity.T * movement).T
+            d_activity = d_activity * movement
 
         # Analyze each spine
         for spine in range(s_dFoF.shape[1]):
@@ -200,3 +200,70 @@ def get_coactivity_rate(spine, dendrite, sampling_rate):
         dend_fraction_coactive,
     )
 
+
+def get_dend_spine_traces_and_onsets(
+    dendrite, spine_matrix, coactivity, activity_window=(-2, 2)
+):
+    """Helper function to help getting the activity traces of dendrites and spines
+        for all dendritic or coactive events. Also gets the relative onset of spine
+        activity
+        
+        INPUT PARAMETERS
+            dendrite - np.array of dendrite binary activity trace
+            
+            spine_matrix = 2d np.array of spine binary activity traces (columns = spines)
+
+            coactivity - boolean specifying whether to perform for coactivty events (True) or
+                        all dendritic events (False)
+            
+            activity_window - tuple specifying the window around which you want the activity
+                                from. E.g. (-2,2) for 2 sec before and after
+
+        OUTPUT PARAMETERS
+            spine_traces - 2d np.array of spine activity around each
+                            event. Centered around dendrite onset. 
+                            columns = each event, rows = time (in frames)
+            
+            dend_traces - 2d np.array of dendrite activity around each
+                            event. Centered around dendrite onset. 
+                            columns = each event, rows = time (in frames)
+            
+            relative_onsets - np.array of spine onsets relative to dendrite
+    """
+    # Get the initial timestamps
+
+
+def get_activity_timestamps(activity):
+    """Helper function to get timestamps for activity onsets"""
+    # Get activity onsets and offsets
+    diff = np.insert(np.diff(activity), 0, 0)
+    onset = np.nonzero(diff == 1)[0]
+    offset = np.nonzero(diff == -1)[0]
+    # Make sure onsets and offsets are of the same length
+    if len(onset) > len(offset):
+        # Drop last onset if there is no offset
+        onset = onset[:-1]
+    elif len(onset) < len(offset):
+        # Drop first offset if there is no onset for it
+        offset = offset[1:]
+    # Get timestamps
+    timestamps = []
+    for on, off in zip(onset, offset):
+        timestamps.append((on, off))
+
+    return timestamps
+
+
+def get_coactivity_timestamps(activity, coactivity):
+    """Helper function to get timestamps of activity onsets, but only
+        for coactive events"""
+    # Get activity onsets and offsets
+    timestamps = get_activity_timestamps(activity)
+    # Assess if each timestamp coincides with coactivity
+    coactive_timestamps = []
+    for stamp in timestamps:
+        coactivity_epoch = coactivity[stamp[0] : stamp[1] + 1]
+        if sum(coactivity_epoch):
+            coactive_timestamps.append(stamp)
+
+    return coactive_timestamps
