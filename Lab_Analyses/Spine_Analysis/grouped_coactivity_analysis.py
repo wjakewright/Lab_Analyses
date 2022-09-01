@@ -196,7 +196,7 @@ def longitudinal_coactivity_analysis(mice_list, days, corrected, threshold, excl
                     rewarded=False,
                 )
                 move_amps = [
-                    np.nanmean(before - after)
+                    np.nanmean(after - before)
                     for before, after in zip(all_befores, all_durings)
                 ]
                 move_amps = np.array(move_amps)
