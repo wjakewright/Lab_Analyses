@@ -355,6 +355,25 @@ def get_dend_spine_traces_and_onsets(
         center_point = np.absolute(activity_window[0] * sampling_rate)
         offset = center_point - initial_d_onset
         onset_stamps = [x - offset for x in initial_stamps]
+
+        # Refine the timestamps
+        refined_idxs = []
+        for i, stamp in enumerate(onset_stamps):
+            if i == 0:
+                if stamp - np.absolute(activity_window[0]) < 0:
+                    refined_idxs.append(False)
+                else:
+                    refined_idxs.append(True)
+                continue
+            if i == len(onset_stamps) - 1:
+                if stamp + np.absolute(activity_window[1]) >= len(curr_spine_dFoF):
+                    refined_idxs.append(False)
+                else:
+                    refined_idxs.append(True)
+                continue
+            refined_idxs.append(True)
+        onset_stamps = list(compress(onset_stamps, refined_idxs))
+
         # Get the traces centered on the dendrite onsets
         dend_trace, _ = d_utils.get_trace_mean_sem(
             dendrite_dFoF.reshape(-1, 1),
