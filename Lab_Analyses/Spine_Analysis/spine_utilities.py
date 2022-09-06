@@ -3,6 +3,10 @@
 import os
 
 import numpy as np
+import scipy.optimize as syop
+import scipy.signal as sysignal
+from Lab_Analyses.Spine_Analysis.global_coactivity_v2 import get_activity_timestamps
+from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
 
@@ -168,4 +172,88 @@ def load_spine_datasets(mouse_id, days, followup):
         mouse_data[FOV] = FOV_data
 
     return mouse_data
+
+
+def spine_volume_norm_constant(
+    activity_traces, dFoF_traces, volumes, zoom_factor, sampling_rate, iterations=1000,
+):
+    """Function to generate a normalization constant to normalize spine activity
+        by its volume
+        
+        INPUT PARAMETERS
+            activity_trace - np.array of all spines binarized activity
+            
+            dFoF_trace - np.array of all spine's dFoF trace
+            
+            volume - int or float of all spine's volume
+            
+            zoom_factor - int or float of the zoom used when imaging
+
+            sampling_rate - int or float of the imaging sampling rate
+
+            interations - int of how many interations of constants to test
+            
+        OUTPUT PARAMETERS
+            norm_constant - np.array of the normalization constant for each spine
+            
+    """
+    DISTANCE = 0.5 * sampling_rate
+    # First generate an averaged activity trace
+    max_amplitudes = []
+    for i in range(activity_traces.shape[1]):
+        activity_stamps = get_activity_timestamps(activity_traces[:, i])
+        activity_stamps = [x[0] for x in activity_stamps]
+        _, mean_trace = d_utils.get_trace_mean_sem(
+            dFoF_traces[:, i].reshape(-1, 1),
+            ["Spine"],
+            activity_stamps,
+            window=(-2, 2),
+            sampling_rate=sampling_rate,
+        )
+        # Find max peak amplitude
+        trace_med = np.median(mean_trace)
+        trace_std = np.std(mean_trace)
+        trace_h = trace_med + trace_std
+        _, trace_props = sysignal.find_peaks(
+            mean_trace, height=trace_h, distance=DISTANCE,
+        )
+        trace_amps = trace_props["peak_heights"]
+        max_amp = np.max(trace_amps)
+        max_amplitudes.append(max_amp)
+
+    # Convert Volume to um from pixels
+    pix_to_um = zoom_factor / 2
+    um_volumes = []
+    for volume in volumes:
+        um_volume = volume / pix_to_um
+        um_volumes.append(um_volume)
+
+    # Convert values to arrays
+    max_amplitudes = np.array(max_amplitudes)
+    um_volumes = np.array(um_volumes)
+
+    # Estimate minimum constant
+    obj_function = lambda C: norm_objective_function(max_amplitudes, um_volumes, C)
+    test_constants = []
+    for i in range(iterations):
+        tc = obj_function(i)
+        test_constants.append(tc)
+    x0 = np.nanmean(test_constants)
+    # Find minimum constant
+    constant = syop.minimize(obj_function, x0, bounds=(0, np.inf))
+    # Apply min constant to each volume
+    norm_constant = um_volumes + constant
+
+    return norm_constant
+
+
+def norm_objective_function(x, y, con):
+    """Helper function to genterate the objective function for spine volume normalization"""
+    new_x = x / (y + con)
+    new_y = y + con
+
+    x_input = np.vstack([new_x, np.ones(len(new_x))]).T
+    _, c = np.linalg.lstsq(x_input, new_y, rcond=0)[0]
+
+    return np.absolute(c)
 
