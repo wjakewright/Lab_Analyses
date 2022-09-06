@@ -121,36 +121,48 @@ def spine_movement_activity(
     return all_befores, all_durings, movement_epochs, movement_mean_sems
 
 
-def assess_movement_quality(
-    spine_data,
-    activity_type="spine_GluSnFr_activity",
-    coactivity=False,
-    exclude=None,
+def quantify_movment_quality(
+    mouse_id,
+    activity_matrix,
+    lever_active,
+    lever_force,
+    threshold=0.5,
     sampling_rate=60,
-    rewarded=False,
 ):
-    """Function to assess the quality of the movement when spines are active. Compared
-        to the learned movement pattern on the final day
+    """Function to assess the quality of movments during specific activity events.
+        Compared to the learned movement pattern on the final day
         
         INPUT PARAMETERS
-            spine_data - spind_data object. (e.g., Dual_Channel_Spine_Data)
+            mouse_id - str specifying the mouse id. Used to pull relevant learned movement
             
-            activity_type - str specifying what type of activity you wish to use. Must match the 
-                            field name of the data object 
+            activity_matrix - 2d np.array of the binaried activity traces. colums = different rois
+            
+            lever_active - np.array of the binarized lever activity
+            
+            lever_force - np.array of the lever force smooth
+            
+            threshold - float of the correlation threshold for a movement to be considered
+                        a learned movement
+                        
+            sampling_rate - int or float of the imaging sampling rate
 
-            coactivity - boolean specifying if you wish to analyze only coactive periods
-                        Default is False
-            
-            exclude - string specifying types of spines you wish to exlude from analysis
-            
-            sampling_rate - float or int specifying the imaging rate the data was collected with
+        OUTPUT PARAMETERS
+            lever_learned_binary - np.array binarized to when learned movements occur
 
-            rewarded - boolean specifying whether to use only rewarded movements or not
+            all_active_movements - list of 2d np.arrays of all the movements an roi is active
+                                    during (rows = movements, columns = time)
+
+            avg_active_movements - list of np.arrays of the average movement an roi is active
+                                    during
+
+            median_movement_correlations - np.array of the median correlation of movements an 
+                                            roi is active during with the learned movement pattern
+            
+            learned_move_resample - np.array of the learned movement pattern resampled to a frames
+            
     """
-
-    # Load the learned movement pattern
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
-    behavior_path = os.path.join(initial_path, spine_data.mouse_id, "behavior")
+    behavior_path = os.path.join(initial_path, mouse_id, "behavior")
     final_day = sorted([x[0] for x in os.walk(behavior_path)])[-1]
     load_path = os.path.join(behavior_path, final_day)
     fnames = next(os.walk(load_path))[2]
@@ -158,107 +170,85 @@ def assess_movement_quality(
     learned_file = load_pickle(fname, load_path)[0]
     learned_movement = learned_file.movement_avg
     learned_movement = learned_movement - learned_movement[0]
-    spine_groupings = spine_data.spine_grouping
 
     # Remove the baseline period
     corr_len = learned_file.corr_matrix.shape[1]
     baseline_len = len(learned_movement) - corr_len
     learned_movement = learned_movement[baseline_len:]
 
-    # Need to down sample the learrned movement now to match the imaging rate
+    # Need to downsample the learned movement now to match the imaging rate
     frac = Fraction(sampling_rate / 1000).limit_denominator()
     n = frac.numerator
     d = frac.denominator
     learned_move_resample = sysignal.resample_poly(learned_movement, n, d)
-    # move_duration = len(learned_move_resample)
-    corr_duration = 60
+    corr_duration = int(1.5 * sampling_rate)  ## 1.5 seconds
     learned_move_resample = learned_move_resample[:corr_duration]
-
-    # Get relevant data from spine data
-    if rewarded:
-        lever_active = spine_data.rewarded_movement_binary
-        lever_trace = spine_data.rewarded_movement_force
-    else:
-        lever_active = spine_data.lever_active
-        lever_trace = spine_data.lever_force_smooth
-
-    if coactivity is False:
-        activity = getattr(spine_data, activity_type)
-    else:
-        s_activity = getattr(spine_data, activity_type)
-        d_activity = spine_data.dendrite_calcium_activity
-        activity = np.zeros(s_activity.shape)
-        for d in range(d_activity.shape[1]):
-            if type(spine_groupings[d]) == list:
-                spines = spine_groupings[d]
-            else:
-                spines = spine_groupings
-            for s in spines:
-                activity[:, s] = s_activity[:, s] * d_activity[:, d]
-
-    if exclude:
-        exclude_spines = find_spine_classes(spine_data.spine_flags, exclude)
-        exclude_spines = np.array([not x for x in exclude_spines])
-        activity = activity[:, exclude_spines]
 
     # Get onsets and offsets of the movements
     movement_diff = np.insert(np.diff(lever_active), 0, 0, axis=0)
     movement_onsets = np.nonzero(movement_diff == 1)[0]
     movement_offsets = np.nonzero(movement_diff == -1)[0]
-    ## make sure onsets and offsets are the same length
+    ## Make sure the onsets and offsets are the same length
     if len(movement_onsets) > len(movement_offsets):
-        # Drop last onset if there is no offset
+        # Drop last onset if there is no corresponding offset
         movement_onsets = movement_onsets[:-1]
     elif len(movement_onsets) < len(movement_offsets):
-        # Drop first offest if there is no onset for it
+        # Drop the first offset if there is no onset for it
         movement_offsets = movement_offsets[1:]
 
     move_idxs = []
     for onset, offset in zip(movement_onsets, movement_offsets):
         move_idxs.append((onset, offset))
 
-    movement_correlations = []
-    spine_movements = []
-    mean_spine_movements = []
-    # Assess the movements for each spine
-    for i in range(activity.shape[1]):
-        spine_trace = activity[:, i]
-        all_spine_movements = []
+    # Generate a learned movement binary trace
+    lever_learned_binary = np.zeros(len(lever_active))
+    for movement in move_idxs:
+        force = lever_force[movement[0] : movement[0] + corr_duration]
+        r = stats.pearsonr(learned_move_resample, force)[0]
+        if r >= threshold:
+            lever_learned_binary[movement[0] : movement[1]] = 1
+        else:
+            continue
+
+    # Assess the movements for each roi
+    median_movement_correlations = []
+    all_active_movements = []
+    avg_active_movements = []
+    for i in range(activity_matrix.shape[1]):
+        active_trace = activity_matrix[:, i]
+        active_movements = []
         for movement in move_idxs:
-            spine_epoch = spine_trace[movement[0] : movement[1]]
-            if sum(spine_epoch):
-                spine_move = lever_trace[movement[0] : movement[0] + corr_duration]
-                all_spine_movements.append(spine_move)
-
+            active_epoch = active_trace[movement[0] : movement[1]]
+            if sum(active_epoch):
+                active_move = lever_force[movement[0] : movement[0] + corr_duration]
+                active_movements.append(active_move)
             else:
-                continue
-
-        # Average the movements
+                pass
         try:
-            s_movements = np.stack(all_spine_movements, axis=0)
-            spine_movements.append(s_movements)
-            mean_movement = np.nanmean(s_movements, axis=0)
-            mean_spine_movements.append(mean_movement)
-            # Correlate with the learned movement
+            a_movements = np.stack(active_movements, axis=0)
+            all_active_movements.append(a_movements)
+            avg_move = np.nanmean(a_movements, axis=0)
+            avg_active_movements.append(avg_move)
+            # correlation with the learned movement
             corrs = []
-            for m in range(s_movements.shape[0]):
-                corr = stats.pearsonr(learned_move_resample, s_movements[m, :])[0]
+            for m in range(a_movements.shape[0]):
+                corr = stats.pearsonr(learned_move_resample, a_movements[m, :])[0]
                 corrs.append(corr)
             move_corr = np.nanmedian(corrs)
-            movement_correlations.append(move_corr)
+            median_movement_correlations.append(move_corr)
         except ValueError:
-            spine_movements.append(np.zeros(corr_duration))
-            mean_spine_movements.append(np.zeros(corr_duration))
-            movement_correlations.append(np.nan)
+            all_active_movements.append(np.zeros(corr_duration))
+            avg_active_movements.append(np.zeros(corr_duration))
+            median_movement_correlations.append(np.nan)
 
     # convert outputs to arrays
-    movement_correlations = np.array(movement_correlations)
-    mean_spine_movements = np.array(mean_spine_movements).T
+    median_movement_correlations = np.array(median_movement_correlations)
 
     return (
-        spine_movements,
-        mean_spine_movements,
-        movement_correlations,
+        lever_learned_binary,
+        all_active_movements,
+        avg_active_movements,
+        median_movement_correlations,
         learned_move_resample,
     )
 
