@@ -45,8 +45,18 @@ def total_coactivity_analysis(
             dend_coactive_amplitude - np.array of the peak mean response of dendritic activity during
                                       coactive events of a given spine
             
-            spine_coactive_amplitude - np.array of the peak mean responsse of spine calcium during
+            spine_coactive_calcium - np.array of the peak mean responsse of spine calcium during
                                        coactive events of a given spine
+
+            spine_coactive_std - np.array of the variance in the peak activity of spine activity during
+                                 coactive events of a given spine
+            
+            dend_coactive_std - np.array of the variance in peak activity of dendritic activity during 
+                                coactive events of a given spine
+            
+
+            spine_coactive_calcium_std - np.array of the variance in the peak calcium of spine activity during
+                                        coactive events of a given spine
             
             relative_spine_coactive_amplitude - np.array of the peak mean responses of spine coactivity
                                                 during coactive events of a given spine normalized to 
@@ -130,6 +140,9 @@ def total_coactivity_analysis(
     spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
     spine_coactive_calcium = np.zeros(spine_activity.shape[1])
     dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
+    spine_coactive_std = np.zeros(spine_activity.shape[1])
+    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1])
+    dend_coactive_std = np.zeros(spine_activity.shape[1])
     relative_dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
     relative_spine_coactive_calcium = np.zeros(spine_activity.shape[1])
     relative_spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
@@ -187,7 +200,9 @@ def total_coactivity_analysis(
             dt_spine_traces,
             dt_dendrite_traces,
             dt_spine_amps,
+            _,
             dt_dendrite_amps,
+            _,
             _,
         ) = get_dend_spine_traces_and_onsets(
             d_activity,
@@ -204,6 +219,8 @@ def total_coactivity_analysis(
             dt_spine_calcium_amps,
             _,
             _,
+            _,
+            _,
         ) = get_dend_spine_traces_and_onsets(
             d_activity,
             s_activity,
@@ -218,7 +235,9 @@ def total_coactivity_analysis(
             co_spine_traces,
             co_dendrite_traces,
             co_spine_amps,
+            co_spine_var,
             co_dendrite_amps,
+            co_dendrite_var,
             rel_onsets,
         ) = get_dend_spine_traces_and_onsets(
             d_activity,
@@ -232,7 +251,9 @@ def total_coactivity_analysis(
         (
             co_spine_calcium_traces,
             _,
-            co_spine_calicum_amps,
+            co_spine_calcium_amps,
+            co_spine_calcium_var,
+            _,
             _,
             _,
         ) = get_dend_spine_traces_and_onsets(
@@ -246,12 +267,15 @@ def total_coactivity_analysis(
         )
         rel_dend_amps = dt_dendrite_amps - co_dendrite_amps
         rel_spine_amps = dt_spine_amps - co_spine_amps
-        rel_spine_calcium_amps = dt_spine_calcium_amps - co_spine_calicum_amps
+        rel_spine_calcium_amps = dt_spine_calcium_amps - co_spine_calcium_amps
         # Store values
         for i in range(len(dt_spine_traces)):
             spine_coactive_amplitude[spines[i]] = co_spine_amps[i]
             dend_coactive_amplitude[spines[i]] = co_dendrite_amps[i]
-            spine_coactive_calcium[spines[i]] = co_spine_calicum_amps[i]
+            spine_coactive_calcium[spines[i]] = co_spine_calcium_amps[i]
+            spine_coactive_std[spines[i]] = co_spine_var[i]
+            spine_coactive_calcium_std[spines[i]] = co_spine_calcium_var[i]
+            dend_coactive_std[spines[i]] = co_dendrite_var[i]
             relative_dend_coactive_amplitude[spines[i]] = rel_dend_amps[i]
             relative_spine_coactive_amplitude[spines[i]] = rel_spine_amps[i]
             relative_spine_coactive_calcium[spines[i]] = rel_spine_calcium_amps[i]
@@ -273,8 +297,11 @@ def total_coactivity_analysis(
         spine_coactive_amplitude,
         dend_coactive_amplitude,
         spine_coactive_calcium,
-        relative_dend_coactive_amplitude,
+        spine_coactive_std,
+        dend_coactive_std,
+        spine_coactive_calcium_std,
         relative_spine_coactive_amplitude,
+        relative_dend_coactive_amplitude,
         relative_spine_coactive_calcium,
         relative_spine_onsets,
         dend_triggered_spine_traces,
@@ -387,7 +414,11 @@ def get_dend_spine_traces_and_onsets(
 
             spine_amplitudes - np.array of the peak spine amplitude
 
-            dend_ampliitudes - np.array of the peak dendrite amplitudes
+            spine_std - np.array of the std of spine activity
+
+            dend_amplitudes - np.array of the peak dendrite amplitudes
+
+            dend_std - np.array of the std of dendrite activity
             
             relative_onsets - np.array of spine onsets relative to dendrite
     """
@@ -395,7 +426,9 @@ def get_dend_spine_traces_and_onsets(
     dend_traces = []
     spine_traces = []
     dend_amplitudes = []
+    dend_stds = []
     spine_amplitudes = []
+    spine_stds = []
     relative_onsets = []
 
     # Perform the analysis for each spine seperately
@@ -409,7 +442,7 @@ def get_dend_spine_traces_and_onsets(
         # Get the initial timestamps
         initial_stamps = get_activity_timestamps(new_dend_activity)
         initial_stamps = [x[0] for x in initial_stamps]
-        _, d_mean = d_utils.get_trace_mean_sem(
+        d_trace, d_mean = d_utils.get_trace_mean_sem(
             dendrite_dFoF.reshape(-1, 1),
             ["Dendrite"],
             initial_stamps,
@@ -417,10 +450,14 @@ def get_dend_spine_traces_and_onsets(
             sampling_rate=sampling_rate,
         )
         initial_d_mean = list(d_mean.values())[0][0]
+        d_trace = list(d_trace.values())[0]
         # Find the onset
         initial_d_onset, dend_amp = find_activity_onset([initial_d_mean])
         initial_d_onset = initial_d_onset[0]
         dend_amp = dend_amp[0]
+        dmax_idx = np.where(initial_d_mean == dend_amp)
+        d_std_trace = np.nanstd(d_trace, axis=1)
+        dend_std = d_std_trace[dmax_idx]
         # Correct timestamps to be at the onset
         center_point = np.absolute(activity_window[0] * sampling_rate)
         offset = center_point - initial_d_onset
@@ -456,6 +493,7 @@ def get_dend_spine_traces_and_onsets(
         # Append dendrite values
         dend_traces.append(dend_trace)
         dend_amplitudes.append(dend_amp)
+        dend_stds.append(dend_std)
         # Get the traces for the current spine
         spine_trace, spine_mean = d_utils.get_trace_mean_sem(
             curr_spine_dFoF.reshape(-1, 1),
@@ -470,19 +508,33 @@ def get_dend_spine_traces_and_onsets(
         s_onset, s_amp = find_activity_onset([spine_mean])
         s_onset = s_onset[0]
         s_amp = s_amp[0]
+        smax_idx = np.where(spine_mean == s_amp)
+        s_std_trace = np.nanstd(spine_trace, axis=1)
+        spine_std = s_std_trace[smax_idx]
         # Get the relative amplitude
         relative_onset = (s_onset - center_point) / sampling_rate
         # Append spine values
         spine_traces.append(spine_trace)
         spine_amplitudes.append(s_amp)
+        spine_stds.append(spine_std)
         relative_onsets.append(relative_onset)
 
     # Convert some outputs to arrays
     dend_amplitudes = np.array(dend_amplitudes)
+    dend_stds = np.array(dend_stds)
     spine_amplitudes = np.array(spine_amplitudes)
+    spine_stds = np.array(spine_stds)
     relative_onsets = np.array(relative_onsets)
 
-    return spine_traces, dend_traces, spine_amplitudes, dend_amplitudes, relative_onsets
+    return (
+        spine_traces,
+        dend_traces,
+        spine_amplitudes,
+        spine_stds,
+        dend_amplitudes,
+        dend_stds,
+        relative_onsets,
+    )
 
 
 def get_activity_timestamps(activity):
