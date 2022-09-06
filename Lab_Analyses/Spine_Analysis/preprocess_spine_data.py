@@ -176,7 +176,7 @@ def organize_dual_spine_data(
                 reward_silent_dendrites=[],
                 dendrite_movement_activity={},
                 dendrite_reward_activity={},
-                artifact_frames=aligned_GluSnFr.imaging_parameters["Artifact Frames"],
+                imaging_parameters=aligned_GluSnFr.imaging_parameters,
             )
 
             # Start filling in the missing data
@@ -292,6 +292,7 @@ def organize_dual_spine_data(
                     corrected_spine_pixel_intensity=structural_data.corrected_spine_pixel_intensity,
                     corrected_dend_segment_intensity=structural_data.corrected_dend_segment_intensity,
                     corrected_spine_volume=structural_data.corrected_spine_volume,
+                    imaging_parameters=structural_data.imaging_parameters,
                 )
 
             # Store the period data
@@ -371,7 +372,7 @@ class Dual_Channel_Spine_Data:
     reward_silent_dendrites: list
     dendrite_movement_activity: dict
     dendrite_reward_activity: dict
-    artifact_frames: list
+    imaging_parameters: dict
 
 
 @dataclass
@@ -390,4 +391,5 @@ class Structural_Spine_Data:
     corrected_spine_pixel_intensity: list
     corrected_dend_segment_intensity: list
     corrected_spine_volume: list
+    imaging_parameters: dict
 
