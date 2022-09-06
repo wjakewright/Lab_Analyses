@@ -44,6 +44,9 @@ def total_coactivity_analysis(
             dend_coactive_amplitude - np.array of the peak mean response of dendritic activity during
                                       coactive events of a given spine
             
+            spine_coactive_amplitude - np.array of the peak mean responsse of spine calcium during
+                                       coactive events of a given spine
+            
             relative_spine_coactive_amplitude - np.array of the peak mean responses of spine coactivity
                                                 during coactive events of a given spine normalized to 
                                                 it mean activity across all dendritic events
@@ -51,6 +54,10 @@ def total_coactivity_analysis(
             relative_dend_coactive_amplitude - np.array of the peak mean responses of dendritic coactivity
                                                 during coactive events of a given spine normalized to 
                                                 it mean activity across all dendritic events
+            
+            relative_spine_coactive_calcium - np.array of the peak mean responses of spine calcium during
+                                              coactive events of a given spine normalized to its mean activity
+                                              across all dendritic events
             
             relative_spine_onsets - np.array of the mean onset of spine activity relative to dendritic 
                                     activity for coactive events
@@ -60,7 +67,11 @@ def total_coactivity_analysis(
                                           columns = each event, rows = time (in frames)
             
             dend_triggered_dend_traces - list of 2d np.array of dendrite activty around each
-                                         each dendritic event. Centered around 
+                                         each dendritic event. Centered around dendrite onsets
+            
+            dend_triggered_spine_calcium_traces - list of 2d np.array of spine calcium acround 
+                                                  each dendritic event. Centered around dendrite onset
+                                                  columns = each event, rows = time (in frames)
 
             coactive_spine_traces - list of 2d np.arrays of spine activity around each coactive
                                     event. Centered around corresponding dendrite onset.
@@ -70,11 +81,16 @@ def total_coactivity_analysis(
                                     event. Centered arorund dendrite onsets. 
                                     column = each event, rows = time (in frames)
             
+            coactive_spine_calcium_traces - list of 2d np.arrays of dendrite activity around each
+                                            coactive event. Centered around dnedrite onsets.
+                                            column = each event, rows = time (in frames)
+            
             coactivity_matrix - 2d np.array of the coactivity trace for each spine (columns)
     """
     # Pull some important information from data
     spine_groupings = data.spine_grouping
     spine_dFoF = data.spine_GluSnFr_processed_dFoF
+    spine_calcium = data.spine_calcium_processed_dFoF
     spine_activity = data.spine_GluSnFr_activity
     dendrite_dFoF = data.dendrite_calcium_processed_dFoF
     dendrite_activity = data.dendrite_calcium_activity
@@ -102,13 +118,17 @@ def total_coactivity_analysis(
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
+    spine_coactive_calcium = np.zeros(spine_activity.shape[1])
     dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
     relative_dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
+    relative_spine_coactive_calcium = np.zeros(spine_activity.shape[1])
     relative_spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
     relative_spine_onsets = np.zeros(spine_activity.shape[1])
     dend_triggered_spine_traces = [None for i in global_correlation]
+    dend_triggered_spine_calcium_traces = [None for i in global_correlation]
     dend_triggered_dend_traces = [None for i in global_correlation]
     coactive_spine_traces = [None for i in global_correlation]
+    coactive_spine_calcium_traces = [None for i in global_correlation]
     coactive_dend_traces = [None for i in global_correlation]
     coactivity_matrix = np.zeros(spine_activity.shape)
 
@@ -123,6 +143,7 @@ def total_coactivity_analysis(
         s_activity = spine_activity[:, spines]
         d_dFoF = dendrite_dFoF[:, dendrite]
         d_activity = dendrite_activity[:, dendrite]
+        s_calcium = spine_calcium[:, spines]
 
         # Refine activity matrices for only movement epochs if specified
         if movement is not None:
@@ -167,6 +188,21 @@ def total_coactivity_analysis(
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
+        (
+            dt_spine_calcium_traces,
+            _,
+            dt_spine_calcium_amps,
+            _,
+            _,
+        ) = get_dend_spine_traces_and_onsets(
+            d_activity,
+            s_activity,
+            d_dFoF,
+            s_calcium,
+            coactivity=False,
+            activity_window=(2, 2),
+            sampling_rate=sampling_rate,
+        )
         ### Get for coactive events only
         (
             co_spine_traces,
@@ -183,18 +219,38 @@ def total_coactivity_analysis(
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
+        (
+            co_spine_calcium_traces,
+            _,
+            co_spine_calicum_amps,
+            _,
+            _,
+        ) = get_dend_spine_traces_and_onsets(
+            d_activity,
+            s_activity,
+            d_dFoF,
+            s_calcium,
+            coactivity=True,
+            activity_window=(2, 2),
+            sampling_rate=sampling_rate,
+        )
         rel_dend_amps = dt_dendrite_amps - co_dendrite_amps
         rel_spine_amps = dt_spine_amps - co_spine_amps
+        rel_spine_calcium_amps = dt_spine_calcium_amps - co_spine_calicum_amps
         # Store values
         for i in range(len(dt_spine_traces)):
             spine_coactive_amplitude[spines[i]] = co_spine_amps[i]
             dend_coactive_amplitude[spines[i]] = co_dendrite_amps[i]
+            spine_coactive_calcium[spines[i]] = co_spine_calicum_amps[i]
             relative_dend_coactive_amplitude[spines[i]] = rel_dend_amps[i]
             relative_spine_coactive_amplitude[spines[i]] = rel_spine_amps[i]
+            relative_spine_coactive_calcium[spines[i]] = rel_spine_calcium_amps[i]
             relative_spine_onsets[spines[i]] = rel_onsets[i]
             dend_triggered_spine_traces[spines[i]] = dt_spine_traces[i]
+            dend_triggered_spine_calcium_traces[spines[i]] = dt_spine_calcium_traces[i]
             dend_triggered_dend_traces[spines[i]] = dt_dendrite_traces[i]
             coactive_spine_traces[spines[i]] = co_spine_traces[i]
+            coactive_spine_calcium_traces[spines[i]] = co_spine_calcium_traces[i]
             coactive_dend_traces[spines[i]] = co_dendrite_traces[i]
 
     # Return the output
@@ -206,13 +262,17 @@ def total_coactivity_analysis(
         dend_fraction_coactive,
         spine_coactive_amplitude,
         dend_coactive_amplitude,
+        spine_coactive_calcium,
         relative_dend_coactive_amplitude,
         relative_spine_coactive_amplitude,
+        relative_spine_coactive_calcium,
         relative_spine_onsets,
         dend_triggered_spine_traces,
         dend_triggered_dend_traces,
+        dend_triggered_spine_calcium_traces,
         coactive_spine_traces,
         coactive_dend_traces,
+        coactive_spine_calcium_traces,
         coactivity_matrix,
     )
 
