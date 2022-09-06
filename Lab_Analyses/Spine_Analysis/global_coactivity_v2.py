@@ -2,6 +2,7 @@ from itertools import compress
 
 import numpy as np
 import scipy.signal as sysignal
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import quantify_movment_quality
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.movement_responsiveness import movement_responsiveness
 from scipy import stats
@@ -17,8 +18,8 @@ def total_coactivity_analysis(
             
             movement_epoch - str specifying if you want to analyze only during specific
                             types of movements. Accepts - 'movement', 'rewarded', 
-                            'unrewarded' and 'nonmovement'. Default is None, analyzing
-                            the entire imaging session
+                            'unrewarded', learned', and 'nonmovement'. Default is None, 
+                            analyzing the entire imaging session
             
             sampling_rate - int or float specifying what the imaging rate
 
@@ -108,6 +109,15 @@ def total_coactivity_analysis(
         movement = data.lever_active - data.rewarded_movement_binary
     elif movement_epoch == "nonmovement":
         movement = np.absolute(data.lever_active - 1)
+    elif movement_epoch == "learned":
+        movement, _, _, _, _ = quantify_movment_quality(
+            data.mouse_id,
+            spine_activity,
+            data.lever_active,
+            data.lever_force_smooth,
+            threshold=0.5,
+            sampling_rate=sampling_rate,
+        )
     else:
         movement = None
 
