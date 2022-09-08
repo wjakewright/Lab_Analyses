@@ -416,7 +416,6 @@ def conjunctive_coactivity_analysis(
         movement = None
 
     # Set up output variables
-    global_correlation = np.zeros(spine_activity.shape[1])
     local_correlation = np.zeros(spine_activity.shape[1])
     coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
@@ -438,11 +437,11 @@ def conjunctive_coactivity_analysis(
     dend_coactive_auc = np.zeros(spine_activity.shape[1])
     relative_spine_dend_onsets = np.zeros(spine_activity.shape[1])
     relative_spine_nearby_onsets = np.zeros(spine_activity.shape[1])
-    coactive_spine_traces = [None for i in global_correlation]
-    coactive_nearby_traces = [None for i in global_correlation]
-    coactive_spine_calcium_traces = [None for i in global_correlation]
-    coactive_nearby_calcium_traces = [None for i in global_correlation]
-    coactive_dend_traces = [None for i in global_correlation]
+    coactive_spine_traces = [None for i in local_correlation]
+    coactive_nearby_traces = [None for i in local_correlation]
+    coactive_spine_calcium_traces = [None for i in local_correlation]
+    coactive_nearby_calcium_traces = [None for i in local_correlation]
+    coactive_dend_traces = [None for i in local_correlation]
     conjunctive_coactivity_matrix = np.zeros(spine_activity.shape)
 
     # Process spines for each parent dendrite
@@ -500,8 +499,40 @@ def conjunctive_coactivity_analysis(
             conj_timestamps = get_activity_timestamps(curr_conj_coactivity)
 
             # Start analyzing the conjunctive coactivity
-            co_event_num = len(conj_timestamps)
+            event_num, event_rate, spine_frac, dend_frac = get_coactivity_rate(
+                curr_s_activity,
+                d_activity,
+                curr_conj_coactivity,
+                sampling_rate=sampling_rate,
+            )
 
 
-def get_conjunctive_coactivity_rate(spine, dendrite, conj, sampling_rate):
-    """Helper function to """
+def get_conjunctive_traces(
+    timestamps,
+    spine_dFoF,
+    nearby_dFoF,
+    dendrite_dFoF,
+    activity_window=(-2, 2),
+    sampling_rate=60,
+):
+    """Helper function to get the dendrite, spine, and nearby spine traces
+        during conjunctive coactivity events
+        
+        INPUT PARAMETERS
+            timestamps - list of tuples with the timestamps (onset, offset) of each 
+                        conjunctive coactivity event
+        
+            spine_dFoF - np.array of the main spine dFoF activity
+            
+            nearby_dFoF - 2d np.array of the nearby spines (columns) dFoF activity
+            
+            dendrite_dFoF - np.array of the dendrite dFoF activity 
+            
+            activity_window - tuple specifying the window around which you want the activity
+                              from . e.g., (-2,2) for 2sec before and after
+                              
+            sampling_rate - int specifying the sampling rate
+
+        OUTPUT PARAMETERS
+    """
+
