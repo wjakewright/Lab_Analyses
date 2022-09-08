@@ -1,5 +1,6 @@
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
+    get_activity_timestamps,
     get_coactivity_rate,
     get_dend_spine_traces_and_onsets,
 )
@@ -206,14 +207,18 @@ def total_coactivity_analysis(
             global_correlation[spines[spine]] = corr
 
             # Calculate coactivity rate
+            curr_coactivity = d_activity * s_activity[:, spine]
             event_num, event_rate, spine_frac, dend_frac = get_coactivity_rate(
-                s_activity[:, spine], d_activity, sampling_rate=sampling_rate
+                s_activity[:, spine],
+                d_activity,
+                curr_coactivity,
+                sampling_rate=sampling_rate,
             )
             coactivity_event_num[spines[spine]] = event_num
             coactivity_event_rate[spines[spine]] = event_rate
             spine_fraction_coactive[spines[spine]] = spine_frac
             dend_fraction_coactive[spines[spine]] = dend_frac
-            coactivity_matrix[:, spines[spine]] = d_activity * s_activity[:, spine]
+            coactivity_matrix[:, spines[spine]] = curr_coactivity
 
         # Get amplitudes, relative_onsets and activity traces
         ### First get for all dendritic events
@@ -485,4 +490,18 @@ def conjunctive_coactivity_analysis(
             nearby_s_dFoF = s_dFoF[:, nearby_spines]
             nearby_s_activity = s_activity[:, nearby_spines]
             nearby_s_calcium = s_calcium[:, nearby_spines]
+            # Get spine-dendrite coactivity trace
+            curr_coactivity = curr_s_activity * d_activity
+            # Get a conjunctive coactivity trace, where at least one other nearby spine is coactive
+            combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
+            combined_nearby_activity[combined_nearby_activity > 1] = 1
+            curr_conj_coactivity = combined_nearby_activity * curr_coactivity
+            # Get conjunctive coactivity timestamps
+            conj_timestamps = get_activity_timestamps(curr_conj_coactivity)
 
+            # Start analyzing the conjunctive coactivity
+            co_event_num = len(conj_timestamps)
+
+
+def get_conjunctive_coactivity_rate(spine, dendrite, conj, sampling_rate):
+    """Helper function to """
