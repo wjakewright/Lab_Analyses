@@ -57,6 +57,12 @@ def total_coactivity_analysis(
 
             spine_coactive_calcium_std - np.array of the variance in the peak calcium of spine activity during
                                         coactive events of a given spine
+
+            dend_coactive_auc - np.array of the area under the dendrite activity curve during coactive events
+                                of a given spine
+            
+            spine_coactive_calcium_auc - np.array of the area under the spine calcium curve during coative
+                                        events of a given spine
             
             relative_spine_coactive_amplitude - np.array of the peak mean responses of spine coactivity
                                                 during coactive events of a given spine normalized to 
@@ -108,6 +114,7 @@ def total_coactivity_analysis(
 
     if zscore:
         spine_dFoF = d_utils.z_score(spine_dFoF)
+        spine_calcium = d_utils.z_score(spine_calcium)
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
     ## Get specific movement periods
@@ -143,6 +150,8 @@ def total_coactivity_analysis(
     spine_coactive_std = np.zeros(spine_activity.shape[1])
     spine_coactive_calcium_std = np.zeros(spine_activity.shape[1])
     dend_coactive_std = np.zeros(spine_activity.shape[1])
+    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1])
+    dend_coactive_auc = np.zeros(spine_activity.shape[1])
     relative_dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
     relative_spine_coactive_calcium = np.zeros(spine_activity.shape[1])
     relative_spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
@@ -201,7 +210,9 @@ def total_coactivity_analysis(
             dt_dendrite_traces,
             dt_spine_amps,
             _,
+            _,
             dt_dendrite_amps,
+            _,
             _,
             _,
         ) = get_dend_spine_traces_and_onsets(
@@ -221,6 +232,8 @@ def total_coactivity_analysis(
             _,
             _,
             _,
+            _,
+            _,
         ) = get_dend_spine_traces_and_onsets(
             d_activity,
             s_activity,
@@ -235,8 +248,10 @@ def total_coactivity_analysis(
             co_spine_traces,
             co_dendrite_traces,
             co_spine_amps,
+            _,
             co_spine_var,
             co_dendrite_amps,
+            co_dendrite_auc,
             co_dendrite_var,
             rel_onsets,
         ) = get_dend_spine_traces_and_onsets(
@@ -253,6 +268,8 @@ def total_coactivity_analysis(
             _,
             co_spine_calcium_amps,
             co_spine_calcium_var,
+            co_spine_calcium_auc,
+            _,
             _,
             _,
             _,
@@ -276,6 +293,8 @@ def total_coactivity_analysis(
             spine_coactive_std[spines[i]] = co_spine_var[i]
             spine_coactive_calcium_std[spines[i]] = co_spine_calcium_var[i]
             dend_coactive_std[spines[i]] = co_dendrite_var[i]
+            spine_coactive_calcium_auc[spines[i]] = co_spine_calcium_auc[i]
+            dend_coactive_auc[spines[i]] = co_dendrite_auc[i]
             relative_dend_coactive_amplitude[spines[i]] = rel_dend_amps[i]
             relative_spine_coactive_amplitude[spines[i]] = rel_spine_amps[i]
             relative_spine_coactive_calcium[spines[i]] = rel_spine_calcium_amps[i]
@@ -300,6 +319,8 @@ def total_coactivity_analysis(
         spine_coactive_std,
         dend_coactive_std,
         spine_coactive_calcium_std,
+        dend_coactive_auc,
+        spine_coactive_calcium_auc,
         relative_spine_coactive_amplitude,
         relative_dend_coactive_amplitude,
         relative_spine_coactive_calcium,
@@ -312,4 +333,72 @@ def total_coactivity_analysis(
         coactive_spine_calcium_traces,
         coactivity_matrix,
     )
+
+
+def conjunctive_coactivity_analysis(
+    data, movement_epoch=None, cluster_dist=10, sampling_rate=60, zscore=False,
+):
+    """Function to analyze spine coactivity with global dendritic activity and the activity
+        of nearby spines
+        
+        INPUT PARAMETERS
+            data - spine_data object (e.g., Dual_Channel_Spine_Data
+            
+            movement_epoch - str specifying if you want to analyze only during specific
+                            types of movements. Accepts - 'movement', 'rewarded', 'unrewarded',
+                            'learned', and 'nonmovement'. Default is None, analyzing the entire
+                            imaging session
+                            
+            cluster_dist - int or float specifying the distance from target spine you will consider
+                            to be nearby spines
+            
+            sampling_rate - int or float specifying what the imaging rate is
+            
+            zscore - boolean of whether to zscore dFoF traces for analysis
+            
+        OUTPUT PARAMTERS
+        
+    """
+    # Pull some important information from data
+    spine_groupings = data.spine_grouping
+    spine_positions = data.spine_positions
+    spine_dFoF = data.spine_GluSnFr_processed_dFoF
+    spine_calcium = data.spine_calcium_processed_dFoF
+    spine_activity = data.spine_GluSnFr_activity
+    dendrite_dFoF = data.dendrite_calcium_processed_dFoF
+    dendrite_activity = data.dendrite_calcium_activity
+
+    if zscore:
+        spine_dFoF = d_utils.z_score(spine_dFoF)
+        spine_calcium = d_utils.z_score(spine_calcium)
+        dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
+
+    # Get specific movement periods if specified
+    if movement_epoch == "movement":
+        movement = data.lever_active
+    elif movement_epoch == "rewarded":
+        movement = data.rewarded_movement_binary
+    elif movement_epoch == "unrewarded":
+        movement = data.lever_active - data.rewarded_movement_binary
+    elif movement_epoch == "nonmovement":
+        movement = np.absolute(data.lever_active - 1)
+    elif movement_epoch == "learned":
+        movement, _, _, _, _ = quantify_movment_quality(
+            data.mouse_id,
+            spine_activity,
+            data.lever_active,
+            threshold=0.5,
+            sampling_rate=sampling_rate,
+        )
+    else:
+        movement = None
+
+    # Set up output variables
+    global_correlation = np.zeros(spine_activity.shape[1])
+    local_correlation = np.zeros(spine_activity.shape[1])
+    coactivity_event_num = np.zeros(spine_activity.shape[1])
+    coactivity_event_rate = np.zeros(spine_activity.shape[1])
+    spine_fraction_coactive = np.zeros(spine_activity.shape[1])
+    dend_fraction_coactive = np.zeros(spine_activity.shape[1])
+    coactive_spine_num = np.zeros(spine_activity.shape[1])
 
