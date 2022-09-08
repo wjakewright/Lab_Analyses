@@ -401,4 +401,25 @@ def conjunctive_coactivity_analysis(
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     coactive_spine_num = np.zeros(spine_activity.shape[1])
+    spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
+    nearby_coactive_amplitude_sum = np.zeros(spine_activity.shape[1])
+    spine_coactive_calcium = np.zeros(spine_activity.shape[1])
+    nearby_coactive_calcium_sum = np.zeros(spine_activity.shape[1])
+    dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
+    spine_coactive_std = np.zeros(spine_activity.shape[1])
+    nearby_coactive_std = np.zeros(spine_activity.shape[1])
+    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1])
+    nearby_coactive_calcium_std = np.zeros(spine_activity.shape[1])
+    dend_coactive_std = np.zeros(spine_activity.shape[1])
+    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1])
+    nearby_coactive_calcium_auc_sum = np.zeros(spine_activity.shape[1])
+    dend_coactive_auc = np.zeros(spine_activity.shape[1])
+    relative_spine_dend_onsets = np.zeros(spine_activity.shape[1])
+    relative_spine_nearby_onsets = np.zeros(spine_activity.shape[1])
+    coactive_spine_traces = [None for i in global_correlation]
+    coactive_nearby_traces = [None for i in global_correlation]
+    coactive_spine_calcium_traces = [None for i in global_correlation]
+    coactive_nearby_calcium_traces = [None for i in global_correlation]
+    coactive_dend_traces = [None for i in global_correlation]
+    conjunctive_coactivity_matrix = np.zeros(spine_activity.shape)
 
