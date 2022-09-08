@@ -271,21 +271,6 @@ def get_activity_timestamps(activity):
     return timestamps
 
 
-def get_coactivity_timestamps(activity, coactivity):
-    """Helper function to get timestamps of activity onsets, but only
-        for coactive events"""
-    # Get activity onsets and offsets
-    timestamps = get_activity_timestamps(activity)
-    # Assess if each timestamp coincides with coactivity
-    coactive_timestamps = []
-    for stamp in timestamps:
-        coactivity_epoch = coactivity[stamp[0] : stamp[1] + 1]
-        if sum(coactivity_epoch):
-            coactive_timestamps.append(stamp)
-
-    return coactive_timestamps
-
-
 def find_activity_onset(activity_means, sampling_rate=60):
     """Helper function to find the activity onsset of mean activity traces
     
