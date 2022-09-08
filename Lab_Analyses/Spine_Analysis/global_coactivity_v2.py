@@ -4,6 +4,7 @@ from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_dend_spine_traces_and_onsets,
 )
 from Lab_Analyses.Spine_Analysis.spine_movement_analysis import quantify_movment_quality
+from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
 
@@ -106,6 +107,7 @@ def total_coactivity_analysis(
     """
     # Pull some important information from data
     spine_groupings = data.spine_grouping
+    spine_flags = data.spine_flags
     spine_dFoF = data.spine_GluSnFr_processed_dFoF
     spine_calcium = data.spine_calcium_processed_dFoF
     spine_activity = data.spine_GluSnFr_activity
@@ -176,6 +178,8 @@ def total_coactivity_analysis(
         d_dFoF = dendrite_dFoF[:, dendrite]
         d_activity = dendrite_activity[:, dendrite]
         s_calcium = spine_calcium[:, spines]
+        curr_flags = spine_flags[spines]
+        curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
 
         # Refine activity matrices for only movement epochs if specified
         if movement is not None:
@@ -184,6 +188,14 @@ def total_coactivity_analysis(
 
         # Analyze coactivity rates for each spine
         for spine in range(s_dFoF.shape[1]):
+            # Go ahead and skip over eliminated spines
+            if curr_el_spines[spine]:
+                coactivity_event_num[spines[spine]] = np.nan
+                coactivity_event_rate[spines[spine]] = np.nan
+                spine_fraction_coactive[spines[spine]] = np.nan
+                dend_fraction_coactive[spines[spine]] = np.nan
+                coactivity_matrix[:, spines[spine]] = np.zeros(len(s_dFoF[:, spine]))
+                continue
             # Perform correlation
             if movement is not None:
                 # Correlation only during specified movements
@@ -287,6 +299,8 @@ def total_coactivity_analysis(
         rel_spine_calcium_amps = dt_spine_calcium_amps - co_spine_calcium_amps
         # Store values
         for i in range(len(dt_spine_traces)):
+            if curr_el_spines[i] is True:
+                continue
             spine_coactive_amplitude[spines[i]] = co_spine_amps[i]
             dend_coactive_amplitude[spines[i]] = co_dendrite_amps[i]
             spine_coactive_calcium[spines[i]] = co_spine_calcium_amps[i]
@@ -360,7 +374,10 @@ def conjunctive_coactivity_analysis(
         
     """
     # Pull some important information from data
+    pix_to_um = data.imaging_parameters["Zoom"] / 2
+
     spine_groupings = data.spine_grouping
+    spine_flags = data.spine_flags
     spine_positions = data.spine_positions
     spine_dFoF = data.spine_GluSnFr_processed_dFoF
     spine_calcium = data.spine_calcium_processed_dFoF
@@ -422,4 +439,50 @@ def conjunctive_coactivity_analysis(
     coactive_nearby_calcium_traces = [None for i in global_correlation]
     coactive_dend_traces = [None for i in global_correlation]
     conjunctive_coactivity_matrix = np.zeros(spine_activity.shape)
+
+    # Process spines for each parent dendrite
+    for dendrite in range(dendrite_activity.shape[1]):
+        # Get spines on this dendrite
+        if type(spine_groupings[dendrite]) == list:
+            spines = spine_groupings[dendrite]
+        else:
+            spines = spine_groupings
+
+        s_dFoF = spine_dFoF[:, spines]
+        s_activity = spine_activity[:, spines]
+        s_calcium = spine_calcium[:, spines]
+        d_dFoF = dendrite_dFoF[:, dendrite]
+        d_activity = dendrite_activity[:, dendrite]
+        curr_positions = spine_positions[spines]
+        curr_flags = spine_flags[spines]
+
+        # Refine activity matrices for only movement epochs if specified
+        if movement is not None:
+            s_activity = (s_activity.T * movement).T
+            d_activity = d_activity * movement
+
+        # Analyze each spine individually
+        for spine in range(s_dFoF.shape[1]):
+            # Find its neighboring spines
+            ## Find spine positions
+            curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
+            curr_el_spines = np.array(curr_el_spines)
+            target_position = curr_positions[spine]
+            other_positions = [
+                x for idx, x in enumerate(curr_positions) if idx != spine
+            ]
+            relative_positions = np.array(other_positions) - target_position
+            relative_positions = np.absolute(relative_positions)
+            ## Find spines within cluster distance
+            nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
+            ## Remove the eliminated spines. Don't want to consider their activity here
+            nearby_spines = nearby_spines * curr_el_spines
+
+            # Get the relevant spine activity data
+            curr_s_dFoF = s_dFoF[:, spine]
+            curr_s_activity = s_activity[:, spine]
+            curr_s_calcium = s_calcium[:, spine]
+            nearby_s_dFoF = s_dFoF[:, nearby_spines]
+            nearby_s_activity = s_activity[:, nearby_spines]
+            nearby_s_calcium = s_calcium[:, nearby_spines]
 
