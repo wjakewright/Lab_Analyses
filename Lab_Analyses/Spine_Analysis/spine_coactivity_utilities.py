@@ -6,7 +6,7 @@ from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
 
 
-def get_coactivity_rate(spine, dendrite, sampling_rate):
+def get_coactivity_rate(spine, dendrite, coactivity, sampling_rate):
     """Helper function to calculate the coactivity frequency between a spine and 
         its parent dendrite. These rates are normalized by geometric mean of the spine
         and dendrite activity rates
@@ -15,6 +15,8 @@ def get_coactivity_rate(spine, dendrite, sampling_rate):
             spine - np.array of spine binary activity trace
             
             dendrite - np.array of dendrite binary activity traces
+
+            coactivity - np.array of the coactivity trace to be used
             
             sampling_rate - int or float of the sampling rate
             
@@ -33,7 +35,6 @@ def get_coactivity_rate(spine, dendrite, sampling_rate):
     duration = len(spine) / sampling_rate
 
     # Get coactivity binary trace
-    coactivity = spine * dendrite
     # Count coactive events
     events = np.nonzero(np.diff(coactivity) == 1)[0]
     coactivity_event_num = len(events)
