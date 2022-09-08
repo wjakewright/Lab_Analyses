@@ -511,6 +511,7 @@ def get_conjunctive_traces(
     timestamps,
     spine_dFoF,
     nearby_dFoF,
+    nearby_activity,
     dendrite_dFoF,
     activity_window=(-2, 2),
     sampling_rate=60,
@@ -525,6 +526,8 @@ def get_conjunctive_traces(
             spine_dFoF - np.array of the main spine dFoF activity
             
             nearby_dFoF - 2d np.array of the nearby spines (columns) dFoF activity
+
+            nearby_activity - 2d np.array of the nearby spines (columns) binarized activity
             
             dendrite_dFoF - np.array of the dendrite dFoF activity 
             
