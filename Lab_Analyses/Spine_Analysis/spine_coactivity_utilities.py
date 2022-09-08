@@ -106,9 +106,13 @@ def get_dend_spine_traces_and_onsets(
 
             spine_amplitudes - np.array of the peak spine amplitude
 
+            spine_auc - np.array of the area under the spine activity curve
+
             spine_std - np.array of the std of spine activity
 
             dend_amplitudes - np.array of the peak dendrite amplitudes
+
+            dend_auc - np.array of the area under the dendrite activity curve
 
             dend_std - np.array of the std of dendrite activity
             
@@ -118,8 +122,10 @@ def get_dend_spine_traces_and_onsets(
     dend_traces = []
     spine_traces = []
     dend_amplitudes = []
+    dend_auc = []
     dend_stds = []
     spine_amplitudes = []
+    spine_auc = []
     spine_stds = []
     relative_onsets = []
 
@@ -174,18 +180,25 @@ def get_dend_spine_traces_and_onsets(
         onset_stamps = list(compress(onset_stamps, refined_idxs))
 
         # Get the traces centered on the dendrite onsets
-        dend_trace, _ = d_utils.get_trace_mean_sem(
+        dend_trace, dend_mean = d_utils.get_trace_mean_sem(
             dendrite_dFoF.reshape(-1, 1),
             ["Dendrite"],
             onset_stamps,
             window=activity_window,
             sampling_rate=sampling_rate,
         )
+        dend_mean = list(dend_mean.values())[0][0]
         dend_trace = list(dend_trace.values())[0]
+        # Get the area under curve for the mean activity trace
+        d_area_trace = dend_mean[center_point:]
+        ## normalize the start to zero
+        d_area_trace = d_area_trace - d_area_trace[0]
+        d_auc = np.trapz(d_area_trace)
         # Append dendrite values
         dend_traces.append(dend_trace)
         dend_amplitudes.append(dend_amp)
         dend_stds.append(dend_std)
+        dend_auc.append(d_auc)
         # Get the traces for the current spine
         spine_trace, spine_mean = d_utils.get_trace_mean_sem(
             curr_spine_dFoF.reshape(-1, 1),
@@ -196,34 +209,42 @@ def get_dend_spine_traces_and_onsets(
         )
         spine_mean = list(spine_mean.values())[0][0]
         spine_trace = list(spine_trace.values())[0]
-        # Get the spine onsets and amplitudes
+        # Get the spine onsets and amplitudes and auc
         s_onset, s_amp = find_activity_onset([spine_mean])
         s_onset = s_onset[0]
         s_amp = s_amp[0]
         smax_idx = np.where(spine_mean == s_amp)
         s_std_trace = np.nanstd(spine_trace, axis=1)
         spine_std = s_std_trace[smax_idx]
+        s_area_trace = spine_mean[s_onset:]
+        s_area_trace = s_area_trace - s_area_trace[0]
+        s_auc = np.trapz(s_area_trace)
         # Get the relative amplitude
         relative_onset = (s_onset - center_point) / sampling_rate
         # Append spine values
         spine_traces.append(spine_trace)
         spine_amplitudes.append(s_amp)
         spine_stds.append(spine_std)
+        spine_auc.append(s_auc)
         relative_onsets.append(relative_onset)
 
     # Convert some outputs to arrays
     dend_amplitudes = np.array(dend_amplitudes)
     dend_stds = np.array(dend_stds)
+    dend_auc = np.array(dend_auc)
     spine_amplitudes = np.array(spine_amplitudes)
     spine_stds = np.array(spine_stds)
+    spine_auc = np.array(spine_auc)
     relative_onsets = np.array(relative_onsets)
 
     return (
         spine_traces,
         dend_traces,
         spine_amplitudes,
+        spine_auc,
         spine_stds,
         dend_amplitudes,
+        dend_auc,
         dend_stds,
         relative_onsets,
     )
