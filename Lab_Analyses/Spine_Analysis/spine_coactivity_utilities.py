@@ -71,7 +71,7 @@ def get_dend_spine_traces_and_onsets(
     spine_activity_matrix,
     dendrite_dFoF,
     spine_dFoF_matrix,
-    coactivity,
+    reference_trace,
     norm_constants=None,
     activity_window=(-2, 2),
     sampling_rate=60,
@@ -89,8 +89,8 @@ def get_dend_spine_traces_and_onsets(
 
             spine_dFoF_matrix - 2d np.array of spine dFoF activty traces (columns=spines)
 
-            coactivity - boolean specifying whether to perform for coactivty events (True) or
-                        all dendritic events (False)
+            reference_trace - 2d or 1d np.array of binary activity trace to use to get
+                              timestamps 
 
             norm_constants - np.array of constants to normalize activity by volume
             
@@ -132,17 +132,21 @@ def get_dend_spine_traces_and_onsets(
     spine_auc = []
     spine_stds = []
     relative_onsets = []
+    if len(reference_trace.shape) == 1:
+        reference_trace = np.hstack(
+            [
+                reference_trace.reshape(-1, 1)
+                for x in range(spine_activity_matrix.shape[1])
+            ]
+        )
 
     # Perform the analysis for each spine seperately
     for i in range(spine_activity_matrix.shape[1]):
-        curr_spine_activity = spine_activity_matrix[:, i]
+        curr_reference = reference_trace[:, i]
         curr_spine_dFoF = spine_dFoF_matrix[:, i]
-        if coactivity:
-            new_dend_activity = dendrite_activity * curr_spine_activity
-        else:
-            new_dend_activity = dendrite_activity
+
         # Get the initial timestamps
-        initial_stamps = get_activity_timestamps(new_dend_activity)
+        initial_stamps = get_activity_timestamps(curr_reference)
         initial_stamps = [x[0] for x in initial_stamps]
         d_trace, d_mean = d_utils.get_trace_mean_sem(
             dendrite_dFoF.reshape(-1, 1),
