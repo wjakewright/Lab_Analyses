@@ -72,6 +72,7 @@ def get_dend_spine_traces_and_onsets(
     dendrite_dFoF,
     spine_dFoF_matrix,
     coactivity,
+    norm_constants=None,
     activity_window=(-2, 2),
     sampling_rate=60,
 ):
@@ -90,6 +91,8 @@ def get_dend_spine_traces_and_onsets(
 
             coactivity - boolean specifying whether to perform for coactivty events (True) or
                         all dendritic events (False)
+
+            norm_constants - np.array of constants to normalize activity by volume
             
             activity_window - tuple specifying the window around which you want the activity
                                 from. E.g. (-2,2) for 2 sec before and after
@@ -210,6 +213,9 @@ def get_dend_spine_traces_and_onsets(
         )
         spine_mean = list(spine_mean.values())[0][0]
         spine_trace = list(spine_trace.values())[0]
+        if norm_constants is not None:
+            spine_mean = spine_mean / norm_constants[i]
+            spine_trace = spine_trace / norm_constants[i]
         # Get the spine onsets and amplitudes and auc
         s_onset, s_amp = find_activity_onset([spine_mean])
         s_onset = s_onset[0]
