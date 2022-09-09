@@ -194,7 +194,7 @@ def spine_volume_norm_constant(
             interations - int of how many interations of constants to test
             
         OUTPUT PARAMETERS
-            norm_constant - np.array of the normalization constant for each spine
+            norm_constants - np.array of the normalization constant for each spine
             
     """
     DISTANCE = 0.5 * sampling_rate
@@ -242,9 +242,9 @@ def spine_volume_norm_constant(
     # Find minimum constant
     constant = syop.minimize(obj_function, x0, bounds=(0, np.inf))
     # Apply min constant to each volume
-    norm_constant = um_volumes + constant
+    norm_constants = um_volumes + constant
 
-    return norm_constant
+    return norm_constants
 
 
 def norm_objective_function(x, y, con):
