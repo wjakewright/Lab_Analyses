@@ -205,6 +205,7 @@ def total_coactivity_analysis(
         d_dFoF = dendrite_dFoF[:, dendrite]
         d_activity = dendrite_activity[:, dendrite]
         s_calcium = spine_calcium[:, spines]
+        curr_coactivity_matrix = np.zeros(s_calcium.shape[1])
         curr_flags = spine_flags[spines]
         curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
 
@@ -245,6 +246,7 @@ def total_coactivity_analysis(
             spine_fraction_coactive[spines[spine]] = spine_frac
             dend_fraction_coactive[spines[spine]] = dend_frac
             coactivity_matrix[:, spines[spine]] = curr_coactivity
+            curr_coactivity_matrix[:, spine] = curr_coactivity
 
         # Get amplitudes, relative_onsets and activity traces
         ### First get for all dendritic events
@@ -263,7 +265,7 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_dFoF,
-            coacitivity=False,
+            refrence_trace=d_activity,
             norm_constants=glu_norm_constants,
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
@@ -283,7 +285,7 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_calcium,
-            norm_constants=ca_norm_constants,
+            reference_trace=d_activity,
             coactivity=False,
             activity_window=(2, 2),
             sampling_rate=sampling_rate,
@@ -305,7 +307,7 @@ def total_coactivity_analysis(
             d_dFoF,
             s_dFoF,
             norm_constants=glu_norm_constants,
-            coacitivity=True,
+            reference_trace=curr_coactivity_matrix,
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
@@ -325,7 +327,7 @@ def total_coactivity_analysis(
             d_dFoF,
             s_calcium,
             norm_constants=ca_norm_constants,
-            coactivity=True,
+            reference_trace=curr_coactivity_matrix,
             activity_window=(2, 2),
             sampling_rate=sampling_rate,
         )
@@ -572,6 +574,10 @@ def conjunctive_coactivity_analysis(
                 curr_conj_coactivity,
                 sampling_rate=sampling_rate,
             )
+            coactivity_event_num[spines[spine]] = event_num
+            coactivity_event_rate[spines[spine]] = event_rate
+            spine_fraction_coactive[spines[spine]] = spine_frac
+            dend_fraction_coactive[spines[spine]] = dend_frac
 
 
 def analyze_conjunctive_events(
