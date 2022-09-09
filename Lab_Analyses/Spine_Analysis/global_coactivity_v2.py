@@ -126,7 +126,7 @@ def total_coactivity_analysis(
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
     if volume_norm:
-        norm_constants = spine_volume_norm_constant(
+        glu_norm_constants = spine_volume_norm_constant(
             spine_activity,
             spine_dFoF,
             data.spine_volume,
@@ -134,8 +134,17 @@ def total_coactivity_analysis(
             sampling_rate=sampling_rate,
             iterations=1000,
         )
+        ca_norm_constants = spine_volume_norm_constant(
+            spine_activity,
+            spine_calcium,
+            data.spine_volume,
+            data.imaging_parameters["Zoom"],
+            sampling_rate=sampling_rate,
+            iterations=1000,
+        )
     else:
-        norm_constants = None
+        glu_norm_constants = None
+        ca_norm_constants = None
 
     ## Get specific movement periods
     if movement_epoch == "movement":
@@ -255,7 +264,7 @@ def total_coactivity_analysis(
             d_dFoF,
             s_dFoF,
             coacitivity=False,
-            norm_constants=norm_constants,
+            norm_constants=glu_norm_constants,
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
@@ -274,7 +283,7 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_calcium,
-            norm_constants=norm_constants,
+            norm_constants=ca_norm_constants,
             coactivity=False,
             activity_window=(2, 2),
             sampling_rate=sampling_rate,
@@ -295,7 +304,7 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_dFoF,
-            norm_constants=norm_constants,
+            norm_constants=glu_norm_constants,
             coacitivity=True,
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
@@ -315,7 +324,7 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_calcium,
-            norm_constants=norm_constants,
+            norm_constants=ca_norm_constants,
             coactivity=True,
             activity_window=(2, 2),
             sampling_rate=sampling_rate,
@@ -376,7 +385,12 @@ def total_coactivity_analysis(
 
 
 def conjunctive_coactivity_analysis(
-    data, movement_epoch=None, cluster_dist=10, sampling_rate=60, zscore=False,
+    data,
+    movement_epoch=None,
+    cluster_dist=10,
+    sampling_rate=60,
+    zscore=False,
+    volume_norm=False,
 ):
     """Function to analyze spine coactivity with global dendritic activity and the activity
         of nearby spines
@@ -395,6 +409,8 @@ def conjunctive_coactivity_analysis(
             sampling_rate - int or float specifying what the imaging rate is
             
             zscore - boolean of whether to zscore dFoF traces for analysis
+
+            volume_norm - boolean of whether or not to normalize activity by spine volume
             
         OUTPUT PARAMTERS
         
@@ -416,6 +432,27 @@ def conjunctive_coactivity_analysis(
         spine_dFoF = d_utils.z_score(spine_dFoF)
         spine_calcium = d_utils.z_score(spine_calcium)
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
+
+    if volume_norm:
+        glu_norm_constants = spine_volume_norm_constant(
+            spine_activity,
+            spine_dFoF,
+            data.spine_volume,
+            data.imaging_parameters["Zoom"],
+            sampling_rate=sampling_rate,
+            iterations=1000,
+        )
+        ca_norm_constants = spine_volume_norm_constant(
+            spine_activity,
+            spine_calcium,
+            data.spine_volume,
+            data.imaging_parameters["Zoom"],
+            sampling_rate=sampling_rate,
+            iterations=1000,
+        )
+    else:
+        glu_norm_constants = np.array([None for x in spine_activity.shape[1]])
+        ca_norm_constants = np.array([None for x in spine_activity.shape[1]])
 
     # Get specific movement periods if specified
     if movement_epoch == "movement":
@@ -483,6 +520,8 @@ def conjunctive_coactivity_analysis(
         curr_positions = spine_positions[spines]
         curr_flags = [x for i, x in enumerate(spine_flags) if i in spines]
         curr_volumes = spine_volumes[spines]
+        curr_glu_norm_constants = glu_norm_constants[spines]
+        curr_ca_norm_constants = ca_norm_constants[spines]
 
         # Refine activity matrices for only movement epochs if specified
         if movement is not None:
@@ -514,6 +553,9 @@ def conjunctive_coactivity_analysis(
             nearby_s_activity = s_activity[:, nearby_spines]
             nearby_s_calcium = s_calcium[:, nearby_spines]
             nearby_volumes = curr_volumes[nearby_spines]
+            glu_constant = curr_glu_norm_constants[spine]
+            ca_constant = curr_ca_norm_constants[spine]
+
             # Get spine-dendrite coactivity trace
             curr_coactivity = curr_s_activity * d_activity
             # Get a conjunctive coactivity trace, where at least one other nearby spine is coactive
@@ -539,6 +581,7 @@ def analyze_conjunctive_events(
     nearby_activity,
     dendrite_dFoF,
     nearby_spine_volumes,
+    norm_constants=None,
     activity_window=(-2, 2),
     sampling_rate=60,
 ):
@@ -554,10 +597,12 @@ def analyze_conjunctive_events(
             nearby_dFoF - 2d np.array of the nearby spines (columns) dFoF activity
 
             nearby_activity - 2d np.array of the nearby spines (columns) binarized activity
-
-            nearby_spine_volumes - np.array of the spine volumes of the nearby spines
             
-            dendrite_dFoF - np.array of the dendrite dFoF activity 
+            dendrite_dFoF - np.array of the dendrite dFoF activity
+            
+            nearby_spine_volumes - np.array of the spine volumes of the nearby spines
+
+
             
             activity_window - tuple specifying the window around which you want the activity
                               from . e.g., (-2,2) for 2sec before and after
