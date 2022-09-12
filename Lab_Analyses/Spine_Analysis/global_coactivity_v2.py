@@ -557,6 +557,8 @@ def conjunctive_coactivity_analysis(
             nearby_volumes = curr_volumes[nearby_spines]
             glu_constant = curr_glu_norm_constants[spine]
             ca_constant = curr_ca_norm_constants[spine]
+            nearby_glu_constants = curr_glu_norm_constants[nearby_spines]
+            nearby_ca_constants = curr_ca_norm_constants[nearby_spines]
 
             # Get spine-dendrite coactivity trace
             curr_coactivity = curr_s_activity * d_activity
@@ -642,7 +644,9 @@ def nearby_spine_conjunctive_events(
     nearby_activity,
     dendrite_dFoF,
     nearby_spine_volumes,
-    norm_constants=None,
+    target_constant=None,
+    glu_constants=None,
+    ca_constants=None,
     activity_window=(-2, 2),
     sampling_rate=60,
 ):
@@ -665,7 +669,12 @@ def nearby_spine_conjunctive_events(
             
             nearby_spine_volumes - np.array of the spine volumes of the nearby spines
 
+            target_constant = float or int of the GluSnFR constant to normalize activity by 
+                              spine volume. No noramlization if None
+            
+            glu_constants - np.array of the GluSnFR constants for the nearby spines
 
+            ca_constants - np.array of the RCaMP2 constants for the nearby spines
             
             activity_window - tuple specifying the window around which you want the activity
                               from . e.g., (-2,2) for 2sec before and after
@@ -674,6 +683,10 @@ def nearby_spine_conjunctive_events(
 
         OUTPUT PARAMETERS
     """
+    if target_constant is not None:
+        NORM = True
+    else:
+        NORM = False
 
     before_f = int(activity_window[0] * sampling_rate)
     after_f = int(activity_window[1] * sampling_rate)
@@ -706,4 +719,28 @@ def nearby_spine_conjunctive_events(
     for event in event_stamps:
         # Get target spine activity
         t_spine_trace = spine_dFoF[event + before_f : event + after_f]
+        if NORM:
+            t_spine_trace = t_spine_trace / target_constant
+        coactive_spine_traces = []
+        coactive_spine_ca_traces = []
+        coactive_spine_idxs = []
+        # Check each nearby spine to see if coactive
+        for i in range(nearby_activity.shape[1]):
+            nearby_spine_a = nearby_activity[:, i]
+            nearby_spine_dFoF = nearby_dFoF[:, i]
+            nearby_spine_ca = nearby_calcium[:, i]
+            event_activity = nearby_spine_a[event + before_f : event + after_f]
+            if np.sum(event_activity):
+                # If there is coactivity, append the value
+                dFoF = nearby_spine_dFoF[event + before_f : event + after_f]
+                calcium = nearby_spine_ca[event + before_f : event + after_f]
+                if NORM:
+                    dFoF = dFoF / glu_constants[i]
+                    calcium = calcium / ca_constants[i]
+                coactive_spine_traces.append(dFoF)
+                coactive_spine_ca_traces.append(calcium)
+                coactive_spine_idxs.append(i)
+            else:
+                continue
+        #
 
