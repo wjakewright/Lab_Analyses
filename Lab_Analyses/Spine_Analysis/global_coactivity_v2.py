@@ -1,5 +1,6 @@
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
+    find_activity_onset,
     get_activity_timestamps,
     get_coactivity_rate,
     get_dend_spine_traces_and_onsets,
@@ -498,7 +499,6 @@ def conjunctive_coactivity_analysis(
     nearby_coactive_calcium_auc_sum = np.zeros(spine_activity.shape[1])
     dend_coactive_auc = np.zeros(spine_activity.shape[1])
     relative_spine_dend_onsets = np.zeros(spine_activity.shape[1])
-    relative_spine_nearby_onsets = np.zeros(spine_activity.shape[1])
     coactive_spine_traces = [None for i in local_correlation]
     coactive_nearby_traces = [None for i in local_correlation]
     coactive_spine_calcium_traces = [None for i in local_correlation]
@@ -634,7 +634,7 @@ def conjunctive_coactivity_analysis(
             coactive_dend_traces[spines[spine]] = d_traces
 
 
-def analyze_conjunctive_events(
+def nearby_spine_conjunctive_events(
     timestamps,
     spine_dFoF,
     nearby_dFoF,
@@ -657,6 +657,8 @@ def analyze_conjunctive_events(
             
             nearby_dFoF - 2d np.array of the nearby spines (columns) dFoF activity
 
+            nearby_calcium - 2d np.array of the nearby spines (columns) calcium activity
+
             nearby_activity - 2d np.array of the nearby spines (columns) binarized activity
             
             dendrite_dFoF - np.array of the dendrite dFoF activity
@@ -673,6 +675,35 @@ def analyze_conjunctive_events(
         OUTPUT PARAMETERS
     """
 
+    before_f = int(activity_window[0] * sampling_rate)
+    after_f = int(activity_window[1] * sampling_rate)
+
     # Find dendrite onsets to center analysis around
     initial_stamps = [x[0] for x in timestamps]
+    _, d_mean = d_utils.get_trace_mean_sem(
+        dendrite_dFoF.reshape(-1, 1),
+        ["Dendrite"],
+        initial_stamps,
+        window=activity_window,
+        sampling_rate=sampling_rate,
+    )
+    d_mean = list(d_mean.values())[0][0]
+    d_onset, _ = find_activity_onset([d_mean])
+    d_onset = d_onset[0]
+    # Correct timestamps so that they are centered on dendrite onsets
+    center_point = np.absolute(activity_window[0] * sampling_rate)
+    offset = center_point - d_onset
+    event_stamps = [x - offset for x in initial_stamps]
+
+    # Analyze each co-activity event
+    ### Some temporary variables
+    spine_nearby_correlations = []
+    coactive_spine_num = []
+    coacitve_spine_volumes = []
+    sum_coactive_spine_traces = []
+    sum_coactive_spine_ca_traces = []
+
+    for event in event_stamps:
+        # Get target spine activity
+        t_spine_trace = spine_dFoF[event + before_f : event + after_f]
 
