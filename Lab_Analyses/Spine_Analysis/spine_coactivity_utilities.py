@@ -337,3 +337,199 @@ def find_activity_onset(activity_means, sampling_rate=60):
         trace_amplitudes[i] = trace_amp
 
     return activity_onsets, trace_amplitudes
+
+
+def nearby_spine_conjunctive_events(
+    timestamps,
+    spine_dFoF,
+    nearby_dFoF,
+    nearby_calcium,
+    nearby_activity,
+    dendrite_dFoF,
+    nearby_spine_volumes,
+    target_constant=None,
+    glu_constants=None,
+    ca_constants=None,
+    activity_window=(-2, 2),
+    sampling_rate=60,
+):
+    """Helper function to get the dendrite, spine, and nearby spine traces
+        during conjunctive coactivity events
+        
+        INPUT PARAMETERS
+            timestamps - list of tuples with the timestamps (onset, offset) of each 
+                        conjunctive coactivity event
+        
+            spine_dFoF - np.array of the main spine dFoF activity
+            
+            nearby_dFoF - 2d np.array of the nearby spines (columns) dFoF activity
+
+            nearby_calcium - 2d np.array of the nearby spines (columns) calcium activity
+
+            nearby_activity - 2d np.array of the nearby spines (columns) binarized activity
+            
+            dendrite_dFoF - np.array of the dendrite dFoF activity
+            
+            nearby_spine_volumes - np.array of the spine volumes of the nearby spines
+
+            target_constant = float or int of the GluSnFR constant to normalize activity by 
+                              spine volume. No noramlization if None
+            
+            glu_constants - np.array of the GluSnFR constants for the nearby spines
+
+            ca_constants - np.array of the RCaMP2 constants for the nearby spines
+            
+            activity_window - tuple specifying the window around which you want the activity
+                              from . e.g., (-2,2) for 2sec before and after
+                              
+            sampling_rate - int specifying the sampling rate
+
+        OUTPUT PARAMETERS
+            avg_coactive_correlation - float or int of the average correlation of the summed
+                                        nearby coactive spine activity and the target spine
+
+            avg_coactive_num - float of the average number of nearby spines coactive during 
+                                each event
+
+            avg_coactive_volume - float of the average volume of nearby spines coactive with 
+                                    with the target spine. Coactive spines are averaged for each
+                                    event and then averaged across all events
+
+            activity_amplitude - float of the average amplitude of the mean nearby spine trace. 
+                                 For each event, nearby coactive spine traces are summed. These
+                                 are then averaged across all trials, from which the peak is taken
+
+            ca_activity_amplitude- float of the average calcium amplitude of the mean nearby spine
+                                    trace. Calculated same as activity_amplitude
+
+            activity_std - float of the average std around the activity peak. Measured by taking the
+                            std of the summed coactive traces across each event at the time point
+                            of the averaged max peak
+
+            ca_activity_std - float of the average std around the calcium activity peak. Calculated
+                              in the same manner as activity_std
+
+            ca_activity_auc - float of the average area under the curve of the average nearby coactive
+                                spine calcium traces
+
+            sum_coactive_spine_traces - 2d np.array of the summed nearby spine activity for each coactive
+                                        event (columns)
+                                        
+            sum_coactive_spine_ca_traces - 2d np.array of the summed nearby spine calcium activity for 
+                                            each coactive event (columns)
+    """
+    if target_constant is not None:
+        NORM = True
+    else:
+        NORM = False
+
+    before_f = int(activity_window[0] * sampling_rate)
+    after_f = int(activity_window[1] * sampling_rate)
+
+    # Find dendrite onsets to center analysis around
+    initial_stamps = [x[0] for x in timestamps]
+    _, d_mean = d_utils.get_trace_mean_sem(
+        dendrite_dFoF.reshape(-1, 1),
+        ["Dendrite"],
+        initial_stamps,
+        window=activity_window,
+        sampling_rate=sampling_rate,
+    )
+    d_mean = list(d_mean.values())[0][0]
+    d_onset, _ = find_activity_onset([d_mean])
+    d_onset = d_onset[0]
+    # Correct timestamps so that they are centered on dendrite onsets
+    center_point = np.absolute(activity_window[0] * sampling_rate)
+    offset = center_point - d_onset
+    event_stamps = [x - offset for x in initial_stamps]
+
+    # Analyze each co-activity event
+    ### Some temporary variables
+    spine_nearby_correlations = []
+    coactive_spine_num = []
+    coacitve_spine_volumes = []
+    sum_coactive_spine_traces = []
+    sum_coactive_spine_ca_traces = []
+
+    for event in event_stamps:
+        # Get target spine activity
+        t_spine_trace = spine_dFoF[event + before_f : event + after_f]
+        if NORM:
+            t_spine_trace = t_spine_trace / target_constant
+        coactive_spine_traces = []
+        coactive_spine_ca_traces = []
+        coactive_spine_idxs = []
+        # Check each nearby spine to see if coactive
+        for i in range(nearby_activity.shape[1]):
+            nearby_spine_a = nearby_activity[:, i]
+            nearby_spine_dFoF = nearby_dFoF[:, i]
+            nearby_spine_ca = nearby_calcium[:, i]
+            event_activity = nearby_spine_a[event + before_f : event + after_f]
+            if np.sum(event_activity):
+                # If there is coactivity, append the value
+                dFoF = nearby_spine_dFoF[event + before_f : event + after_f]
+                calcium = nearby_spine_ca[event + before_f : event + after_f]
+                if NORM:
+                    dFoF = dFoF / glu_constants[i]
+                    calcium = calcium / ca_constants[i]
+                coactive_spine_traces.append(dFoF)
+                coactive_spine_ca_traces.append(calcium)
+                coactive_spine_idxs.append(i)
+            else:
+                continue
+        # Process activity of this activity
+        spine_trace_array = np.vstack(coactive_spine_traces).T
+        spine_ca_trace_array = np.vstack(coactive_spine_ca_traces).T
+        sum_spine_trace = np.sum(spine_trace_array, axis=1)
+        sum_spine_ca_trace = np.sum(spine_ca_trace_array)
+        corr, _ = stats.pearsonr(t_spine_trace, sum_spine_trace)
+        num = len(coactive_spine_idxs)
+        vol = np.mean(nearby_spine_volumes[coactive_spine_idxs])
+        # Store values
+        spine_nearby_correlations.append(corr)
+        coactive_spine_num.append(num)
+        coacitve_spine_volumes.append(vol)
+        sum_coactive_spine_traces.append(sum_spine_trace)
+        sum_coactive_spine_ca_traces.append(sum_spine_ca_trace)
+
+    # Reformat nearby spine traces
+    sum_coactive_spine_traces = np.vstack(sum_coactive_spine_traces).T
+    sum_coactive_spine_ca_traces = np.vstack(sum_coactive_spine_ca_traces).T
+
+    # Average correlations, nums, and volumes,
+    avg_coactive_correlation = np.mean(spine_nearby_correlations)
+    avg_coactive_num = np.mean(coactive_spine_num)
+    avg_coactive_volume = np.mean(coacitve_spine_volumes)
+
+    # Get peak, std, and auc of traces
+    avg_coactive_trace = np.nanmean(sum_coactive_spine_traces, axis=1)
+    std_coactive_trace = np.nanstd(sum_coactive_spine_traces, axis=1)
+    avg_coactive_ca_trace = np.nanmean(sum_coactive_spine_ca_traces, axis=1)
+    std_coactive_ca_trace = np.nanstd(sum_coactive_spine_ca_traces, axis=1)
+    onsets, amps = find_activity_onset(
+        [avg_coactive_trace, avg_coactive_ca_trace], sampling_rate=sampling_rate
+    )
+    ca_activity_onset = onsets[1]
+    activity_amplitude = amps[0]
+    ca_activity_amplitude = amps[1]
+    activity_max = np.where(avg_coactive_trace == activity_amplitude)
+    ca_activity_max = np.where(avg_coactive_ca_trace == ca_activity_amplitude)
+    activity_std = std_coactive_trace[activity_max]
+    ca_activity_std = std_coactive_ca_trace[ca_activity_max]
+    area_trace = avg_coactive_ca_trace[ca_activity_onset:]
+    area_trace = area_trace - area_trace[0]
+    ca_activity_auc = np.trapz(area_trace)
+
+    return (
+        avg_coactive_correlation,
+        avg_coactive_num,
+        avg_coactive_volume,
+        activity_amplitude,
+        ca_activity_amplitude,
+        activity_std,
+        ca_activity_std,
+        ca_activity_auc,
+        sum_coactive_spine_traces,
+        sum_coactive_spine_ca_traces,
+    )
+
