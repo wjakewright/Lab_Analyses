@@ -167,23 +167,23 @@ def total_coactivity_analysis(
         movement = None
 
     # Set up output variables
-    global_correlation = np.zeros(spine_activity.shape[1])
+    global_correlation = np.zeros(spine_activity.shape[1]) * np.nan
     coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
-    spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
-    spine_coactive_calcium = np.zeros(spine_activity.shape[1])
-    dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
-    spine_coactive_std = np.zeros(spine_activity.shape[1])
-    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1])
-    dend_coactive_std = np.zeros(spine_activity.shape[1])
-    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1])
-    dend_coactive_auc = np.zeros(spine_activity.shape[1])
-    relative_dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
-    relative_spine_coactive_calcium = np.zeros(spine_activity.shape[1])
-    relative_spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
-    relative_spine_onsets = np.zeros(spine_activity.shape[1])
+    spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    dend_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1]) * np.nan
+    dend_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    dend_coactive_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    relative_dend_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    relative_spine_coactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    relative_spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    relative_spine_onsets = np.zeros(spine_activity.shape[1]) * np.nan
     dend_triggered_spine_traces = [None for i in global_correlation]
     dend_triggered_spine_calcium_traces = [None for i in global_correlation]
     dend_triggered_dend_traces = [None for i in global_correlation]
@@ -217,11 +217,6 @@ def total_coactivity_analysis(
         for spine in range(s_dFoF.shape[1]):
             # Go ahead and skip over eliminated spines
             if curr_el_spines[spine]:
-                coactivity_event_num[spines[spine]] = np.nan
-                coactivity_event_rate[spines[spine]] = np.nan
-                spine_fraction_coactive[spines[spine]] = np.nan
-                dend_fraction_coactive[spines[spine]] = np.nan
-                coactivity_matrix[:, spines[spine]] = np.zeros(len(s_dFoF[:, spine]))
                 continue
             # Perform correlation
             if movement is not None:
@@ -234,6 +229,11 @@ def total_coactivity_analysis(
 
             # Calculate coactivity rate
             curr_coactivity = d_activity * s_activity[:, spine]
+
+            # Skip further analysis if there is no coactivity
+            if not np.sum(curr_coactivity):
+                continue
+
             event_num, event_rate, spine_frac, dend_frac = get_coactivity_rate(
                 s_activity[:, spine],
                 d_activity,
