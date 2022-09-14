@@ -42,10 +42,90 @@ def conjunctive_coactivity_analysis(
             volume_norm - boolean of whether or not to normalize activity by spine volume
             
         OUTPUT PARAMTERS
+            local_correlation - np.array of the average correlation of each spine with nearby
+                                coactive spines during conjunctive events
+
+            coactivity_event_num - np.array of the number of conjnctive coactive events for each
+                                    spine
+
+            coactivity_event_rate - np.array of the event rate of the conjunctive coactive events
+                                    for each spine
+
+            spine_fraction_coactive - np.array of the fraction of spine activity events that are
+                                      also conjunctive coactivity events for each spine
+
+            dend_fraction_coactive - np.array of the fraction of dendritic activity events that
+                                     are also conjunctive coactivity events with each spine
+
+            coactive_spine_num - np.array of the average number of coactive spines across 
+                                conjunctive coactivity events for each spine
+
+            coactive_spine_volumes - np.array of the average volume of spines coactive during
+                                     conjunctive events for each spine
+
+            spine_coactive_amplitude - np.array of the average peak amplitude of activity during
+                                        conjuntive events for each spine
+
+            nearby_coactive_amplitude_sum - np.array of the average summed activity of neaby coactive
+                                            spines during conjunctive events for each spine
+
+            spine_coactive_calcium - np.array of the average peak calcium amplitude during conjunctive 
+                                    events for each spine
+
+            nearby_coactive_calcium_sum - np.array of the average summed calcium of nearby coactive
+                                         spines during conjunctive events for each spine
+
+            dend_coactive_amplitude - np.array of the average peak amplitude of dendrite activity 
+                                     during conjunctive events for each spine
+                                     
+            spine_coactive_std - np.array of the std around the peak activity amplitude during conjunctive
+                                 events for each spine
+
+            nearby_coactive_std - np.array of the std around the summed peak activity amplitude of 
+                                  nearby coactive spines during conjunctive events for each spine
+
+            spine_coactive_calcium_std - np.array of the std around the peak calcium amplitude during
+                                         conjunctive events for each spine
+
+            nearby_coactive_calcium_std - np.array of the std around the summed peak calcium amplitude
+                                          of nearby coactive spines during conjunctive events for each spine
+
+            dend_coactive_std - np.array of the std around the peak dendritic activity during
+                                conjunctive events for each spine
+
+            spine_coactive_calcium_auc - np.array of the auc of the average calcium trace during
+                                        conjunctive events for each spine
+
+            nearby_coactive_calcium_auc_sum - np.array of the auc of the averaged summed calcium
+                                                trace of nearby coactive spines during conjunctive
+                                                events for each spine
+
+            dend_coactive_auc - np.arry of the auc of the average dendrite trace during conjunctive
+                                events for each spine
+
+            relative_spine_dend_onsets - np.array of the relative onset of spine activity in relation
+                                        to the onset of dendritic activity during conjunctive events
+
+            coactive_spine_traces - list of 2d np.arrays of activity traces for each conjunctive event
+                                    for each spine (columns=events)
+
+            coactive_nearby_traces -list of 2d np.arrays of the summed activity traces of nearby coactive
+                                    spines for each conjunctive event for each spine (columns=events)
+
+            coactive_spine_calcium_traces - list of 2d np.arrays of calcium traces for each conjunctive
+                                            event for each spine (columns = events)
+
+            coactive_nearby_calcium_traces - list of 2d np.arrays of the summed calcium traces of nearby
+                                             coactive spines for each conjunctive event for each spine
+                                             (columns=events)
+
+            coactive_dend_traces - list of 2d of np.arrays of the dendrite activity traces for each each
+                                    conjunctive event for each spine (columns=events)
+
+            conjunctive_coactivity_matrix - 2d np.array of binarized conjunctive coactivity 
+                                            (columns=spines, rows=time) 
         
     """
-    # Pull some important information from data
-    pix_to_um = data.imaging_parameters["Zoom"] / 2
 
     spine_groupings = np.array(data.spine_grouping)
     spine_flags = data.spine_flags
@@ -104,27 +184,27 @@ def conjunctive_coactivity_analysis(
         movement = None
 
     # Set up output variables
-    local_correlation = np.zeros(spine_activity.shape[1])
+    local_correlation = np.zeros(spine_activity.shape[1]) * np.nan
     coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     coactive_spine_num = np.zeros(spine_activity.shape[1])
-    coactive_spine_volumes = np.zeros(spine_activity.shape[1])
-    spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
-    nearby_coactive_amplitude_sum = np.zeros(spine_activity.shape[1])
-    spine_coactive_calcium = np.zeros(spine_activity.shape[1])
-    nearby_coactive_calcium_sum = np.zeros(spine_activity.shape[1])
-    dend_coactive_amplitude = np.zeros(spine_activity.shape[1])
-    spine_coactive_std = np.zeros(spine_activity.shape[1])
-    nearby_coactive_std = np.zeros(spine_activity.shape[1])
-    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1])
-    nearby_coactive_calcium_std = np.zeros(spine_activity.shape[1])
-    dend_coactive_std = np.zeros(spine_activity.shape[1])
-    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1])
-    nearby_coactive_calcium_auc_sum = np.zeros(spine_activity.shape[1])
-    dend_coactive_auc = np.zeros(spine_activity.shape[1])
-    relative_spine_dend_onsets = np.zeros(spine_activity.shape[1])
+    coactive_spine_volumes = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    nearby_coactive_amplitude_sum = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    nearby_coactive_calcium_sum = np.zeros(spine_activity.shape[1]) * np.nan
+    dend_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    nearby_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1]) * np.nan
+    nearby_coactive_calcium_std = np.zeros(spine_activity.shape[1]) * np.nan
+    dend_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    nearby_coactive_calcium_auc_sum = np.zeros(spine_activity.shape[1]) * np.nan
+    dend_coactive_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    relative_spine_dend_onsets = np.zeros(spine_activity.shape[1]) * np.nan
     coactive_spine_traces = [None for i in local_correlation]
     coactive_nearby_traces = [None for i in local_correlation]
     coactive_spine_calcium_traces = [None for i in local_correlation]
@@ -193,6 +273,11 @@ def conjunctive_coactivity_analysis(
             combined_nearby_activity[combined_nearby_activity > 1] = 1
             curr_conj_coactivity = combined_nearby_activity * curr_coactivity
             conjunctive_coactivity_matrix[:, spines[spine]] = curr_conj_coactivity
+
+            # Skip further anlaysis if no conjunctive coactivity for current spine
+            if not sum(curr_conj_coactivity):
+                continue
+
             # Get conjunctive coactivity timestamps
             conj_timestamps = get_activity_timestamps(curr_conj_coactivity)
 
