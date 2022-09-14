@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     find_activity_onset,
     get_activity_timestamps,
@@ -485,7 +484,7 @@ def conjunctive_coactivity_analysis(
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     coactive_spine_num = np.zeros(spine_activity.shape[1])
-    nearby_spine_volumes = np.zeros(spine_activity.shape[1])
+    coactive_spine_volumes = np.zeros(spine_activity.shape[1])
     spine_coactive_amplitude = np.zeros(spine_activity.shape[1])
     nearby_coactive_amplitude_sum = np.zeros(spine_activity.shape[1])
     spine_coactive_calcium = np.zeros(spine_activity.shape[1])
@@ -635,6 +634,73 @@ def conjunctive_coactivity_analysis(
             coactive_spine_traces[spines[spine]] = s_traces
             coactive_spine_calcium_traces[spines[spine]] = s_ca_traces
             coactive_dend_traces[spines[spine]] = d_traces
+
+            # Analyze the activity of nearby coactive spines
+            (
+                local_corr,
+                coactive_num,
+                coactive_vol,
+                activity_amp,
+                ca_activity_amp,
+                activity_std,
+                ca_activity_std,
+                ca_activity_auc,
+                coactive_s_traces,
+                coactive_s_ca_traces,
+            ) = nearby_spine_conjunctive_events(
+                timestamps=conj_timestamps,
+                spine_dFoF=curr_s_dFoF,
+                nearby_dFoF=nearby_s_dFoF,
+                nearby_calcium=nearby_s_calcium,
+                nearby_activity=nearby_s_activity,
+                dendrite_dFoF=d_dFoF,
+                nearby_spine_volumes=nearby_volumes,
+                target_constant=glu_constant,
+                glu_constatns=nearby_glu_constants,
+                ca_constants=nearby_ca_constants,
+                activity_window=(-2, 2),
+                sampling_rate=60,
+            )
+            local_correlation[spines[spine]] = local_corr
+            coactive_spine_num[spines[spine]] = coactive_num
+            coactive_spine_volumes[spines[spine]] = coactive_vol
+            nearby_coactive_amplitude_sum[spines[spine]] = activity_amp
+            nearby_coactive_calcium_sum[spines[spine]] = ca_activity_amp
+            nearby_coactive_std[spines[spine]] = activity_std
+            nearby_coactive_calcium_std[spines[spine]] = ca_activity_std
+            nearby_coactive_calcium_auc_sum[spines[spine]] = ca_activity_auc
+            coactive_nearby_traces[spines[spine]] = coactive_s_traces
+            coactive_nearby_calcium_traces[spines[spine]] = coactive_s_ca_traces
+
+    return (
+        local_correlation,
+        coactivity_event_num,
+        coactivity_event_rate,
+        spine_fraction_coactive,
+        dend_fraction_coactive,
+        coactive_spine_num,
+        coactive_spine_volumes,
+        spine_coactive_amplitude,
+        nearby_coactive_amplitude_sum,
+        spine_coactive_calcium,
+        nearby_coactive_calcium_sum,
+        dend_coactive_amplitude,
+        spine_coactive_std,
+        nearby_coactive_std,
+        spine_coactive_calcium_std,
+        nearby_coactive_calcium_std,
+        dend_coactive_std,
+        spine_coactive_calcium_auc,
+        nearby_coactive_calcium_auc_sum,
+        dend_coactive_auc,
+        relative_spine_dend_onsets,
+        coactive_spine_traces,
+        coactive_nearby_traces,
+        coactive_spine_calcium_traces,
+        coactive_nearby_calcium_traces,
+        coactive_dend_traces,
+        conjunctive_coactivity_matrix,
+    )
 
 
 def nearby_spine_conjunctive_events(
