@@ -275,7 +275,7 @@ def conjunctive_coactivity_analysis(
             conjunctive_coactivity_matrix[:, spines[spine]] = curr_conj_coactivity
 
             # Skip further anlaysis if no conjunctive coactivity for current spine
-            if not sum(curr_conj_coactivity):
+            if not np.sum(curr_conj_coactivity):
                 continue
 
             # Get conjunctive coactivity timestamps
