@@ -5,7 +5,7 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from scipy import stats
 
 
-def spine_coactivity_analysis(
+def local_spine_coactivity_analysis(
     spine_activity,
     spine_positions,
     flags,
