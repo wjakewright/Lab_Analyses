@@ -9,64 +9,58 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
 )
 
 
-def calculate_volume_change(data_list, days=None, exclude=None):
-    """Function to calculate relative volume change for all spines
+def calculate_volume_change(volume_list, flag_list, days=None, exclude=None):
+    """Function to calculate relative volume change across all spines
     
         INPUT PARAMETERS
-            data_list - list of datasets to compare each other to. All datasets will
-                        be compared to the first dataset. This requires data to have both
-                        lists of spine volume and spine flags. 
+            volume_list - list of np.arrays of spine volumes, with each array corresponding
+                            to each day
             
-            days - list of str specifying which day each dataset corresponds to.
-                    Default is none, which will automatically generate labels
-
-            exclude - str specifying a type of spine to exclude from the analysis
+            flag_list - list containing the corresponding spine flags, with each item corresponding
+                        to the volume_list arrays for each day
+            
+            days - list of str specifying which day each volume list corresponds to. Default is
+                    none, which automatically generates generic labels
+            
+            exclude - str specifying a type of spine flag to exclude from the analysis
         
         OUTPUT PARAMETERS
-            relative_volume - dict containing the relative volume change for each day
-            
-            relative_corrected_volume
+            relative_volumes - dict containing the relative volume change for each day
+
+            stable_idxs - np.array of the indexes of the stable spines
     """
     # Set up days
     if days is None:
-        days = [f"Day {x}" for x in range(1, len(data_list) + 1)]
-    # Get indexes of stable spines throughout all analyzed days
-    spine_flags = [x.spine_flags for x in data_list]
-    stable_spines = find_stable_spines(spine_flags)
+        days = [f"Day {x}" for x in range(1, len(volume_list) + 1)]
 
-    # Find additional spines to exlude
+    # Get indexes of stable spines throughout all analyzed days
+    stable_spines = find_stable_spines(flag_list)
+
+    # Find additional spines to exclude
     if exclude:
-        exclude_spines = find_spine_classes(data_list[-1].spine_flags, exclude)
-        # Reverse values to exlude these spines
+        exclude_spines = find_spine_classes(flag_list[-1], exclude)
+        # Reverse values to exclude these spines
         exclude_spines = np.array([not x for x in exclude_spines])
         # Combine with the stable spines
         stable_spines = stable_spines * exclude_spines
 
-    # Get volumes for only stable spines
+    # Get volumes only for stable_spines
     spine_volumes = []
-    corrected_spine_volumes = []
-    for data in data_list:
-        spine_volumes.append(list(compress(data.spine_volume, stable_spines)))
-        corrected_spine_volumes.append(
-            list(compress(data.corrected_spine_volume, stable_spines))
-        )
+    for volumes in volume_list:
+        stable_vols = np.array(volumes)[stable_spines]
+        spine_volumes.append(stable_vols)
 
     # Calculate relative volume now
-    baseline_vol = spine_volumes[0]
-    baseline_corr_vol = corrected_spine_volumes[0]
-    relative_volume = {}
-    relative_corrected_volume = {}
+    baseline_volume = spine_volumes[0]
+    relative_volumes = {}
+    for vol, day in zip(spine_volumes, days):
+        rel_vol = vol / baseline_volume
+        relative_volumes[day] = rel_vol
 
-    for vol, corr_vol, day in zip(spine_volumes, corrected_spine_volumes, days):
-        rel_vol = np.array(vol) / np.array(baseline_vol)
-        rel_corr_vol = np.array(corr_vol) / np.array(baseline_corr_vol)
-        relative_volume[day] = rel_vol
-        relative_corrected_volume[day] = rel_corr_vol
+    # Get stable spine indexes
+    stable_idxs = np.nonzero(stable_spines)[0]
 
-    # Get the spine indexes
-    spine_idxs = np.nonzero(stable_spines)[0]
-
-    return relative_volume, relative_corrected_volume, spine_idxs
+    return relative_volumes, stable_idxs
 
 
 def classify_plasticity(relative_volumes, threshold=0.25):
