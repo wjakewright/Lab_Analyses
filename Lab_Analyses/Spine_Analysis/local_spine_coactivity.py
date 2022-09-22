@@ -1,5 +1,7 @@
 """Module to perform spine co-activity analyses"""
 
+from threading import local
+
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_activity_timestamps,
@@ -12,6 +14,7 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     spine_volume_norm_constant,
 )
+from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
 
 
@@ -43,10 +46,13 @@ def local_spine_coactivity_analysis(
             volume_nomr - boolean of whether or not to normalize activity by spine volume
             
         OUTPUT PARMATERS
-            distance_coactivity_rate - np.array of the normalized coactivity for each spine
+            distance_coactivity_rate - 2d np.array of the normalized coactivity for each spine
                                         (columns) over the binned distances (row)
 
             distance_bins - np.array of the distances data were binned over
+
+            local_correlation - np.array of the average correlation of each spine with nearby
+                                coactive spines during conjunctive events
             
             local_coactivity_matrix - 2d np.array of the binarized local coactivity 
                                         (columns=spines, rows=time)
@@ -57,54 +63,143 @@ def local_spine_coactivity_analysis(
             spine_fraction_coactive - np.array of the fraction of spine activity events that 
                                       are also coacctive with at least one nearby spine
             
-            coactive_spine_num - np.array of the average number of coactive spines across 
-                                local coactivity events for each spine
+            local_coactive_spine_num - np.array of the average number of coactive spines across 
+                                        local coactivity events for each spine
                                 
-            coactive_spine_volumes - np.array of the average volume of spines coactive during
-                                    local coactivity events for each spine
+            local_coactive_spine_volumes - np.array of the average volume of spines coactive during
+                                            local coactivity events for each spine
             
             spine_coactive_amplitude - np.array of the average peak amplitude of activity
                                       during local coactive events for each spine
                                       
-            nearby_coactive_amplitude - np.array of the peak average summed activity of nearby 
+            local_coactive_amplitude - np.array of the peak average summed activity of nearby 
                                         coactive spines during local coactivity events for each spine
             
             spine_coactive_calcium - np.array of the average peak calcium amplitude during
                                     local coactivity events for each spine
             
-            nearby_coactive_calcium - np.array of the peak average summed calcium activity of nearby
+            local_coactive_calcium - np.array of the peak average summed calcium activity of nearby
                                      spines during local coactivity events for each spine
                                      
             spine_coactive_std - np.array of the std around the peak activity amplitude during local
                                 coactive events for each spine
             
-            nearby_coactive_std - np.array of the std around the summed peak activity amplitude of
+            local_coactive_std - np.array of the std around the summed peak activity amplitude of
                                   nearby coactive spines during local coactive events for each spine
                                   
             spine_coactive_calcium_std - np.array of the std around the peak calcium amplitude
                                          during local coactive events for each spine
                                          
-            nearby_coactiive_calcium_std - np.array of the std around the summe dpeak calcium amplitude
+            local_coactiive_calcium_std - np.array of the std around the summe dpeak calcium amplitude
                                            of nearby coactive spines during local coactive events
             
             spine_coactive_calcium_auc - np.array of the auc of the average calcium trace during
                                          local coative events for each spine
                                          
-            nearby_coactive_calcium_auc - np.array of the auc of the averaged summed calcium trace
+            local_coactive_calcium_auc - np.array of the auc of the averaged summed calcium trace
                                           of nearby coactive spines during local coactive events
                                           
             spine_coactive_traces - list of 2d np.arrays of activity traces for each local coactivity
                                     event for each spine (columns = events)
             
-            nearby_coactive_traces - list of 2d np.arrays of summed activity traces for each local
+            local_coactive_traces - list of 2d np.arrays of summed activity traces for each local
                                     coactivity event for each spine (columns=events)
                                     
             spine_coactive_calcium_traces - list of 2d np.arrays of calcium traces for each local coactivity
                                             event for each spine (coluumns=events)
             
-            nearby_coactive_calcium_traces - list of 2d np.arrays of the summed calcium traces for each
+            local_coactive_calcium_traces - list of 2d np.arrays of the summed calcium traces for each
                                             local coactivity event for each spine (columns=events)
     """
+
+    spine_groupings = np.array(data.spine_grouping)
+    spine_flags = data.spine_flags
+    spine_volumes = np.array(data.spine_volume)
+    spine_positions = data.spine_positions
+    spine_dFoF = data.spine_GluSnFr_processed_dFoF
+    spine_activity = data.spine_GluSnFr_activity
+    dendrite_activity = data.dendrite_calcium_activity
+
+    if zscore:
+        spine_dFoF = d_utils.z_score(spine_dFoF)
+        spine_calcium = d_utils.z_score(spine_calcium)
+
+    if volume_norm:
+        glu_norm_constants = spine_volume_norm_constant(
+            spine_activity,
+            spine_dFoF,
+            data.spine_volume,
+            data.imaging_parameters["Zoom"],
+            sampling_rate=sampling_rate,
+            iterations=1000,
+        )
+        ca_norm_constants = spine_volume_norm_constant(
+            spine_activity,
+            spine_calcium,
+            data.spine_volume,
+            data.imaging_parameters["Zoom"],
+            sampling_rate=sampling_rate,
+            iterations=1000,
+        )
+    else:
+        glu_norm_constants = np.array([None for x in spine_activity.shape[1]])
+        ca_norm_constants = np.array([None for x in spine_activity.shape[1]])
+
+    # Get specific movement periods if specified
+    if movement_epoch == "movement":
+        movement = data.lever_active
+    elif movement_epoch == "rewarded":
+        movement = data.rewarded_movement_binary
+    elif movement_epoch == "unrewarded":
+        movement = data.lever_active - data.rewarded_movement_binary
+    elif movement_epoch == "nonmovement":
+        movement = np.absolute(data.lever_active - 1)
+    elif movement_epoch == "learned":
+        movement, _, _, _, _ = quantify_movment_quality(
+            data.mouse_id,
+            spine_activity,
+            data.lever_active,
+            threshold=0.5,
+            sampling_rate=sampling_rate,
+        )
+    else:
+        movement = None
+
+    # Set up output variables
+    distance_coactivity_rate = None
+    distance_bins = None
+    local_correlation = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactivity_rate = np.zeros(spine_activity.shape[1])
+    local_coactivity_matrix = np.zeros(spine_activity.shape)
+    spine_fraction_coactive = np.zeros(spine_activity.shape[1])
+    local_coactive_spine_num = np.zeros(spine_activity.shape[1])
+    local_coactive_spine_volumes = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactive_std = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_std = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactive_calcium_std = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_traces = [None for i in local_correlation]
+    local_coactive_traces = [None for i in local_correlation]
+    spine_coactive_calcium_traces = [None for i in local_correlation]
+    local_coactive_calcium_traces = [None for i in local_correlation]
+
+    # Process distance dependence coactivity rates
+    distance_coactivity_rate, distance_bins = local_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+    )
+
+    # Process spines for each parent dendrite
 
 
 def local_coactivity_rate_analysis(
