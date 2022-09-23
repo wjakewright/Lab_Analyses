@@ -367,7 +367,7 @@ def conjunctive_coactivity_analysis(
                 dendrite_dFoF=d_dFoF,
                 nearby_spine_volumes=nearby_volumes,
                 target_constant=glu_constant,
-                glu_constatns=nearby_glu_constants,
+                glu_constants=nearby_glu_constants,
                 ca_constants=nearby_ca_constants,
                 activity_window=(-2, 2),
                 sampling_rate=60,
