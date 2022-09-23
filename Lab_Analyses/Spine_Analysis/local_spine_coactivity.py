@@ -200,6 +200,65 @@ def local_spine_coactivity_analysis(
     )
 
     # Process spines for each parent dendrite
+    for dendrite in range(dendrite_activity.shape[1]):
+        # Get spines on this dendrite
+        if type(spine_groupings[dendrite]) == list:
+            spines = spine_groupings[dendrite]
+        else:
+            spines = spine_groupings
+
+        s_dFoF = spine_dFoF[:, spines]
+        s_activity = spine_activity[:, spines]
+        s_calcium = spine_calcium[:, spines]
+        curr_positions = spine_positions[spines]
+        curr_flags = [x for i, x in enumerate(spine_flags) if i in spines]
+        curr_volumes = spine_volumes[spines]
+        curr_glu_norm_constants = glu_norm_constants[spines]
+        curr_ca_norm_constants = ca_norm_constants[spines]
+
+        # Refine activity matrices for only movement epochs if specified
+        if movement is not None:
+            s_activity = (s_activity.T * movement).T
+
+        # Analyze each spine individually
+        for spine in range(s_dFoF.shape[1]):
+            # Find neighboring spines
+            ## Get relative spine positions
+            curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
+            curr_el_spines = np.array(curr_el_spines)
+            target_position = curr_positions[spine]
+            other_positions = [
+                x for idx, x in enumerate(curr_positions) if idx != spine
+            ]
+            relative_positions = np.array(other_positions) - target_position
+            relative_positions = np.abolute(relative_positions)
+            ## Find spines within cluster distance
+            nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
+            ## Remove the eliminated spines. Dan't want to consider their activity here
+            nearby_spines = nearby_spines * curr_el_spines
+
+            # Get relevant spine activity data
+            curr_s_dFoF = s_dFoF[:, spine]
+            curr_s_activity = s_activity[:, spine]
+            curr_s_calcium = s_calcium[:, spine]
+            nearby_s_dFoF = s_dFoF[:, nearby_spines]
+            nearby_s_activity = s_activity[:, nearby_spines]
+            nearby_s_calcium = s_calcium[:, nearby_spines]
+            nearby_volumes = curr_volumes[nearby_spines]
+            glu_constant = curr_glu_norm_constants[spine]
+            ca_constant = curr_ca_norm_constants[spine]
+            nearby_glu_constants = curr_glu_norm_constants[nearby_spines]
+            nearby_ca_constants = curr_ca_norm_constants[nearby_spines]
+
+            # Get local coactivity trace, where at least one nearby spine is coactive with target
+            combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
+            combined_nearby_activity[combined_nearby_activity > 1] = 1
+            curr_local_coactivity = combined_nearby_activity * curr_s_activity
+            local_coactivity_matrix[:, spines[spine]] = curr_local_coactivity
+
+            # Skip further analysis if no conjunctive coactivity for current spine
+            if not np.sum(curr_local_coactivity):
+                continue
 
 
 def local_coactivity_rate_analysis(
