@@ -260,6 +260,130 @@ def local_spine_coactivity_analysis(
             if not np.sum(curr_local_coactivity):
                 continue
 
+            # Get local coactivity timestamps
+            local_timestamps = get_activity_timestamps(curr_local_coactivity)
+
+            # Start analyzing the local coactivity
+            _, event_rate, spine_frac, _ = get_coactivity_rate(
+                curr_s_activity,
+                curr_local_coactivity,
+                curr_local_coactivity,
+                sampling_rate=sampling_rate,
+            )
+            local_coactivity_rate[spines[spine]] = event_rate
+            spine_fraction_coactive[spines[spine]] = spine_frac
+
+            # Analyze the activity of the target spine
+            (
+                s_traces,
+                _,
+                s_amp,
+                _,
+                s_std,
+                _,
+                _,
+                _,
+                _,
+            ) = get_dend_spine_traces_and_onsets(
+                curr_s_activity.reshape(-1, 1),
+                curr_s_activity.reshape(-1, 1),
+                curr_s_dFoF.reshape(-1, 1),
+                curr_s_dFoF.reshape(-1, 1),
+                curr_local_coactivity.reshape(-1, 1),
+                norm_constants=(glu_constant),
+                activity_window=(-2, 2),
+                sampling_rate=sampling_rate,
+            )
+            (
+                s_ca_traces,
+                _,
+                s_ca_amp,
+                s_ca_auc,
+                s_ca_std,
+                _,
+                _,
+                _,
+                _,
+            ) = get_dend_spine_traces_and_onsets(
+                curr_s_activity.reshape(-1, 1),
+                curr_s_activity.reshape(-1, 1),
+                curr_s_calcium.reshape(-1, 1),
+                curr_s_calcium.reshape(-1, 1),
+                curr_local_coactivity.reshape(-1, 1),
+                norm_constants=(ca_constant),
+                activity_window=(-2, 2),
+                sampling_rate=sampling_rate,
+            )
+            spine_coactive_amplitude[spines[spine]] = s_amp
+            spine_coactive_calcium[spines[spine]] = s_ca_amp
+            spine_coactive_std[spines[spine]] = s_std
+            spine_coactive_calcium_std[spines[spine]] = s_ca_std
+            spine_coactive_calcium_auc[spines[spine]] = s_ca_auc
+            spine_coactive_traces[spines[spine]] = s_traces
+            spine_coactive_calcium_traces[spines[spine]] = s_ca_traces
+
+            # Analyze the activity of nearby coactive spines
+            (
+                local_corr,
+                coactive_num,
+                coactive_vol,
+                activity_amp,
+                ca_activity_amp,
+                activity_std,
+                ca_activity_std,
+                ca_activity_auc,
+                coactive_s_traces,
+                coactive_s_ca_traces,
+            ) = nearby_spine_conjunctive_events(
+                timestamps=local_timestamps,
+                spine_dFoF=curr_s_dFoF,
+                nearby_dFoF=nearby_s_dFoF,
+                nearby_calcium=nearby_s_calcium,
+                nearby_activity=nearby_s_activity,
+                dendrite_dFoF=curr_s_dFoF,
+                nearby_spine_volumes=nearby_volumes,
+                target_constant=glu_constant,
+                glu_constants=nearby_glu_constants,
+                ca_constants=nearby_ca_constants,
+                activity_window=(-2, 2),
+                sampling_rate=sampling_rate,
+            )
+            local_correlation[spines[spine]] = local_corr
+            local_coactive_spine_num[spines[spine]] = coactive_num
+            local_coactive_spine_volumes[spines[spine]] = coactive_vol
+            local_coactive_amplitude[spines[spine]] = activity_amp
+            local_coactive_calcium[spines[spine]] = ca_activity_amp
+            local_coactive_std[spines[spine]] = activity_std
+            local_coactive_calcium_std[spines[spine]] = ca_activity_std
+            local_coactive_calcium_auc[spines[spine]] = ca_activity_auc
+            local_coactive_traces[spines[spine]] = coactive_s_traces
+            local_coactive_calcium_traces[spines[spine]] = coactive_s_ca_traces
+
+    return (
+        distance_coactivity_rate,
+        distance_bins,
+        local_correlation,
+        local_coactivity_rate,
+        local_coactivity_matrix,
+        spine_fraction_coactive,
+        local_coactive_spine_num,
+        local_coactive_spine_volumes,
+        spine_coactive_amplitude,
+        local_coactive_amplitude,
+        spine_coactive_calcium,
+        local_coactive_calcium,
+        spine_coactive_std,
+        local_coactive_std,
+        spine_coactive_calcium_std,
+        local_coactive_calcium_std,
+        spine_coactive_calcium_auc,
+        local_coactive_calcium_auc,
+        spine_coactive_traces,
+        local_coactive_traces,
+        spine_coactive_calcium_traces,
+        local_coactive_calcium_traces,
+    )
+
 
 def local_coactivity_rate_analysis(
     spine_activity,
