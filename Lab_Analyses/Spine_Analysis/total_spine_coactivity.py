@@ -128,7 +128,7 @@ def total_coactivity_analysis(
         glu_norm_constants = spine_volume_norm_constant(
             spine_activity,
             spine_dFoF,
-            data.spine_volume,
+            data.corrected_spine_volume,
             data.imaging_parameters["Zoom"],
             sampling_rate=sampling_rate,
             iterations=1000,
@@ -136,7 +136,7 @@ def total_coactivity_analysis(
         ca_norm_constants = spine_volume_norm_constant(
             spine_activity,
             spine_calcium,
-            data.spine_volume,
+            data.corrected_spine_volume,
             data.imaging_parameters["Zoom"],
             sampling_rate=sampling_rate,
             iterations=1000,
