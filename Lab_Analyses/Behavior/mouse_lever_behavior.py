@@ -86,7 +86,7 @@ def analyze_mouse_lever_behavior(
             directories.remove(dir)
 
     # Initialize sessions list
-    sessions = np.linspace(1, len(directories), len(directories), dtype=int)
+    sessions = np.linspace(1, len(imaged), len(imaged), dtype=int)
     sess_names = [os.path.basename(x) for x in directories]
 
     # Check is save suffix is a list or not
