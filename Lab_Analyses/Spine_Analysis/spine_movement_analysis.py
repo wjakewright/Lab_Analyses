@@ -9,6 +9,7 @@ import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     load_spine_datasets,
+    spine_volume_norm_constant,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
@@ -16,6 +17,62 @@ from scipy import stats
 
 
 def spine_movement_activity(
+    data, rewarded=False, zscore=False, volume_norm=False, sampling_rate=60
+):
+    """Function to get spine and dendrite movement-related activity"""
+
+    # Get relevant data
+    if rewarded:
+        movement_trace = data.rewarded_movement_binary
+    else:
+        movement_trace = data.lever_active
+    spine_groupings = data.spine_grouping
+    spine_volumes = np.array(data.corrected_spine_volume)
+    spine_dFoF = data.spine_GluSnFr_processed_dFoF
+    spine_activity = data.spine_GluSnFr_activity
+    dendrite_dFoF = data.dendrite_calcium_processed_dFoF
+
+    if zscore:
+        spine_dFoF = d_utils.z_score(spine_dFoF)
+        dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
+
+    if volume_norm:
+        norm_constants = spine_volume_norm_constant(
+            spine_activity,
+            spine_dFoF,
+            spine_volumes,
+            data.imaging_parameters["Zoom"],
+            sampling_rate=sampling_rate,
+            iterations=1000,
+        )
+    else:
+        norm_constants = np.array([None for x in spine_activity.shape[1]])
+
+    # Set up some outputs
+    dend_traces = []
+    spine_traces = []
+    dend_amplitudes = []
+    dend_std = []
+    spine_amplitudes = []
+    spine_std = []
+    dend_onsets = []
+    spine_onsets = []
+
+    # Process spines on each parent dendrite
+    for dendrite in range(dendrite_dFoF.shape[1]):
+        # Get spines on this dendrite
+        if type(spine_groupings[dendrite]) == list:
+            spines = spine_groupings[dendrite]
+        else:
+            spines = spine_groupings
+
+        # Get relevant data from current spines and dendrite
+        s_dFoF = spine_dFoF[:, spines]
+        d_dFoF = dendrite_dFoF[:, dendrite]
+        curr_norm_constants = norm_constants[:, spines]
+
+
+def spine_movement_activity1(
     data,
     activity_type="spine_GluSnFr_processed_dFoF",
     exclude="Eliminated",
