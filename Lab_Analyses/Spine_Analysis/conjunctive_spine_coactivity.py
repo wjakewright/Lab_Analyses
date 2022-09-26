@@ -127,9 +127,9 @@ def conjunctive_coactivity_analysis(
         
     """
 
-    spine_groupings = np.array(data.spine_grouping)
+    spine_groupings = data.spine_grouping
     spine_flags = data.spine_flags
-    spine_volumes = np.array(data.spine_volume)
+    spine_volumes = np.array(data.corrected_spine_volume)
     spine_positions = data.spine_positions
     spine_dFoF = data.spine_GluSnFr_processed_dFoF
     spine_calcium = data.spine_calcium_processed_dFoF
@@ -146,7 +146,7 @@ def conjunctive_coactivity_analysis(
         glu_norm_constants = spine_volume_norm_constant(
             spine_activity,
             spine_dFoF,
-            data.spine_volume,
+            data.corrected_spine_volume,
             data.imaging_parameters["Zoom"],
             sampling_rate=sampling_rate,
             iterations=1000,
@@ -154,7 +154,7 @@ def conjunctive_coactivity_analysis(
         ca_norm_constants = spine_volume_norm_constant(
             spine_activity,
             spine_calcium,
-            data.spine_volume,
+            data.corrected_spine_volume,
             data.imaging_parameters["Zoom"],
             sampling_rate=sampling_rate,
             iterations=1000,
