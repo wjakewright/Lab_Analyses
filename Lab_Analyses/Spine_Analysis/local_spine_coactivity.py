@@ -1,7 +1,5 @@
 """Module to perform spine co-activity analyses"""
 
-from threading import local
-
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_activity_timestamps,
