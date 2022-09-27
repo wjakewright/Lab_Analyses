@@ -10,7 +10,7 @@ from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
     local_spine_coactivity_analysis,
 )
 from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
-    quantify_movment_quality,
+    quantify_movement_quality,
     spine_movement_activity,
 )
 from Lab_Analyses.Spine_Analysis.spine_utilities import load_spine_datasets
@@ -168,7 +168,7 @@ def grouped_coactivity_analysis(
                 conj_coactive_spine_calcium_traces,
                 conj_coactive_nearby_calcium_traces,
                 conj_coactive_dend_traces,
-                conj_conjunctive_coactivity_matrix,
+                conj_coactivity_matrix,
             ) = conjunctive_coactivity_analysis(
                 data,
                 movement_epoch=movement_epochs,
@@ -178,4 +178,106 @@ def grouped_coactivity_analysis(
                 volume_norm=volume_norm,
             )
 
-            # Analyze movement
+            # Analyze movement-related activity
+            (
+                move_dend_traces,
+                move_spine_traces,
+                move_dend_amplitude,
+                move_dend_std,
+                move_spine_amplitude,
+                move_spine_std,
+                move_dend_onset,
+                move_spine_onset,
+            ) = spine_movement_activity(
+                data,
+                rewarded=False,
+                zscore=zscore,
+                volume_norm=volume_norm,
+                sampling_rate=sampling_rate,
+                activity_window=(-2, 2),
+            )
+            (
+                rwd_move_dend_traces,
+                rwd_move_spine_traces,
+                rwd_move_dend_amplitude,
+                rwd_move_dend_std,
+                rwd_move_spine_amplitude,
+                rwd_move_spine_std,
+                rwd_move_dend_onset,
+                rwd_move_spine_onset,
+            ) = spine_movement_activity(
+                data,
+                rewarded=True,
+                zscore=zscore,
+                volume_norm=volume_norm,
+                sampling_rate=sampling_rate,
+                activity_window=(-2, 2),
+            )
+            # Assess movement quality
+            (
+                _,
+                spine_movements,
+                _,
+                spine_movement_corr,
+                learned_movement,
+            ) = quantify_movement_quality(
+                mouse,
+                data.spine_GluSnFr_activity,
+                data.lever_active,
+                data.lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            ### Set up dendrite activity matrix for each spine
+            dend_activity_matrix = np.zeros(data.spine_GluSnFr_activity.shape)
+            for d in range(data.dendrite_calcium_activity.shape[1]):
+                if type(data.spine_grouping[d]) == list:
+                    spines = data.spine_grouping[d]
+                else:
+                    spines = data.spine_grouping
+                dend_activity_matrix[:, spines] = data.dendrite_calcium_activity[:, d]
+            (_, dend_movements, _, dend_movement_corr, _,) = quantify_movement_quality(
+                mouse,
+                dend_activity_matrix,
+                data.lever_active,
+                data.lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            (
+                _,
+                local_movements,
+                _,
+                local_movement_corr,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                local_coactivity_matrix,
+                data.lever_active,
+                data.lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            (
+                _,
+                global_movements,
+                _,
+                global_movement_corr,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                global_coactivity_matrix,
+                data.lever_active,
+                data.lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            (_, conj_movements, _, conj_movement_corr, _,) = quantify_movement_quality(
+                mouse,
+                conj_coactivity_matrix,
+                data.lever_active,
+                data.lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+
