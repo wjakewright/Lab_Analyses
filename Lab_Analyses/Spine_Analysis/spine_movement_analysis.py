@@ -6,6 +6,10 @@ from itertools import compress
 
 import numpy as np
 import scipy.signal as sysignal
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
+    find_activity_onset,
+    get_activity_timestamps,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     load_spine_datasets,
@@ -17,9 +21,51 @@ from scipy import stats
 
 
 def spine_movement_activity(
-    data, rewarded=False, zscore=False, volume_norm=False, sampling_rate=60
+    data,
+    rewarded=False,
+    zscore=False,
+    volume_norm=False,
+    sampling_rate=60,
+    activity_window=(-2, 2),
 ):
-    """Function to get spine and dendrite movement-related activity"""
+    """Function to get spine and dendrite movement-related activity
+    
+        INPUT PARAMETERS
+            data - dataclass of spine data (e.g., Dual_Channel_Spine_Data
+            
+            rewarded - boolean term of whether to use only rewarded movements
+            
+            zscore - boolean term of whether to zscore the activity data
+            
+            volume_norm - boolean term of whether or not to normalize the activity
+                            based on the spines volume
+            
+            sampling_rate - int or float of the imaging sampling rate
+            
+            activity_window - tuple specifying the period around movement you to 
+                                analyze in seconds
+                                
+        OUTPUT PARAMETERS
+            dend_traces - list of 2d np.array of dendrite activity around each event.
+                            Centered around movement onset. columns = each event, 
+                            rows = time (in frames)
+            
+            spine_traces - list of 2d np.arrays of spine activity around each event.
+                            Centered around movement onset. colums = each event, 
+                            rows = time (in frames)
+            
+            dend_amplitudes - np.array of the peak dendrite amplitude 
+            
+            dend_std - np.array of the std of dendritic activity
+            
+            spine_amplitudes - np.array of the peak spine amplitude
+            
+            spine_std - np.array of the std of the spine activity
+            
+            dend_onsets - np.array of the dendrite activity onsets relative to movements
+            
+            spine_onsets - np.array of the spine activity onsets relative to movements
+    """
 
     # Get relevant data
     if rewarded:
@@ -48,15 +94,17 @@ def spine_movement_activity(
     else:
         norm_constants = np.array([None for x in spine_activity.shape[1]])
 
+    center_point = activity_window[0] * sampling_rate
+
     # Set up some outputs
-    dend_traces = []
-    spine_traces = []
-    dend_amplitudes = []
-    dend_std = []
-    spine_amplitudes = []
-    spine_std = []
-    dend_onsets = []
-    spine_onsets = []
+    dend_traces = [None for i in spine_dFoF.shape[1]]
+    spine_traces = [None for i in spine_dFoF.shape[1]]
+    dend_amplitudes = np.zeros(spine_dFoF.shape[1])
+    dend_std = np.zeros(spine_dFoF.shape[1])
+    spine_amplitudes = np.zeros(spine_dFoF.shape[1])
+    spine_std = np.zeros(spine_dFoF.shape[1])
+    dend_onsets = np.zeros(spine_dFoF.shape[1])
+    spine_onsets = np.zeros(spine_dFoF.shape[1])
 
     # Process spines on each parent dendrite
     for dendrite in range(dendrite_dFoF.shape[1]):
@@ -71,111 +119,73 @@ def spine_movement_activity(
         d_dFoF = dendrite_dFoF[:, dendrite]
         curr_norm_constants = norm_constants[:, spines]
 
+        # Get movement onset timestamps
+        timestamps = get_activity_timestamps(movement_trace)
 
-def spine_movement_activity1(
-    data,
-    activity_type="spine_GluSnFr_processed_dFoF",
-    exclude="Eliminated",
-    sampling_rate=60,
-    rewarded=False,
-):
-    """Function to get the spine activity during movement epochs. 
-        Gets the mean before and during movement, as well as the each trace and mean±sem trace
-        
-        INPUT PARAMETERS
-            data - spind_data object. (e.g., Dual_Channel_Spine_Data
-            
-            activity_type - str specifying what type of activity you wish to use. Must match the 
-                            field name of the data object
-            
-            exclude - string specifying types of spines you wish to exlude from analysis
-            
-            sampling_rate - float or int specifying the imaging rate the data was collected with
+        # Get individual traces and mean traces
+        s_traces, s_mean_sems = d_utils.get_trace_mean_sem(
+            s_dFoF,
+            [f"spine {a}" for a in range(s_dFoF.shape[1])],
+            timestamps,
+            window=activity_window,
+            sampling_rate=sampling_rate,
+        )
+        d_traces, d_mean_sem = d_utils.get_trace_mean_sems(
+            d_dFoF.reshape(-1, 1),
+            ["Dendrite"],
+            timestamps,
+            window=activity_window,
+            sampling_rate=sampling_rate,
+        )
+        # Reorganize trace outputs
+        s_traces = list(s_traces.values())
+        s_means = [x[0] for x in s_mean_sems.values()]
+        d_traces = list(d_traces.values())[0]
+        d_mean = list(d_mean_sem.values())[0][0]
 
-            rewarded - boolean specifying whether to use only rewarded movements or not
-            
-        OUTPUT PARAMETERS
-            all_befores - 
-            
-            all_durings - 
-            
-            movement_epochs - 
-            
-            movement_mean_sems - 
-    """
+        if volume_norm:
+            s_traces = [s_traces[i] / norm_constants[i] for i in range(s_dFoF.shape[1])]
+            s_means = [s_means[i] / norm_constants[i] for i in range(s_dFoF.shape[1])]
 
-    before_window = int(2 * sampling_rate)
+        # Get onsets and amplitudes
+        s_onsets, s_amps = find_activity_onset(s_means)
+        d_onset, d_amp = find_activity_onset([d_mean])
+        d_onset = d_onset[0]
+        d_amp = d_amp[0]
 
-    # Get the activity and behavior out of the object
-    activity = getattr(data, activity_type)
-    spine_ids = data.spine_ids
-    if rewarded:
-        movement = data.rewarded_movement_binary
-    else:
-        movement = data.lever_active
+        # Get activity std and relative onset for each spine
+        for spine in range(s_dFoF.shape[1]):
+            # Relative onsets
+            s_rel_onset = (s_onsets[spine] - center_point) / sampling_rate
+            d_rel_onset = (d_onset - center_point) / sampling_rate
+            # Activity std
+            s_max = np.where(s_means[spine] == s_amps[spine])
+            s_std = np.nanstd(s_traces[spine], axis=1)
+            s_std = s_std[s_max]
+            d_max = np.where(d_mean == d_amp)
+            d_std = np.nanstd(d_traces, axis=1)
+            d_std = d_std[d_max]
 
-    # Get indexes of spines to analzyed
-    if exclude:
-        exclude_spines = find_spine_classes(data.spine_flags, exclude)
-        exclude_spines = np.array([not x for x in exclude_spines])
-        spine_ids = list(compress(spine_ids, exclude_spines))
-        activity = activity[:, exclude_spines]
+            # Store outputs
+            dend_traces[spines[spine]] = d_traces
+            spine_traces[spines[spine]] = s_traces[spine]
+            dend_amplitudes[spines[spine]] = d_amp
+            dend_std[spines[spine]] = d_std
+            spine_amplitudes[spines[spine]] = s_amps[spine]
+            spine_std[spines[spine]] = s_std
+            dend_onsets[spines[spine]] = d_rel_onset
+            spine_onsets[spines[spine]] = s_rel_onset
 
-    # Get the movement onset and offset timestamps
-    movement_diff = np.insert(np.diff(movement), 0, 0, axis=0)
-    movement_onsets = np.nonzero(movement_diff == 1)[0]
-    movement_offsets = np.nonzero(movement_diff == -1)[0]
-
-    ## made sure onsets and offsets are the same length
-    if len(movement_onsets) > len(movement_offsets):
-        # Drop last onset if there is no offset
-        movement_onsets = movement_onsets[:-1]
-    elif len(movement_onsets) < len(movement_offsets):
-        # Drop first offest if there is no onset for it
-        movement_offsets = movement_offsets[1:]
-
-    timestamps = []
-    for onset, offset in zip(movement_onsets, movement_offsets):
-        stamp = (onset, offset)
-        timestamps.append(stamp)
-
-    # Refine the timestamps
-    refined_idxs = []
-    for i, stamp in enumerate(timestamps):
-        # remove first movement if to early
-        if stamp[0] - before_window < 0:
-            refined_idxs.append(False)
-            continue
-        # remove movements that go beyond activity window at end
-        if stamp[0] + before_window >= len(activity[:, 0]):
-            refined_idxs.append(False)
-            continue
-        # remove movements with another movement 1s before
-        if i == 0:
-            refined_idxs.append(True)
-            continue
-        if stamp[0] - before_window <= timestamps[i - 1][1]:
-            refined_idxs.append(False)
-        else:
-            refined_idxs.append(True)
-
-    timestamps = list(compress(timestamps, refined_idxs))
-    epoch_timestamps = [x[0] for x in timestamps]
-
-    # Get all befores, and durings
-    all_befores, all_durings = d_utils.get_before_during_means(
-        activity, timestamps, window=1, sampling_rate=sampling_rate
+    return (
+        dend_traces,
+        spine_traces,
+        dend_amplitudes,
+        dend_std,
+        spine_amplitudes,
+        spine_std,
+        dend_onsets,
+        spine_onsets,
     )
-    # Get the traces and mean±sem trace
-    movement_epochs, movement_mean_sems = d_utils.get_trace_mean_sem(
-        activity,
-        spine_ids,
-        epoch_timestamps,
-        window=(-2, 2),
-        sampling_rate=sampling_rate,
-    )
-
-    return all_befores, all_durings, movement_epochs, movement_mean_sems
 
 
 def quantify_movment_quality(
