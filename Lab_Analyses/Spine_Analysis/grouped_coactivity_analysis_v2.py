@@ -695,6 +695,28 @@ def grouped_coactivity_analysis(
         conj_movement_corr=grouped_data["conj_movement_corr"],
     )
 
+    # Save Section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Desktop\Analyzed_data\grouped"
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+
+        # Set up name to include some parameters
+        if movement_epochs is None:
+            epoch_name = "session"
+        else:
+            epoch_name = movement_epochs
+        if zscore:
+            a_type = "zscore"
+        else:
+            a_type = "dFoF"
+
+        save_name = f"{day}_{epoch_name}_{a_type}_spine_coactivity_data"
+        save_pickle(save_name, spine_coactivity_data, save_path)
+
+    return spine_coactivity_data
+
 
 ################# DATACLASS #####################
 @dataclass
