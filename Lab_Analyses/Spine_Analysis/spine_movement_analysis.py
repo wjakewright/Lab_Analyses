@@ -188,7 +188,7 @@ def spine_movement_activity(
     )
 
 
-def quantify_movment_quality(
+def quantify_movement_quality(
     mouse_id,
     activity_matrix,
     lever_active,
