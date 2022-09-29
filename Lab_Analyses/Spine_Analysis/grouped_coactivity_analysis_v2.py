@@ -1,7 +1,6 @@
 import os
 from collections import defaultdict
 from dataclasses import dataclass
-from tokenize import group
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.conjunctive_spine_coactivity import (
@@ -542,6 +541,7 @@ def grouped_coactivity_analysis(
 
     # Store data for outputing and saving
     spine_coactivity_data = Spine_Coactivity_Data(
+        day=day,
         mouse_id=grouped_data["mouse_id"],
         FOV=grouped_data["FOV"],
         parameters=parameters,
@@ -724,6 +724,7 @@ class Spine_Coactivity_Data:
     """Dataclass for storing spine data of a single day following coactivity analysis 
         across all mice in a given group"""
 
+    day: str
     mouse_id: list
     FOV: list
     parameters: dict
