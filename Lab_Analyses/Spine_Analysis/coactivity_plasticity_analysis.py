@@ -1,4 +1,5 @@
 import os
+from itertools import compress
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis import spine_plotting as sp
@@ -7,6 +8,7 @@ from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     classify_plasticity,
 )
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
+from scipy import stats
 
 
 class Coactivity_Plasticity:
@@ -177,6 +179,70 @@ class Coactivity_Plasticity:
             m_colors=colors,
             s_colors=colors,
             s_alpha=s_alpha,
+            save=save,
+            save_path=save_path,
+        )
+
+    def plot_plastic_spine_mean_traces(
+        self,
+        trace_type,
+        exclude=None,
+        avlines=None,
+        figsize=(5, 5),
+        colors=["darkorange", "forestgreen", "silver"],
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot the mean activity traces for each plastic spine group"""
+
+        # Get the relevant traces
+        traces = getattr(self, trace_type)
+        enlarged_traces = compress(traces, self.enlarged_spines)
+        shrunken_traces = compress(traces, self.shrunken_spines)
+        stable_traces = compress(traces, self.stable_spines)
+        # Get the means for each spine
+        enlarged_mean_traces = [x.mean(axis=1) for x in enlarged_traces]
+        enlarged_mean_traces = np.vstack(enlarged_mean_traces)
+        shrunken_mean_traces = [x.mean(axis=1) for x in shrunken_traces]
+        shrunken_mean_traces = np.vstack(shrunken_mean_traces)
+        stable_mean_traces = [x.mean(axis=1) for x in stable_traces]
+        stable_mean_traces = np.vstack(stable_mean_traces)
+        # Get mean and sem across traces
+        enlarged_mean = np.mean(enlarged_mean_traces, axis=0)
+        enlarged_sem = stats.sem(enlarged_mean_traces, axis=0)
+        shrunken_mean = np.mean(shrunken_mean_traces, axis=0)
+        shrunken_sem = stats.sem(shrunken_mean_traces, axis=0)
+        stable_mean = np.mean(stable_mean_traces, axis=0)
+        stable_sem = stats.sem(stable_mean_traces, axis=0)
+
+        # prepare data for plotting
+        spine_groups = ["enlarged", "shrunken", "stable"]
+        mean_list = []
+        sem_list = []
+        plot_colors = []
+        for i, group in enumerate(spine_groups):
+            if group == exclude:
+                continue
+            mean_list.append(eval(f"{group}_mean"))
+            sem_list.append(eval(f"{group}_sem"))
+            plot_colors.append(colors[i])
+        if self.parameters["zscore"]:
+            ytitle = "zscore"
+        else:
+            ytitle = "\u0394" + "F/F\u2080"
+
+        # Make the plot
+        sp.plot_mean_activity_traces(
+            mean_list,
+            sem_list,
+            sampling_rate=self.parameters["Sampling Rate"],
+            avlines=avlines,
+            figsize=figsize,
+            colors=plot_colors,
+            title=None,
+            ytitle=ytitle,
+            ylim=ylim,
             save=save,
             save_path=save_path,
         )
