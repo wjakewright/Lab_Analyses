@@ -363,9 +363,9 @@ def plot_mean_activity_trace(
     """Function to plot mean activity traces
         
         INPUT PARAMTERS
-            mean - np.array of mean trace
+            mean - np.array of mean trace or a list of arrays for multiple groups
             
-            sem - np.array of sem trace
+            sem - np.array of sem trace or a list of arrays for multiple groups
 
             sampling_rate - int specifing the imaging sampling rate
             
@@ -384,11 +384,15 @@ def plot_mean_activity_trace(
             save_path - str of where to save the figure
             
     """
-
     fig = plt.figure(figsize=figsize)
     x = np.linspace(0, len(mean) / sampling_rate, len(mean))
-    plt.plot(x, mean, color=color)
-    plt.fill_between(x, mean - sem, mean + sem, color=color, alpha=0.2)
+    if type(mean) == np.ndarray:
+        plt.plot(x, mean, color=color)
+        plt.fill_between(x, mean - sem, mean + sem, color=color, alpha=0.2)
+    elif type(mean) == list:
+        for m, s, c in zip(mean, sem, color):
+            plt.plot(x, m, color=c)
+            plt.fill_between(x, m - s, m + s, c, alpha=0.2)
     if avlines:
         for line in avlines:
             plt.axvline(x=line / sampling_rate, linestyle="--", color="black")
@@ -398,7 +402,7 @@ def plot_mean_activity_trace(
     plt.ylabel(ytitle)
     plt.xlabel("Time (s)")
     plt.xticks(
-        ticks=[0, 2, 4], labels=[0, 2, 4],
+        ticks=[0, 2, 4], labels=[-2, 0, 2],
     )
 
     fig.tight_layout()
