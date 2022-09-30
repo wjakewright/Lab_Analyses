@@ -135,6 +135,52 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_plastic_spine_groups(
+        self,
+        variable_name,
+        mean_type,
+        err_type,
+        marker="o",
+        figsize=(5, 5),
+        ytitle=None,
+        ylim=None,
+        colors=["darkorange", "forestgreen", "silver"],
+        s_alpha=0.3,
+        save=False,
+        save_path=None,
+    ):
+        """Method for plotting means and individual points for a given variable for each spine
+            group"""
+        variable = getattr(self, variable_name)
+
+        enlarged_data = variable[self.enlarged_spines]
+        shrunken_data = variable[self.shrunken_spines]
+        stable_data = variable[self.stable_spines]
+
+        data_dict = {
+            "Enlarged": enlarged_data,
+            "Shrunken": shrunken_data,
+            "Stable": stable_data,
+        }
+
+        sp.plot_swarm_bar_plot(
+            data_dict,
+            mean_type,
+            err_type,
+            marker,
+            figsize,
+            title=None,
+            xtitle=None,
+            ytitle=ytitle,
+            ylim=ylim,
+            linestyle="",
+            m_colors=colors,
+            s_colors=colors,
+            s_alpha=s_alpha,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
