@@ -1,16 +1,18 @@
 import os
 
 import numpy as np
+from Lab_Analyses.Spine_Analysis import spine_plotting as sp
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
 )
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 class Coactivity_Plasticity:
     """Class to handle the analysis of spine plasticity on coactivity datasets"""
 
-    def __init__(self, data, threshold, exclude):
+    def __init__(self, data, threshold, exclude, save=False, save_path=None):
         """Initialize the class
         
             INPUT PARAMETERS
@@ -39,9 +41,14 @@ class Coactivity_Plasticity:
         self.threshold = threshold
         self.exclude = exclude
         self.parameters = self.dataset.parameters
+        self.save = save
+        self.save_path = save_path
 
         # Analyze the data
         self.analyze_plasticity()
+
+        if save:
+            self.save_output()
 
     def analyze_plasticity(self):
         """Method to calculate spine volume change and classify plasticity"""
@@ -87,3 +94,62 @@ class Coactivity_Plasticity:
                 raise Exception(f"{variable} is incorrect datatype !!!")
             # Store the attribute
             setattr(self, attribute, new_variable)
+
+    def plot_volume_correlation(
+        self,
+        variable_name,
+        CI=None,
+        y_title=None,
+        xlim=None,
+        ylim=None,
+        face_color="mediumblue",
+        edge_color="white",
+        edge_width=0.3,
+        s_alpha=0.5,
+        line_color="mediumblue",
+        line_width=1,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot and correlation a given variable against spine volume change"""
+        variable = getattr(self, variable_name)
+        x_title = "\u0394" + " spine volume"
+
+        sp.plot_sns_scatter_correlation(
+            self.relative_volumes,
+            variable,
+            CI,
+            title=None,
+            x_title=x_title,
+            y_title=y_title,
+            figsize=(5, 5),
+            xlim=xlim,
+            ylim=ylim,
+            face_color=face_color,
+            edge_color=edge_color,
+            edge_width=edge_width,
+            s_alpha=s_alpha,
+            line_color=line_color,
+            line_width=line_width,
+            save=save,
+            save_path=save_path,
+        )
+
+    def save_output(self):
+        """Method to save the output"""
+        if self.save_path is None:
+            save_path = r"C:\Users\Desktop\Analyzed_data\grouped"
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+
+        # Set up name based on some of the parameters
+        if self.parameters["Movement Epoch"] is None:
+            epoch_name = "session"
+        else:
+            epoch_name = self.parameters["Movement Epoch"]
+        if self.parameters["zscore"]:
+            a_type = "zscore"
+        else:
+            a_type = "dFoF"
+        save_name = f"{self.day}_{epoch_name}_{a_type}_coactivity_plasticity_data"
+        save_pickle(save_name, self, save_path)
