@@ -353,7 +353,7 @@ def plot_mean_activity_trace(
     sampling_rate=60,
     avlines=None,
     figsize=(5, 5),
-    color="mediumblue",
+    colors="mediumblue",
     title=None,
     ytitle=None,
     ylim=None,
@@ -387,10 +387,10 @@ def plot_mean_activity_trace(
     fig = plt.figure(figsize=figsize)
     x = np.linspace(0, len(mean) / sampling_rate, len(mean))
     if type(mean) == np.ndarray:
-        plt.plot(x, mean, color=color)
-        plt.fill_between(x, mean - sem, mean + sem, color=color, alpha=0.2)
+        plt.plot(x, mean, color=colors)
+        plt.fill_between(x, mean - sem, mean + sem, color=colors, alpha=0.2)
     elif type(mean) == list:
-        for m, s, c in zip(mean, sem, color):
+        for m, s, c in zip(mean, sem, colors):
             plt.plot(x, m, color=c)
             plt.fill_between(x, m - s, m + s, c, alpha=0.2)
     if avlines:
@@ -404,7 +404,7 @@ def plot_mean_activity_trace(
     plt.xticks(
         ticks=[0, 2, 4], labels=[-2, 0, 2],
     )
-
+    plt.legend(loc="upper right")
     fig.tight_layout()
     if save:
         if save_path is None:
