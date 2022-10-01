@@ -404,8 +404,99 @@ def plot_mean_activity_trace(
     plt.xticks(
         ticks=[0, 2, 4], labels=[-2, 0, 2],
     )
+    plt.tick_params(axis="both", which="both", direction="in", length=4)
     plt.legend(loc="upper right")
     fig.tight_layout()
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
+
+def ind_mean_activity_traces(
+    mean_list,
+    sem_list,
+    sampling_rate=60,
+    avlines=None,
+    figsize=(10, 4),
+    color="mediumblue",
+    title=None,
+    ytitle=None,
+    ylim=None,
+    save=False,
+    save_path=None,
+):
+    """Function to plot all of the mean activity traces across all 
+        spiens
+        
+        INPUT PARAMETERS
+            mean_list - list of np.arrays contianing the mean activity
+                        trace for each spine
+            
+            sem_list - list of np.arrays containing the sem of activity
+                        traces for each spine
+            
+            sampling_rate - int or float specifying the sampling rate
+            
+            avlines - list of tuples of lines to label on the x axis (e.g., onsets)
+            
+            figsize - tuple specifying the size of the figure
+            
+            color - str specifying the color of the traces
+            
+            title - str specifying the title of the plot
+            
+            ytitle - str specifying the title of the y axis
+            
+            ylim - tuple specifying the limits of the y axis
+            
+            save - boolean of whetehr or not to save the graph
+            
+            save_path - str of the path of where to save the graph
+            
+    """
+    # Set up the subplots
+    tot = len(mean_list)
+    COL_NUM = 4
+    row_num = tot // COL_NUM
+    row_num += tot % COL_NUM
+    fig_size = (figsize[0], figsize[1] * row_num)
+    fig = plt.figure(figsize=fig_size)
+    fig.subplots_adjust(hspace=0.5)
+    fig.suptitle(title)
+
+    # Get max amplitude in order to set ylim
+    if ylim is None:
+        maxes = []
+        mins = []
+        for mean, sem in zip(mean_list, sem_list):
+            maxes.append(np.max(mean) + np.max(sem))
+            mins.append(np.min(mean) - np.max(sem))
+        ylim = (np.max(maxes), np.min(mins))
+
+    if avlines is None:
+        avlines = [None for i in mean_list]
+
+    count = 1
+    # Make individual plots
+    for mean, sem, avline in zip(mean_list, sem_list, avlines):
+        x = np.linspace(0, len(mean) / sampling_rate, len(mean))
+        ax = fig.add_subplot(row_num, COL_NUM, count)
+        ax.plot(x, mean, color=color)
+        ax.fill_between(x, mean - sem, mean + sem, color=color, alpha=0.2)
+        if avline:
+            for line in avline:
+                ax.avline(x=line, linestyle="--", color="black")
+        plt.xticks(ticks=[0, 2, 4], labels=[-2, 0, 2])
+        plt.xlabel("Time (s)")
+        plt.ylim(bottom=ylim[0], top=ylim[1])
+        plt.ylabel(ytitle)
+        plt.tick_params(axis="both", which="both", direction="in", length=4)
+        count += 1
+
+    fig.tight_layout()
+
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
