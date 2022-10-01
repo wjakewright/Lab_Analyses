@@ -121,7 +121,7 @@ class Coactivity_Plasticity:
             self.relative_volumes,
             variable,
             CI,
-            title=None,
+            title=variable_name,
             x_title=x_title,
             y_title=y_title,
             figsize=(5, 5),
@@ -171,7 +171,7 @@ class Coactivity_Plasticity:
             err_type,
             marker,
             figsize,
-            title=None,
+            title=variable_name,
             xtitle=None,
             ytitle=ytitle,
             ylim=ylim,
@@ -240,7 +240,47 @@ class Coactivity_Plasticity:
             avlines=avlines,
             figsize=figsize,
             colors=plot_colors,
-            title=None,
+            title=trace_type,
+            ytitle=ytitle,
+            ylim=ylim,
+            save=save,
+            save_path=save_path,
+        )
+
+    def plot_ind_spine_mean_traces(
+        self,
+        trace_type,
+        group,
+        avlines=None,
+        figsize=(10, 4),
+        color="mediumblue",
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot mean activity traces for each spine in a given
+            spine group"""
+
+        # Get relevant traces
+        traces = getattr(self, trace_type)
+        group_spines = getattr(self, group)
+        group_traces = compress(traces, group_spines)
+        mean_traces = [x.mean(axis=1) for x in group_traces]
+        sem_traces = [stats.sem(x, axis=1) for x in group_traces]
+
+        if self.parameters["zscore"]:
+            ytitle = "zscore"
+        else:
+            ytitle = "\u0394" + "F/F\u2080"
+
+        sp.ind_mean_activity_traces(
+            mean_traces,
+            sem_traces,
+            sampling_rate=self.parameters["Sampling Rate"],
+            avlines=avlines,
+            figsize=figsize,
+            color=color,
+            title=f"{trace_type} {group}",
             ytitle=ytitle,
             ylim=ylim,
             save=save,
