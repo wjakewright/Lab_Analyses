@@ -247,6 +247,7 @@ def plot_multi_line_plot(
     to_plot,
     colors=None,
     ylims=None,
+    sizes=None,
     save=False,
     save_path=None,
 ):
@@ -260,9 +261,11 @@ def plot_multi_line_plot(
             
             to_plot - list of string specifying what to plot. Accepts:
                      'success rate', 'cue to reward', 'reaction time', 
-                     'within correlation', 'across correlation', 'correlation heatmap'
+                     'within correlation', 'across correlation'
                      
-            colors - list of str specifying what color to give the different groups
+            colors - list of str specifying what color to give the different groups.
+                    Accepts success", "cue_to_reward", "reaction_time", "within", "across"
+                    Optional with default set to None. Can specify on the ones you wish to change. 
             
             ylims - dic specifying what ylim to set each different plot to, with each
                     key corresponding to the to_plot list
@@ -272,6 +275,79 @@ def plot_multi_line_plot(
             save_path - str specifying where to save the figures
             
     """
+    if save is True and save_path is None:
+        raise Exception("Must specify the save path in order to save the figure")
+
+    # Set up some variables
+    if ylims is None:
+        ylims = {
+            "success": None,
+            "cue_to_reward": None,
+            "reaction_time": None,
+            "within": None,
+            "across": None,
+        }
+    if sizes is None:
+        sizes = {
+            "success": (6, 5),
+            "cue_to_reward": (6, 5),
+            "reaction_time": (6, 5),
+            "within": (6, 5),
+            "across": (6, 5),
+        }
+
+    # Make each plot specified
+    for plot in zip(to_plot):
+        # Get the relevant data
+        if plot == "success rate":
+            data = [x.success_rate for x in data_list]
+            ylim = ylims["success"]
+            size = sizes["success"]
+        elif plot == "reaction time":
+            data = [x.avg_reaction_time for x in data_list]
+            ylim = ylims["reaction_time"]
+            size = sizes["reaction_time"]
+        elif plot == "cue to reward":
+            data = [x.avg_cue_to_reward for x in data_list]
+            ylim = ylims["cue_to_reward"]
+            size = sizes["cue_to_reward"]
+        elif plot == "within correlation":
+            data = [x.within_sess_corr for x in data_list]
+            ylim = ylims["within"]
+            size = sizes["within"]
+        elif plot == "across correlation":
+            data = [x.across_sess_corr for x in data_list]
+            ylim = ylims["across"]
+            size = sizes["across"]
+
+        fig = plt.figure(figsize=size)
+        fig.subtitle(plot)
+        for d, c, n in zip(data, colors, group_names):
+            plt.errorbar(
+                d["session"],
+                d["mean"],
+                yerr=d["sem"],
+                color=c,
+                marker="o",
+                markerfacecolor="white",
+                markeredgecolor=c,
+                linewidth=1.5,
+                elinewidth=1,
+                ecolor=c,
+                label=n,
+            )
+        plt.xlabel("Session", labelpad=15)
+        plt.xticks(d["session"], d["session"])
+        plt.ylabel(plot, labelpad=15)
+        if ylim is not None:
+            plt.ylim(bottom=ylim[0], top=ylim[1])
+        plt.legend(bbox_to_anchor=(1, 1), loc="upper right", ncol=1)
+
+        fig.tight_layout()
+
+        if save is True:
+            fname = os.path.join(save_path, plot)
+            plt.savefig(fname + ".pdf")
 
 
 # --------------------------------------------------------------------------
