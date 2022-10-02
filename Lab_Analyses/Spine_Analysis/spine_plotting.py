@@ -350,6 +350,7 @@ def mean_and_lines_plot(
 def plot_mean_activity_trace(
     mean,
     sem,
+    group_names=None,
     sampling_rate=60,
     avlines=None,
     figsize=(5, 5),
@@ -390,8 +391,8 @@ def plot_mean_activity_trace(
         plt.plot(x, mean, color=colors)
         plt.fill_between(x, mean - sem, mean + sem, color=colors, alpha=0.2)
     elif type(mean) == list:
-        for m, s, c in zip(mean, sem, colors):
-            plt.plot(x, m, color=c)
+        for m, s, c, n in zip(mean, sem, colors, group_names):
+            plt.plot(x, m, color=c, label=n)
             plt.fill_between(x, m - s, m + s, c, alpha=0.2)
     if avlines:
         for line in avlines:
