@@ -241,6 +241,39 @@ def plot_mean_sem_line_plot(
         plt.savefig(fname + ".pdf")
 
 
+def plot_multi_line_plot(
+    group_names,
+    data_list,
+    to_plot,
+    colors=None,
+    ylims=None,
+    save=False,
+    save_path=None,
+):
+    """Function to plot multiple groups of mice behavioral data against each other
+        on the same plot
+        
+        INPUT PARAMETERS
+            group_names - list of str specifying the group names
+            
+            data_list - list of grouped_lever_press dataclasses for each group
+            
+            to_plot - list of string specifying what to plot. Accepts:
+                     'success rate', 'cue to reward', 'reaction time', 
+                     'within correlation', 'across correlation', 'correlation heatmap'
+                     
+            colors - list of str specifying what color to give the different groups
+            
+            ylims - dic specifying what ylim to set each different plot to, with each
+                    key corresponding to the to_plot list
+                    
+            save - boolean of whether or not to save the output figures
+            
+            save_path - str specifying where to save the figures
+            
+    """
+
+
 # --------------------------------------------------------------------------
 # ------------------------SPECIFIC LINE PLOTS-------------------------------
 # --------------------------------------------------------------------------
