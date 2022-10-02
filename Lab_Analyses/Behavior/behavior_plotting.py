@@ -297,7 +297,7 @@ def plot_multi_line_plot(
         }
 
     # Make each plot specified
-    for plot in zip(to_plot):
+    for plot in to_plot:
         # Get the relevant data
         if plot == "success rate":
             data = [x.success_rate for x in data_list]
@@ -321,7 +321,7 @@ def plot_multi_line_plot(
             size = sizes["across"]
 
         fig = plt.figure(figsize=size)
-        fig.subtitle(plot)
+        fig.suptitle(plot)
         for d, c, n in zip(data, colors, group_names):
             plt.errorbar(
                 d["session"],
