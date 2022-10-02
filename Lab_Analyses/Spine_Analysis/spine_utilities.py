@@ -5,8 +5,9 @@ import os
 import numpy as np
 import scipy.optimize as syop
 import scipy.signal as sysignal
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import \
-    get_activity_timestamps
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
+    get_activity_timestamps,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
