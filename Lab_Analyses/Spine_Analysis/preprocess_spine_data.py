@@ -292,7 +292,7 @@ def organize_dual_spine_data(
                     corrected_spine_pixel_intensity=structural_data.corrected_spine_pixel_intensity,
                     corrected_dend_segment_intensity=structural_data.corrected_dend_segment_intensity,
                     corrected_spine_volume=structural_data.corrected_spine_volume,
-                    imaging_parameters=structural_data.imaging_parameters,
+                    imaging_parameters=structural_data.parameters,
                 )
 
             # Store the period data
