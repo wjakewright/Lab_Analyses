@@ -203,6 +203,9 @@ def spine_volume_norm_constant(
     # First generate an averaged activity trace
     max_amplitudes = []
     for i in range(activity_traces.shape[1]):
+        if not np.sum(activity_traces[:, i]):
+            max_amplitudes.append(0)
+            continue
         activity_stamps = get_activity_timestamps(activity_traces[:, i])
         activity_stamps = [x[0] for x in activity_stamps]
         _, mean_trace = d_utils.get_trace_mean_sem(
@@ -212,6 +215,7 @@ def spine_volume_norm_constant(
             window=(-2, 2),
             sampling_rate=sampling_rate,
         )
+        mean_trace = mean_trace["Spine"][0]
         # Find max peak amplitude
         trace_med = np.median(mean_trace)
         trace_std = np.std(mean_trace)
@@ -220,7 +224,10 @@ def spine_volume_norm_constant(
             mean_trace, height=trace_h, distance=DISTANCE,
         )
         trace_amps = trace_props["peak_heights"]
-        max_amp = np.max(trace_amps)
+        try:
+            max_amp = np.max(trace_amps)
+        except ValueError:
+            max_amp = 0
         max_amplitudes.append(max_amp)
 
     # Convert Volume to um from pixels
@@ -242,7 +249,7 @@ def spine_volume_norm_constant(
         test_constants.append(tc)
     x0 = np.nanmean(test_constants)
     # Find minimum constant
-    constant = syop.minimize(obj_function, x0, bounds=(0, np.inf))
+    constant = syop.minimize(obj_function, x0, bounds=[(0, np.inf)]).x
     # Apply min constant to each volume
     norm_constants = um_volumes + constant
 
