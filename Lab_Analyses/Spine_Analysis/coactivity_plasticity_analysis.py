@@ -85,15 +85,21 @@ class Coactivity_Plasticity:
                 continue
             # Refine the attributes data
             variable = getattr(self.dataset, attribute)
-            if type(variable) == np.array:
+            print(attribute)
+            if type(variable) == np.ndarray:
                 if len(variable.shape) == 1:
                     new_variable = variable[spine_idxs]
                 elif len(variable.shape) == 2:
                     new_variable = variable[:, spine_idxs]
             elif type(variable) == list:
-                new_variable = [variable[i] for i in spine_idxs]
+                try:
+                    new_variable = [variable[i] for i in spine_idxs]
+                except IndexError:
+                    print(variable)
             else:
-                raise Exception(f"{variable} is incorrect datatype !!!")
+                raise Exception(
+                    f"{attribute} {type(variable)} is incorrect datatype !!!"
+                )
             # Store the attribute
             setattr(self, attribute, new_variable)
 
@@ -291,6 +297,8 @@ class Coactivity_Plasticity:
         """Method to save the output"""
         if self.save_path is None:
             save_path = r"C:\Users\Desktop\Analyzed_data\grouped"
+        else:
+            save_path = self.save_path
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
