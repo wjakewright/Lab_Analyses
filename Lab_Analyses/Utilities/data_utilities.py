@@ -139,7 +139,6 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
     before_f = int(window[0] * sampling_rate)
     after_f = int(window[1] * sampling_rate)
     win_size = -before_f + after_f
-
     # Get each event epoch
     roi_event_epochs = {}
     for i in range(activity.shape[1]):
@@ -147,9 +146,14 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
         roi = ROI_ids[i]
         epochs = np.zeros(win_size).reshape(-1, 1)
         for t in timestamps:
+            if np.isnan(t):
+                continue
             t = int(t)
             e = d[t + before_f : t + after_f].reshape(-1, 1)
-            epochs = np.hstack((epochs, e))
+            try:
+                epochs = np.hstack((epochs, e))
+            except ValueError:
+                continue
         epochs = epochs[:, 1:]
         roi_event_epochs[roi] = epochs
 
