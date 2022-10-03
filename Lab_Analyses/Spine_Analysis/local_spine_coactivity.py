@@ -7,7 +7,9 @@ from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_dend_spine_traces_and_onsets,
     nearby_spine_conjunctive_events,
 )
-from Lab_Analyses.Spine_Analysis.spine_movement_analysis import quantify_movment_quality
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
+    quantify_movement_quality,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     spine_volume_norm_constant,
@@ -113,8 +115,9 @@ def local_spine_coactivity_analysis(
     spine_groupings = np.array(data.spine_grouping)
     spine_flags = data.spine_flags
     spine_volumes = np.array(data.corrected_spine_volume)
-    spine_positions = data.spine_positions
+    spine_positions = np.array(data.spine_positions)
     spine_dFoF = data.spine_GluSnFr_processed_dFoF
+    spine_calcium = data.spine_calcium_processed_dFoF
     spine_activity = data.spine_GluSnFr_activity
     dendrite_activity = data.dendrite_calcium_activity
 
@@ -140,8 +143,8 @@ def local_spine_coactivity_analysis(
             iterations=1000,
         )
     else:
-        glu_norm_constants = np.array([None for x in spine_activity.shape[1]])
-        ca_norm_constants = np.array([None for x in spine_activity.shape[1]])
+        glu_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
+        ca_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
 
     # Get specific movement periods if specified
     if movement_epoch == "movement":
@@ -153,7 +156,7 @@ def local_spine_coactivity_analysis(
     elif movement_epoch == "nonmovement":
         movement = np.absolute(data.lever_active - 1)
     elif movement_epoch == "learned":
-        movement, _, _, _, _ = quantify_movment_quality(
+        movement, _, _, _, _ = quantify_movement_quality(
             data.mouse_id,
             spine_activity,
             data.lever_active,
@@ -229,11 +232,11 @@ def local_spine_coactivity_analysis(
                 x for idx, x in enumerate(curr_positions) if idx != spine
             ]
             relative_positions = np.array(other_positions) - target_position
-            relative_positions = np.abolute(relative_positions)
+            relative_positions = np.absolute(relative_positions)
             ## Find spines within cluster distance
             nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
             ## Remove the eliminated spines. Dan't want to consider their activity here
-            nearby_spines = nearby_spines * curr_el_spines
+            nearby_spines = [i for i in nearby_spines if not curr_el_spines[i]]
 
             # Get relevant spine activity data
             curr_s_dFoF = s_dFoF[:, spine]
@@ -248,7 +251,7 @@ def local_spine_coactivity_analysis(
             nearby_glu_constants = curr_glu_norm_constants[nearby_spines]
             nearby_ca_constants = curr_ca_norm_constants[nearby_spines]
 
-            # Get local coactivity trace, where at least one nearby spine is coactive with target
+            # Get local coactivity trace, where at least one nearby spine is coactive with targe
             combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
             combined_nearby_activity[combined_nearby_activity > 1] = 1
             curr_local_coactivity = combined_nearby_activity * curr_s_activity
@@ -288,7 +291,7 @@ def local_spine_coactivity_analysis(
                 curr_s_dFoF.reshape(-1, 1),
                 curr_s_dFoF.reshape(-1, 1),
                 curr_local_coactivity.reshape(-1, 1),
-                norm_constants=(glu_constant),
+                norm_constants=[glu_constant],
                 activity_window=(-2, 2),
                 sampling_rate=sampling_rate,
             )
@@ -308,17 +311,17 @@ def local_spine_coactivity_analysis(
                 curr_s_calcium.reshape(-1, 1),
                 curr_s_calcium.reshape(-1, 1),
                 curr_local_coactivity.reshape(-1, 1),
-                norm_constants=(ca_constant),
+                norm_constants=[ca_constant],
                 activity_window=(-2, 2),
                 sampling_rate=sampling_rate,
             )
-            spine_coactive_amplitude[spines[spine]] = s_amp
-            spine_coactive_calcium[spines[spine]] = s_ca_amp
-            spine_coactive_std[spines[spine]] = s_std
-            spine_coactive_calcium_std[spines[spine]] = s_ca_std
-            spine_coactive_calcium_auc[spines[spine]] = s_ca_auc
-            spine_coactive_traces[spines[spine]] = s_traces
-            spine_coactive_calcium_traces[spines[spine]] = s_ca_traces
+            spine_coactive_amplitude[spines[spine]] = s_amp[0]
+            spine_coactive_calcium[spines[spine]] = s_ca_amp[0]
+            spine_coactive_std[spines[spine]] = s_std[0]
+            spine_coactive_calcium_std[spines[spine]] = s_ca_std[0]
+            spine_coactive_calcium_auc[spines[spine]] = s_ca_auc[0]
+            spine_coactive_traces[spines[spine]] = s_traces[0]
+            spine_coactive_calcium_traces[spines[spine]] = s_ca_traces[0]
 
             # Analyze the activity of nearby coactive spines
             (
