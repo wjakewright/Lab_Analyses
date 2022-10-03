@@ -184,22 +184,12 @@ def get_dend_spine_traces_and_onsets(
         onset_stamps = [x - offset for x in initial_stamps]
 
         # Refine the timestamps
-        refined_idxs = []
-        for t, stamp in enumerate(onset_stamps):
-            if t == 0:
-                if stamp - np.absolute(activity_window[0]) < 0:
-                    refined_idxs.append(False)
-                else:
-                    refined_idxs.append(True)
-                continue
-            if t == len(onset_stamps) - 1:
-                if stamp + np.absolute(activity_window[1]) >= len(curr_spine_dFoF):
-                    refined_idxs.append(False)
-                else:
-                    refined_idxs.append(True)
-                continue
-            refined_idxs.append(True)
-        onset_stamps = list(compress(onset_stamps, refined_idxs))
+        onset_stamps = refine_activity_timestamps(
+            onset_stamps,
+            activity_window,
+            max_len=len(curr_spine_dFoF),
+            sampling_rate=sampling_rate,
+        )
 
         # Get the traces centered on the dendrite onsets
         dend_trace, dend_mean = d_utils.get_trace_mean_sem(
@@ -302,6 +292,27 @@ def get_activity_timestamps(activity):
         timestamps.append((on, off))
 
     return timestamps
+
+
+def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
+    """Helper function to refine timestamps to make sure they fit in the window"""
+    refined_idxs = []
+    before = np.absolute(window[0] * sampling_rate)
+    after = np.absolute(window[1] * sampling_rate)
+    for t, stamp in enumerate(timestamps):
+        if stamp - before < 0:
+            refined_idxs.append(False)
+            continue
+
+        if stamp + after > max_len:
+            refined_idxs.append(False)
+            continue
+
+        refined_idxs.append(True)
+
+    refined_stamps = list(compress(timestamps, refined_idxs))
+
+    return refined_stamps
 
 
 def find_activity_onset(activity_means, sampling_rate=60):
@@ -456,6 +467,13 @@ def nearby_spine_conjunctive_events(
 
     # Find dendrite onsets to center analysis around
     initial_stamps = [x[0] for x in timestamps]
+    # Refine stamps
+    initial_stamps = refine_activity_timestamps(
+        initial_stamps,
+        activity_window,
+        max_len=len(spine_dFoF),
+        sampling_rate=sampling_rate,
+    )
     _, d_mean = d_utils.get_trace_mean_sem(
         dendrite_dFoF.reshape(-1, 1),
         ["Dendrite"],
@@ -490,7 +508,6 @@ def nearby_spine_conjunctive_events(
         # Check each nearby spine to see if coactive
         for i in range(nearby_activity.shape[1]):
             nearby_spine_a = nearby_activity[:, i]
-            print(np.sum(nearby_spine_a))
             nearby_spine_dFoF = nearby_dFoF[:, i]
             nearby_spine_ca = nearby_calcium[:, i]
             event_activity = nearby_spine_a[event + before_f : event + after_f]
