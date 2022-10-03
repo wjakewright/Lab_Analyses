@@ -92,13 +92,13 @@ def spine_movement_activity(
             iterations=1000,
         )
     else:
-        norm_constants = np.array([None for x in spine_activity.shape[1]])
+        norm_constants = np.array([None for x in range(spine_activity.shape[1])])
 
-    center_point = activity_window[0] * sampling_rate
+    center_point = int(activity_window[0] * sampling_rate)
 
     # Set up some outputs
-    dend_traces = [None for i in spine_dFoF.shape[1]]
-    spine_traces = [None for i in spine_dFoF.shape[1]]
+    dend_traces = [None for i in range(spine_dFoF.shape[1])]
+    spine_traces = [None for i in range(spine_dFoF.shape[1])]
     dend_amplitudes = np.zeros(spine_dFoF.shape[1])
     dend_std = np.zeros(spine_dFoF.shape[1])
     spine_amplitudes = np.zeros(spine_dFoF.shape[1])
@@ -117,10 +117,10 @@ def spine_movement_activity(
         # Get relevant data from current spines and dendrite
         s_dFoF = spine_dFoF[:, spines]
         d_dFoF = dendrite_dFoF[:, dendrite]
-        curr_norm_constants = norm_constants[:, spines]
 
         # Get movement onset timestamps
         timestamps = get_activity_timestamps(movement_trace)
+        timestamps = [x[0] for x in timestamps]
 
         # Get individual traces and mean traces
         s_traces, s_mean_sems = d_utils.get_trace_mean_sem(
@@ -130,7 +130,7 @@ def spine_movement_activity(
             window=activity_window,
             sampling_rate=sampling_rate,
         )
-        d_traces, d_mean_sem = d_utils.get_trace_mean_sems(
+        d_traces, d_mean_sem = d_utils.get_trace_mean_sem(
             d_dFoF.reshape(-1, 1),
             ["Dendrite"],
             timestamps,
@@ -159,12 +159,18 @@ def spine_movement_activity(
             s_rel_onset = (s_onsets[spine] - center_point) / sampling_rate
             d_rel_onset = (d_onset - center_point) / sampling_rate
             # Activity std
-            s_max = np.where(s_means[spine] == s_amps[spine])
+            s_max = np.where(s_means[spine] == s_amps[spine])[0]
             s_std = np.nanstd(s_traces[spine], axis=1)
-            s_std = s_std[s_max]
-            d_max = np.where(d_mean == d_amp)
+            if s_max:
+                s_std = s_std[s_max]
+            else:
+                s_std = s_std[center_point]
+            d_max = np.where(d_mean == d_amp)[0]
             d_std = np.nanstd(d_traces, axis=1)
-            d_std = d_std[d_max]
+            if d_max:
+                d_std = d_std[d_max]
+            else:
+                d_std = d_std[center_point]
 
             # Store outputs
             dend_traces[spines[spine]] = d_traces
