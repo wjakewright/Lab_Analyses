@@ -3,7 +3,9 @@ from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_coactivity_rate,
     get_dend_spine_traces_and_onsets,
 )
-from Lab_Analyses.Spine_Analysis.spine_movement_analysis import quantify_movment_quality
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
+    quantify_movement_quality,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     spine_volume_norm_constant,
@@ -155,7 +157,7 @@ def total_coactivity_analysis(
     elif movement_epoch == "nonmovement":
         movement = np.absolute(data.lever_active - 1)
     elif movement_epoch == "learned":
-        movement, _, _, _, _ = quantify_movment_quality(
+        movement, _, _, _, _ = quantify_movement_quality(
             data.mouse_id,
             spine_activity,
             data.lever_active,
@@ -204,9 +206,15 @@ def total_coactivity_analysis(
         d_dFoF = dendrite_dFoF[:, dendrite]
         d_activity = dendrite_activity[:, dendrite]
         s_calcium = spine_calcium[:, spines]
-        curr_coactivity_matrix = np.zeros(s_calcium.shape[1])
-        curr_flags = spine_flags[spines]
+        curr_coactivity_matrix = np.zeros(s_calcium.shape)
+        curr_flags = [spine_flags[i] for i in spines]
         curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
+        if glu_norm_constants:
+            curr_glu_constants = glu_norm_constants[spines]
+            curr_ca_constants = ca_norm_constants[spines]
+        else:
+            curr_glu_constants = None
+            curr_ca_constants = None
 
         # Refine activity matrices for only movement epochs if specified
         if movement is not None:
@@ -264,8 +272,8 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_dFoF,
-            refrence_trace=d_activity,
-            norm_constants=glu_norm_constants,
+            reference_trace=d_activity,
+            norm_constants=curr_glu_constants,
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
@@ -285,8 +293,8 @@ def total_coactivity_analysis(
             d_dFoF,
             s_calcium,
             reference_trace=d_activity,
-            coactivity=False,
-            activity_window=(2, 2),
+            norm_constants=curr_ca_constants,
+            activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
         ### Get for coactive events only
@@ -305,7 +313,7 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_dFoF,
-            norm_constants=glu_norm_constants,
+            norm_constants=curr_glu_constants,
             reference_trace=curr_coactivity_matrix,
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
@@ -325,9 +333,9 @@ def total_coactivity_analysis(
             s_activity,
             d_dFoF,
             s_calcium,
-            norm_constants=ca_norm_constants,
+            norm_constants=curr_ca_constants,
             reference_trace=curr_coactivity_matrix,
-            activity_window=(2, 2),
+            activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
         rel_dend_amps = dt_dendrite_amps - co_dendrite_amps
