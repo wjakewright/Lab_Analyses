@@ -77,8 +77,8 @@ def grouped_coactivity_analysis(
 
             movement_spines = data.movement_spines
             rwd_movement_spines = data.reward_movement_spines
-            movement_dendrites = np.zeros(movement_spines.shape)
-            rwd_movement_dendrites = np.zeros(rwd_movement_spines)
+            movement_dendrites = np.zeros(np.array(movement_spines).shape)
+            rwd_movement_dendrites = np.zeros(np.array(rwd_movement_spines).shape)
             # Analyze local spine coactivity
             (
                 local_distance_coactivity_rate,
@@ -241,9 +241,12 @@ def grouped_coactivity_analysis(
                     spines = data.spine_grouping[d]
                 else:
                     spines = data.spine_grouping
-                dend_activity_matrix[:, spines] = data.dendrite_calcium_activity[:, d]
-                movement_dendrites[spines] = data.movement_dendrites[d]
-                rwd_movement_dendrites[spines] = data.reward_movement_dendrites[d]
+                    for s in spines:
+                        dend_activity_matrix[:, s] = data.dendrite_calcium_activity[
+                            :, d
+                        ]
+                        movement_dendrites[s] = data.movement_dendrites[d]
+                        rwd_movement_dendrites[s] = data.reward_movement_dendrites[d]
             (_, dend_movements, _, dend_movement_corr, _,) = quantify_movement_quality(
                 mouse,
                 dend_activity_matrix,
@@ -294,17 +297,19 @@ def grouped_coactivity_analysis(
             dend_activity_freq = []
             for s in range(data.spine_GluSnFr_activity.shape[1]):
                 duration = len(data.spine_GluSnFr_activity[:, s]) / sampling_rate
-                s_events = np.nonzero(np.diff(data.spine_GluSnFr_activity[:, s]) == 1)
-                d_events = np.nonzero(np.diff(dend_activity_matrix[:, s]) == 1)
-                spine_freq = (s_events / duration) * 60
-                dend_freq = (d_events / duration) * 60
+                s_events = np.nonzero(np.diff(data.spine_GluSnFr_activity[:, s]) == 1)[
+                    0
+                ]
+                d_events = np.nonzero(np.diff(dend_activity_matrix[:, s]) == 1)[0]
+                spine_freq = (len(s_events) / duration) * 60
+                dend_freq = (len(d_events) / duration) * 60
                 spine_activity_freq.append(spine_freq)
                 dend_activity_freq.append(dend_freq)
             spine_activity_freq = np.array(spine_activity_freq)
             dend_activity_freq = np.array(dend_activity_freq)
 
-            fovs = [FOV for i in range(spine_activity_freq)]
-            ids = [mouse for i in range(spine_activity_freq)]
+            fovs = [FOV for i in range(len(spine_activity_freq))]
+            ids = [mouse for i in range(len(spine_activity_freq))]
 
             # Store data from this mouse in grouped_data dictionary
             grouped_data["mouse_id"].append(ids)
@@ -522,14 +527,13 @@ def grouped_coactivity_analysis(
 
     # Merge all the data across FOVs and mice
     for key, value in grouped_data.items():
-        if type(value) == list:
+        if type(value[0]) == list:
             grouped_data[key] = [y for x in value for y in x]
-        elif type(value) == np.ndarray:
-            if len(value.shape) == 1:
+        elif type(value[0]) == np.ndarray:
+            if len(value[0].shape) == 1:
                 grouped_data[key] = np.concatenate(value)
-            elif len(value.shape) == 2:
+            elif len(value[0].shape) == 2:
                 grouped_data[key] = np.hstack(value)
-
     parameters = {
         "Sampling Rate": sampling_rate,
         "Cluster Dist": CLUSTER_DIST,
@@ -538,7 +542,7 @@ def grouped_coactivity_analysis(
         "Volume Norm": volume_norm,
         "Movement Epoch": movement_epochs,
     }
-
+    print(grouped_data["local_spine_coactive_amplitude"])
     # Store data for outputing and saving
     spine_coactivity_data = Spine_Coactivity_Data(
         day=day,
