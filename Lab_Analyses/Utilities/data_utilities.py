@@ -162,7 +162,7 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
     for key, value in roi_event_epochs.items():
         m = np.mean(value, axis=1)
         sem = stats.sem(value, axis=1)
-        roi_mean_sems[key] = [m, sem]
+        roi_mean_sems[key] = (m, sem)
 
     return roi_event_epochs, roi_mean_sems
 
