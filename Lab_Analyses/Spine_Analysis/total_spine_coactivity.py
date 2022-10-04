@@ -224,12 +224,12 @@ def total_coactivity_analysis(
         # Analyze coactivity rates for each spine
         for spine in range(s_dFoF.shape[1]):
             # Go ahead and skip over eliminated spines
-            if not curr_el_spines[spine]:
+            if curr_el_spines[spine]:
                 continue
             # Perform correlation
             if movement is not None:
                 # Correlation only during specified movements
-                move_idxs = np.where(movement == 1)[0]
+                move_idxs = np.nonzero(movement == 1)[0]
                 corr, _ = stats.pearsonr(s_dFoF[move_idxs, spine], d_dFoF[move_idxs])
             else:
                 corr, _ = stats.pearsonr(s_dFoF[:, spine], d_dFoF)
@@ -268,7 +268,6 @@ def total_coactivity_analysis(
             _,
             _,
         ) = get_dend_spine_traces_and_onsets(
-            d_activity,
             s_activity,
             d_dFoF,
             s_dFoF,
@@ -288,7 +287,6 @@ def total_coactivity_analysis(
             _,
             _,
         ) = get_dend_spine_traces_and_onsets(
-            d_activity,
             s_activity,
             d_dFoF,
             s_calcium,
@@ -309,7 +307,6 @@ def total_coactivity_analysis(
             co_dendrite_var,
             rel_onsets,
         ) = get_dend_spine_traces_and_onsets(
-            d_activity,
             s_activity,
             d_dFoF,
             s_dFoF,
@@ -329,7 +326,6 @@ def total_coactivity_analysis(
             _,
             _,
         ) = get_dend_spine_traces_and_onsets(
-            d_activity,
             s_activity,
             d_dFoF,
             s_calcium,
@@ -338,12 +334,12 @@ def total_coactivity_analysis(
             activity_window=(-2, 2),
             sampling_rate=sampling_rate,
         )
-        rel_dend_amps = dt_dendrite_amps - co_dendrite_amps
-        rel_spine_amps = dt_spine_amps - co_spine_amps
-        rel_spine_calcium_amps = dt_spine_calcium_amps - co_spine_calcium_amps
+        rel_dend_amps = dt_dendrite_amps / co_dendrite_amps
+        rel_spine_amps = dt_spine_amps / co_spine_amps
+        rel_spine_calcium_amps = dt_spine_calcium_amps / co_spine_calcium_amps
         # Store values
         for i in range(len(dt_spine_traces)):
-            if curr_el_spines[i] is True:
+            if curr_el_spines[i]:
                 continue
             spine_coactive_amplitude[spines[i]] = co_spine_amps[i]
             dend_coactive_amplitude[spines[i]] = co_dendrite_amps[i]
