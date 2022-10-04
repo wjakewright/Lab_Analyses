@@ -67,7 +67,6 @@ def get_coactivity_rate(spine, dendrite, coactivity, sampling_rate):
 
 
 def get_dend_spine_traces_and_onsets(
-    dendrite_activity,
     spine_activity_matrix,
     dendrite_dFoF,
     spine_dFoF_matrix,
@@ -81,8 +80,7 @@ def get_dend_spine_traces_and_onsets(
         activity
         
         INPUT PARAMETERS
-            dendrite - np.array of dendrite binary activity trace
-            
+
             spine_matrix = 2d np.array of spine binary activity traces (columns = spines)
 
             dendrite_dFoF - np.array of dendrite dFoF trace
@@ -145,6 +143,7 @@ def get_dend_spine_traces_and_onsets(
         curr_reference = reference_trace[:, i]
         curr_spine_dFoF = spine_dFoF_matrix[:, i]
 
+        # Skip spines when there is no reference coactivity
         if not np.sum(curr_reference):
             dend_traces.append([])
             spine_traces.append([])
@@ -167,13 +166,13 @@ def get_dend_spine_traces_and_onsets(
             window=activity_window,
             sampling_rate=sampling_rate,
         )
-        initial_d_mean = list(d_mean.values())[0][0]
-        d_trace = list(d_trace.values())[0]
+        initial_d_mean = d_mean["Dendrite"][0]
+        d_trace = d_trace["Dendrite"]
         # Find the onset
         initial_d_onset, dend_amp = find_activity_onset([initial_d_mean])
-        initial_d_onset = initial_d_onset[0]
-        dend_amp = dend_amp[0]
-        if dend_amp != 0:
+        initial_d_onset = initial_d_onset[0]  # Get value inside array output
+        dend_amp = dend_amp[0]  # Get value inside array output
+        if not np.isnan(dend_amp):
             dmax_idx = np.where(initial_d_mean == dend_amp)[0]
         else:
             dmax_idx = center_point
@@ -335,8 +334,8 @@ def find_activity_onset(activity_means, sampling_rate=60):
     trace_amplitudes = np.zeros(len(activity_means))
     # Find each onset
     for i, trace in enumerate(activity_means):
-        trace_med = np.median(trace)
-        trace_std = np.std(trace)
+        trace_med = np.nanmedian(trace)
+        trace_std = np.nanstd(trace)
         trace_h = trace_med + trace_std
         trace_peaks, trace_props = sysignal.find_peaks(
             trace, height=trace_h, distance=DISTANCE,
@@ -345,7 +344,7 @@ def find_activity_onset(activity_means, sampling_rate=60):
         # Get the max peak
         try:
             trace_peak = trace_peaks[np.argmax(trace_amps)]
-        # If no activity, set onset to be np.nan
+        # If no peaks detected, set onset and amplitude to be np.nan
         except ValueError:
             activity_onsets[i] = np.nan
             trace_amplitudes[i] = np.nan
@@ -354,7 +353,7 @@ def find_activity_onset(activity_means, sampling_rate=60):
         trace_amp = np.max(trace_amps)
         trace_peak_trace = trace[:trace_peak]
         try:
-            trace_offset = np.where(trace_peak_trace < 0.75 * trace_amp)[0][-1]
+            trace_offset = np.nonzero(trace_peak_trace < 0.75 * trace_amp)[0][-1]
         except IndexError:
             activity_onsets[i] = 0
             trace_amplitudes[i] = trace_amp
@@ -364,7 +363,7 @@ def find_activity_onset(activity_means, sampling_rate=60):
         trace_deriv = np.gradient(trace)[:trace_offset]
         # Find where the velocity goes below zero
         trace_below_zero = trace_deriv <= 0
-        if sum(trace_below_zero):
+        if np.sum(trace_below_zero):
             onset = np.nonzero(trace_below_zero)[0][-1]
         # If derivative doesn't go below zero, find where it goes below the median
         else:
