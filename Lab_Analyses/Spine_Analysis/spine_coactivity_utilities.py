@@ -176,15 +176,16 @@ def get_dend_spine_traces_and_onsets(
             dmax_idx = np.where(initial_d_mean == dend_amp)[0]
         else:
             dmax_idx = center_point
+            initial_d_onset = 0
         d_std_trace = np.nanstd(d_trace, axis=1)
         dend_std = d_std_trace[dmax_idx]
         # Correct timestamps to be at the onset
         offset = center_point - initial_d_onset
-        onset_stamps = [x - offset for x in initial_stamps]
+        offset_stamps = [int(x - offset) for x in initial_stamps]
 
         # Refine the timestamps
         onset_stamps = refine_activity_timestamps(
-            onset_stamps,
+            offset_stamps,
             activity_window,
             max_len=len(curr_spine_dFoF),
             sampling_rate=sampling_rate,
@@ -198,8 +199,8 @@ def get_dend_spine_traces_and_onsets(
             window=activity_window,
             sampling_rate=sampling_rate,
         )
-        dend_mean = list(dend_mean.values())[0][0]
-        dend_trace = list(dend_trace.values())[0]
+        dend_mean = dend_mean["Dendrite"][0]
+        dend_trace = dend_trace["Dendrite"]
         # Get the area under curve for the mean activity trace
         d_area_trace = dend_mean[center_point:]
         ## normalize the start to zero
@@ -218,30 +219,30 @@ def get_dend_spine_traces_and_onsets(
             window=activity_window,
             sampling_rate=sampling_rate,
         )
-        spine_mean = list(spine_mean.values())[0][0]
-        spine_trace = list(spine_trace.values())[0]
+        spine_mean = spine_mean["Spine"][0]
+        spine_trace = spine_trace["Spine"]
         if norm_constants is not None:
             spine_mean = spine_mean / norm_constants[i]
             spine_trace = spine_trace / norm_constants[i]
         # Get the spine onsets and amplitudes and auc
         s_onset, s_amp = find_activity_onset([spine_mean])
-        try:
-            s_onset = int(s_onset[0])
-        except ValueError:
+        s_onset = s_onset[0]
+        s_amp = s_amp[0]
+        # Skip spines if no peak is found
+        if np.isnan(s_amp):
             spine_traces.append(spine_trace)
             spine_amplitudes.append(np.nan)
             spine_stds.append(np.nan)
             spine_auc.append(np.nan)
             relative_onsets.append(np.nan)
             continue
-        s_amp = s_amp[0]
-        smax_idx = np.where(spine_mean == s_amp)[0]
+        smax_idx = np.nonzero(spine_mean == s_amp)[0][0]
         s_std_trace = np.nanstd(spine_trace, axis=1)
         spine_std = s_std_trace[smax_idx]
         s_area_trace = spine_mean[s_onset:]
         s_area_trace = s_area_trace - s_area_trace[0]
         s_auc = np.trapz(s_area_trace)
-        # Get the relative amplitude
+        # Get the relative onset in seconds
         relative_onset = (s_onset - center_point) / sampling_rate
         # Append spine values
         spine_traces.append(spine_trace)
@@ -298,12 +299,12 @@ def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
     refined_idxs = []
     before = np.absolute(window[0] * sampling_rate)
     after = np.absolute(window[1] * sampling_rate)
-    for t, stamp in enumerate(timestamps):
+    for stamp in timestamps:
         if stamp - before < 0:
             refined_idxs.append(False)
             continue
 
-        if stamp + after > max_len:
+        if stamp + after > max_len - 1:
             refined_idxs.append(False)
             continue
 
