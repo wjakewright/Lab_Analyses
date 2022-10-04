@@ -234,6 +234,8 @@ def quantify_movement_quality(
             learned_move_resample - np.array of the learned movement pattern resampled to a frames
             
     """
+    CORR_INT = 1.5
+
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
     final_day = sorted([x[0] for x in os.walk(behavior_path)])[-1]
@@ -254,7 +256,7 @@ def quantify_movement_quality(
     n = frac.numerator
     d = frac.denominator
     learned_move_resample = sysignal.resample_poly(learned_movement, n, d)
-    corr_duration = int(1.5 * sampling_rate)  ## 1.5 seconds
+    corr_duration = int(CORR_INT * sampling_rate)  ## 1.5 seconds
     learned_move_resample = learned_move_resample[:corr_duration]
 
     # Get onsets and offsets of the movements
