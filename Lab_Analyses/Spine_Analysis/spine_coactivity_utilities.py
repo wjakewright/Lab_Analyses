@@ -369,7 +369,7 @@ def find_activity_onset(activity_means, sampling_rate=60):
         # If derivative doesn't go below zero, find where it goes below the median
         else:
             try:
-                onset = np.where(trace_search_trace < trace_med)[0][-1]
+                onset = np.nonzero(trace_search_trace < trace_med)[0][-1]
             except:
                 onset = 0
         activity_onsets[i] = onset
@@ -467,13 +467,6 @@ def nearby_spine_conjunctive_events(
 
     # Find dendrite onsets to center analysis around
     initial_stamps = [x[0] for x in timestamps]
-    # Refine stamps
-    initial_stamps = refine_activity_timestamps(
-        initial_stamps,
-        activity_window,
-        max_len=len(spine_dFoF),
-        sampling_rate=sampling_rate,
-    )
     _, d_mean = d_utils.get_trace_mean_sem(
         dendrite_dFoF.reshape(-1, 1),
         ["Dendrite"],
@@ -481,13 +474,21 @@ def nearby_spine_conjunctive_events(
         window=activity_window,
         sampling_rate=sampling_rate,
     )
-    d_mean = list(d_mean.values())[0][0]
+    d_mean = d_mean["Dendrite"][0]
     d_onset, _ = find_activity_onset([d_mean])
     d_onset = d_onset[0]
     # Correct timestamps so that they are centered on dendrite onsets
     center_point = np.absolute(activity_window[0] * sampling_rate)
     offset = int(center_point - d_onset)
-    event_stamps = [x - offset for x in initial_stamps]
+    event_stamps = [int(x - offset) for x in initial_stamps]
+
+    # Refine event stamps
+    event_stamps = refine_activity_timestamps(
+        event_stamps,
+        activity_window,
+        max_len=len(spine_dFoF),
+        sampling_rate=sampling_rate,
+    )
 
     # Analyze each co-activity event
     ### Some temporary variables
@@ -527,7 +528,7 @@ def nearby_spine_conjunctive_events(
         spine_trace_array = np.vstack(coactive_spine_traces).T
         spine_ca_trace_array = np.vstack(coactive_spine_ca_traces).T
         sum_spine_trace = np.sum(spine_trace_array, axis=1)
-        sum_spine_ca_trace = np.sum(spine_ca_trace_array)
+        sum_spine_ca_trace = np.sum(spine_ca_trace_array, axis=1)
         corr, _ = stats.pearsonr(t_spine_trace, sum_spine_trace)
         num = len(coactive_spine_idxs)
         vol = np.mean(nearby_spine_volumes[coactive_spine_idxs])
@@ -538,14 +539,14 @@ def nearby_spine_conjunctive_events(
         sum_coactive_spine_traces.append(sum_spine_trace)
         sum_coactive_spine_ca_traces.append(sum_spine_ca_trace)
 
-    # Reformat nearby spine traces
+    # Reformat nearby spine traces into arrays
     sum_coactive_spine_traces = np.vstack(sum_coactive_spine_traces).T
     sum_coactive_spine_ca_traces = np.vstack(sum_coactive_spine_ca_traces).T
 
     # Average correlations, nums, and volumes,
-    avg_coactive_correlation = np.mean(spine_nearby_correlations)
-    avg_coactive_num = np.mean(coactive_spine_num)
-    avg_coactive_volume = np.mean(coacitve_spine_volumes)
+    avg_coactive_correlation = np.nanmean(spine_nearby_correlations)
+    avg_coactive_num = np.nanmean(coactive_spine_num)
+    avg_coactive_volume = np.nanmean(coacitve_spine_volumes)
 
     # Get peak, std, and auc of traces
     avg_coactive_trace = np.nanmean(sum_coactive_spine_traces, axis=1)
@@ -555,22 +556,27 @@ def nearby_spine_conjunctive_events(
     onsets, amps = find_activity_onset(
         [avg_coactive_trace, avg_coactive_ca_trace], sampling_rate=sampling_rate
     )
-    try:
-        ca_activity_onset = int(onsets[1])
+    if not np.isnan(amps[0]):
         activity_amplitude = amps[0]
-        ca_activity_amplitude = amps[1]
-        activity_max = np.where(avg_coactive_trace == activity_amplitude)
-        ca_activity_max = np.where(avg_coactive_ca_trace == ca_activity_amplitude)
+        activity_max = np.nonzero(avg_coactive_trace == activity_amplitude)[0][0]
         activity_std = std_coactive_trace[activity_max]
+    else:
+        activity_amplitude = amps[0]
+        activity_std = np.nan
+
+    if not np.isnan(amps[1]):
+        ca_activity_onset = int(onsets[1])
+        ca_activity_amplitude = amps[1]
+        ca_activity_max = np.nonzero(avg_coactive_ca_trace == ca_activity_amplitude)[0][
+            0
+        ]
         ca_activity_std = std_coactive_ca_trace[ca_activity_max]
         area_trace = avg_coactive_ca_trace[ca_activity_onset:]
         area_trace = area_trace - area_trace[0]
         ca_activity_auc = np.trapz(area_trace)
-    except ValueError:
+    else:
         ca_activity_onset = np.nan
-        activity_amplitude = amps[0]
         ca_activity_amplitude = amps[1]
-        activity_std = np.nan
         ca_activity_std = np.nan
         ca_activity_auc = np.nan
 
