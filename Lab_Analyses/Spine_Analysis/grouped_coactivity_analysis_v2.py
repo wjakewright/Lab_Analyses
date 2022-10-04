@@ -73,12 +73,12 @@ def grouped_coactivity_analysis(
                 data = dataset[day]
                 followup_volume = None
                 followup_flags = None
-            sampling_rate = data.imaging_parameters["Sampling Rate"]
+            sampling_rate = int(data.imaging_parameters["Sampling Rate"])
 
-            movement_spines = data.movement_spines
-            rwd_movement_spines = data.reward_movement_spines
-            movement_dendrites = np.zeros(np.array(movement_spines).shape)
-            rwd_movement_dendrites = np.zeros(np.array(rwd_movement_spines).shape)
+            movement_spines = np.array(data.movement_spines)
+            rwd_movement_spines = np.array(data.reward_movement_spines)
+            movement_dendrites = np.zeros(movement_spines.shape)
+            rwd_movement_dendrites = np.zeros(rwd_movement_spines.shape)
             # Analyze local spine coactivity
             (
                 local_distance_coactivity_rate,
