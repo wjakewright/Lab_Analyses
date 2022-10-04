@@ -2,18 +2,12 @@
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    get_activity_timestamps,
-    get_coactivity_rate,
-    get_dend_spine_traces_and_onsets,
-    nearby_spine_conjunctive_events,
-)
-from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
-    quantify_movement_quality,
-)
+    get_activity_timestamps, get_coactivity_rate,
+    get_dend_spine_traces_and_onsets, nearby_spine_conjunctive_events)
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import \
+    quantify_movement_quality
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    find_spine_classes,
-    spine_volume_norm_constant,
-)
+    find_spine_classes, spine_volume_norm_constant)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
 
@@ -112,7 +106,7 @@ def local_spine_coactivity_analysis(
                                             local coactivity event for each spine (columns=events)
     """
 
-    spine_groupings = np.array(data.spine_grouping)
+    spine_groupings = data.spine_grouping
     spine_flags = data.spine_flags
     spine_volumes = np.array(data.corrected_spine_volume)
     spine_positions = np.array(data.spine_positions)
@@ -228,15 +222,15 @@ def local_spine_coactivity_analysis(
             curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
             curr_el_spines = np.array(curr_el_spines)
             target_position = curr_positions[spine]
-            other_positions = [
-                x for idx, x in enumerate(curr_positions) if idx != spine
-            ]
-            relative_positions = np.array(other_positions) - target_position
+
+            relative_positions = np.array(curr_positions) - target_position
             relative_positions = np.absolute(relative_positions)
             ## Find spines within cluster distance
             nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
             ## Remove the eliminated spines. Dan't want to consider their activity here
             nearby_spines = [i for i in nearby_spines if not curr_el_spines[i]]
+            # Remove the current spine from the nearby indexes
+            nearby_spines.pop(spine)
 
             # Get relevant spine activity data
             curr_s_dFoF = s_dFoF[:, spine]
