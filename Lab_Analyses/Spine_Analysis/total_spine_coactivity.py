@@ -224,7 +224,7 @@ def total_coactivity_analysis(
         # Analyze coactivity rates for each spine
         for spine in range(s_dFoF.shape[1]):
             # Go ahead and skip over eliminated spines
-            if curr_el_spines[spine]:
+            if not curr_el_spines[spine]:
                 continue
             # Perform correlation
             if movement is not None:
