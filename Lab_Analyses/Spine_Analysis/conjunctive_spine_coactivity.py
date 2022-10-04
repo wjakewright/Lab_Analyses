@@ -252,8 +252,10 @@ def conjunctive_coactivity_analysis(
             relative_positions = np.absolute(relative_positions)
             ## Find spines within cluster distance
             nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
-            ## Remove the eliminated spines. Don't want to consider their activity here
+            ## Remove the eliminated spines. Dan't want to consider their activity here
             nearby_spines = [i for i in nearby_spines if not curr_el_spines[i]]
+            # Remove the current spine from the nearby indexes
+            nearby_spines.pop(spine)
 
             # Get the relevant spine activity data
             curr_s_dFoF = s_dFoF[:, spine]
@@ -310,8 +312,8 @@ def conjunctive_coactivity_analysis(
                 curr_s_activity.reshape(-1, 1),
                 d_dFoF,
                 curr_s_dFoF.reshape(-1, 1),
-                curr_conj_coactivity.reshape(-1, 1),
-                norm_constants=(glu_constant),
+                curr_conj_coactivity,
+                norm_constants=[glu_constant],
                 activity_window=(-2, 2),
                 sampling_rate=sampling_rate,
             )
@@ -330,8 +332,8 @@ def conjunctive_coactivity_analysis(
                 curr_s_activity.reshape(-1, 1),
                 d_dFoF,
                 curr_s_calcium.reshape(-1, 1),
-                curr_conj_coactivity.reshape(-1, 1),
-                norm_constants=(ca_constant),
+                curr_conj_coactivity,
+                norm_constants=[ca_constant],
                 activity_window=(-2, 2),
                 sampling_rate=sampling_rate,
             )
@@ -372,7 +374,7 @@ def conjunctive_coactivity_analysis(
                 glu_constants=nearby_glu_constants,
                 ca_constants=nearby_ca_constants,
                 activity_window=(-2, 2),
-                sampling_rate=60,
+                sampling_rate=sampling_rate,
             )
             local_correlation[spines[spine]] = local_corr
             coactive_spine_num[spines[spine]] = coactive_num
