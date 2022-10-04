@@ -2,12 +2,18 @@
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    get_activity_timestamps, get_coactivity_rate,
-    get_dend_spine_traces_and_onsets, nearby_spine_conjunctive_events)
-from Lab_Analyses.Spine_Analysis.spine_movement_analysis import \
-    quantify_movement_quality
+    get_activity_timestamps,
+    get_coactivity_rate,
+    get_dend_spine_traces_and_onsets,
+    nearby_spine_conjunctive_events,
+)
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
+    quantify_movement_quality,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    find_spine_classes, spine_volume_norm_constant)
+    find_spine_classes,
+    spine_volume_norm_constant,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
 
@@ -251,7 +257,7 @@ def local_spine_coactivity_analysis(
             curr_local_coactivity = combined_nearby_activity * curr_s_activity
             local_coactivity_matrix[:, spines[spine]] = curr_local_coactivity
 
-            # Skip further analysis if no conjunctive coactivity for current spine
+            # Skip further analysis if no local coactivity for current spine
             if not np.sum(curr_local_coactivity):
                 continue
 
@@ -281,7 +287,6 @@ def local_spine_coactivity_analysis(
                 _,
             ) = get_dend_spine_traces_and_onsets(
                 curr_s_activity.reshape(-1, 1),
-                curr_s_activity.reshape(-1, 1),
                 curr_s_dFoF.reshape(-1, 1),
                 curr_s_dFoF.reshape(-1, 1),
                 curr_local_coactivity.reshape(-1, 1),
@@ -301,7 +306,6 @@ def local_spine_coactivity_analysis(
                 _,
             ) = get_dend_spine_traces_and_onsets(
                 curr_s_activity.reshape(-1, 1),
-                curr_s_activity.reshape(-1, 1),
                 curr_s_calcium.reshape(-1, 1),
                 curr_s_calcium.reshape(-1, 1),
                 curr_local_coactivity.reshape(-1, 1),
@@ -309,6 +313,8 @@ def local_spine_coactivity_analysis(
                 activity_window=(-2, 2),
                 sampling_rate=sampling_rate,
             )
+            # Store the outputs
+            ## Outputs are lists/arrays so get individual values from them
             spine_coactive_amplitude[spines[spine]] = s_amp[0]
             spine_coactive_calcium[spines[spine]] = s_ca_amp[0]
             spine_coactive_std[spines[spine]] = s_std[0]
