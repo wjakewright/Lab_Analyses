@@ -140,8 +140,8 @@ def spine_movement_activity(
         # Reorganize trace outputs
         s_traces = list(s_traces.values())
         s_means = [x[0] for x in s_mean_sems.values()]
-        d_traces = list(d_traces.values())[0]
-        d_mean = list(d_mean_sem.values())[0][0]
+        d_traces = d_traces["Dendrite"]
+        d_mean = d_mean_sem["Dendrite"][0]
 
         if volume_norm:
             s_traces = [s_traces[i] / norm_constants[i] for i in range(s_dFoF.shape[1])]
@@ -156,20 +156,25 @@ def spine_movement_activity(
         # Get activity std and relative onset for each spine
         for spine in range(s_dFoF.shape[1]):
             # Relative onsets
-            s_rel_onset = (s_onsets[spine] - center_point) / sampling_rate
-            d_rel_onset = (d_onset - center_point) / sampling_rate
-            # Activity std
-            s_max = np.where(s_means[spine] == s_amps[spine])[0]
-            s_std = np.nanstd(s_traces[spine], axis=1)
-            if s_max:
+            if not np.isnan(s_amps[spine]):
+                s_rel_onset = (s_onsets[spine] - center_point) / sampling_rate
+                # Activity std
+                s_max = np.nonzero(s_means[spine] == s_amps[spine])[0]
+                s_std = np.nanstd(s_traces[spine], axis=1)
                 s_std = s_std[s_max]
             else:
+                s_rel_onset = np.nan
+                s_amps[spine] = 0
                 s_std = s_std[center_point]
-            d_max = np.where(d_mean == d_amp)[0]
-            d_std = np.nanstd(d_traces, axis=1)
-            if d_max:
+
+            if not np.isnan(d_amp):
+                d_rel_onset = (d_onset - center_point) / sampling_rate
+                d_max = np.nonzero(d_mean == d_amp)[0]
+                d_std = np.nanstd(d_traces, axis=1)
                 d_std = d_std[d_max]
             else:
+                d_rel_onset = np.nan
+                d_amp = 0
                 d_std = d_std[center_point]
 
             # Store outputs
