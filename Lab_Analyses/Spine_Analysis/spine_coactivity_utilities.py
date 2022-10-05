@@ -190,7 +190,6 @@ def get_dend_spine_traces_and_onsets(
             max_len=len(curr_spine_dFoF),
             sampling_rate=sampling_rate,
         )
-
         # Get the traces centered on the dendrite onsets
         dend_trace, dend_mean = d_utils.get_trace_mean_sem(
             dendrite_dFoF.reshape(-1, 1),
@@ -222,8 +221,9 @@ def get_dend_spine_traces_and_onsets(
         spine_mean = spine_mean["Spine"][0]
         spine_trace = spine_trace["Spine"]
         if norm_constants is not None:
-            spine_mean = spine_mean / norm_constants[i]
-            spine_trace = spine_trace / norm_constants[i]
+            if norm_constants[i] is not None:
+                spine_mean = spine_mean / norm_constants[i]
+                spine_trace = spine_trace / norm_constants[i]
         # Get the spine onsets and amplitudes and auc
         s_onset, s_amp = find_activity_onset([spine_mean])
         s_onset = s_onset[0]
@@ -236,6 +236,7 @@ def get_dend_spine_traces_and_onsets(
             spine_auc.append(np.nan)
             relative_onsets.append(np.nan)
             continue
+        s_onset = int(s_onset)
         smax_idx = np.nonzero(spine_mean == s_amp)[0][0]
         s_std_trace = np.nanstd(spine_trace, axis=1)
         spine_std = s_std_trace[smax_idx]
@@ -467,6 +468,13 @@ def nearby_spine_conjunctive_events(
 
     # Find dendrite onsets to center analysis around
     initial_stamps = [x[0] for x in timestamps]
+    initial_stamps = refine_activity_timestamps(
+        initial_stamps,
+        activity_window,
+        max_len=len(spine_dFoF),
+        sampling_rate=sampling_rate,
+    )
+
     _, d_mean = d_utils.get_trace_mean_sem(
         dendrite_dFoF.reshape(-1, 1),
         ["Dendrite"],
@@ -479,7 +487,10 @@ def nearby_spine_conjunctive_events(
     d_onset = d_onset[0]
     # Correct timestamps so that they are centered on dendrite onsets
     center_point = np.absolute(activity_window[0] * sampling_rate)
-    offset = int(center_point - d_onset)
+    try:
+        offset = int(center_point - d_onset)
+    except ValueError:
+        offset = 0
     event_stamps = [int(x - offset) for x in initial_stamps]
 
     # Refine event stamps
