@@ -29,13 +29,13 @@ class Coactivity_Plasticity:
         # Check to see if one dataset was input and set up data
         if type(data) == list:
             self.dataset = data[0]
-            self.followup_flags = data[1].spine_flags
-            self.followup_volumes = data[1].corrected_spine_volume
+            self.subsequent_flags = data[1].spine_flags
+            self.subsequent_volumes = data[1].spine_volumes_um
         elif isinstance(data, object):
             if data.followup_volumes is not None:
                 self.dataset = data
-                self.followup_flags = data.followup_flags
-                self.followup_volumes = data.followup_volumes
+                self.subsequent_flags = data.followup_flags
+                self.subsequent_volumes = data.followup_volumes_um
             else:
                 raise Exception("Data must have followup data containing spine volumes")
 
@@ -55,13 +55,13 @@ class Coactivity_Plasticity:
     def analyze_plasticity(self):
         """Method to calculate spine volume change and classify plasticity"""
 
-        volume_data = [self.dataset.spine_volumes, self.followup_volumes]
-        flag_list = [self.dataset.spine_flags, self.followup_flags]
+        volume_data = [self.dataset.spine_volumes_um, self.subsequent_volumes]
+        flag_list = [self.dataset.spine_flags, self.subsequent_flags]
 
         relative_volumes, spine_idxs = calculate_volume_change(
             volume_data, flag_list, days=None, exclude=self.exclude
         )
-        relative_volumes = list(relative_volumes.values())[0]
+        relative_volumes = np.array(list(relative_volumes.values())[-1])
         enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
             relative_volumes, self.threshold
         )
@@ -76,16 +76,25 @@ class Coactivity_Plasticity:
         attributes = list(self.dataset.__dict__.keys())
         ## Go through each attribute
         for attribute in attributes:
+            # Save attributes that do not need to be refined
             if (
                 attribute == "day"
-                or attribute == "mouse_id"
                 or attribute == "parameters"
                 or attribute == "learned_movement"
             ):
+                variable = getattr(self.dataset, attribute)
+                setattr(self, attribute, variable)
                 continue
-            # Refine the attributes data
+
+            # Get the corresponding variable
             variable = getattr(self.dataset, attribute)
-            print(attribute)
+
+            # Skip variables that are None
+            if variable is None:
+                setattr(self, attribute, variable)
+                continue
+
+            # Refine variable based on spine idxs
             if type(variable) == np.ndarray:
                 if len(variable.shape) == 1:
                     new_variable = variable[spine_idxs]
@@ -95,9 +104,11 @@ class Coactivity_Plasticity:
                 try:
                     new_variable = [variable[i] for i in spine_idxs]
                 except IndexError:
+                    print(f"{attribute} is an empty list !!! Will skip.")
                     print(variable)
+                    continue
             else:
-                raise Exception(
+                raise TypeError(
                     f"{attribute} {type(variable)} is incorrect datatype !!!"
                 )
             # Store the attribute
