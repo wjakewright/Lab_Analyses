@@ -67,7 +67,9 @@ def grouped_coactivity_analysis(
         for FOV, dataset in datasets.items():
             if followup is True:
                 data = dataset[f"Pre {day}"]
-                followup_volume = dataset[f"Post {day}"].corrected_spine_volume
+                followup_volume = np.array(
+                    dataset[f"Post {day}"].corrected_spine_volume
+                )
                 followup_flags = dataset[f"Post {day}"].spine_flags
             else:
                 data = dataset[day]
@@ -301,8 +303,8 @@ def grouped_coactivity_analysis(
                     0
                 ]
                 d_events = np.nonzero(np.diff(dend_activity_matrix[:, s]) == 1)[0]
-                spine_freq = (len(s_events) / duration) * 60
-                dend_freq = (len(d_events) / duration) * 60
+                spine_freq = (len(s_events) / duration) * sampling_rate
+                dend_freq = (len(d_events) / duration) * sampling_rate
                 spine_activity_freq.append(spine_freq)
                 dend_activity_freq.append(dend_freq)
             spine_activity_freq = np.array(spine_activity_freq)
@@ -311,13 +313,21 @@ def grouped_coactivity_analysis(
             fovs = [FOV for i in range(len(spine_activity_freq))]
             ids = [mouse for i in range(len(spine_activity_freq))]
 
+            # Get volumes in um
+            pix_to_um = data.imaging_parameters["Zoom"] / 2
+            spine_volume = np.array(data.corrected_spine_volume)
+            spine_volume_um = spine_volume / pix_to_um
+            followup_volume_um = followup_volume / pix_to_um
+
             # Store data from this mouse in grouped_data dictionary
             grouped_data["mouse_id"].append(ids)
             grouped_data["FOV"].append(fovs)
             grouped_data["spine_flags"].append(data.spine_flags)
             grouped_data["followup_flags"].append(followup_flags)
-            grouped_data["spine_volumes"].append(data.corrected_spine_volume)
+            grouped_data["spine_volumes"].append(spine_volume)
+            grouped_data["spine_volumes_um"].append(spine_volume_um)
             grouped_data["followup_volumes"].append(followup_volume)
+            grouped_data["followup_volumes_um"].append(followup_volume_um)
             grouped_data["spine_activity_freq"].append(spine_activity_freq)
             grouped_data["dend_activity_freq"].append(dend_activity_freq)
             grouped_data["movement_spines"].append(movement_spines)
@@ -526,14 +536,15 @@ def grouped_coactivity_analysis(
             grouped_data["conj_movement_corr"].append(conj_movement_corr)
 
     # Merge all the data across FOVs and mice
+    regrouped_data = {}
     for key, value in grouped_data.items():
         if type(value[0]) == list:
-            grouped_data[key] = [y for x in value for y in x]
+            regrouped_data[key] = [y for x in value for y in x]
         elif type(value[0]) == np.ndarray:
             if len(value[0].shape) == 1:
-                grouped_data[key] = np.concatenate(value)
+                regrouped_data[key] = np.concatenate(value)
             elif len(value[0].shape) == 2:
-                grouped_data[key] = np.hstack(value)
+                regrouped_data[key] = np.hstack(value)
     parameters = {
         "Sampling Rate": sampling_rate,
         "Cluster Dist": CLUSTER_DIST,
@@ -542,161 +553,174 @@ def grouped_coactivity_analysis(
         "Volume Norm": volume_norm,
         "Movement Epoch": movement_epochs,
     }
-    print(grouped_data["local_spine_coactive_amplitude"])
     # Store data for outputing and saving
     spine_coactivity_data = Spine_Coactivity_Data(
         day=day,
-        mouse_id=grouped_data["mouse_id"],
-        FOV=grouped_data["FOV"],
+        mouse_id=regrouped_data["mouse_id"],
+        FOV=regrouped_data["FOV"],
         parameters=parameters,
-        spine_flags=grouped_data["spine_flags"],
-        followup_flags=grouped_data["followup_flags"],
-        spine_volumes=grouped_data["spine_volumes"],
-        followup_volumes=grouped_data["followup_volumes"],
-        spine_activity_freq=grouped_data["spine_activity_freq"],
-        dend_activity_freq=grouped_data["dend_activity_freq"],
-        movement_spines=grouped_data["movement_spines"],
-        rwd_movement_spines=grouped_data["rwd_movement_spines"],
-        movement_dendrites=grouped_data["movement_dendrites"],
-        rwd_movement_dendrites=grouped_data["rwd_movement_dendrites"],
-        distance_coactivity_rate=grouped_data["distance_coactivity_rate"],
-        local_spine_correlation=grouped_data["local_spine_correlation"],
-        local_coactivity_rate=grouped_data["local_coactivity_rate"],
-        local_spine_fraction_coactive=grouped_data["local_spine_fraction_coactive"],
-        local_coactive_spine_num=grouped_data["local_coactive_spine_num"],
-        local_coactive_spine_volumes=grouped_data["local_coactive_spine_volumes"],
-        local_spine_coactive_amplitude=grouped_data["local_spine_coactivie_amplitude"],
-        local_nearby_coactive_amplitude=grouped_data["local_nearby_coactive_amplitude"],
-        local_spine_coactive_calcium=grouped_data["local_spine_coactive_calcium"],
-        local_nearby_coactive_calcium=grouped_data["local_nearby_coactive_calcium"],
-        local_spine_coactive_std=grouped_data["local_spine_coactive_std"],
-        local_nearby_coactive_std=grouped_data["local_nearby_coactive_std"],
-        local_spine_coactive_calcium_std=grouped_data[
+        spine_flags=regrouped_data["spine_flags"],
+        followup_flags=regrouped_data["followup_flags"],
+        spine_volumes=regrouped_data["spine_volumes"],
+        spine_volumes_um=regrouped_data["spine_volumes_um"],
+        followup_volumes=regrouped_data["followup_volumes"],
+        followup_volumes_um=regrouped_data["followup_volumes_um"],
+        spine_activity_freq=regrouped_data["spine_activity_freq"],
+        dend_activity_freq=regrouped_data["dend_activity_freq"],
+        movement_spines=regrouped_data["movement_spines"],
+        rwd_movement_spines=regrouped_data["rwd_movement_spines"],
+        movement_dendrites=regrouped_data["movement_dendrites"],
+        rwd_movement_dendrites=regrouped_data["rwd_movement_dendrites"],
+        distance_coactivity_rate=regrouped_data["distance_coactivity_rate"],
+        local_spine_correlation=regrouped_data["local_spine_correlation"],
+        local_coactivity_rate=regrouped_data["local_coactivity_rate"],
+        local_spine_fraction_coactive=regrouped_data["local_spine_fraction_coactive"],
+        local_coactive_spine_num=regrouped_data["local_coactive_spine_num"],
+        local_coactive_spine_volumes=regrouped_data["local_coactive_spine_volumes"],
+        local_spine_coactive_amplitude=regrouped_data[
+            "local_spine_coactivie_amplitude"
+        ],
+        local_nearby_coactive_amplitude=regrouped_data[
+            "local_nearby_coactive_amplitude"
+        ],
+        local_spine_coactive_calcium=regrouped_data["local_spine_coactive_calcium"],
+        local_nearby_coactive_calcium=regrouped_data["local_nearby_coactive_calcium"],
+        local_spine_coactive_std=regrouped_data["local_spine_coactive_std"],
+        local_nearby_coactive_std=regrouped_data["local_nearby_coactive_std"],
+        local_spine_coactive_calcium_std=regrouped_data[
             "local_spine_coactive_calcium_std"
         ],
-        local_nearby_coactive_calcium_std=grouped_data[
+        local_nearby_coactive_calcium_std=regrouped_data[
             "local_nearby_coactive_calcium_std"
         ],
-        local_spine_coactive_calcium_auc=grouped_data[
+        local_spine_coactive_calcium_auc=regrouped_data[
             "local_spine_coactive_calcium_auc"
         ],
-        local_nearby_coactive_calcium_auc=grouped_data[
+        local_nearby_coactive_calcium_auc=regrouped_data[
             "local_nearby_coactive_calcium_auc"
         ],
-        local_spine_coactive_traces=grouped_data["local_spine_coactive_traces"],
-        local_nearby_coactive_traces=grouped_data["local_nearby_coactive_traces"],
-        local_spine_coactive_calcium_traces=grouped_data[
+        local_spine_coactive_traces=regrouped_data["local_spine_coactive_traces"],
+        local_nearby_coactive_traces=regrouped_data["local_nearby_coactive_traces"],
+        local_spine_coactive_calcium_traces=regrouped_data[
             "local_spine_coactive_calcium_traces"
         ],
-        local_nearby_coactive_calcium_traces=grouped_data[
+        local_nearby_coactive_calcium_traces=regrouped_data[
             "local_nearby_coactive_calcium_traces"
         ],
-        global_correlation=grouped_data["global_correlation"],
-        global_coactivity_event_num=grouped_data["global_coactivity_event_num"],
-        global_coactivity_event_rate=grouped_data["global_coactivity_event_rate"],
-        global_spine_fraction_coactive=grouped_data["global_spine_fraction_coactive"],
-        global_dend_fraction_coactive=grouped_data["global_dend_fraction_coactive"],
-        global_spine_coactive_amplitude=grouped_data["global_spine_coactive_amplitude"],
-        global_dend_coactive_amplitude=grouped_data["global_dend_coactive_amplitude"],
-        global_spine_coactive_calcium=grouped_data["global_spine_coactive_calcium"],
-        global_spine_coactive_std=grouped_data["global_spine_coactive_std"],
-        global_dend_coactive_std=grouped_data["global_dend_coactive_std"],
-        global_spine_coactive_calcium_std=grouped_data[
+        global_correlation=regrouped_data["global_correlation"],
+        global_coactivity_event_num=regrouped_data["global_coactivity_event_num"],
+        global_coactivity_event_rate=regrouped_data["global_coactivity_event_rate"],
+        global_spine_fraction_coactive=regrouped_data["global_spine_fraction_coactive"],
+        global_dend_fraction_coactive=regrouped_data["global_dend_fraction_coactive"],
+        global_spine_coactive_amplitude=regrouped_data[
+            "global_spine_coactive_amplitude"
+        ],
+        global_dend_coactive_amplitude=regrouped_data["global_dend_coactive_amplitude"],
+        global_spine_coactive_calcium=regrouped_data["global_spine_coactive_calcium"],
+        global_spine_coactive_std=regrouped_data["global_spine_coactive_std"],
+        global_dend_coactive_std=regrouped_data["global_dend_coactive_std"],
+        global_spine_coactive_calcium_std=regrouped_data[
             "global_spine_coactive_calcium_std"
         ],
-        global_dend_coactive_auc=grouped_data["global_dend_coactive_auc"],
-        global_spine_coactive_calcium_auc=grouped_data[
+        global_dend_coactive_auc=regrouped_data["global_dend_coactive_auc"],
+        global_spine_coactive_calcium_auc=regrouped_data[
             "global_spine_coactive_calcium_auc"
         ],
-        global_relative_spine_coactive_amplitude=grouped_data[
+        global_relative_spine_coactive_amplitude=regrouped_data[
             "global_relative_spine_coactive_amplitude"
         ],
-        global_relative_dend_coactive_amplitude=grouped_data[
+        global_relative_dend_coactive_amplitude=regrouped_data[
             "global_relative_dend_coactive_amplitude"
         ],
-        global_relative_spine_coactive_calcium=grouped_data[
+        global_relative_spine_coactive_calcium=regrouped_data[
             "global_relative_spine_coactive_calcium"
         ],
-        global_relative_spine_onsets=grouped_data["global_relative_spine_onsets"],
-        global_dend_triggered_spine_traces=grouped_data[
+        global_relative_spine_onsets=regrouped_data["global_relative_spine_onsets"],
+        global_dend_triggered_spine_traces=regrouped_data[
             "global_dend_triggered_dend_traces"
         ],
-        global_dend_triggered_dend_traces=grouped_data[
+        global_dend_triggered_dend_traces=regrouped_data[
             "global_dend_triggered_dend_traces"
         ],
-        global_dend_triggered_spine_calcium_traces=grouped_data[
+        global_dend_triggered_spine_calcium_traces=regrouped_data[
             "global_dend_triggered_spine_calcium_traces"
         ],
-        global_coactive_spine_traces=grouped_data["global_coactive_spine_traces"],
-        global_coactive_dend_traces=grouped_data["global_coactive_dend_traces"],
-        global_coactive_spine_calcium_traces=grouped_data[
+        global_coactive_spine_traces=regrouped_data["global_coactive_spine_traces"],
+        global_coactive_dend_traces=regrouped_data["global_coactive_dend_traces"],
+        global_coactive_spine_calcium_traces=regrouped_data[
             "global_coactive_spine_calcium"
         ],
-        conjunctive_correlation=grouped_data["conjunctive_correlation"],
-        conj_coactivity_event_num=grouped_data["conj_coactivity_event"],
-        conj_coactivity_event_rate=grouped_data["conj_coactivity_event_rate"],
-        conj_spine_fraction_coactive=grouped_data["conj_spine_fraction_coactive"],
-        conj_dend_fraction_coactive=grouped_data["conj_dend_fraction_coactive"],
-        conj_coactive_spine_num=grouped_data["conj_coactive_spine_num"],
-        conj_coactive_spine_volumes=grouped_data["conj_coactive_spine_volumes"],
-        conj_spine_coactive_amplitude=grouped_data["conj_spine_coactive_amplitude"],
-        conj_nearby_coactive_amplitude_sum=grouped_data[
+        conjunctive_correlation=regrouped_data["conjunctive_correlation"],
+        conj_coactivity_event_num=regrouped_data["conj_coactivity_event"],
+        conj_coactivity_event_rate=regrouped_data["conj_coactivity_event_rate"],
+        conj_spine_fraction_coactive=regrouped_data["conj_spine_fraction_coactive"],
+        conj_dend_fraction_coactive=regrouped_data["conj_dend_fraction_coactive"],
+        conj_coactive_spine_num=regrouped_data["conj_coactive_spine_num"],
+        conj_coactive_spine_volumes=regrouped_data["conj_coactive_spine_volumes"],
+        conj_spine_coactive_amplitude=regrouped_data["conj_spine_coactive_amplitude"],
+        conj_nearby_coactive_amplitude_sum=regrouped_data[
             "conj_nearby_coactive_amplitude_sum"
         ],
-        conj_spine_coactive_calcium=grouped_data["conj_spine_coactive_calcium"],
-        conj_nearby_coactive_calcium_sum=grouped_data[
+        conj_spine_coactive_calcium=regrouped_data["conj_spine_coactive_calcium"],
+        conj_nearby_coactive_calcium_sum=regrouped_data[
             "conj_nearby_coactive_calcium_sum"
         ],
-        conj_dend_coactive_amplitude=grouped_data["conj_dend_coactive_amplitude"],
-        conj_spine_coactive_std=grouped_data["conj_spine_coactive_std"],
-        conj_nearby_coactive_std=grouped_data["conj_nearby_coactive_std"],
-        conj_spine_coactive_calcium_std=grouped_data["conj_spine_coactive_calcium_std"],
-        conj_nearby_coactive_calcium_std=grouped_data[
+        conj_dend_coactive_amplitude=regrouped_data["conj_dend_coactive_amplitude"],
+        conj_spine_coactive_std=regrouped_data["conj_spine_coactive_std"],
+        conj_nearby_coactive_std=regrouped_data["conj_nearby_coactive_std"],
+        conj_spine_coactive_calcium_std=regrouped_data[
+            "conj_spine_coactive_calcium_std"
+        ],
+        conj_nearby_coactive_calcium_std=regrouped_data[
             "conj_nearby_coactive_calcium_std"
         ],
-        conj_dend_coactive_std=grouped_data["conj_dend_coactive_std"],
-        conj_spine_coactive_calcium_auc=grouped_data["conj_spine_coactive_calcium_auc"],
-        conj_nearby_coactive_calcium_auc_sum=grouped_data[
+        conj_dend_coactive_std=regrouped_data["conj_dend_coactive_std"],
+        conj_spine_coactive_calcium_auc=regrouped_data[
+            "conj_spine_coactive_calcium_auc"
+        ],
+        conj_nearby_coactive_calcium_auc_sum=regrouped_data[
             "conj_nearby_coactive_calcium_auc_sum"
         ],
-        conj_dend_coactive_auc=grouped_data["conj_dend_coactive_auc"],
-        conj_relative_spine_dend_onsets=grouped_data["conj_relative_spine_dend_onsets"],
-        conj_coactive_spine_traces=grouped_data["conj_coactive_spine_traces"],
-        conj_coactive_nearby_traces=grouped_data["conj_coactive_spine_traces"],
-        conj_coactive_spine_calcium_traces=grouped_data[
+        conj_dend_coactive_auc=regrouped_data["conj_dend_coactive_auc"],
+        conj_relative_spine_dend_onsets=regrouped_data[
+            "conj_relative_spine_dend_onsets"
+        ],
+        conj_coactive_spine_traces=regrouped_data["conj_coactive_spine_traces"],
+        conj_coactive_nearby_traces=regrouped_data["conj_coactive_spine_traces"],
+        conj_coactive_spine_calcium_traces=regrouped_data[
             "conj_coactive_spine_calcium_traces"
         ],
-        conj_coactive_nearby_calcium_traces=grouped_data[
+        conj_coactive_nearby_calcium_traces=regrouped_data[
             "conj_coactive_nearby_calcium_traces"
         ],
-        conj_coactive_dend_traces=grouped_data["conj_coactive_dend_traces"],
-        move_dend_traces=grouped_data["move_dend_traces"],
-        move_spine_traces=grouped_data["move_spine_traces"],
-        move_dend_amplitude=grouped_data["move_dend_amplitude"],
-        move_dend_std=grouped_data["move_dend_std"],
-        move_spine_amplitude=grouped_data["move_spine_amplitude"],
-        move_spine_std=grouped_data["move_spine_std"],
-        move_dend_onset=grouped_data["move_dend_onset"],
-        move_spine_onset=grouped_data["move_spine_onset"],
-        rwd_move_dend_traces=grouped_data["rwd_move_dend_traces"],
-        rwd_move_spine_traces=grouped_data["rwd_move_spine_traces"],
-        rwd_move_dend_amplitude=grouped_data["rwd_move_dend_amplitude"],
-        rwd_move_dend_std=grouped_data["rwd_move_dend_std"],
-        rwd_move_spine_amplitude=grouped_data["rwd_move_spine_amplitude"],
-        rwd_move_spine_std=grouped_data["rwd_move_spine_std"],
-        rwd_move_dend_onset=grouped_data["rwd_move_dend_onset"],
-        rwd_move_spine_onset=grouped_data["rwd_move_spine_onset"],
-        learned_movement=grouped_data["learned_movement"],
-        spine_movements=grouped_data["spine_movements"],
-        spine_movement_corr=grouped_data["spine_movement_corr"],
-        dend_movements=grouped_data["dend_movements"],
-        dend_movement_corr=grouped_data["dend_movement_corr"],
-        local_movements=grouped_data["local_movements"],
-        local_movement_corr=grouped_data["local_movement_corr"],
-        global_movements=grouped_data["global_movements"],
-        global_movement_corr=grouped_data["global_movement_corr"],
-        conj_movements=grouped_data["conj_movements"],
-        conj_movement_corr=grouped_data["conj_movement_corr"],
+        conj_coactive_dend_traces=regrouped_data["conj_coactive_dend_traces"],
+        move_dend_traces=regrouped_data["move_dend_traces"],
+        move_spine_traces=regrouped_data["move_spine_traces"],
+        move_dend_amplitude=regrouped_data["move_dend_amplitude"],
+        move_dend_std=regrouped_data["move_dend_std"],
+        move_spine_amplitude=regrouped_data["move_spine_amplitude"],
+        move_spine_std=regrouped_data["move_spine_std"],
+        move_dend_onset=regrouped_data["move_dend_onset"],
+        move_spine_onset=regrouped_data["move_spine_onset"],
+        rwd_move_dend_traces=regrouped_data["rwd_move_dend_traces"],
+        rwd_move_spine_traces=regrouped_data["rwd_move_spine_traces"],
+        rwd_move_dend_amplitude=regrouped_data["rwd_move_dend_amplitude"],
+        rwd_move_dend_std=regrouped_data["rwd_move_dend_std"],
+        rwd_move_spine_amplitude=regrouped_data["rwd_move_spine_amplitude"],
+        rwd_move_spine_std=regrouped_data["rwd_move_spine_std"],
+        rwd_move_dend_onset=regrouped_data["rwd_move_dend_onset"],
+        rwd_move_spine_onset=regrouped_data["rwd_move_spine_onset"],
+        learned_movement=regrouped_data["learned_movement"],
+        spine_movements=regrouped_data["spine_movements"],
+        spine_movement_corr=regrouped_data["spine_movement_corr"],
+        dend_movements=regrouped_data["dend_movements"],
+        dend_movement_corr=regrouped_data["dend_movement_corr"],
+        local_movements=regrouped_data["local_movements"],
+        local_movement_corr=regrouped_data["local_movement_corr"],
+        global_movements=regrouped_data["global_movements"],
+        global_movement_corr=regrouped_data["global_movement_corr"],
+        conj_movements=regrouped_data["conj_movements"],
+        conj_movement_corr=regrouped_data["conj_movement_corr"],
     )
 
     # Save Section
@@ -715,8 +739,12 @@ def grouped_coactivity_analysis(
             a_type = "zscore"
         else:
             a_type = "dFoF"
+        if volume_norm:
+            norm = "_norm"
+        else:
+            norm = ""
 
-        save_name = f"{day}_{epoch_name}_{a_type}_spine_coactivity_data"
+        save_name = f"{day}_{epoch_name}_{a_type}{norm}_spine_coactivity_data"
         save_pickle(save_name, spine_coactivity_data, save_path)
 
     return spine_coactivity_data
@@ -735,7 +763,9 @@ class Spine_Coactivity_Data:
     spine_flags: list
     followup_flags: list
     spine_volumes: np.array
+    spine_volumes_um: np.array
     followup_volumes: np.array
+    followup_volumes_um: np.array
     spine_activity_freq: np.array
     dend_activity_freq: np.array
     movement_spines: np.array
