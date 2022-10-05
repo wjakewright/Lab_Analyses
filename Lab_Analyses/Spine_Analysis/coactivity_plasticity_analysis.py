@@ -322,5 +322,10 @@ class Coactivity_Plasticity:
             a_type = "zscore"
         else:
             a_type = "dFoF"
-        save_name = f"{self.day}_{epoch_name}_{a_type}_coactivity_plasticity_data"
+        if self.parameters["Volume Norm"]:
+            norm = "_norm"
+        else:
+            norm = ""
+        thresh = self.threshold
+        save_name = f"{self.day}_{epoch_name}_{a_type}{norm}_{thresh}_coactivity_plasticity_data"
         save_pickle(save_name, self, save_path)
