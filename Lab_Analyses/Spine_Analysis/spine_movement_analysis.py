@@ -9,6 +9,7 @@ import scipy.signal as sysignal
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     find_activity_onset,
     get_activity_timestamps,
+    refine_activity_timestamps,
 )
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
@@ -94,7 +95,7 @@ def spine_movement_activity(
     else:
         norm_constants = np.array([None for x in range(spine_activity.shape[1])])
 
-    center_point = int(activity_window[0] * sampling_rate)
+    center_point = int(np.absolute(activity_window[0]) * sampling_rate)
 
     # Set up some outputs
     dend_traces = [None for i in range(spine_dFoF.shape[1])]
@@ -105,6 +106,15 @@ def spine_movement_activity(
     spine_std = np.zeros(spine_dFoF.shape[1])
     dend_onsets = np.zeros(spine_dFoF.shape[1])
     spine_onsets = np.zeros(spine_dFoF.shape[1])
+
+    timestamps = get_activity_timestamps(movement_trace)
+    timestamps = [x[0] for x in timestamps]
+    timestamps = refine_activity_timestamps(
+        timestamps,
+        window=activity_window,
+        max_len=spine_dFoF.shape[0],
+        sampling_rate=sampling_rate,
+    )
 
     # Process spines on each parent dendrite
     for dendrite in range(dendrite_dFoF.shape[1]):
@@ -119,8 +129,6 @@ def spine_movement_activity(
         d_dFoF = dendrite_dFoF[:, dendrite]
 
         # Get movement onset timestamps
-        timestamps = get_activity_timestamps(movement_trace)
-        timestamps = [x[0] for x in timestamps]
 
         # Get individual traces and mean traces
         s_traces, s_mean_sems = d_utils.get_trace_mean_sem(
@@ -149,9 +157,9 @@ def spine_movement_activity(
 
         # Get onsets and amplitudes
         s_onsets, s_amps = find_activity_onset(s_means)
-        d_onset, d_amp = find_activity_onset([d_mean])
+        d_onset, dend_amp = find_activity_onset([d_mean])
         d_onset = d_onset[0]
-        d_amp = d_amp[0]
+        dend_amp = dend_amp[0]
 
         # Get activity std and relative onset for each spine
         for spine in range(s_dFoF.shape[1]):
@@ -159,23 +167,26 @@ def spine_movement_activity(
             if not np.isnan(s_amps[spine]):
                 s_rel_onset = (s_onsets[spine] - center_point) / sampling_rate
                 # Activity std
-                s_max = np.nonzero(s_means[spine] == s_amps[spine])[0]
-                s_std = np.nanstd(s_traces[spine], axis=1)
-                s_std = s_std[s_max]
+                s_max = np.nonzero(s_means[spine] == s_amps[spine])[0][0]
+                s_stdiv = np.nanstd(s_traces[spine], axis=1)
+                s_std = s_stdiv[s_max]
             else:
                 s_rel_onset = np.nan
                 s_amps[spine] = 0
-                s_std = s_std[center_point]
+                s_stdiv = np.nanstd(s_traces[spine], axis=1)
+                s_std = s_stdiv[center_point]
 
-            if not np.isnan(d_amp):
+            if not np.isnan(dend_amp):
+                d_amp = dend_amp
                 d_rel_onset = (d_onset - center_point) / sampling_rate
-                d_max = np.nonzero(d_mean == d_amp)[0]
-                d_std = np.nanstd(d_traces, axis=1)
-                d_std = d_std[d_max]
+                d_max = np.nonzero(d_mean == d_amp)[0][0]
+                d_stdiv = np.nanstd(d_traces, axis=1)
+                d_std = d_stdiv[d_max]
             else:
                 d_rel_onset = np.nan
                 d_amp = 0
-                d_std = d_std[center_point]
+                d_stdiv = np.nanstd(d_traces, axis=1)
+                d_std = d_stdiv[center_point]
 
             # Store outputs
             dend_traces[spines[spine]] = d_traces
