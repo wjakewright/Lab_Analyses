@@ -577,9 +577,7 @@ def grouped_coactivity_analysis(
         local_spine_fraction_coactive=regrouped_data["local_spine_fraction_coactive"],
         local_coactive_spine_num=regrouped_data["local_coactive_spine_num"],
         local_coactive_spine_volumes=regrouped_data["local_coactive_spine_volumes"],
-        local_spine_coactive_amplitude=regrouped_data[
-            "local_spine_coactivie_amplitude"
-        ],
+        local_spine_coactive_amplitude=regrouped_data["local_spine_coactive_amplitude"],
         local_nearby_coactive_amplitude=regrouped_data[
             "local_nearby_coactive_amplitude"
         ],
@@ -648,10 +646,10 @@ def grouped_coactivity_analysis(
         global_coactive_spine_traces=regrouped_data["global_coactive_spine_traces"],
         global_coactive_dend_traces=regrouped_data["global_coactive_dend_traces"],
         global_coactive_spine_calcium_traces=regrouped_data[
-            "global_coactive_spine_calcium"
+            "global_coactive_spine_calcium_traces"
         ],
         conjunctive_correlation=regrouped_data["conjunctive_correlation"],
-        conj_coactivity_event_num=regrouped_data["conj_coactivity_event"],
+        conj_coactivity_event_num=regrouped_data["conj_coactivity_event_num"],
         conj_coactivity_event_rate=regrouped_data["conj_coactivity_event_rate"],
         conj_spine_fraction_coactive=regrouped_data["conj_spine_fraction_coactive"],
         conj_dend_fraction_coactive=regrouped_data["conj_dend_fraction_coactive"],
