@@ -234,9 +234,9 @@ def local_spine_coactivity_analysis(
             ## Find spines within cluster distance
             nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
             ## Remove the eliminated spines. Dan't want to consider their activity here
-            nearby_spines = [i for i in nearby_spines if not curr_el_spines[i]]
-            # Remove the current spine from the nearby indexes
-            nearby_spines.pop(spine)
+            nearby_spines = [
+                i for i in nearby_spines if not curr_el_spines[i] and i != spine
+            ]
 
             # Get relevant spine activity data
             curr_s_dFoF = s_dFoF[:, spine]
