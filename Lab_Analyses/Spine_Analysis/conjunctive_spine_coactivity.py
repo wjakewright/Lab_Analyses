@@ -253,9 +253,9 @@ def conjunctive_coactivity_analysis(
             ## Find spines within cluster distance
             nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
             ## Remove the eliminated spines. Dan't want to consider their activity here
-            nearby_spines = [i for i in nearby_spines if not curr_el_spines[i]]
-            # Remove the current spine from the nearby indexes
-            nearby_spines.pop(spine)
+            nearby_spines = [
+                i for i in nearby_spines if not curr_el_spines[i] and i != spine
+            ]
 
             # Get the relevant spine activity data
             curr_s_dFoF = s_dFoF[:, spine]
@@ -308,7 +308,6 @@ def conjunctive_coactivity_analysis(
                 d_std,
                 rel_onset,
             ) = get_dend_spine_traces_and_onsets(
-                d_activity,
                 curr_s_activity.reshape(-1, 1),
                 d_dFoF,
                 curr_s_dFoF.reshape(-1, 1),
@@ -328,7 +327,6 @@ def conjunctive_coactivity_analysis(
                 _,
                 _,
             ) = get_dend_spine_traces_and_onsets(
-                d_activity,
                 curr_s_activity.reshape(-1, 1),
                 d_dFoF,
                 curr_s_calcium.reshape(-1, 1),
