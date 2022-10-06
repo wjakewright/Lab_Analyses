@@ -118,7 +118,7 @@ class Coactivity_Plasticity:
         self,
         variable_name,
         CI=None,
-        y_title=None,
+        ytitle=None,
         xlim=None,
         ylim=None,
         face_color="mediumblue",
@@ -132,15 +132,15 @@ class Coactivity_Plasticity:
     ):
         """Method to plot and correlation a given variable against spine volume change"""
         variable = getattr(self, variable_name)
-        x_title = "\u0394" + " spine volume"
+        xtitle = "\u0394" + " spine volume"
 
         sp.plot_sns_scatter_correlation(
             self.relative_volumes,
             variable,
             CI,
             title=variable_name,
-            x_title=x_title,
-            y_title=y_title,
+            xtitle=xtitle,
+            ytitle=ytitle,
             figsize=(5, 5),
             xlim=xlim,
             ylim=ylim,
@@ -254,6 +254,7 @@ class Coactivity_Plasticity:
             mean_list,
             sem_list,
             sampling_rate=self.parameters["Sampling Rate"],
+            activity_window=self.parameters["Activity Window"],
             avlines=avlines,
             figsize=figsize,
             colors=plot_colors,
@@ -294,6 +295,7 @@ class Coactivity_Plasticity:
             mean_traces,
             sem_traces,
             sampling_rate=self.parameters["Sampling Rate"],
+            activity_window=self.parameters["Activity Window"],
             avlines=avlines,
             figsize=figsize,
             color=color,
