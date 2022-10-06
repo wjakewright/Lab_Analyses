@@ -17,6 +17,7 @@ from Lab_Analyses.Utilities import data_utilities as d_utils
 
 def conjunctive_coactivity_analysis(
     data,
+    activity_window=(-2, 3),
     movement_epoch=None,
     cluster_dist=10,
     sampling_rate=60,
@@ -28,6 +29,9 @@ def conjunctive_coactivity_analysis(
         
         INPUT PARAMETERS
             data - spine_data object (e.g., Dual_Channel_Spine_Data
+
+            activity_window - tuple specifying the time window around each event you want to 
+                              analyze the activity from in terms of seconds
             
             movement_epoch - str specifying if you want to analyze only during specific
                             types of movements. Accepts - 'movement', 'rewarded', 'unrewarded',
@@ -284,6 +288,8 @@ def conjunctive_coactivity_analysis(
 
             # Get conjunctive coactivity timestamps
             conj_timestamps = get_activity_timestamps(curr_conj_coactivity)
+            if not conj_timestamps:
+                continue
 
             # Start analyzing the conjunctive coactivity
             event_num, event_rate, spine_frac, dend_frac = get_coactivity_rate(
@@ -313,7 +319,7 @@ def conjunctive_coactivity_analysis(
                 curr_s_dFoF.reshape(-1, 1),
                 curr_conj_coactivity,
                 norm_constants=[glu_constant],
-                activity_window=(-2, 2),
+                activity_window=activity_window,
                 sampling_rate=sampling_rate,
             )
             (
@@ -332,7 +338,7 @@ def conjunctive_coactivity_analysis(
                 curr_s_calcium.reshape(-1, 1),
                 curr_conj_coactivity,
                 norm_constants=[ca_constant],
-                activity_window=(-2, 2),
+                activity_window=activity_window,
                 sampling_rate=sampling_rate,
             )
             spine_coactive_amplitude[spines[spine]] = s_amp[0]
@@ -371,7 +377,7 @@ def conjunctive_coactivity_analysis(
                 target_constant=glu_constant,
                 glu_constants=nearby_glu_constants,
                 ca_constants=nearby_ca_constants,
-                activity_window=(-2, 2),
+                activity_window=activity_window,
                 sampling_rate=sampling_rate,
             )
             local_correlation[spines[spine]] = local_corr
