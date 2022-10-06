@@ -30,12 +30,12 @@ class Coactivity_Plasticity:
         if type(data) == list:
             self.dataset = data[0]
             self.subsequent_flags = data[1].spine_flags
-            self.subsequent_volumes = data[1].spine_volumes_um
+            self.subsequent_volumes = data[1].spine_volumes
         elif isinstance(data, object):
             if data.followup_volumes is not None:
                 self.dataset = data
                 self.subsequent_flags = data.followup_flags
-                self.subsequent_volumes = data.followup_volumes_um
+                self.subsequent_volumes = data.followup_volumes
             else:
                 raise Exception("Data must have followup data containing spine volumes")
 
@@ -55,7 +55,7 @@ class Coactivity_Plasticity:
     def analyze_plasticity(self):
         """Method to calculate spine volume change and classify plasticity"""
 
-        volume_data = [self.dataset.spine_volumes_um, self.subsequent_volumes]
+        volume_data = [self.dataset.spine_volumes, self.subsequent_volumes]
         flag_list = [self.dataset.spine_flags, self.subsequent_flags]
 
         relative_volumes, spine_idxs = calculate_volume_change(
@@ -132,6 +132,8 @@ class Coactivity_Plasticity:
     ):
         """Method to plot and correlation a given variable against spine volume change"""
         variable = getattr(self, variable_name)
+        # Remove nan values
+        variable = variable[~np.isnan(variable)]
         xtitle = "\u0394" + " spine volume"
 
         sp.plot_sns_scatter_correlation(
@@ -173,8 +175,11 @@ class Coactivity_Plasticity:
         variable = getattr(self, variable_name)
 
         enlarged_data = variable[self.enlarged_spines]
+        enlarged_data = enlarged_data[~np.isnan(enlarged_data)]
         shrunken_data = variable[self.shrunken_spines]
+        shrunken_data = shrunken_data[~np.isnan(shrunken_data)]
         stable_data = variable[self.stable_spines]
+        stable_data = stable_data[~np.isnan(stable_data)]
 
         data_dict = {
             "Enlarged": enlarged_data,
