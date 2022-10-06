@@ -26,7 +26,8 @@ def save_pickle(fname, data, path=None):
         fname = os.path.join(path, fname)
 
     pickle_fname = fname + ".pickle"
-    pickle.dump(data, open(pickle_fname, "wb"))
+    with open(pickle_fname, "wb") as f:
+        pickle.dump(data, f)
 
 
 def load_pickle(fname_list, path=None):
