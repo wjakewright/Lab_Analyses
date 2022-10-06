@@ -289,6 +289,8 @@ def quantify_movement_quality(
 
     move_idxs = []
     for onset, offset in zip(movement_onsets, movement_offsets):
+        if onset + corr_duration > len(lever_force):
+            continue
         move_idxs.append((onset, offset))
 
     # Generate a learned movement binary trace
@@ -296,6 +298,7 @@ def quantify_movement_quality(
     for movement in move_idxs:
         force = lever_force[movement[0] : movement[0] + corr_duration]
         r = stats.pearsonr(learned_move_resample, force)[0]
+
         if r >= threshold:
             lever_learned_binary[movement[0] : movement[1]] = 1
         else:
