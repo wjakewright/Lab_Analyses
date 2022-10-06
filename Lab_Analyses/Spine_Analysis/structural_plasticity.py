@@ -3,10 +3,8 @@
 from itertools import compress
 
 import numpy as np
-from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    find_spine_classes,
-    find_stable_spines,
-)
+from Lab_Analyses.Spine_Analysis.spine_utilities import (find_spine_classes,
+                                                         find_stable_spines)
 
 
 def calculate_volume_change(volume_list, flag_list, days=None, exclude=None):
@@ -35,19 +33,25 @@ def calculate_volume_change(volume_list, flag_list, days=None, exclude=None):
 
     # Get indexes of stable spines throughout all analyzed days
     stable_spines = find_stable_spines(flag_list)
+    print(stable_spines)
 
     # Find additional spines to exclude
     if exclude:
         exclude_spines = find_spine_classes(flag_list[-1], exclude)
         # Reverse values to exclude these spines
         exclude_spines = np.array([not x for x in exclude_spines])
+        print(exclude_spines)
         # Combine with the stable spines
         stable_spines = stable_spines * exclude_spines
 
     # Get volumes only for stable_spines
     spine_volumes = []
     for volumes in volume_list:
-        stable_vols = np.array(volumes)[stable_spines]
+        print(len(volumes))
+        print(len(stable_spines))
+        vols = np.array(volumes)
+        stable_vols = vols[stable_spines]
+        print(len(stable_vols))
         spine_volumes.append(stable_vols)
 
     # Calculate relative volume now
