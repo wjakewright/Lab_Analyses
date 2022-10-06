@@ -15,12 +15,20 @@ from scipy import stats
 
 
 def total_coactivity_analysis(
-    data, movement_epoch=None, sampling_rate=60, zscore=False, volume_norm=False,
+    data,
+    activity_window=(-2, 3),
+    movement_epoch=None,
+    sampling_rate=60,
+    zscore=False,
+    volume_norm=False,
 ):
     """Function to analyze spine co-activity with global dendritic activity
     
         INPUT PARAMETERS
             data - spine_data object. (e.g. Dual_Channel_Spine_Data)
+
+            activity_window - tuple specifying the time window around each event you wish to 
+                              analyze the activity from in terms of seconds
             
             movement_epoch - str specifying if you want to analyze only during specific
                             types of movements. Accepts - 'movement', 'rewarded', 
@@ -273,7 +281,7 @@ def total_coactivity_analysis(
             s_dFoF,
             reference_trace=d_activity,
             norm_constants=curr_glu_constants,
-            activity_window=(-2, 2),
+            activity_window=activity_window,
             sampling_rate=sampling_rate,
         )
         (
@@ -292,7 +300,7 @@ def total_coactivity_analysis(
             s_calcium,
             reference_trace=d_activity,
             norm_constants=curr_ca_constants,
-            activity_window=(-2, 2),
+            activity_window=activity_window,
             sampling_rate=sampling_rate,
         )
         ### Get for coactive events only
@@ -312,7 +320,7 @@ def total_coactivity_analysis(
             s_dFoF,
             norm_constants=curr_glu_constants,
             reference_trace=curr_coactivity_matrix,
-            activity_window=(-2, 2),
+            activity_window=activity_window,
             sampling_rate=sampling_rate,
         )
         (
@@ -331,7 +339,7 @@ def total_coactivity_analysis(
             s_calcium,
             norm_constants=curr_ca_constants,
             reference_trace=curr_coactivity_matrix,
-            activity_window=(-2, 2),
+            activity_window=activity_window,
             sampling_rate=sampling_rate,
         )
         rel_dend_amps = dt_dendrite_amps / co_dendrite_amps
