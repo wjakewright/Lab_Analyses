@@ -160,8 +160,12 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
     # Get the mean and sem of the traces
     roi_mean_sems = {}
     for key, value in roi_event_epochs.items():
-        m = np.nanmean(value, axis=1)
-        sem = stats.sem(value, axis=1, nan_policy="omit")
+        if value.shape[1] == 1:
+            m = value.flatten()
+            sem = np.zeros(value.shape[0])
+        else:
+            m = np.nanmean(value, axis=1)
+            sem = stats.sem(value, axis=1, nan_policy="omit")
         roi_mean_sems[key] = (m, sem)
 
     return roi_event_epochs, roi_mean_sems
