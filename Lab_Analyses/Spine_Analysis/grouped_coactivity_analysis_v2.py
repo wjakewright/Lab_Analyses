@@ -22,6 +22,7 @@ def grouped_coactivity_analysis(
     mice_list,
     day,
     followup=True,
+    activity_window=(-2, 2),
     movement_epochs=None,
     zscore=False,
     volume_norm=False,
@@ -107,6 +108,7 @@ def grouped_coactivity_analysis(
                 local_nearby_coactive_calcium_traces,
             ) = local_spine_coactivity_analysis(
                 data,
+                activity_window=activity_window,
                 movement_epoch=movement_epochs,
                 cluster_dist=CLUSTER_DIST,
                 sampling_rate=sampling_rate,
@@ -142,6 +144,7 @@ def grouped_coactivity_analysis(
                 global_coactivity_matrix,
             ) = total_coactivity_analysis(
                 data,
+                activity_window=activity_window,
                 movement_epoch=movement_epochs,
                 sampling_rate=sampling_rate,
                 zscore=zscore,
@@ -179,6 +182,7 @@ def grouped_coactivity_analysis(
                 conj_coactivity_matrix,
             ) = conjunctive_coactivity_analysis(
                 data,
+                activity_window=activity_window,
                 movement_epoch=movement_epochs,
                 cluster_dist=CLUSTER_DIST,
                 sampling_rate=sampling_rate,
@@ -202,7 +206,7 @@ def grouped_coactivity_analysis(
                 zscore=zscore,
                 volume_norm=volume_norm,
                 sampling_rate=sampling_rate,
-                activity_window=(-2, 2),
+                activity_window=activity_window,
             )
             (
                 rwd_move_dend_traces,
@@ -219,7 +223,7 @@ def grouped_coactivity_analysis(
                 zscore=zscore,
                 volume_norm=volume_norm,
                 sampling_rate=sampling_rate,
-                activity_window=(-2, 2),
+                activity_window=activity_window,
             )
             # Assess movement quality
             (
@@ -549,9 +553,10 @@ def grouped_coactivity_analysis(
         "Sampling Rate": sampling_rate,
         "Cluster Dist": CLUSTER_DIST,
         "Distance Bins": local_distance_bins,
-        "zcore": zscore,
+        "zscore": zscore,
         "Volume Norm": volume_norm,
         "Movement Epoch": movement_epochs,
+        "Activity Window": activity_window,
     }
     # Store data for outputing and saving
     spine_coactivity_data = Spine_Coactivity_Data(
