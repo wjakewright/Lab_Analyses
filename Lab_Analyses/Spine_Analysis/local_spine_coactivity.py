@@ -20,6 +20,7 @@ from scipy import stats
 
 def local_spine_coactivity_analysis(
     data,
+    activity_window=(-2, 3),
     movement_epoch=None,
     cluster_dist=10,
     sampling_rate=60,
@@ -30,6 +31,9 @@ def local_spine_coactivity_analysis(
     
         INPUT PARAMETERS
             data - spine_data object (e.g., Dual_Channel_Spine_Data)
+
+            activity_window - tuple specifying the window of time around events to 
+                             analyze the data in terms of seconds
             
             movement_epoch - str specifying if you want to analyze only during specific
                             types of movements. Accepts - 'movement', 'rewarded', 'unrewarded',
@@ -263,6 +267,8 @@ def local_spine_coactivity_analysis(
 
             # Get local coactivity timestamps
             local_timestamps = get_activity_timestamps(curr_local_coactivity)
+            if not local_timestamps:
+                continue
 
             # Start analyzing the local coactivity
             _, event_rate, spine_frac, _ = get_coactivity_rate(
@@ -291,7 +297,7 @@ def local_spine_coactivity_analysis(
                 curr_s_dFoF.reshape(-1, 1),
                 curr_local_coactivity,
                 norm_constants=[glu_constant],
-                activity_window=(-2, 2),
+                activity_window=activity_window,
                 sampling_rate=sampling_rate,
             )
             (
@@ -310,7 +316,7 @@ def local_spine_coactivity_analysis(
                 curr_s_calcium.reshape(-1, 1),
                 curr_local_coactivity,
                 norm_constants=[ca_constant],
-                activity_window=(-2, 2),
+                activity_window=activity_window,
                 sampling_rate=sampling_rate,
             )
             # Store the outputs
@@ -346,7 +352,7 @@ def local_spine_coactivity_analysis(
                 target_constant=glu_constant,
                 glu_constants=nearby_glu_constants,
                 ca_constants=nearby_ca_constants,
-                activity_window=(-2, 2),
+                activity_window=activity_window,
                 sampling_rate=sampling_rate,
             )
             local_correlation[spines[spine]] = local_corr
@@ -451,10 +457,10 @@ def local_coactivity_rate_analysis(
                     continue
                 # Don't compare eliminated spines
                 if curr_el_spines[i] == True:
-                    current_coactivity.append(np.nan)
+                    current_coactivity.append(0)
                     continue
                 if curr_el_spines[j] == True:
-                    current_coactivity.append(np.nan)
+                    current_coactivity.append(0)
                     continue
                 test_spine = s_activity[:, j]
                 co_rate = calculate_coactivity(curr_spine, test_spine, sampling_rate)
@@ -507,8 +513,17 @@ def bin_by_position(data, positions, bins):
 
     for i in range(len(bins)):
         if i != len(bins) - 1:
-            idxs = np.where((positions > bins[i]) & (positions <= bins[i + 1]))
-            binned_data.append(np.nanmean(data[idxs]))
+            idxs = np.nonzero((positions > bins[i]) & (positions <= bins[i + 1]))[0]
+            if idxs.size == 0:
+                binned_data.append(np.nan)
+                continue
+            try:
+                binned_data.append(np.nanmean(data[idxs]))
+            except RuntimeWarning:
+                print(idxs)
+                print(data)
+                print(bins[i])
+
         # else:
         #    idxs = np.where(positions > bins[i])
         #    binned_data.append(np.nanmean(data[idxs]))
