@@ -173,12 +173,13 @@ def get_dend_spine_traces_and_onsets(
         initial_d_onset = initial_d_onset[0]  # Get value inside array output
         dend_amp = dend_amp[0]  # Get value inside array output
         if not np.isnan(dend_amp):
-            dmax_idx = np.where(initial_d_mean == dend_amp)[0]
+            dmax_idx = np.nonzero(initial_d_mean == dend_amp)[0][0]
         else:
             dmax_idx = center_point
             initial_d_onset = 0
         d_std_trace = np.nanstd(d_trace, axis=1)
         dend_std = d_std_trace[dmax_idx]
+
         # Correct timestamps to be at the onset
         offset = center_point - initial_d_onset
         offset_stamps = [int(x - offset) for x in initial_stamps]
@@ -475,14 +476,14 @@ def nearby_spine_conjunctive_events(
         sampling_rate=sampling_rate,
     )
 
-    _, d_mean = d_utils.get_trace_mean_sem(
+    _, dend_mean = d_utils.get_trace_mean_sem(
         dendrite_dFoF.reshape(-1, 1),
         ["Dendrite"],
         initial_stamps,
         window=activity_window,
         sampling_rate=sampling_rate,
     )
-    d_mean = d_mean["Dendrite"][0]
+    d_mean = dend_mean["Dendrite"][0]
     d_onset, _ = find_activity_onset([d_mean])
     d_onset = d_onset[0]
     # Correct timestamps so that they are centered on dendrite onsets
@@ -490,6 +491,8 @@ def nearby_spine_conjunctive_events(
     try:
         offset = int(center_point - d_onset)
     except ValueError:
+        offset = 0
+    if offset == center_point:
         offset = 0
     event_stamps = [int(x - offset) for x in initial_stamps]
 
@@ -523,6 +526,7 @@ def nearby_spine_conjunctive_events(
             nearby_spine_dFoF = nearby_dFoF[:, i]
             nearby_spine_ca = nearby_calcium[:, i]
             event_activity = nearby_spine_a[event + before_f : event + after_f]
+
             if np.sum(event_activity):
                 # If there is coactivity, append the value
                 dFoF = nearby_spine_dFoF[event + before_f : event + after_f]
@@ -536,13 +540,16 @@ def nearby_spine_conjunctive_events(
             else:
                 continue
         # Process activity of this activity
-        spine_trace_array = np.vstack(coactive_spine_traces).T
+        try:
+            spine_trace_array = np.vstack(coactive_spine_traces).T
+        except:
+            continue
         spine_ca_trace_array = np.vstack(coactive_spine_ca_traces).T
-        sum_spine_trace = np.sum(spine_trace_array, axis=1)
-        sum_spine_ca_trace = np.sum(spine_ca_trace_array, axis=1)
+        sum_spine_trace = np.nansum(spine_trace_array, axis=1)
+        sum_spine_ca_trace = np.nansum(spine_ca_trace_array, axis=1)
         corr, _ = stats.pearsonr(t_spine_trace, sum_spine_trace)
         num = len(coactive_spine_idxs)
-        vol = np.mean(nearby_spine_volumes[coactive_spine_idxs])
+        vol = np.nanmean(nearby_spine_volumes[coactive_spine_idxs])
         # Store values
         spine_nearby_correlations.append(corr)
         coactive_spine_num.append(num)
@@ -551,7 +558,13 @@ def nearby_spine_conjunctive_events(
         sum_coactive_spine_ca_traces.append(sum_spine_ca_trace)
 
     # Reformat nearby spine traces into arrays
-    sum_coactive_spine_traces = np.vstack(sum_coactive_spine_traces).T
+    try:
+        sum_coactive_spine_traces = np.vstack(sum_coactive_spine_traces).T
+    except ValueError:
+        print(timestamps)
+        print(sum_coactive_spine_traces)
+        print(d_mean)
+        print(d_onset)
     sum_coactive_spine_ca_traces = np.vstack(sum_coactive_spine_ca_traces).T
 
     # Average correlations, nums, and volumes,
