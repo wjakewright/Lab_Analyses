@@ -352,6 +352,7 @@ def plot_mean_activity_trace(
     sem,
     group_names=None,
     sampling_rate=60,
+    activity_window=(-2, 3),
     avlines=None,
     figsize=(5, 5),
     colors="mediumblue",
@@ -386,12 +387,13 @@ def plot_mean_activity_trace(
             
     """
     fig = plt.figure(figsize=figsize)
-    x = np.linspace(0, len(mean) / sampling_rate, len(mean))
     if type(mean) == np.ndarray:
+        x = np.linspace(activity_window[0], activity_window[1], len(mean))
         plt.plot(x, mean, color=colors)
         plt.fill_between(x, mean - sem, mean + sem, color=colors, alpha=0.2)
     elif type(mean) == list:
         for m, s, c, n in zip(mean, sem, colors, group_names):
+            x = np.linspace(activity_window[0], activity_window[1], len(m))
             plt.plot(x, m, color=c, label=n)
             plt.fill_between(x, m - s, m + s, c, alpha=0.2)
     if avlines:
@@ -403,7 +405,8 @@ def plot_mean_activity_trace(
     plt.ylabel(ytitle)
     plt.xlabel("Time (s)")
     plt.xticks(
-        ticks=[0, 2, 4], labels=[-2, 0, 2],
+        ticks=[activity_window[0], 0, activity_window[1]],
+        labels=[activity_window[0], 0, activity_window[1]],
     )
     plt.tick_params(axis="both", which="both", direction="in", length=4)
     plt.legend(loc="upper right")
@@ -419,6 +422,7 @@ def ind_mean_activity_traces(
     mean_list,
     sem_list,
     sampling_rate=60,
+    activity_window=(-2, 3),
     avlines=None,
     figsize=(10, 4),
     color="mediumblue",
@@ -482,14 +486,17 @@ def ind_mean_activity_traces(
     count = 1
     # Make individual plots
     for mean, sem, avline in zip(mean_list, sem_list, avlines):
-        x = np.linspace(0, len(mean) / sampling_rate, len(mean))
+        x = np.linspace(activity_window[0], activity_window[1], len(mean))
         ax = fig.add_subplot(row_num, COL_NUM, count)
         ax.plot(x, mean, color=color)
         ax.fill_between(x, mean - sem, mean + sem, color=color, alpha=0.2)
         if avline:
             for line in avline:
                 ax.avline(x=line, linestyle="--", color="black")
-        plt.xticks(ticks=[0, 2, 4], labels=[-2, 0, 2])
+        plt.xticks(
+            ticks=[activity_window[0], 0, activity_window[1]],
+            labels=[activity_window[0], 0, activity_window[1]],
+        )
         plt.xlabel("Time (s)")
         plt.ylim(bottom=ylim[0], top=ylim[1])
         plt.ylabel(ytitle)
