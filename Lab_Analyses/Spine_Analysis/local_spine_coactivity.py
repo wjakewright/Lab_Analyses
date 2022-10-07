@@ -7,14 +7,12 @@ from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_dend_spine_traces_and_onsets,
     nearby_spine_conjunctive_events,
 )
-from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
-    quantify_movement_quality,
-)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     spine_volume_norm_constant,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 from scipy import stats
 
 
