@@ -658,15 +658,25 @@ def calculate_dend_spine_freq(data, movement_epoch, sampling_rate=60):
 
     if movement is not None:
         spine_activity = (spine_activity.T * movement).T
-        dendrite_activity = dendrite_activity * movement
+        dendrite_activity = (dendrite_activity.T * movement).T
+
+    dend_activity_matrix = np.zeros(data.spine_GluSnFr_activity.shape)
+    for d in range(dendrite_activity.shape[1]):
+        if type(data.spine_grouping[d]) == list:
+            spines = data.spine_grouping[d]
+        else:
+            spines = data.spine_grouping
+            for s in spines:
+                dend_activity_matrix[:, s] = dendrite_activity[:, d]
 
     spine_activity_freq = []
     dend_activity_freq = []
     for s in range(spine_activity.shape[1]):
         s_activity = spine_activity[:, s]
+        d_activity = dend_activity_matrix[:, s]
         duration = len(s_activity) / sampling_rate
         s_events = np.nonzero(np.diff(s_activity) == 1)[0]
-        d_events = np.nonzero(np.diff(dendrite_activity) == 1)[0]
+        d_events = np.nonzero(np.diff(d_activity) == 1)[0]
         s_freq = (len(s_events) / duration) * sampling_rate
         d_freq = (len(d_events) / duration) * sampling_rate
         spine_activity_freq.append(s_freq)
