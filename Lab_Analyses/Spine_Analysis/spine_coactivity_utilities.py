@@ -3,6 +3,7 @@ from itertools import compress
 import numpy as np
 import scipy.signal as sysignal
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 from scipy import stats
 
 
@@ -617,3 +618,60 @@ def nearby_spine_conjunctive_events(
         sum_coactive_spine_ca_traces,
     )
 
+
+def calculate_dend_spine_freq(data, movement_epoch, sampling_rate=60):
+    """Function to calculate the overall activity rate of dendrites and spines
+        Can be narrowed down to during specific types of movements
+        
+        INPUT PARAMETERS
+            data - spine_data object (e.g., Dual_Channel_Spine_Dat
+            
+            movement_epochs - str specifying if analysis should be confined to specific
+                            movement periods. Accepts - 'movement', 'rewarded', 'unrewarded',
+                            'learned', and 'nonmovement'. Default is None, analyzing the entire
+                            imaging session
+            
+            sampling_rate - int or float specifying the imaging rate
+    """
+    spine_activity = data.spine_GluSnFr_activity
+    dendrite_activity = data.dendrite_calcium_activity
+
+    # Get specific movement periods if specified
+    if movement_epoch == "movement":
+        movement = data.lever_active
+    elif movement_epoch == "rewarded":
+        movement = data.rewarded_movement_binary
+    elif movement_epoch == "unrewarded":
+        movement = data.lever_active - data.rewarded_movement_binary
+    elif movement_epoch == "nonmovement":
+        movement = np.absolute(data.lever_active - 1)
+    elif movement_epoch == "learned":
+        movement, _, _, _, _ = quantify_movement_quality(
+            data.mouse_id,
+            spine_activity,
+            data.lever_active,
+            threshold=0.5,
+            sampling_rate=sampling_rate,
+        )
+    else:
+        movement = None
+
+    if movement is not None:
+        spine_activity = (spine_activity.T * movement).T
+        dendrite_activity = dendrite_activity * movement
+
+    spine_activity_freq = []
+    dend_activity_freq = []
+    for s in range(spine_activity.shape[1]):
+        s_activity = spine_activity[:, s]
+        duration = len(s_activity) / sampling_rate
+        s_events = np.nonzero(np.diff(s_activity) == 1)[0]
+        d_events = np.nonzero(np.diff(dendrite_activity) == 1)[0]
+        s_freq = (len(s_events) / duration) * sampling_rate
+        d_freq = (len(d_events) / duration) * sampling_rate
+        spine_activity_freq.append(s_freq)
+        dend_activity_freq.append(d_freq)
+    spine_activity_freq = np.array(spine_activity_freq)
+    dend_activity_freq = np.array(dend_activity_freq)
+
+    return spine_activity_freq, dend_activity_freq
