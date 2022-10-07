@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import statsmodels.stats.api as sm
+from cv2 import trace
 from scipy import stats
 
 sns.set()
@@ -348,7 +349,7 @@ def mean_and_lines_plot(
         plt.savefig(fname + ".pdf")
 
 
-def plot_mean_activity_trace(
+def plot_mean_activity_traces(
     mean,
     sem,
     group_names=None,
@@ -502,6 +503,67 @@ def ind_mean_activity_traces(
         plt.ylim(bottom=ylim[0], top=ylim[1])
         plt.ylabel(ytitle)
         plt.tick_params(axis="both", which="both", direction="in", length=4)
+        count += 1
+
+    fig.tight_layout()
+
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
+
+def plot_multi_mean_activity_traces(
+    mean_dict,
+    sem_dict,
+    trace_types,
+    activity_window=(-2, 3),
+    avline_dict=None,
+    figsize=(8, 4),
+    colors=["mediumblue", "firebrick"],
+    title=None,
+    ytitle=None,
+    ylim=None,
+    save=False,
+    save_path=None,
+):
+    """Function to plot multiple activity trace plots in a single subplot figure"""
+    # Set up subplot
+    tot = len(list(mean_dict.values()))
+    COL_NUM = 4
+    row_num = tot // COL_NUM
+    row_num += tot % COL_NUM
+    fig_size = (figsize[0], figsize[1] * row_num)
+    fig = plt.figure(figsize=fig_size)
+    fig.subplots_adjust(hspace=0.5)
+    fig.suptitle(title)
+
+    count = 1
+    plot_groups = list(mean_dict.keys())
+    for group in plot_groups:
+        means = mean_dict[group]
+        sems = sem_dict[group]
+        try:
+            avlines = avline_dict[group]
+        except:
+            avlines = [None for x in means]
+        ax = fig.add_subplot(row_num, COL_NUM, count)
+        ax.set_title(group)
+        for m, s, c, t, a in zip(means, sems, colors, trace_types, avlines):
+            x = np.linspace(activity_window[0], activity_window[1], len(m))
+            ax.plot(x, m, color=c)
+            ax.fill_between(x, m - s, m + s, color=c, alpha=0.2, label=t)
+            ax.axvline(x=a, linestyle="--", color=c)
+        plt.xticks(
+            ticks=[activity_window[0], 0, activity_window[1]],
+            labels=[activity_window[0], 0, activity_window[1]],
+        )
+        plt.xlabel("Time (s)")
+        plt.ylabel(ytitle)
+        plt.tick_params(axis="both", which="both", direction="in", length=4)
+        if ylim:
+            plt.ylim(bottom=ylim[0], top=ylim[1])
         count += 1
 
     fig.tight_layout()
