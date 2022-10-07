@@ -9,7 +9,9 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
 )
 
 
-def calculate_volume_change(volume_list, flag_list, days=None, exclude=None):
+def calculate_volume_change(
+    volume_list, flag_list, norm=False, days=None, exclude=None
+):
     """Function to calculate relative volume change across all spines
     
         INPUT PARAMETERS
@@ -18,6 +20,9 @@ def calculate_volume_change(volume_list, flag_list, days=None, exclude=None):
             
             flag_list - list containing the corresponding spine flags, with each item corresponding
                         to the volume_list arrays for each day
+
+            norm - boolean term specifying if you which to calulate normalize volume
+                    chagnes
             
             days - list of str specifying which day each volume list corresponds to. Default is
                     none, which automatically generates generic labels
@@ -57,9 +62,14 @@ def calculate_volume_change(volume_list, flag_list, days=None, exclude=None):
     # Calculate relative volume now
     baseline_volume = spine_volumes[0]
     relative_volumes = {}
-    for vol, day in zip(spine_volumes, days):
-        rel_vol = vol / baseline_volume
-        relative_volumes[day] = rel_vol
+    if not norm:
+        for vol, day in zip(spine_volumes, days):
+            rel_vol = vol / baseline_volume
+            relative_volumes[day] = rel_vol
+    else:
+        for vol, day in zip(spine_volumes, days):
+            rel_vol = (vol - baseline_volume) / (vol + baseline_volume)
+            relative_volumes[day] = rel_vol
 
     return relative_volumes, stable_idxs
 
