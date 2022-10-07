@@ -1,14 +1,11 @@
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    get_coactivity_rate,
-    get_dend_spine_traces_and_onsets,
-)
+    get_coactivity_rate, get_dend_spine_traces_and_onsets)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    find_spine_classes,
-    spine_volume_norm_constant,
-)
+    find_spine_classes, spine_volume_norm_constant)
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
+from Lab_Analyses.Utilities.quantify_movment_quality import \
+    quantify_movement_quality
 from scipy import stats
 
 
@@ -340,9 +337,9 @@ def total_coactivity_analysis(
             activity_window=activity_window,
             sampling_rate=sampling_rate,
         )
-        rel_dend_amps = dt_dendrite_amps / co_dendrite_amps
-        rel_spine_amps = dt_spine_amps / co_spine_amps
-        rel_spine_calcium_amps = dt_spine_calcium_amps / co_spine_calcium_amps
+        rel_dend_amps = co_dendrite_amps / dt_dendrite_amps
+        rel_spine_amps = co_spine_amps / dt_spine_amps
+        rel_spine_calcium_amps = co_spine_calcium_amps / dt_spine_calcium_amps
         # Store values
         for i in range(len(dt_spine_traces)):
             if curr_el_spines[i]:
