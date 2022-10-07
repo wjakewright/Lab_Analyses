@@ -14,7 +14,9 @@ from scipy import stats
 class Coactivity_Plasticity:
     """Class to handle the analysis of spine plasticity on coactivity datasets"""
 
-    def __init__(self, data, threshold, exclude, save=False, save_path=None):
+    def __init__(
+        self, data, threshold, exclude, vol_norm=False, save=False, save_path=None
+    ):
         """Initialize the class
         
             INPUT PARAMETERS
@@ -42,6 +44,7 @@ class Coactivity_Plasticity:
         self.day = self.dataset.day
         self.threshold = threshold
         self.exclude = exclude
+        self.vol_norm = vol_norm
         self.parameters = self.dataset.parameters
         self.save = save
         self.save_path = save_path
@@ -59,7 +62,7 @@ class Coactivity_Plasticity:
         flag_list = [self.dataset.spine_flags, self.subsequent_flags]
 
         relative_volumes, spine_idxs = calculate_volume_change(
-            volume_data, flag_list, days=None, exclude=self.exclude
+            volume_data, flag_list, norm=self.vol_norm, days=None, exclude=self.exclude
         )
         relative_volumes = np.array(list(relative_volumes.values())[-1])
         enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
@@ -71,6 +74,10 @@ class Coactivity_Plasticity:
         self.enlarged_spines = enlarged_spines
         self.shrunken_spines = shrunken_spines
         self.stable_spines = stable_spines
+
+        # refine some self attributes
+        self.subsequent_volumes = self.subsequent_volumes[spine_idxs]
+        self.subsequent_flags = [self.subsequent_flags[i] for i in spine_idxs]
 
         # Refine coactivity variables for only stable spines and store them
         attributes = list(self.dataset.__dict__.keys())
@@ -133,11 +140,15 @@ class Coactivity_Plasticity:
         """Method to plot and correlation a given variable against spine volume change"""
         variable = getattr(self, variable_name)
         # Remove nan values
-        variable = variable[~np.isnan(variable)]
+        non_nan = np.nonzero(~np.isnan(variable))[0]
+        variable = variable[non_nan]
         xtitle = "\u0394" + " spine volume"
+        # Log transform relative volumes
+        log_vol = np.log10(self.relative_volumes)
+        log_vol = log_vol[non_nan]
 
         sp.plot_sns_scatter_correlation(
-            self.relative_volumes,
+            log_vol,
             variable,
             CI,
             title=variable_name,
@@ -224,11 +235,17 @@ class Coactivity_Plasticity:
         shrunken_traces = compress(traces, self.shrunken_spines)
         stable_traces = compress(traces, self.stable_spines)
         # Get the means for each spine
-        enlarged_mean_traces = [x.mean(axis=1) for x in enlarged_traces]
+        enlarged_mean_traces = [
+            x.mean(axis=1) for x in enlarged_traces if type(x) == np.ndarray
+        ]
         enlarged_mean_traces = np.vstack(enlarged_mean_traces)
-        shrunken_mean_traces = [x.mean(axis=1) for x in shrunken_traces]
+        shrunken_mean_traces = [
+            x.mean(axis=1) for x in shrunken_traces if type(x) == np.ndarray
+        ]
         shrunken_mean_traces = np.vstack(shrunken_mean_traces)
-        stable_mean_traces = [x.mean(axis=1) for x in stable_traces]
+        stable_mean_traces = [
+            x.mean(axis=1) for x in stable_traces if type(x) == np.ndarray
+        ]
         stable_mean_traces = np.vstack(stable_mean_traces)
         # Get mean and sem across traces
         enlarged_mean = np.mean(enlarged_mean_traces, axis=0)
