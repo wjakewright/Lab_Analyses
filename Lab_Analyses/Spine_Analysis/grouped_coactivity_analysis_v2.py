@@ -652,7 +652,7 @@ def grouped_coactivity_analysis(
         ],
         global_relative_spine_onsets=regrouped_data["global_relative_spine_onsets"],
         global_dend_triggered_spine_traces=regrouped_data[
-            "global_dend_triggered_dend_traces"
+            "global_dend_triggered_spine_traces"
         ],
         global_dend_triggered_dend_traces=regrouped_data[
             "global_dend_triggered_dend_traces"
@@ -701,7 +701,7 @@ def grouped_coactivity_analysis(
             "conj_relative_spine_dend_onsets"
         ],
         conj_coactive_spine_traces=regrouped_data["conj_coactive_spine_traces"],
-        conj_coactive_nearby_traces=regrouped_data["conj_coactive_spine_traces"],
+        conj_coactive_nearby_traces=regrouped_data["conj_coactive_nearby_traces"],
         conj_coactive_spine_calcium_traces=regrouped_data[
             "conj_coactive_spine_calcium_traces"
         ],
