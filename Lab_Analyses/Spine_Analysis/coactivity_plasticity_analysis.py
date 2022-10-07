@@ -287,6 +287,72 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_spine_dend_mean_traces(
+        self,
+        trace_type,
+        avlines=None,
+        figsize=(8, 4),
+        colors=["firebrick", "mediumblue"],
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot spine vs dendrite activity traces. Plots all groups of spines in the 
+           same subplot
+           
+           trace_types accepted include 'dend_triggered', 'global', 'conj'
+        """
+        if trace_type == "dend_triggered":
+            spine_traces = getattr(self, "global_dend_triggered_spine_traces")
+            dend_traces = getattr(self, "global_dend_triggered_dend_traces")
+        elif trace_type == "global":
+            spine_traces = getattr(self, "global_coactive_spine_traces")
+            dend_traces = getattr(self, "global_coactiive_dend_traces")
+        elif trace_type == "conj":
+            spine_traces = getattr(self, "conj_coactive_spine_traces")
+            dend_traces = getattr(self, "conj_coactive_dend_traces")
+
+        spine_groups = ["all", "enlarged_spines", "shrunken_spines", "stable_spines"]
+        mean_dict = {}
+        sem_dict = {}
+        for group in spine_groups:
+            if group != "all":
+                group_spines = getattr(self, group)
+                s_traces = compress(spine_traces, group_spines)
+                d_traces = compress(dend_traces, group_spines)
+            else:
+                s_traces = spine_traces
+                d_traces = dend_traces
+            s_traces = np.vstack(s_traces)
+            d_traces = np.vstack(d_traces)
+            d_traces = np.unique(d_traces, axis=0)
+            s_mean = np.mean(s_traces, axis=0)
+            s_sem = stats.sem(s_traces, axis=0)
+            d_mean = np.mean(d_traces, axis=0)
+            d_sem = stats.sem(d_traces, axis=0)
+            mean_dict[group] = [d_mean, s_mean]
+            sem_dict[group] = [d_sem, s_sem]
+
+        if self.parameters["zscore"]:
+            ytitle = "zscore"
+        else:
+            ytitle = "\u0394" + "F/F\u2080"
+
+        sp.plot_multi_mean_activity_traces(
+            mean_dict,
+            sem_dict,
+            trace_type=["dendrite", "spine"],
+            activity_window=self.parameters["Activity Window"],
+            avline_dict=avlines,
+            figsize=figsize,
+            colors=colors,
+            title=trace_type,
+            ytitle=ytitle,
+            ylim=ylim,
+            save=save,
+            save_path=save_path,
+        )
+
     def plot_ind_spine_mean_traces(
         self,
         trace_type,
