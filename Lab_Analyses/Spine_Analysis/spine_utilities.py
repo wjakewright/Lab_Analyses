@@ -5,9 +5,8 @@ import os
 import numpy as np
 import scipy.optimize as syop
 import scipy.signal as sysignal
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    get_activity_timestamps,
-)
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import \
+    get_activity_timestamps
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
@@ -265,4 +264,6 @@ def norm_objective_function(x, y, con):
     _, c = np.linalg.lstsq(x_input, new_y, rcond=0)[0]
 
     return np.absolute(c)
+
+
 
