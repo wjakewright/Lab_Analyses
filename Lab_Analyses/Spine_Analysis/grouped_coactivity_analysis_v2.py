@@ -9,12 +9,13 @@ from Lab_Analyses.Spine_Analysis.conjunctive_spine_coactivity import (
 from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
     local_spine_coactivity_analysis,
 )
-from Lab_Analyses.Spine_Analysis.spine_movement_analysis import (
-    quantify_movement_quality,
-    spine_movement_activity,
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
+    calculate_dend_spine_freq,
 )
+from Lab_Analyses.Spine_Analysis.spine_movement_analysis import spine_movement_activity
 from Lab_Analyses.Spine_Analysis.spine_utilities import load_spine_datasets
 from Lab_Analyses.Spine_Analysis.total_spine_coactivity import total_coactivity_analysis
+from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
@@ -231,6 +232,7 @@ def grouped_coactivity_analysis(
                 spine_movements,
                 _,
                 spine_movement_corr,
+                spine_movement_num,
                 learned_movement,
             ) = quantify_movement_quality(
                 mouse,
@@ -253,7 +255,14 @@ def grouped_coactivity_analysis(
                         ]
                         movement_dendrites[s] = data.movement_dendrites[d]
                         rwd_movement_dendrites[s] = data.reward_movement_dendrites[d]
-            (_, dend_movements, _, dend_movement_corr, _,) = quantify_movement_quality(
+            (
+                _,
+                dend_movements,
+                _,
+                dend_movement_corr,
+                dend_movement_num,
+                _,
+            ) = quantify_movement_quality(
                 mouse,
                 dend_activity_matrix,
                 data.lever_active,
@@ -266,6 +275,7 @@ def grouped_coactivity_analysis(
                 local_movements,
                 _,
                 local_movement_corr,
+                local_movement_num,
                 _,
             ) = quantify_movement_quality(
                 mouse,
@@ -280,6 +290,7 @@ def grouped_coactivity_analysis(
                 global_movements,
                 _,
                 global_movement_corr,
+                global_movement_num,
                 _,
             ) = quantify_movement_quality(
                 mouse,
@@ -289,7 +300,14 @@ def grouped_coactivity_analysis(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
-            (_, conj_movements, _, conj_movement_corr, _,) = quantify_movement_quality(
+            (
+                _,
+                conj_movements,
+                _,
+                conj_movement_corr,
+                conj_movement_num,
+                _,
+            ) = quantify_movement_quality(
                 mouse,
                 conj_coactivity_matrix,
                 data.lever_active,
@@ -299,20 +317,9 @@ def grouped_coactivity_analysis(
             )
 
             # Get basic activity frequencies
-            spine_activity_freq = []
-            dend_activity_freq = []
-            for s in range(data.spine_GluSnFr_activity.shape[1]):
-                duration = len(data.spine_GluSnFr_activity[:, s]) / sampling_rate
-                s_events = np.nonzero(np.diff(data.spine_GluSnFr_activity[:, s]) == 1)[
-                    0
-                ]
-                d_events = np.nonzero(np.diff(dend_activity_matrix[:, s]) == 1)[0]
-                spine_freq = (len(s_events) / duration) * sampling_rate
-                dend_freq = (len(d_events) / duration) * sampling_rate
-                spine_activity_freq.append(spine_freq)
-                dend_activity_freq.append(dend_freq)
-            spine_activity_freq = np.array(spine_activity_freq)
-            dend_activity_freq = np.array(dend_activity_freq)
+            spine_activity_freq, dend_activity_freq = calculate_dend_spine_freq(
+                data, movement_epochs, sampling_rate,
+            )
 
             fovs = [FOV for i in range(len(spine_activity_freq))]
             ids = [mouse for i in range(len(spine_activity_freq))]
@@ -530,14 +537,19 @@ def grouped_coactivity_analysis(
             grouped_data["learned_movement"].append(learned_movement)
             grouped_data["spine_movements"].append(spine_movements)
             grouped_data["spine_movement_corr"].append(spine_movement_corr)
+            grouped_data["spine_movement_num"].append(spine_movement_num)
             grouped_data["dend_movements"].append(dend_movements)
             grouped_data["dend_movement_corr"].append(dend_movement_corr)
+            grouped_data["dend_movement_num"].append(dend_movement_num)
             grouped_data["local_movements"].append(local_movements)
             grouped_data["local_movement_corr"].append(local_movement_corr)
+            grouped_data["local_movement_num"].append(local_movement_num)
             grouped_data["global_movements"].append(global_movements)
             grouped_data["global_movement_corr"].append(global_movement_corr)
+            grouped_data["global_movement_num"].append(global_movement_num)
             grouped_data["conj_movements"].append(conj_movements)
             grouped_data["conj_movement_corr"].append(conj_movement_corr)
+            grouped_data["conj_movement_num"].append(conj_movement_num)
 
     # Merge all the data across FOVs and mice
     regrouped_data = {}
@@ -716,14 +728,19 @@ def grouped_coactivity_analysis(
         learned_movement=regrouped_data["learned_movement"],
         spine_movements=regrouped_data["spine_movements"],
         spine_movement_corr=regrouped_data["spine_movement_corr"],
+        spine_movement_num=regrouped_data["spine_movement_num"],
         dend_movements=regrouped_data["dend_movements"],
         dend_movement_corr=regrouped_data["dend_movement_corr"],
+        dend_movement_num=regrouped_data["dend_movement_num"],
         local_movements=regrouped_data["local_movements"],
         local_movement_corr=regrouped_data["local_movement_corr"],
+        local_movement_num=regrouped_data["local_movement_num"],
         global_movements=regrouped_data["global_movements"],
         global_movement_corr=regrouped_data["global_movement_corr"],
+        global_movement_num=regrouped_data["global_movement_num"],
         conj_movements=regrouped_data["conj_movements"],
         conj_movement_corr=regrouped_data["conj_movement_corr"],
+        conj_movement_num=regrouped_data["conj_movement_num"],
     )
 
     # Save Section
@@ -863,12 +880,17 @@ class Spine_Coactivity_Data:
     learned_movement: np.array
     spine_movements: list
     spine_movement_corr: np.array
+    spine_movement_num: np.array
     dend_movements: list
     dend_movement_corr: np.array
+    dend_movement_num: np.array
     local_movements: list
     local_movement_corr: np.array
+    local_movement_num: np.array
     global_movements: list
     global_movement_corr: np.array
+    global_movement_num: np.array
     conj_movements: list
     conj_movement_corr: np.array
+    conj_movement_num: np.array
 
