@@ -224,16 +224,17 @@ def plot_swarm_bar_plot(
     sns.stripplot(data=data_df, palette=s_colors, alpha=s_alpha, zorder=0)
 
     # Plot means
-    ax.errorbar(
-        x,
-        data_mean,
-        data_sems,
-        color=m_colors,
-        fmt=marker,
-        markerfacecolor=m_colors,
-        ecolor=m_colors,
-        linestyle=linestyle,
-    )
+    for pos, mean, sem, c in zip(x, data_mean, data_sems, m_colors):
+        ax.errorbar(
+            pos,
+            mean,
+            sem,
+            color=c,
+            fmt=marker,
+            markerfacecolor=c,
+            ecolor=c,
+            linestyle=linestyle,
+        )
 
     # Format axes
     if ylim:
