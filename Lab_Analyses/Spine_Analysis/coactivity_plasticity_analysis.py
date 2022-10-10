@@ -412,6 +412,52 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_spine_coactivity_distance(
+        self,
+        group_type,
+        figsize=(5, 5),
+        colors=["darkorange", "forestgreen", "silver"],
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot distance-dependent spine coactivity for different spine groups"""
+        coactivity_data = self.distance_coactivity_rate
+        bins = self.parameters["Distance Bins"]
+
+        if group_type == "plastic_spines":
+            spine_groups = [
+                "enlarged_spines",
+                "shrunken_spines",
+                "stable_spines",
+            ]
+        if group_type == "movement_spines":
+            spine_groups = [
+                "movement_spines",
+                "nonmovement_spines",
+            ]
+        if group_type == "rwd_movement_spines":
+            spine_groups = [
+                "rwd_movement_spines",
+                "rwd_nonmovement_spines",
+            ]
+
+        group_dict = {}
+        for group in spine_groups:
+            spines = getattr(self, group)
+            group_data = coactivity_data[:, spines]
+
+        sp.plot_spine_coactivity_distance(
+            data_dict=group_dict,
+            bins=bins,
+            colors=colors,
+            title_suff=group_type,
+            figsize=figsize,
+            ylim=ylim,
+            save=save,
+            save_path=save_path,
+        )
+
     def plot_histogram(
         self,
         variable,
