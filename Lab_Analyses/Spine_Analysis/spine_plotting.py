@@ -8,6 +8,8 @@ import pandas as pd
 import seaborn as sns
 import statsmodels.stats.api as sm
 from cv2 import trace
+from matplotlib.lines import lineStyles
+from pyparsing import lineStart
 from scipy import stats
 
 sns.set()
@@ -567,6 +569,57 @@ def plot_multi_mean_activity_traces(
         count += 1
 
     fig.tight_layout()
+
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
+
+def plot_histogram(
+    data,
+    bins,
+    avlines=None,
+    title=None,
+    xtitle=None,
+    figsize=(5, 5),
+    color="mediumblue",
+    alpha=0.4,
+    save=False,
+    save_path=None,
+):
+    """Function to plot a single variable as a histogram
+        
+        INPUT PARAMETERS
+            data - np.array of the data to be plotted
+
+            bins - int specifying the number of bins to plot
+            
+            avline - tuple specifying were to draw vertical lines if desired
+            
+            title - str specifying the plots title
+            
+            xtitle - str specifying the title of the x axis
+            
+            figsize - tuple specifying the size of the figure
+            
+            color - str specifyin the color to make the histogram
+
+            save - boolean specifying whether to save the figure or not
+
+            save_path - str specifying where to save the figure
+            
+    """
+
+    plt.figure(figsize=figsize)
+    plt.hist(data, bins, color=color, alpha=alpha)
+    for line in avlines:
+        plt.avxline(line, lineStyles="--", color="black")
+    plt.title(title)
+    plt.xlabel(xtitle)
+
+    plt.tight_layout()
 
     if save:
         if save_path is None:
