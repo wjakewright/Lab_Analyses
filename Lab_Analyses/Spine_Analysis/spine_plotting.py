@@ -627,3 +627,63 @@ def plot_histogram(
         fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
 
+
+def plot_spine_coactivity_distance(
+    data_dict,
+    bins,
+    colors,
+    title_suff=None,
+    figsize=(5, 5),
+    ylim=None,
+    save=False,
+    save_path=None,
+):
+    """Function to plot the distance dependent spine coactivity
+    
+        INPUT PARAMETERS
+            data_dict - dict of 2d np.arrays of the data to be plotted. Each column
+                        represents a spine
+            
+            bins - list or np.array of the distances the data is binned over
+            
+            colors - list of colors for each group
+
+            title_suff - str specifying additional info for the graph title
+            
+            figsize - tuple specifying the size of the figure
+            
+            ylim - tuple specifying the limits of the y axis
+            
+            save - boolean specifying whether to save the figure of not
+            
+            save_path - str specifying where to save the figure
+    """
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot()
+    title = "Distance-depdendent spine coactivity"
+    if title_suff:
+        title = title + "_" + title_suff
+    ax.set_title(title)
+    x = list(range(len(bins)))
+
+    for i, (key, value) in enumerate(data_dict.items()):
+        mean = np.nanmean(value, axis=1)
+        sem = stats.sem(value, axis=1, nan_policy="omit")
+
+        ax.errorbar(
+            x, mean, yerr=sem, color=colors[i], linestyle="-", label=key,
+        )
+
+    plt.xticks(ticks=x, labels=bins)
+    plt.xlabel("Distance (um)")
+    plt.ylabel("Normalized coactivity rate")
+    if ylim:
+        plt.ylim(bottom=ylim[0], top=ylim[1])
+    fig.tight_layout()
+
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
