@@ -330,6 +330,12 @@ def grouped_coactivity_analysis(
             spine_volume_um = spine_volume / pix_to_um
             followup_volume_um = followup_volume / pix_to_um
 
+            # get non-movement groups
+            non_movement_spines = [not x for x in movement_spines]
+            non_movement_dendrites = [not x for x in movement_dendrites]
+            non_movement_spines = np.array(non_movement_spines)
+            non_movement_dendrites = np.array(non_movement_dendrites)
+
             # Store data from this mouse in grouped_data dictionary
             grouped_data["mouse_id"].append(ids)
             grouped_data["FOV"].append(fovs)
@@ -342,8 +348,10 @@ def grouped_coactivity_analysis(
             grouped_data["spine_activity_freq"].append(spine_activity_freq)
             grouped_data["dend_activity_freq"].append(dend_activity_freq)
             grouped_data["movement_spines"].append(movement_spines)
+            grouped_data["nonmovement_spines"].append(non_movement_spines)
             grouped_data["rwd_movement_spines"].append(rwd_movement_spines)
             grouped_data["movement_dendrites"].append(movement_dendrites)
+            grouped_data["nonmovement_dendrites"].append(non_movement_dendrites)
             grouped_data["rwd_movement_dendrites"].append(rwd_movement_dendrites)
             grouped_data["distance_coactivity_rate"].append(
                 local_distance_coactivity_rate
@@ -585,8 +593,10 @@ def grouped_coactivity_analysis(
         spine_activity_freq=regrouped_data["spine_activity_freq"],
         dend_activity_freq=regrouped_data["dend_activity_freq"],
         movement_spines=regrouped_data["movement_spines"],
+        nonmovement_spines=regrouped_data["nonmovement_spines"],
         rwd_movement_spines=regrouped_data["rwd_movement_spines"],
         movement_dendrites=regrouped_data["movement_dendrites"],
+        nonmovement_dendrites=regrouped_data["nonmovement_dendrites"],
         rwd_movement_dendrites=regrouped_data["rwd_movement_dendrites"],
         distance_coactivity_rate=regrouped_data["distance_coactivity_rate"],
         local_spine_correlation=regrouped_data["local_spine_correlation"],
@@ -789,8 +799,10 @@ class Spine_Coactivity_Data:
     spine_activity_freq: np.array
     dend_activity_freq: np.array
     movement_spines: np.array
+    nonmovement_spines: np.array
     rwd_movement_spines: np.array
     movement_dendrites: np.array
+    nonmovement_dendrites: np.array
     rwd_movement_dendrites: np.array
     distance_coactivity_rate: np.array  # 2d
     local_spine_correlation: np.array
