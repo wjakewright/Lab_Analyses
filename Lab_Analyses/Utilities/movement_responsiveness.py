@@ -6,7 +6,7 @@ import random
 import numpy as np
 
 
-def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=97.5):
+def movement_responsiveness(dFoF, active_lever, permutations=10000, percentile=99):
     """Function to determine if ROIs display movement related activity
         
         INPUT PARAMTERS
