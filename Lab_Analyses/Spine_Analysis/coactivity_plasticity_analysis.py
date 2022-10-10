@@ -290,6 +290,7 @@ class Coactivity_Plasticity:
     def plot_spine_dend_mean_traces(
         self,
         trace_type,
+        group_type="plastic",
         avlines=None,
         figsize=(8, 4),
         colors=["firebrick", "mediumblue"],
@@ -301,6 +302,7 @@ class Coactivity_Plasticity:
            same subplot
            
            trace_types accepted include 'dend_triggered', 'global', 'conj'
+           group_type accepts 'plastic' or 'movement'
         """
         if trace_type == "dend_triggered":
             spine_traces = getattr(self, "global_dend_triggered_spine_traces")
@@ -312,7 +314,15 @@ class Coactivity_Plasticity:
             spine_traces = getattr(self, "conj_coactive_spine_traces")
             dend_traces = getattr(self, "conj_coactive_dend_traces")
 
-        spine_groups = ["all", "enlarged_spines", "shrunken_spines", "stable_spines"]
+        if group_type == "plastic":
+            spine_groups = [
+                "all",
+                "enlarged_spines",
+                "shrunken_spines",
+                "stable_spines",
+            ]
+        if group_type == "movement":
+            spine_groups = ["all", "movement_spines", "rwd_movement_spines"]
         mean_dict = {}
         sem_dict = {}
         for group in spine_groups:
@@ -392,6 +402,33 @@ class Coactivity_Plasticity:
             ylim=ylim,
             save=save,
             save_path=save_path,
+        )
+
+    def plot_histogram(
+        self,
+        variable,
+        bins,
+        avlines=None,
+        figsize=(5, 5),
+        color="mediumblue",
+        alpha=0.4,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot a data varialbe as a histogram"""
+        data = getattr(self, variable)
+
+        sp.plot_histogram(
+            data,
+            bins,
+            avlines,
+            variable,
+            variable,
+            figsize,
+            color,
+            alpha,
+            save,
+            save_path,
         )
 
     def save_output(self):
