@@ -288,29 +288,28 @@ class Coactivity_Plasticity:
     def plot_spine_dend_mean_traces(
         self,
         trace_type,
-        group_type="plastic",
-        avlines=None,
+        group_type,
         figsize=(8, 4),
         colors=["firebrick", "mediumblue"],
         ylim=None,
         save=False,
         save_path=None,
     ):
-        """Method to plot spine vs dendrite activity traces. Plots all groups of spines in the 
-           same subplot
-           
-           trace_types accepted include 'dend_triggered', 'global', 'conj'
-           group_type accepts 'plastic' or 'movement'
-        """
+        """Method to plot spine vs dendrite activity traces. Plots spines of the same
+            group in different subplots"""
+
         if trace_type == "dend_triggered":
             spine_traces = getattr(self, "global_dend_triggered_spine_traces")
             dend_traces = getattr(self, "global_dend_triggered_dend_traces")
+            avlines = None
         elif trace_type == "global":
             spine_traces = getattr(self, "global_coactive_spine_traces")
             dend_traces = getattr(self, "global_coactiive_dend_traces")
+            avlines = [(0, x) for x in self.global_relative_spine_onsets]
         elif trace_type == "conj":
             spine_traces = getattr(self, "conj_coactive_spine_traces")
             dend_traces = getattr(self, "conj_coactive_dend_traces")
+            avlines = [(0, x) for x in self.conj_relative_spine_dend_onsets]
 
         if group_type == "plastic":
             spine_groups = [
@@ -320,17 +319,27 @@ class Coactivity_Plasticity:
                 "stable_spines",
             ]
         if group_type == "movement":
-            spine_groups = ["all", "movement_spines", "rwd_movement_spines"]
+            spine_groups = [
+                "all",
+                "movement_spines",
+                "nonmovement_spines",
+                "rwd_movement_spines",
+                "rwd_nonmovement_spines",
+            ]
+
         mean_dict = {}
         sem_dict = {}
+        aline_dict = {}
         for group in spine_groups:
             if group != "all":
                 group_spines = getattr(self, group)
                 s_traces = compress(spine_traces, group_spines)
                 d_traces = compress(dend_traces, group_spines)
+                alines = compress(avlines, group_spines)
             else:
                 s_traces = spine_traces
                 d_traces = dend_traces
+                alines = avlines
             s_traces = np.vstack(s_traces)
             d_traces = np.vstack(d_traces)
             d_traces = np.unique(d_traces, axis=0)
@@ -340,6 +349,7 @@ class Coactivity_Plasticity:
             d_sem = stats.sem(d_traces, axis=0)
             mean_dict[group] = [d_mean, s_mean]
             sem_dict[group] = [d_sem, s_sem]
+            aline_dict[group] = alines
 
         if self.parameters["zscore"]:
             ytitle = "zscore"
@@ -351,7 +361,7 @@ class Coactivity_Plasticity:
             sem_dict,
             trace_type=["dendrite", "spine"],
             activity_window=self.parameters["Activity Window"],
-            avline_dict=avlines,
+            aveline_dict=aline_dict,
             figsize=figsize,
             colors=colors,
             title=trace_type,
