@@ -167,9 +167,10 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
-    def plot_plastic_spine_groups(
+    def plot_group_scatter_plots(
         self,
         variable_name,
+        group_type,
         mean_type,
         err_type,
         marker="o",
@@ -181,22 +182,27 @@ class Coactivity_Plasticity:
         save=False,
         save_path=None,
     ):
-        """Method for plotting means and individual points for a given variable for each spine
-            group"""
+        """Method for plotting the means and individual points for a given variable
+            for specified groups"""
+
         variable = getattr(self, variable_name)
+        data_dict = {}
+        if group_type == "plastic_spines":
+            spine_groups = [
+                "enlarged_spines",
+                "shrunken_spines",
+                "stable_spines",
+            ]
+        if group_type == "movement_spines":
+            spine_groups = ["movement_spines", "nonmovement_spines"]
+        if group_type == "rwd_movement_spines":
+            spine_groups = ["rwd_movement_spines", "rwd_nonmovement_spines"]
 
-        enlarged_data = variable[self.enlarged_spines]
-        enlarged_data = enlarged_data[~np.isnan(enlarged_data)]
-        shrunken_data = variable[self.shrunken_spines]
-        shrunken_data = shrunken_data[~np.isnan(shrunken_data)]
-        stable_data = variable[self.stable_spines]
-        stable_data = stable_data[~np.isnan(stable_data)]
-
-        data_dict = {
-            "Enlarged": enlarged_data,
-            "Shrunken": shrunken_data,
-            "Stable": stable_data,
-        }
+        for group in spine_groups:
+            group_spines = getattr(self, group)
+            group_data = variable[group_spines]
+            group_data = group_data[~np.nan(group_data)]
+            data_dict[group] = group_data
 
         sp.plot_swarm_bar_plot(
             data_dict,
@@ -216,8 +222,9 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
-    def plot_plastic_spine_mean_traces(
+    def plot_group_spine_mean_traces(
         self,
+        group_type,
         trace_type,
         exclude=None,
         avlines=None,
@@ -227,59 +234,50 @@ class Coactivity_Plasticity:
         save=False,
         save_path=None,
     ):
-        """Method to plot the mean activity traces for each plastic spine group"""
+        """Method to plot the mean activity traces for specified spine groups"""
 
-        # Get the relevant traces
         traces = getattr(self, trace_type)
-        enlarged_traces = compress(traces, self.enlarged_spines)
-        shrunken_traces = compress(traces, self.shrunken_spines)
-        stable_traces = compress(traces, self.stable_spines)
-        # Get the means for each spine
-        enlarged_mean_traces = [
-            x.mean(axis=1) for x in enlarged_traces if type(x) == np.ndarray
-        ]
-        enlarged_mean_traces = np.vstack(enlarged_mean_traces)
-        shrunken_mean_traces = [
-            x.mean(axis=1) for x in shrunken_traces if type(x) == np.ndarray
-        ]
-        shrunken_mean_traces = np.vstack(shrunken_mean_traces)
-        stable_mean_traces = [
-            x.mean(axis=1) for x in stable_traces if type(x) == np.ndarray
-        ]
-        stable_mean_traces = np.vstack(stable_mean_traces)
-        # Get mean and sem across traces
-        enlarged_mean = np.mean(enlarged_mean_traces, axis=0)
-        enlarged_sem = stats.sem(enlarged_mean_traces, axis=0)
-        shrunken_mean = np.mean(shrunken_mean_traces, axis=0)
-        shrunken_sem = stats.sem(shrunken_mean_traces, axis=0)
-        stable_mean = np.mean(stable_mean_traces, axis=0)
-        stable_sem = stats.sem(stable_mean_traces, axis=0)
+        if group_type == "plastic_spines":
+            spine_groups = [
+                "enlarged_spines",
+                "shrunken_spines",
+                "stable_spines",
+            ]
+        if group_type == "movement_spines":
+            spine_groups = ["movement_spines", "nonmovement_spines"]
+        if group_type == "rwd_movement_spines":
+            spine_groups = ["rwd_movement_spines", "rwd_nonmovement_spines"]
 
-        # prepare data for plotting
-        spine_groups = ["enlarged", "shrunken", "stable"]
-        mean_list = []
-        sem_list = []
-        plot_colors = []
-        for i, group in enumerate(spine_groups):
+        mean_traces = []
+        sem_traces = []
+        used_groups = []
+        for group in spine_groups:
             if group == exclude:
                 continue
-            mean_list.append(eval(f"{group}_mean"))
-            sem_list.append(eval(f"{group}_sem"))
-            plot_colors.append(colors[i])
+            spines = getattr(self, group)
+            group_traces = compress(traces, spines)
+            means = [x.nanmean(axis=1) for x in group_traces if type(x) == np.ndarray]
+            means = np.vstack(means)
+            group_mean = np.nanmean(means, axis=0)
+            group_sem = stats.sem(means, axis=0, nan_policy="omit")
+            mean_traces.append(group_mean)
+            sem_traces.append(group_sem)
+            used_groups.append(group)
+
         if self.parameters["zscore"]:
             ytitle = "zscore"
         else:
             ytitle = "\u0394" + "F/F\u2080"
 
-        # Make the plot
         sp.plot_mean_activity_traces(
-            mean_list,
-            sem_list,
+            mean_traces,
+            sem_traces,
+            used_groups,
             sampling_rate=self.parameters["Sampling Rate"],
             activity_window=self.parameters["Activity Window"],
             avlines=avlines,
             figsize=figsize,
-            colors=plot_colors,
+            colors=colors,
             title=trace_type,
             ytitle=ytitle,
             ylim=ylim,
