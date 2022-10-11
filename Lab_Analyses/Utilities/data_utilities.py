@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn import preprocessing
 
 
 def get_before_after_means(
@@ -276,6 +277,22 @@ def peak_sorting(data):
     sorted_data = data[:, sorted_idxs]
 
     return sorted_data
+
+
+def peak_normalize_data(data):
+    """Function to normalize activity data from 0 to 1. 
+        
+        INPUT PARAMETERS
+            data - np.array or pd.DataFrame of data, with columns representing rois
+            
+        OUTPUT PARAMETERS
+            normalized_data - np.array of the peak normalized data
+            
+    """
+    scaler = preprocessing.MinMaxScaler()
+    normalized_data = scaler.fit_transform(data)
+
+    return normalized_data
 
 
 def join_dictionaries(dict_list):
