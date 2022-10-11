@@ -6,10 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import statsmodels.stats.api as sm
-from cv2 import trace
-from matplotlib.lines import lineStyles
-from pyparsing import lineStart
+from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
 
 sns.set()
@@ -687,3 +684,86 @@ def plot_spine_coactivity_distance(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
+
+
+def plot_mean_spine_heatmap(
+    data_dict,
+    figsize=(4, 5),
+    activity_window=(-2, 2),
+    title=None,
+    cbar_label=None,
+    hmap_range=None,
+    center=None,
+    sorted=False,
+    normalize=False,
+    cmap="plasma",
+    save=False,
+    save_path=None,
+):
+    """Function to plot trial averaged spine activity as a heatmap
+        sorted accepts - 'peak' and 'difference', which sort spines based
+        on the peaks of their activity or the difference in their activity
+        before and after the center point
+
+        Allows for multiple subplots for different groups
+    """
+    # Set up subplots
+    tot = len(data_dict.keys())
+    COL_NUM = 4
+    row_num = tot // COL_NUM
+    row_num += tot % COL_NUM
+    fig_size = (figsize[0], figsize[1] * row_num)
+
+    fig = plt.figure(figsize=fig_size)
+    fig.subplots_adjust(hspace=0.5)
+    fig.suptitle(title)
+
+    if hmap_range is None:
+        hmap_range = (None, None)
+        cbar_ticks = None
+    elif hmap_range is not None and center is None:
+        cbar_ticks = (hmap_range[0], hmap_range[1])
+    else:
+        cbar_ticks = (hmap_range[0], center, hmap_range[1])
+
+    # Plot each group
+    for count, (key, value) in enumerate(data_dict.items()):
+        # Process some of the data
+        data = value
+        if sorted:
+            data = d_utils.peak_sorting(data)
+        if normalize:
+            data = d_utils.peak_normalize_data(data)
+        data_t = data.T
+
+        # Plot
+        ax = fig.add_subplot(row_num, COL_NUM, count)
+        hax = sns.heatmap(
+            data_t,
+            cmap=cmap,
+            center=center,
+            vmax=hmap_range[1],
+            vmin=hmap_range[0],
+            cbar_kws={
+                "label": cbar_label,
+                "orientation": "vertical",
+                "ticks": cbar_ticks,
+            },
+            yticklabels=False,
+            ax=ax,
+        )
+        x = np.linspace(activity_window[0], activity_window[1], data_t.shape[1])
+        xticks = np.unique(x.astype(int))
+        plt.xticks(ticks=xticks, labels=xticks)
+        plt.xlabel("Time (s)")
+        hax.patch.set_edgecolor("black")
+        hax.patch.set_linewidth("2.5")
+
+    fig.tight_layout()
+
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
