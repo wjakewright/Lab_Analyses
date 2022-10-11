@@ -689,23 +689,53 @@ def plot_spine_coactivity_distance(
 def plot_mean_spine_heatmap(
     data_dict,
     figsize=(4, 5),
+    sampling_rate=60,
     activity_window=(-2, 2),
     title=None,
     cbar_label=None,
     hmap_range=None,
     center=None,
-    sorted=False,
+    sorted=None,
     normalize=False,
     cmap="plasma",
     save=False,
     save_path=None,
 ):
-    """Function to plot trial averaged spine activity as a heatmap
-        sorted accepts - 'peak' and 'difference', which sort spines based
-        on the peaks of their activity or the difference in their activity
-        before and after the center point
-
+    """Function to plot trial averaged spine activity as a heatmap.
         Allows for multiple subplots for different groups
+
+        INPUT PARAMETERS
+            data_dict - dict of data, with each item containing data for a 
+                        specific group (2d np.array, columns=rois)
+            
+            figsize - tuple specifying the size of the figure
+
+            sampling_rate - int or float specifying the imaging sampling rate
+
+            activity_window - tuple specifying the range of the activity window in sec
+
+            title - str specifying the title of the figure
+
+            cbar_label - str specifying the label for the color bar
+
+            hmap_rate - tuple specifying a min and max of the heatmap
+
+            center - int specifying the center of the color map
+
+            sorted - str specifying if and how to sort the data. 
+                    Accepts 'peak' and 'difference' to sort the data
+                    based on their peak timing or the difference in their
+                    activity before and after the center point
+
+            normalize - boolean specifying if you wish to normalize activity
+                        for each roi
+
+            cmap - str specifying the color map to use
+
+            save - boolean specifying whether to save the figure
+
+            save_path - str specifying where to save the figure
+        
     """
     # Set up subplots
     tot = len(data_dict.keys())
@@ -730,14 +760,19 @@ def plot_mean_spine_heatmap(
     for count, (key, value) in enumerate(data_dict.items()):
         # Process some of the data
         data = value
-        if sorted:
+        if sorted == "peak":
             data = d_utils.peak_sorting(data)
+        if sorted == "difference":
+            data = d_utils.diff_sorting(
+                data, np.absolute(activity_window), sampling_rate
+            )
         if normalize:
             data = d_utils.peak_normalize_data(data)
         data_t = data.T
 
         # Plot
         ax = fig.add_subplot(row_num, COL_NUM, count)
+        ax.set_title(key)
         hax = sns.heatmap(
             data_t,
             cmap=cmap,
