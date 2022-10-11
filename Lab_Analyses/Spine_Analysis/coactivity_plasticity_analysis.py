@@ -252,12 +252,13 @@ class Coactivity_Plasticity:
         sem_traces = []
         used_groups = []
         for group in spine_groups:
-            if group == exclude:
+            if group in exclude:
                 continue
             spines = getattr(self, group)
             group_traces = compress(traces, spines)
             means = [x.nanmean(axis=1) for x in group_traces if type(x) == np.ndarray]
             means = np.vstack(means)
+            means = np.unique(means, axis=0)
             group_mean = np.nanmean(means, axis=0)
             group_sem = stats.sem(means, axis=0, nan_policy="omit")
             mean_traces.append(group_mean)
@@ -332,13 +333,24 @@ class Coactivity_Plasticity:
         aline_dict = {}
         for group in spine_groups:
             if group != "all":
+                # Get spines and average across all events to get mean trace
                 group_spines = getattr(self, group)
                 s_traces = compress(spine_traces, group_spines)
+                s_traces = [
+                    x.nanmean(axis=1) for x in s_traces if type(x) == np.ndarray
+                ]
                 d_traces = compress(dend_traces, group_spines)
+                d_traces = [
+                    x.nanmean(axis=1) for x in d_traces if type(x) == np.ndarray
+                ]
                 alines = compress(avlines, group_spines)
             else:
-                s_traces = spine_traces
-                d_traces = dend_traces
+                s_traces = [
+                    x.nanmean(axis=1) for x in spine_traces if type(x) == np.ndarray
+                ]
+                d_traces = [
+                    x.nanmean(axis=1) for x in dend_traces if type(x) == np.ndarray
+                ]
                 alines = avlines
             s_traces = np.vstack(s_traces)
             d_traces = np.vstack(d_traces)
@@ -446,6 +458,7 @@ class Coactivity_Plasticity:
         for group in spine_groups:
             spines = getattr(self, group)
             group_data = coactivity_data[:, spines]
+            group_dict[group] = group_data
 
         sp.plot_spine_coactivity_distance(
             data_dict=group_dict,
@@ -484,6 +497,21 @@ class Coactivity_Plasticity:
             save,
             save_path,
         )
+
+    def plot_group_mean_heatmaps(
+        self,
+        trace_type,
+        group_type,
+        figsize=(4, 5),
+        hmap_range=None,
+        center=None,
+        sorted=False,
+        normalize=False,
+        cmap="plasma",
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot the trial averaged activity heatmaps across different spine groups"""
 
     def save_output(self):
         """Method to save the output"""
