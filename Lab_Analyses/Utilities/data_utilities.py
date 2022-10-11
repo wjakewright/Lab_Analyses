@@ -259,6 +259,25 @@ def diff_sorting(data, length, sampling_rate):
     return sorted_data
 
 
+def peak_sorting(data):
+    """Function to sort traces based on the timing of the peak ampliitude
+    
+        INPUT PARAMETERS
+            data - np.array of pd.DataFrame of the data, with columns representing
+                    different rois
+                    
+        OUTPUT PARAMETERS
+            sorted_data - np.array of the sorted data
+    """
+    if type(data) == pd.DataFrame:
+        data = np.array(data)
+    peak_idxs = np.argmax(data, axis=0)
+    sorted_idxs = np.argsort(peak_idxs)
+    sorted_data = data[:, sorted_idxs]
+
+    return sorted_data
+
+
 def join_dictionaries(dict_list):
     """Function to join a list of dictionaries with the same keys into a single
         contiuous dictionary"""
