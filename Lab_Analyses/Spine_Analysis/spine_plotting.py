@@ -686,7 +686,7 @@ def plot_spine_coactivity_distance(
         plt.savefig(fname + ".pdf")
 
 
-def plot_mean_spine_heatmap(
+def plot_spine_heatmap(
     data_dict,
     figsize=(4, 5),
     sampling_rate=60,
@@ -764,8 +764,8 @@ def plot_mean_spine_heatmap(
             data = d_utils.peak_sorting(data)
         if sorted == "difference":
             data = d_utils.diff_sorting(
-                data, np.absolute(activity_window), sampling_rate
-            )
+                data.T, np.absolute(activity_window), sampling_rate
+            ).T
         if normalize:
             data = d_utils.peak_normalize_data(data)
         data_t = data.T
