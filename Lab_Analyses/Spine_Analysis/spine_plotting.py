@@ -190,21 +190,19 @@ def plot_swarm_bar_plot(
         data_sems = [np.nanstd(i) for i in data_points]
     elif err_type == "CI":
         num_p = len(data_points[0])
-        sem1 = []
-        sem2 = []
+        data_sems = []
         if num_p <= 30:
-            print("T")
             for data in data_points:
                 ci = stats.t.interval(
                     alpha=0.95,
                     df=len(data) - 1,
                     loc=np.nanmean(data),
-                    scale=stats.sem(data),
+                    scale=stats.sem(data, nan_policy="omit"),
                 )
 
                 # ci = sm.DescrStatsW(data).tconfint_mean()
-                sem1.append(ci[0])
-                sem2.append(ci[1])
+                s = np.array(ci[0], ci[1]).reshape(-1, 1)
+                data_sems.append(s)
         else:
             for data in data_points:
                 ci = stats.norm.interval(
@@ -212,10 +210,9 @@ def plot_swarm_bar_plot(
                     loc=np.nanmean(data),
                     scale=stats.sem(data, nan_policy="omit"),
                 )
-                sem1.append(ci[0])
-                sem2.append(ci[1])
-        data_sems = [np.array(sem1), np.array(sem2)]
-        print(data_sems)
+                data_sems.append()
+                s = np.array(ci[0], ci[1]).reshape(-1, 1)
+                data_sems.append(s)
 
     data_df = pd.DataFrame.from_dict(data_dict, orient="index")
     data_df = data_df.T
