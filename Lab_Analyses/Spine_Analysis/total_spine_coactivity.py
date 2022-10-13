@@ -1,11 +1,14 @@
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    get_coactivity_rate, get_dend_spine_traces_and_onsets)
+    get_coactivity_rate,
+    get_dend_spine_traces_and_onsets,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    find_spine_classes, spine_volume_norm_constant)
+    find_spine_classes,
+    spine_volume_norm_constant,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.quantify_movment_quality import \
-    quantify_movement_quality
+from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 from scipy import stats
 
 
@@ -212,7 +215,7 @@ def total_coactivity_analysis(
         curr_coactivity_matrix = np.zeros(s_calcium.shape)
         curr_flags = [spine_flags[i] for i in spines]
         curr_el_spines = find_spine_classes(curr_flags, "Eliminated Spine")
-        if glu_norm_constants:
+        if glu_norm_constants is not None:
             curr_glu_constants = glu_norm_constants[spines]
             curr_ca_constants = ca_norm_constants[spines]
         else:
