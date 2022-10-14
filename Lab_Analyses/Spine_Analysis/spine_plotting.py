@@ -122,7 +122,9 @@ def plot_swarm_bar_plot(
     ylim=None,
     linestyle="",
     m_colors="mediumblue",
+    m_size=6,
     s_colors="mediumblue",
+    s_size=5,
     s_alpha=0.3,
     ahlines=None,
     save=False,
@@ -219,7 +221,7 @@ def plot_swarm_bar_plot(
     data_df = data_df.T
 
     # Plot the points
-    sns.stripplot(data=data_df, palette=s_colors, alpha=s_alpha, zorder=0)
+    sns.stripplot(data=data_df, palette=s_colors, alpha=s_alpha, zorder=0, size=s_size)
 
     # Plot means
     for pos, mean, sem, c in zip(x, data_mean, data_sems, m_colors):
@@ -232,6 +234,7 @@ def plot_swarm_bar_plot(
             markerfacecolor=c,
             ecolor=c,
             linestyle=linestyle,
+            markersize=m_size,
         )
 
     # Format axes
@@ -268,7 +271,9 @@ def plot_grouped_swarm_bar_plot(
     ylim=None,
     linestyle="",
     m_colors="mediumblue",
+    m_size=6,
     s_colors="mediumblue",
+    s_size=5,
     s_alpha=0.3,
     ahlines=None,
     save=False,
@@ -389,6 +394,8 @@ def plot_grouped_swarm_bar_plot(
         dodge=True,
         ax=ax,
         zorder=0,
+        size=s_size,
+        alpha=s_alpha,
     )
     # Get x positions
     x_coords = []
@@ -411,6 +418,7 @@ def plot_grouped_swarm_bar_plot(
             markerfacecolor=c,
             ecolor=c,
             linestyle=linestyle,
+            markersize=m_size,
         )
 
     # Format axes
