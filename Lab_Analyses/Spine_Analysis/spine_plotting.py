@@ -164,8 +164,10 @@ def plot_swarm_bar_plot(
             save_path - str specifying where to save the figure
     """
     # Make list of colors if only one is provided
-    # if type(colors) == str:
-    #    colors = [colors for i in range(len(list(data_dict.keys())))]
+    if type(m_colors) == str:
+        m_colors = [m_colors for i in range(len(list(data_dict.keys())))]
+    if type(s_colors) == str:
+        s_colors = [s_colors for i in range(len(list(data_dict.keys())))]
 
     # Make the figure
     fig = plt.figure(figsize=figsize)
@@ -201,7 +203,7 @@ def plot_swarm_bar_plot(
                 )
 
                 # ci = sm.DescrStatsW(data).tconfint_mean()
-                s = np.array(ci[0], ci[1]).reshape(-1, 1)
+                s = np.array([ci[0], ci[1]]).reshape(-1, 1)
                 data_sems.append(s)
         else:
             for data in data_points:
@@ -210,8 +212,7 @@ def plot_swarm_bar_plot(
                     loc=np.nanmean(data),
                     scale=stats.sem(data, nan_policy="omit"),
                 )
-                data_sems.append()
-                s = np.array(ci[0], ci[1]).reshape(-1, 1)
+                s = np.array([ci[0], ci[1]]).reshape(-1, 1)
                 data_sems.append(s)
 
     data_df = pd.DataFrame.from_dict(data_dict, orient="index")
@@ -239,6 +240,184 @@ def plot_swarm_bar_plot(
     ax.set_ylabel(ytitle)
     ax.set_xlabel(xtitle)
     ax.set_xticklabels(labels=groups)
+
+    if ahlines:
+        for line in ahlines:
+            ax.axhline(y=line, linestyle="--", linewidth=1)
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, title)
+        plt.savefig(fname + ".pdf")
+
+
+def plot_grouped_swarm_bar_plot(
+    data_dict,
+    groups,
+    mean_type="mean",
+    err_type="sem",
+    marker="o",
+    figsize=(5, 5),
+    title=None,
+    xtitle=None,
+    ytitle="value",
+    ylim=None,
+    linestyle="",
+    m_colors="mediumblue",
+    s_colors="mediumblue",
+    s_alpha=0.3,
+    ahlines=None,
+    save=False,
+    save_path=None,
+):
+    """Function to plot grouped sns swarm plots with overlaying mean and error
+        INPUT PARAMETERS
+            data_dict - nested dictionary of data to be plotted. Outer keys represent the
+                        subgroups, while the inner keys represent the main groups
+            
+            groups - list of strings representing the groups. Main group will be first and 
+                    subgroups will be listed second
+
+            mean_type - str specifying what central point you wish to plot. Accepts
+                        'mean' or 'median'
+            
+            err_type - str specifying what type of error you wish the error bars to 
+                        represent. Accepts 'sem', 'std', and 'CI'
+            
+            marker - str specifying what type of marker you wish to represent the mean
+            
+            figsize - tuple specifying the figure size
+            
+            title - str specifying the name of the title
+            
+            xtitle - str specifying the x axis label
+            
+            ytitle - str specifying the y axis label
+            
+            ylim - tuple specifying the limits of the y axis
+
+            m_colors - 
+            
+            s_colors - str or list of strs specifying the colors of each plot. If only one
+                    color is given, all plots will be the same color
+                    
+            s_alpha - float specifying what level of transparency the scatter points should be
+            
+            save - boolean specifying wheather to save the figure or not
+            
+            save_path - str specifying where to save the figure
+    """
+    # Check colors
+    if type(s_colors) == str:
+        s_colors = [s_colors for i in range(len(list(data_dict.keys())))]
+    elif (type(s_colors) == list) & (len(s_colors) != len(list(data_dict.keys()))):
+        return "Number of scatter colors does not match number of groups"
+    if type(m_colors) == str:
+        m_colors = [m_colors for i in range(len(list(data_dict.keys())))]
+    elif (type(m_colors) == list) & (len(m_colors) != len(list(data_dict.keys()))):
+        return "Number of marker colors does not match number of groups"
+
+    # Organize the data to be plotted
+    dfs = []
+    g1_keys = []
+    g2_keys = []
+    for key, value in data_dict.items():
+        g1_keys = list(value.keys())
+        g2_keys.append(key)
+        df = pd.DataFrame(value)
+        df = pd.melt(df, value_vars=df.columns, var_name=groups[0], value_name=ytitle)
+        df[groups[1]] = key
+        dfs.append(df)
+    plot_df = pd.concat(dfs)
+
+    # Calculate means and errors
+    data_mean = []
+    data_err = []
+    for k1 in g1_keys:
+        for k2 in g2_keys:
+            data = plot_df[ytitle].loc[
+                (plot_df[groups[0]] == k1) & (plot_df[groups[1]] == k2)
+            ]
+            # Get approriate mean
+            if mean_type == "mean":
+                data_mean.append(np.nanmean(data))
+            elif mean_type == "median":
+                data_mean.append(np.nanmedian(data))
+            else:
+                return "Only accepts mean and median for mean_type!!!"
+            # Get appropriate error
+            if err_type == "sem":
+                data_err.append(stats.sem(data, nan_policy="omit"))
+            elif err_type == "std":
+                data_err.append(np.nanstd(data))
+            elif err_type == "CI":
+                num_p = len(data)
+                if num_p <= 30:
+                    ci = stats.t.interval(
+                        alpha=0.95,
+                        df=len(data) - 1,
+                        loc=np.nanmean(data),
+                        scale=stats.sem(data, nan_policy="omit"),
+                    )
+                    s = np.array([ci[0], ci[1]]).reshape(-1, 1)
+                    data_err.append(s)
+                else:
+                    ci = stats.norm.interval(
+                        alpha=0.95,
+                        loc=np.nanmean(data),
+                        scale=stats.sem(data, nan_policy="omit"),
+                    )
+                    s = np.array([ci[0], ci[1]]).reshape(-1, 1)
+                    data_err.append(s)
+
+    # Make the plot
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot()
+    ax.set_title(title)
+
+    # Plot the scatter points
+    strip = sns.stripplot(
+        data=plot_df,
+        x=groups[0],
+        y="value",
+        hue=groups[1],
+        palette=s_colors,
+        dodge=True,
+        ax=ax,
+        zorder=0,
+    )
+    # Get x positions
+    x_coords = []
+    for c in strip.collections:
+        offsets = c.get_offsets()
+        if len(offsets) != 0:
+            xs = [x[0] for x in offsets]
+            x_coords.append(np.mean(xs))
+
+    err_colors = [m_colors for x in g1_keys]
+    err_colors = [x for y in err_colors for x in y]
+    # Plot the mean and error
+    for x, mean, err, c in zip(x_coords, data_mean, data_err, m_colors):
+        ax.errorbar(
+            x,
+            mean,
+            err,
+            color=c,
+            fmt=marker,
+            markerfacecolor=c,
+            ecolor=c,
+            linestyle=linestyle,
+        )
+
+    # Format axes
+    if ylim:
+        ax.set_ylim(bottom=ylim[0], top=ylim[1])
+    ax.set_ylabel(ytitle)
+    ax.set_xlabel(xtitle)
 
     if ahlines:
         for line in ahlines:
