@@ -187,8 +187,11 @@ class Coactivity_Plasticity:
         figsize=(5, 5),
         ytitle=None,
         ylim=None,
-        colors=["darkorange", "forestgreen", "silver"],
+        s_colors=["darkorange", "forestgreen", "silver"],
+        s_size=5,
         s_alpha=0.3,
+        m_colors=["darkorange", "forestgreen", "silver"],
+        m_size=6,
         save=False,
         save_path=None,
     ):
@@ -225,9 +228,87 @@ class Coactivity_Plasticity:
             ytitle=ytitle,
             ylim=ylim,
             linestyle="",
-            m_colors=colors,
-            s_colors=colors,
+            m_colors=m_colors,
+            m_size=m_size,
+            s_colors=s_colors,
             s_alpha=s_alpha,
+            s_size=s_size,
+            save=save,
+            save_path=save_path,
+        )
+
+    def plot_multi_group_scatter_plots(
+        self,
+        variable_name,
+        group_type,
+        subgroup_type,
+        mean_type,
+        err_type,
+        marker="o",
+        figsize=(5, 5),
+        ytitle=None,
+        ylim=None,
+        s_colors=["darkorange", "forestgreen", "silver"],
+        s_alpha=0.3,
+        s_size=5,
+        m_colors=["darkorange", "forestgreen", "silver"],
+        m_size=6,
+        save=False,
+        save_path=None,
+    ):
+        """Method for plotting the means and individual points for a given variable for 
+            specified groups and subgroups"""
+
+        if ytitle is None:
+            ytitle = variable_name
+
+        # Get the data
+        variable = getattr(self, variable_name)
+        # Set up the different groups and subgroups
+        group_dict = {
+            "plastic_spines": ["enlarged_spines", "shrunken_spines", "stable_spines"],
+            "movement_spines": ["movement_spines", "nonmovement_spines"],
+            "rwd_movement_spines": ["rwd_movement_spines", "rwd_nonmovement_spines"],
+            "movement_dendrites": ["movement_dendrites", "nonmovement_dendrites"],
+            "rwd_movement_dendrites": [
+                "rwd_movement_dendrities",
+                "rwd_nonmovement_dendrites",
+            ],
+        }
+        group_list = [subgroup_type, group_type]
+        groups = group_dict[group_type]
+        subgroups = group_dict[subgroup_type]
+        # Divide data into appropriate groups
+        data_dict = {}
+        for subgroup in subgroups:
+            sub_dict = {}
+            sg_spines = getattr(self, subgroup)
+            for group in groups:
+                g_spines = getattr(self, group)
+                spines = np.array(sg_spines) * np.array(g_spines)
+                spine_data = variable[spines]
+                spine_data = spine_data[~np.nan(spine_data)]
+                sub_dict[group] = spine_data
+            data_dict[subgroup] = sub_dict
+
+        # make the plot
+        sp.plot_grouped_swarm_bar_plot(
+            data_dict,
+            group_list,
+            mean_type=mean_type,
+            err_type=err_type,
+            marker=marker,
+            figsize=figsize,
+            title=variable_name,
+            xtitle=None,
+            ytitle=ytitle,
+            linestyle="",
+            m_colors=m_colors,
+            m_size=m_size,
+            s_colors=s_colors,
+            s_size=s_size,
+            s_alpha=s_alpha,
+            ahlines=None,
             save=save,
             save_path=save_path,
         )
