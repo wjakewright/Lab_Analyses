@@ -149,10 +149,10 @@ class Coactivity_Plasticity:
             volume = np.log10(self.relative_volumes)
             xtitle = "\u0394" + " spine volume"
         elif volume_type == "volume_um":
-            volume = self.spine_volume_um
+            volume = self.spine_volumes_um
             xtitle = "spine area (um)"
         elif volume_type == "volume":
-            volume = self.spine_volume
+            volume = self.spine_volumes
             xtitle = "spine area (au)"
 
         volume = volume[non_nan]
@@ -214,7 +214,7 @@ class Coactivity_Plasticity:
         for group in spine_groups:
             group_spines = getattr(self, group)
             group_data = variable[group_spines]
-            group_data = group_data[~np.nan(group_data)]
+            group_data = group_data[~np.isnan(group_data)]
             data_dict[group] = group_data
 
         sp.plot_swarm_bar_plot(
@@ -287,7 +287,7 @@ class Coactivity_Plasticity:
                 g_spines = getattr(self, group)
                 spines = np.array(sg_spines) * np.array(g_spines)
                 spine_data = variable[spines]
-                spine_data = spine_data[~np.nan(spine_data)]
+                spine_data = spine_data[~np.isnan(spine_data)]
                 sub_dict[group] = spine_data
             data_dict[subgroup] = sub_dict
 
@@ -302,6 +302,7 @@ class Coactivity_Plasticity:
             title=variable_name,
             xtitle=None,
             ytitle=ytitle,
+            ylim=ylim,
             linestyle="",
             m_colors=m_colors,
             m_size=m_size,
