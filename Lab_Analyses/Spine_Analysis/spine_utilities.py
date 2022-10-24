@@ -1,14 +1,17 @@
 """Module containing some regularly used functions for spine analysis"""
 
 import os
+from re import L
 
 import numpy as np
 import scipy.optimize as syop
 import scipy.signal as sysignal
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import \
-    get_activity_timestamps
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
+    get_activity_timestamps,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
+from scipy import stats
 
 
 def pad_spine_data(spine_data_list, pad_value=np.nan):
@@ -176,7 +179,7 @@ def load_spine_datasets(mouse_id, days, followup):
 
 
 def spine_volume_norm_constant(
-    activity_traces, dFoF_traces, volumes, zoom_factor, sampling_rate, iterations=1000,
+    activity_traces, dFoF_traces, um_volumes, sampling_rate, iterations=1000,
 ):
     """Function to generate a normalization constant to normalize spine activity
         by its volume
@@ -186,9 +189,7 @@ def spine_volume_norm_constant(
             
             dFoF_trace - np.array of all spine's dFoF trace
             
-            volume - int or float of all spine's volume
-            
-            zoom_factor - int or float of the zoom used when imaging
+            volume - int or float of all spine's volume converted to um
 
             sampling_rate - int or float of the imaging sampling rate
 
@@ -229,16 +230,16 @@ def spine_volume_norm_constant(
             max_amp = 0
         max_amplitudes.append(max_amp)
 
-    # Convert Volume to um from pixels
-    pix_to_um = zoom_factor / 2
-    um_volumes = []
-    for volume in volumes:
-        um_volume = volume / pix_to_um
-        um_volumes.append(um_volume)
-
     # Convert values to arrays
     max_amplitudes = np.array(max_amplitudes)
     um_volumes = np.array(um_volumes)
+    # um_volumes = np.array(volumes)
+
+    # Test initial slope
+    _, p = stats.pearsonr(max_amplitudes, um_volumes)
+    if p > 0.05:
+        norm_constants = np.ones(len(um_volumes))
+        return norm_constants
 
     # Estimate minimum constant
     obj_function = lambda C: norm_objective_function(max_amplitudes, um_volumes, C)
@@ -246,7 +247,7 @@ def spine_volume_norm_constant(
     for i in range(iterations):
         tc = obj_function(i)
         test_constants.append(tc)
-    x0 = np.nanmean(test_constants)
+    x0 = np.nanargmin(test_constants)
     # Find minimum constant
     constant = syop.minimize(obj_function, x0, bounds=[(0, np.inf)]).x
     # Apply min constant to each volume
@@ -255,15 +256,100 @@ def spine_volume_norm_constant(
     return norm_constants
 
 
+def batch_spine_volume_norm_constant(mice_list, day, activity_type):
+    # Set up final output dict
+    constant_dict = {}
+
+    mouse_ids = []
+    FOV_list = []
+    flags = []
+    activity_traces = []
+    dFoF_traces = []
+    volumes_um = []
+    sampling_rates = []
+    # Pool data across all mice togetehr
+    for mouse in mice_list:
+        datasets = load_spine_datasets(mouse, [day], followup=False)
+        mouse_dict = {}
+        for FOV, dataset in datasets.items():
+            data = dataset[day]
+            mouse_dict[FOV] = []
+            sampling_rates.append(data.imaging_parameters["Sampling Rate"])
+            activity = data.spine_GluSnFr_activity
+            if activity_type == "GluSnFr":
+                dFoF = data.spine_GluSnFr_processed_dFoF
+            elif activity_type == "Calcium":
+                dFoF = data.spine_calcium_processed_dFoF
+            else:
+                return "Improper activity type input !!!"
+            volume = data.spine_volume
+            pix_to_um = data.imaging_parameters["Zoom"] / 2
+            for v in volume:
+                um_volume = (np.sqrt(v) / pix_to_um) ** 2
+                mouse_ids.append(mouse)
+                FOV_list.append(FOV)
+                volumes_um.append(um_volume)
+            activity_traces.append(activity)
+            dFoF_traces.append(dFoF)
+            for f in data.spine_flags:
+                flags.append(f)
+        constant_dict[mouse] = mouse_dict
+
+    max_len = np.max([a.shape[0] for a in activity_traces])
+    temp_traces = [np.zeros((max_len, a.shape[1])) for a in activity_traces]
+    padded_a_traces = []
+    padded_d_traces = []
+    for t, a, d in zip(temp_traces, activity_traces, dFoF_traces):
+        td = np.copy(t)
+        t[list(range(a.shape[0])), :] = a
+        td[list(range(a.shape[0])), :] = d
+        padded_a_traces.append(t)
+        padded_d_traces.append(td)
+
+    for a, p in zip(activity_traces, padded_a_traces):
+        print(a.shape)
+        print(p.shape)
+    activity_traces = np.hstack(padded_a_traces)
+    dFoF_traces = np.hstack(padded_d_traces)
+    volumes_um = np.array(volumes_um)
+    sampling_rate = np.unique(sampling_rates)
+    if len(sampling_rate) != 1:
+        return "Different sampling rates between datasets !!!"
+
+    # Set up the output
+    norm_constants = np.ones(activity_traces.shape[1])
+    # Exclude eliminated spines
+    el_spines = find_spine_classes(flags, "Eliminated Spine")
+    spine_idxs = np.nonzero([not i for i in el_spines])[0]
+    print(el_spines)
+    print(spine_idxs)
+    good_activity = activity_traces[:, spine_idxs]
+    good_dFoF = dFoF_traces[:, spine_idxs]
+    good_volumes = volumes_um[spine_idxs]
+
+    good_constants = spine_volume_norm_constant(
+        good_activity, good_dFoF, good_volumes, sampling_rate, iterations=1000
+    )
+    print(good_constants)
+    norm_constants[spine_idxs] = good_constants
+
+    for mouse, value in constant_dict.items():
+        for fov in value.keys():
+            mouse_idxs = [m == mouse for m in mouse_ids]
+            fov_idxs = [f == fov for f in FOV_list]
+            idxs = np.nonzero(np.array(mouse_idxs) * np.array(fov_idxs))[0]
+            constant_dict[mouse][fov] = norm_constants[idxs]
+
+    return constant_dict
+
+
 def norm_objective_function(x, y, con):
     """Helper function to genterate the objective function for spine volume normalization"""
     new_x = x / (y + con)
-    new_y = y + con
+    new_y = y
 
     x_input = np.vstack([new_x, np.ones(len(new_x))]).T
-    _, c = np.linalg.lstsq(x_input, new_y, rcond=0)[0]
+    m, _ = np.linalg.lstsq(x_input, new_y, rcond=0)[0]
 
-    return np.absolute(c)
-
-
+    return np.absolute(m)
 
