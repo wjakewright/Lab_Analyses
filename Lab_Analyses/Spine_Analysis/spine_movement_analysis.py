@@ -2,9 +2,11 @@
 
 import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    find_activity_onset, get_activity_timestamps, refine_activity_timestamps)
-from Lab_Analyses.Spine_Analysis.spine_utilities import \
-    spine_volume_norm_constant
+    find_activity_onset,
+    get_activity_timestamps,
+    refine_activity_timestamps,
+)
+from Lab_Analyses.Spine_Analysis.spine_utilities import spine_volume_norm_constant
 from Lab_Analyses.Utilities import data_utilities as d_utils
 
 
@@ -71,14 +73,7 @@ def spine_movement_activity(
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
     if volume_norm:
-        norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_dFoF,
-            spine_volumes,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
+        norm_constants = volume_norm
     else:
         norm_constants = np.array([None for x in range(spine_activity.shape[1])])
 
