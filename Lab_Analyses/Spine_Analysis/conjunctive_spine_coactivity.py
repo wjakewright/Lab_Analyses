@@ -147,22 +147,8 @@ def conjunctive_coactivity_analysis(
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
     if volume_norm:
-        glu_norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_dFoF,
-            data.corrected_spine_volume,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
-        ca_norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_calcium,
-            data.corrected_spine_volume,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
+        glu_norm_constants = volume_norm[0]
+        ca_norm_constants = volume_norm[1]
     else:
         glu_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
         ca_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
@@ -191,6 +177,7 @@ def conjunctive_coactivity_analysis(
     local_correlation = np.zeros(spine_activity.shape[1]) * np.nan
     coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
+    coactivity_event_rate_norm = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     coactive_spine_num = np.zeros(spine_activity.shape[1])
@@ -290,7 +277,13 @@ def conjunctive_coactivity_analysis(
                 continue
 
             # Start analyzing the conjunctive coactivity
-            event_num, event_rate, spine_frac, dend_frac = get_coactivity_rate(
+            (
+                event_num,
+                event_rate,
+                event_rate_norm,
+                spine_frac,
+                dend_frac,
+            ) = get_coactivity_rate(
                 curr_s_activity,
                 d_activity,
                 curr_conj_coactivity,
@@ -298,6 +291,7 @@ def conjunctive_coactivity_analysis(
             )
             coactivity_event_num[spines[spine]] = event_num
             coactivity_event_rate[spines[spine]] = event_rate
+            coactivity_event_rate_norm[spines[spine]] = event_rate_norm
             spine_fraction_coactive[spines[spine]] = spine_frac
             dend_fraction_coactive[spines[spine]] = dend_frac
 
@@ -393,6 +387,7 @@ def conjunctive_coactivity_analysis(
         local_correlation,
         coactivity_event_num,
         coactivity_event_rate,
+        coactivity_event_rate_norm,
         spine_fraction_coactive,
         dend_fraction_coactive,
         coactive_spine_num,
