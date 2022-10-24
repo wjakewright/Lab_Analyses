@@ -23,8 +23,10 @@ def get_coactivity_rate(spine, dendrite, coactivity, sampling_rate):
             
         OUTPUT PARAMETERS
             coactivity_event_num - int of the number of coactive events
+
+            coactivit_event_rate - float of absolute coactivity event rate
             
-            coactivity_event_rate - float of normalized coactivity event rate
+            coactivity_event_rate_nor - float of normalized coactivity event rate
             
             spine_fraction_coactive - float of fraction of spine activity events that
                                       are also coactive
@@ -41,27 +43,30 @@ def get_coactivity_rate(spine, dendrite, coactivity, sampling_rate):
     coactivity_event_num = len(events)
 
     # Calculate raw event rate
-    event_rate = coactivity_event_num / duration
+    coactivity_event_rate = coactivity_event_num / duration
 
     # Normalize rate based on spine and dendrite event rates
     spine_event_rate = len(np.nonzero(np.diff(spine) == 1)[0]) / duration
     dend_event_rate = len(np.nonzero(np.diff(dendrite) == 1)[0]) / duration
     geo_mean = stats.gmean([spine_event_rate, dend_event_rate])
-    coactivity_event_rate = event_rate / geo_mean
+    coactivity_event_rate_norm = coactivity_event_rate / geo_mean
 
     # Get spine and dendrite fractions
     try:
-        spine_fraction_coactive = event_rate / spine_event_rate
+        spine_fraction_coactive = coactivity_event_rate / spine_event_rate
     except ZeroDivisionError:
         spine_fraction_coactive = 0
     try:
-        dend_fraction_coactive = event_rate / dend_event_rate
+        dend_fraction_coactive = coactivity_event_rate / dend_event_rate
     except ZeroDivisionError:
         dend_fraction_coactive = 0
+
+    coactivity_event_rate = coactivity_event_rate * 60  # convert to minutes
 
     return (
         coactivity_event_num,
         coactivity_event_rate,
+        coactivity_event_rate_norm,
         spine_fraction_coactive,
         dend_fraction_coactive,
     )
@@ -666,8 +671,8 @@ def calculate_dend_spine_freq(data, movement_epoch, sampling_rate=60):
             spines = data.spine_grouping[d]
         else:
             spines = data.spine_grouping
-            for s in spines:
-                dend_activity_matrix[:, s] = dendrite_activity[:, d]
+        for s in spines:
+            dend_activity_matrix[:, s] = dendrite_activity[:, d]
 
     spine_activity_freq = []
     dend_activity_freq = []
@@ -677,8 +682,8 @@ def calculate_dend_spine_freq(data, movement_epoch, sampling_rate=60):
         duration = len(s_activity) / sampling_rate
         s_events = np.nonzero(np.diff(s_activity) == 1)[0]
         d_events = np.nonzero(np.diff(d_activity) == 1)[0]
-        s_freq = (len(s_events) / duration) * sampling_rate
-        d_freq = (len(d_events) / duration) * sampling_rate
+        s_freq = (len(s_events) / duration) * 60  # per minute
+        d_freq = (len(d_events) / duration) * 60  # per minute
         spine_activity_freq.append(s_freq)
         dend_activity_freq.append(d_freq)
     spine_activity_freq = np.array(spine_activity_freq)
