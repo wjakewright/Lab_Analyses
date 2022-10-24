@@ -133,22 +133,8 @@ def total_coactivity_analysis(
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
     if volume_norm:
-        glu_norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_dFoF,
-            data.corrected_spine_volume,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
-        ca_norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_calcium,
-            data.corrected_spine_volume,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
+        glu_norm_constants = volume_norm[0]
+        ca_norm_constants = volume_norm[1]
     else:
         glu_norm_constants = None
         ca_norm_constants = None
@@ -178,6 +164,7 @@ def total_coactivity_analysis(
     global_correlation = np.zeros(spine_activity.shape[1]) * np.nan
     coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
+    coactivity_event_rate_norm = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
@@ -248,7 +235,13 @@ def total_coactivity_analysis(
             if not np.sum(curr_coactivity):
                 continue
 
-            event_num, event_rate, spine_frac, dend_frac = get_coactivity_rate(
+            (
+                event_num,
+                event_rate,
+                event_rate_norm,
+                spine_frac,
+                dend_frac,
+            ) = get_coactivity_rate(
                 s_activity[:, spine],
                 d_activity,
                 curr_coactivity,
@@ -256,6 +249,7 @@ def total_coactivity_analysis(
             )
             coactivity_event_num[spines[spine]] = event_num
             coactivity_event_rate[spines[spine]] = event_rate
+            coactivity_event_rate_norm[spines[spine]] = event_rate_norm
             spine_fraction_coactive[spines[spine]] = spine_frac
             dend_fraction_coactive[spines[spine]] = dend_frac
             coactivity_matrix[:, spines[spine]] = curr_coactivity
@@ -371,6 +365,7 @@ def total_coactivity_analysis(
         global_correlation,
         coactivity_event_num,
         coactivity_event_rate,
+        coactivity_event_rate_norm,
         spine_fraction_coactive,
         dend_fraction_coactive,
         spine_coactive_amplitude,
