@@ -1,5 +1,4 @@
 import os
-from audioop import tostereo
 from fractions import Fraction
 
 import numpy as np
@@ -49,6 +48,7 @@ def quantify_movement_quality(
             
     """
     CORR_INT = 1.5
+    EXPANSION = 0.5 * sampling_rate
 
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
@@ -73,10 +73,25 @@ def quantify_movement_quality(
     corr_duration = int(CORR_INT * sampling_rate)  ## 1.5 seconds
     learned_move_resample = learned_move_resample[:corr_duration]
 
-    # Get onsets and offsets of the movements
+    # Expand movement intervals
+    expansion_const = np.ones(EXPANSION, dtype=int)
+    npad = len(expansion_const) - 1
+    lever_active_padded = np.pad(
+        lever_active, (npad // 2, npad - npad // 2), mode="constant"
+    )
+    exp_lever_active = (
+        np.convolve(lever_active_padded, expansion_const, "valid")
+        .astype(bool)
+        .astype(int)
+    )
+
+    # Get onsets and offsets of the movements and expanded movements
     movement_diff = np.insert(np.diff(lever_active), 0, 0, axis=0)
     movement_onsets = np.nonzero(movement_diff == 1)[0]
     movement_offsets = np.nonzero(movement_diff == -1)[0]
+    exp_movement_diff = np.insert(np.diff(exp_lever_active), 0, 0, axis=0)
+    exp_movement_onsets = np.nonzero(exp_movement_diff == 1)[0]
+    exp_movement_offsets = np.nonzero(exp_movement_diff == -1)[0]
     ## Make sure the onsets and offsets are the same length
     if len(movement_onsets) > len(movement_offsets):
         # Drop last onset if there is no corresponding offset
@@ -84,12 +99,20 @@ def quantify_movement_quality(
     elif len(movement_onsets) < len(movement_offsets):
         # Drop the first offset if there is no onset for it
         movement_offsets = movement_offsets[1:]
+    if len(exp_movement_onsets) > len(exp_movement_offsets):
+        exp_movement_onsets = exp_movement_onsets[:-1]
+    elif len(exp_movement_onsets) < len(exp_movement_offsets):
+        exp_movement_offsets = exp_movement_offsets[1:]
 
     move_idxs = []
-    for onset, offset in zip(movement_onsets, movement_offsets):
+    exp_move_idxs = []
+    for onset, offset, e_onset, e_offset in zip(
+        movement_onsets, movement_offsets, exp_movement_onsets, exp_movement_offsets
+    ):
         if onset + corr_duration > len(lever_force):
             continue
         move_idxs.append((onset, offset))
+        exp_move_idxs.append((e_onset, e_offset))
 
     # Generate a learned movement binary trace
     learned_move_num = 0
@@ -115,8 +138,8 @@ def quantify_movement_quality(
     for i in range(activity_matrix.shape[1]):
         active_trace = activity_matrix[:, i]
         active_movements = []
-        for movement in move_idxs:
-            active_epoch = active_trace[movement[0] : movement[1]]
+        for movement, e_movement in zip(move_idxs, exp_move_idxs):
+            active_epoch = active_trace[e_movement[0] : e_movement[1]]
             if sum(active_epoch):
                 active_move = lever_force[movement[0] : movement[0] + corr_duration]
                 active_movements.append(active_move)
