@@ -92,6 +92,7 @@ def quantify_movement_quality(
         move_idxs.append((onset, offset))
 
     # Generate a learned movement binary trace
+    learned_move_num = 0
     lever_learned_binary = np.zeros(len(lever_active))
     for movement in move_idxs:
         force = lever_force[movement[0] : movement[0] + corr_duration]
@@ -99,12 +100,16 @@ def quantify_movement_quality(
 
         if r >= threshold:
             lever_learned_binary[movement[0] : movement[1]] = 1
+            learned_move_num = learned_move_num + 1
         else:
             continue
 
     # Assess the movements for each roi
     median_movement_correlations = []
-    learned_move_num = []
+    move_frac_active = []
+    learned_move_frac_active = []
+    learned_move_frac_active = []
+    active_move_frac_learned = []
     all_active_movements = []
     avg_active_movements = []
     for i in range(activity_matrix.shape[1]):
@@ -129,13 +134,22 @@ def quantify_movement_quality(
                 corrs.append(corr)
             move_corr = np.nanmedian(corrs)
             median_movement_correlations.append(move_corr)
-            move_num = len(np.nonzero(np.array(corrs) >= 0.5)[0])
-            learned_move_num.append(move_num)
+            # Get some fractions of movements
+            move_frac_active.append(len(active_movements) / len(move_idxs))
+            learned_move_frac_active.append(
+                len(np.nonzero(np.array(corrs) >= 0.5)[0]) / learned_move_num
+            )
+            active_move_frac_learned.append(
+                len(np.nonzero(np.array(corrs) >= 0.5)[0]) / len(corrs)
+            )
+
         except ValueError:
             all_active_movements.append(np.zeros(corr_duration))
             avg_active_movements.append(np.zeros(corr_duration))
             median_movement_correlations.append(np.nan)
-            learned_move_num.append(0)
+            move_frac_active.append(0)
+            learned_move_frac_active.append(0)
+            active_move_frac_learned.append(0)
 
     # convert outputs to arrays
     median_movement_correlations = np.array(median_movement_correlations)
@@ -146,6 +160,8 @@ def quantify_movement_quality(
         all_active_movements,
         avg_active_movements,
         median_movement_correlations,
-        learned_move_num,
+        move_frac_active,
+        learned_move_frac_active,
+        active_move_frac_learned,
         learned_move_resample,
     )
