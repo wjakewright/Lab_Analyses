@@ -333,7 +333,7 @@ def plot_grouped_swarm_bar_plot(
     for key, value in data_dict.items():
         g1_keys = list(value.keys())
         g2_keys.append(key)
-        df = pd.DataFrame(value)
+        df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in value.items()]))
         df = pd.melt(df, value_vars=df.columns, var_name=groups[0], value_name=ytitle)
         df[groups[1]] = key
         dfs.append(df)
