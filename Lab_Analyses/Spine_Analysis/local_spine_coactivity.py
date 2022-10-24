@@ -23,7 +23,7 @@ def local_spine_coactivity_analysis(
     cluster_dist=10,
     sampling_rate=60,
     zscore=False,
-    volume_norm=False,
+    volume_norm=None,
 ):
     """Function to analyze local spine coactivity
     
@@ -45,7 +45,7 @@ def local_spine_coactivity_analysis(
             
             zscore - boolean of whether to zscore dFoF traces for analysis
             
-            volume_nomr - boolean of whether or not to normalize activity by spine volume
+            volume_norm - tuple of the glu and ca constants, or None
             
         OUTPUT PARMATERS
             distance_coactivity_rate - 2d np.array of the normalized coactivity for each spine
@@ -128,22 +128,9 @@ def local_spine_coactivity_analysis(
         spine_calcium = d_utils.z_score(spine_calcium)
 
     if volume_norm:
-        glu_norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_dFoF,
-            data.corrected_spine_volume,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
-        ca_norm_constants = spine_volume_norm_constant(
-            spine_activity,
-            spine_calcium,
-            data.corrected_spine_volume,
-            data.imaging_parameters["Zoom"],
-            sampling_rate=sampling_rate,
-            iterations=1000,
-        )
+        glu_norm_constants = volume_norm[0]
+        ca_norm_constants = volume_norm[1]
+
     else:
         glu_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
         ca_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
@@ -173,6 +160,7 @@ def local_spine_coactivity_analysis(
     distance_bins = None
     local_correlation = np.zeros(spine_activity.shape[1]) * np.nan
     local_coactivity_rate = np.zeros(spine_activity.shape[1])
+    local_coactivity_rate_norm = np.zeros(spine_activity.shape[1])
     local_coactivity_matrix = np.zeros(spine_activity.shape)
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     local_coactive_spine_num = np.zeros(spine_activity.shape[1])
@@ -200,6 +188,16 @@ def local_spine_coactivity_analysis(
         spine_groupings,
         bin_size=5,
         sampling_rate=sampling_rate,
+        norm=False,
+    )
+    distance_coactivity_rate_norm, _ = local_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=True,
     )
 
     # Process spines for each parent dendrite
@@ -269,13 +267,14 @@ def local_spine_coactivity_analysis(
                 continue
 
             # Start analyzing the local coactivity
-            _, event_rate, spine_frac, _ = get_coactivity_rate(
+            _, event_rate, event_rate_norm, spine_frac, _ = get_coactivity_rate(
                 curr_s_activity,
                 curr_local_coactivity,
                 curr_local_coactivity,
                 sampling_rate=sampling_rate,
             )
             local_coactivity_rate[spines[spine]] = event_rate
+            local_coactivity_rate_norm[spines[spine]] = event_rate_norm
             spine_fraction_coactive[spines[spine]] = spine_frac
 
             # Analyze the activity of the target spine
@@ -366,9 +365,11 @@ def local_spine_coactivity_analysis(
 
     return (
         distance_coactivity_rate,
+        distance_coactivity_rate_norm,
         distance_bins,
         local_correlation,
         local_coactivity_rate,
+        local_coactivity_rate_norm,
         local_coactivity_matrix,
         spine_fraction_coactive,
         local_coactive_spine_num,
@@ -397,6 +398,7 @@ def local_coactivity_rate_analysis(
     spine_grouping,
     bin_size=5,
     sampling_rate=60,
+    norm=False,
 ):
     """Function to calculate pairwise spine coactivity rate between 
         all spines along the same dendrite. Spine rates are then binned
@@ -415,6 +417,8 @@ def local_coactivity_rate_analysis(
                              the same dendrite
             
             bin_size - int or float specifying the distance to bin over
+
+            norm - boolean specifying whether or not to normalize the coactivity rate
 
         OUTPUT PARAMETERS
             coactivity_matrix - np.array of the normalized coactivity for each spine (columns)
@@ -461,7 +465,9 @@ def local_coactivity_rate_analysis(
                     current_coactivity.append(0)
                     continue
                 test_spine = s_activity[:, j]
-                co_rate = calculate_coactivity(curr_spine, test_spine, sampling_rate)
+                co_rate = calculate_coactivity(
+                    curr_spine, test_spine, sampling_rate, norm=norm
+                )
                 current_coactivity.append(co_rate)
 
             # Order by positions
@@ -487,7 +493,7 @@ def local_coactivity_rate_analysis(
     return coactivity_matrix, position_bins
 
 
-def calculate_coactivity(spine_1, spine_2, sampling_rate):
+def calculate_coactivity(spine_1, spine_2, sampling_rate, norm):
     """Helper function to calculate spine coactivity rate"""
     duration = len(spine_1) / sampling_rate
     coactivity = spine_1 * spine_2
@@ -500,7 +506,10 @@ def calculate_coactivity(spine_1, spine_2, sampling_rate):
     spine_2_freq = len(np.nonzero(np.diff(spine_2) == 1)[0]) / duration
     geo_mean = stats.gmean([spine_1_freq, spine_2_freq])
 
-    coactivity_rate = event_freq / geo_mean
+    if norm:
+        coactivity_rate = event_freq / geo_mean
+    else:
+        coactivity_rate = event_freq * 60  # convert to seconds
 
     return coactivity_rate
 
