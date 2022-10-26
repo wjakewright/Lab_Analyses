@@ -122,6 +122,7 @@ def local_spine_coactivity_analysis(
     spine_calcium = data.spine_calcium_processed_dFoF
     spine_activity = data.spine_GluSnFr_activity
     dendrite_activity = data.dendrite_calcium_activity
+    movement_spines = np.array(data.movement_spines)
 
     if zscore:
         spine_dFoF = d_utils.z_score(spine_dFoF)
@@ -179,6 +180,8 @@ def local_spine_coactivity_analysis(
     local_coactive_traces = [None for i in local_correlation]
     spine_coactive_calcium_traces = [None for i in local_correlation]
     local_coactive_calcium_traces = [None for i in local_correlation]
+    nearby_spine_idxs = [None for i in local_correlation]
+    frac_nearby_movement = np.zeros(spine_activity.shape[1])
 
     # Process distance dependence coactivity rates
     distance_coactivity_rate, distance_bins = local_coactivity_rate_analysis(
@@ -216,6 +219,7 @@ def local_spine_coactivity_analysis(
         curr_volumes = spine_volumes[spines]
         curr_glu_norm_constants = glu_norm_constants[spines]
         curr_ca_norm_constants = ca_norm_constants[spines]
+        curr_move_spines = movement_spines[spines]
 
         # Refine activity matrices for only movement epochs if specified
         if movement is not None:
@@ -237,6 +241,10 @@ def local_spine_coactivity_analysis(
             nearby_spines = [
                 i for i in nearby_spines if not curr_el_spines[i] and i != spine
             ]
+            nearby_spine_idxs[spines[spine]] = nearby_spines
+            nearby_move_spines = curr_move_spines[nearby_spines].astype(int)
+            frac_move_spines = np.sum(nearby_move_spines) / len(nearby_move_spines)
+            frac_nearby_movement[spines[spine]] = frac_move_spines
 
             # Get relevant spine activity data
             curr_s_dFoF = s_dFoF[:, spine]
@@ -388,6 +396,8 @@ def local_spine_coactivity_analysis(
         local_coactive_traces,
         spine_coactive_calcium_traces,
         local_coactive_calcium_traces,
+        nearby_spine_idxs,
+        frac_nearby_movement,
     )
 
 
