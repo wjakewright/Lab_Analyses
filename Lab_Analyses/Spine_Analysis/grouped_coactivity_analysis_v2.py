@@ -125,6 +125,8 @@ def grouped_coactivity_analysis(
                 local_nearby_coactive_traces,
                 local_spine_coactive_calcium_traces,
                 local_nearby_coactive_calcium_traces,
+                nearby_spine_idxs,
+                frac_nearby_movement,
             ) = local_spine_coactivity_analysis(
                 data,
                 activity_window=activity_window,
@@ -443,6 +445,7 @@ def grouped_coactivity_analysis(
             grouped_data["local_nearby_coactive_calcium_traces"].append(
                 local_nearby_coactive_calcium_traces
             )
+            grouped_data["frac_nearby_movement"].append(frac_nearby_movement)
             grouped_data["global_correlation"].append(global_correlation)
             grouped_data["global_coactivity_event_num"].append(
                 global_coactivity_event_num
@@ -718,6 +721,7 @@ def grouped_coactivity_analysis(
         local_nearby_coactive_calcium_traces=regrouped_data[
             "local_nearby_coactive_calcium_traces"
         ],
+        frac_nearby_movement=regrouped_data["frac_nearby_movement"],
         global_correlation=regrouped_data["global_correlation"],
         global_coactivity_event_num=regrouped_data["global_coactivity_event_num"],
         global_coactivity_event_rate=regrouped_data["global_coactivity_event_rate"],
@@ -950,6 +954,7 @@ class Spine_Coactivity_Data:
     local_nearby_coactive_traces: list
     local_spine_coactive_calcium_traces: list
     local_nearby_coactive_calcium_traces: list
+    frac_nearby_movement: np.array
     global_correlation: np.array
     global_coactivity_event_num: np.array
     global_coactivity_event_rate: np.array
