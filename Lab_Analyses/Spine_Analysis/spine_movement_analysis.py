@@ -1,12 +1,12 @@
 """Module to handle some of the movement analysis for the spine activity data"""
 
 import numpy as np
+from Lab_Analyses.Behavior.mouse_lever_behavior import correlate_btw_sessions
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     find_activity_onset,
     get_activity_timestamps,
     refine_activity_timestamps,
 )
-from Lab_Analyses.Spine_Analysis.spine_utilities import spine_volume_norm_constant
 from Lab_Analyses.Utilities import data_utilities as d_utils
 
 
@@ -220,3 +220,26 @@ def spine_dendrite_movement_similarity(
     spine_dendrite_corr = np.zeros(len(spine_movements)) * np.nan
     spine_nearby_corr = np.zeros(len(spine_movements)) * np.nan
 
+    # Analyze each spine seperately
+    for i in len(spine_movements):
+        # get relevant movements
+        s_movements = spine_movements[i]
+        d_movements = dendrite_movements[i]
+        nearby_idxs = nearby_spine_idxs[i]
+        length = s_movements.shape[1]
+        # correlate spine with parent dendrite
+        s_d_corr = correlate_btw_sessions(s_movements, d_movements, length=length)
+        # correlation spine with each of its neighbors
+        nearby_corrs = []
+        for idx in nearby_idxs:
+            nearby_movements = spine_movements[idx]
+            s_n_corr = correlate_btw_sessions(
+                s_movements, nearby_movements, length=length
+            )
+            nearby_corrs.append(s_n_corr)
+        avg_nearby_corr = np.nanmean(nearby_corrs)
+        # save outputs
+        spine_dendrite_corr[i] = s_d_corr
+        spine_nearby_corr[i] = avg_nearby_corr
+
+    return spine_dendrite_corr, spine_nearby_corr
