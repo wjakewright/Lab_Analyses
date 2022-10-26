@@ -191,3 +191,32 @@ def spine_movement_activity(
         spine_onsets,
     )
 
+
+def spine_dendrite_movement_similarity(
+    spine_movements, dendrite_movements, nearby_spine_idxs
+):
+    """Function to compare the similarity of movements encoded by spines and their parent
+        dendrites and neighboring spines
+        
+        INPUT PARAMETERS
+            spine_movements - list containing all of the movements for each spine
+                              that it was active during
+            
+            dendrite_movements - list containing all of the movements that the parent
+                                  dendrite of each spine was active during
+                                  
+            nearby_spine_idxs - list of the indexs of the nearby spines for each spine
+    
+        OUTPUT PARAMETERS
+            spine_dendrite_corr - np.array of the median correlation between all spine-active
+                                  movements and all dendrite-active movements
+            
+            spine_nearby_corr - np.array of the mean of the median correlations between all
+                                spine-active movements and all active movements of each of 
+                                its nearby spines
+    """
+
+    # Set up outputs
+    spine_dendrite_corr = np.zeros(len(spine_movements)) * np.nan
+    spine_nearby_corr = np.zeros(len(spine_movements)) * np.nan
+
