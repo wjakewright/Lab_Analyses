@@ -146,7 +146,7 @@ def conjunctive_coactivity_analysis(
         spine_calcium = d_utils.z_score(spine_calcium)
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
-    if volume_norm:
+    if volume_norm is not None:
         glu_norm_constants = volume_norm[0]
         ca_norm_constants = volume_norm[1]
     else:
@@ -175,9 +175,10 @@ def conjunctive_coactivity_analysis(
 
     # Set up output variables
     local_correlation = np.zeros(spine_activity.shape[1]) * np.nan
-    coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
     coactivity_event_rate_norm = np.zeros(spine_activity.shape[1])
+    coactivity_event_rate_alt = np.zeros(spine_activity.shape[1])
+    dot_corr = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     coactive_spine_num = np.zeros(spine_activity.shape[1])
@@ -259,13 +260,23 @@ def conjunctive_coactivity_analysis(
             nearby_glu_constants = curr_glu_norm_constants[nearby_spines]
             nearby_ca_constants = curr_ca_norm_constants[nearby_spines]
 
-            # Get spine-dendrite coactivity trace
-            curr_coactivity = curr_s_activity * d_activity
             # Get a conjunctive coactivity trace, where at least one other nearby spine is coactive
             combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
             combined_nearby_activity[combined_nearby_activity > 1] = 1
-            curr_conj_coactivity = combined_nearby_activity * curr_coactivity
-            conjunctive_coactivity_matrix[:, spines[spine]] = curr_conj_coactivity
+            conj_activity = combined_nearby_activity * d_activity
+
+            # Start analyzing the conjunctive coactivity
+            (
+                event_rate,
+                event_rate_norm,
+                event_rate_alt,
+                spine_frac,
+                dend_frac,
+                curr_conj_coactivity,
+                d_corr,
+            ) = get_coactivity_rate(
+                curr_s_activity, conj_activity, sampling_rate=sampling_rate,
+            )
 
             # Skip further anlaysis if no conjunctive coactivity for current spine
             if not np.sum(curr_conj_coactivity):
@@ -276,24 +287,13 @@ def conjunctive_coactivity_analysis(
             if not conj_timestamps:
                 continue
 
-            # Start analyzing the conjunctive coactivity
-            (
-                event_num,
-                event_rate,
-                event_rate_norm,
-                spine_frac,
-                dend_frac,
-            ) = get_coactivity_rate(
-                curr_s_activity,
-                d_activity,
-                curr_conj_coactivity,
-                sampling_rate=sampling_rate,
-            )
-            coactivity_event_num[spines[spine]] = event_num
             coactivity_event_rate[spines[spine]] = event_rate
             coactivity_event_rate_norm[spines[spine]] = event_rate_norm
+            coactivity_event_rate_alt[spines[spine]] = event_rate_alt
             spine_fraction_coactive[spines[spine]] = spine_frac
             dend_fraction_coactive[spines[spine]] = dend_frac
+            dot_corr[spines[spine]] = d_corr
+            conjunctive_coactivity_matrix[:, spines[spine]] = curr_conj_coactivity
 
             (
                 s_traces,
@@ -385,9 +385,10 @@ def conjunctive_coactivity_analysis(
 
     return (
         local_correlation,
-        coactivity_event_num,
         coactivity_event_rate,
         coactivity_event_rate_norm,
+        coactivity_event_rate_alt,
+        dot_corr,
         spine_fraction_coactive,
         dend_fraction_coactive,
         coactive_spine_num,
