@@ -72,7 +72,7 @@ def spine_movement_activity(
         spine_dFoF = d_utils.z_score(spine_dFoF)
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
-    if volume_norm:
+    if volume_norm is not None:
         norm_constants = volume_norm
     else:
         norm_constants = np.array([None for x in range(spine_activity.shape[1])])
@@ -133,7 +133,7 @@ def spine_movement_activity(
         d_traces = d_traces["Dendrite"]
         d_mean = d_mean_sem["Dendrite"][0]
 
-        if volume_norm:
+        if volume_norm is not None:
             s_traces = [s_traces[i] / norm_constants[i] for i in range(s_dFoF.shape[1])]
             s_means = [s_means[i] / norm_constants[i] for i in range(s_dFoF.shape[1])]
 
@@ -221,7 +221,7 @@ def spine_dendrite_movement_similarity(
     spine_nearby_corr = np.zeros(len(spine_movements)) * np.nan
 
     # Analyze each spine seperately
-    for i in len(spine_movements):
+    for i in range(len(spine_movements)):
         # get relevant movements
         s_movements = spine_movements[i]
         d_movements = dendrite_movements[i]
