@@ -348,7 +348,9 @@ class Coactivity_Plasticity:
                 continue
             spines = getattr(self, group)
             group_traces = compress(traces, spines)
-            means = [x.nanmean(axis=1) for x in group_traces if type(x) == np.ndarray]
+            means = [
+                np.nanmean(x, axis=1) for x in group_traces if type(x) == np.ndarray
+            ]
             means = np.vstack(means)
             means = np.unique(means, axis=0)
             group_mean = np.nanmean(means, axis=0)
@@ -429,19 +431,19 @@ class Coactivity_Plasticity:
                 group_spines = getattr(self, group)
                 s_traces = compress(spine_traces, group_spines)
                 s_traces = [
-                    x.nanmean(axis=1) for x in s_traces if type(x) == np.ndarray
+                    np.nanmean(x, axis=1) for x in s_traces if type(x) == np.ndarray
                 ]
                 d_traces = compress(dend_traces, group_spines)
                 d_traces = [
-                    x.nanmean(axis=1) for x in d_traces if type(x) == np.ndarray
+                    np.nanmean(x, axis=1) for x in d_traces if type(x) == np.ndarray
                 ]
                 alines = compress(avlines, group_spines)
             else:
                 s_traces = [
-                    x.nanmean(axis=1) for x in spine_traces if type(x) == np.ndarray
+                    np.nanmean(x, axis=1) for x in spine_traces if type(x) == np.ndarray
                 ]
                 d_traces = [
-                    x.nanmean(axis=1) for x in dend_traces if type(x) == np.ndarray
+                    np.nanmean(x, axis=1) for x in dend_traces if type(x) == np.ndarray
                 ]
                 alines = avlines
             s_traces = np.vstack(s_traces)
@@ -493,7 +495,7 @@ class Coactivity_Plasticity:
         traces = getattr(self, trace_type)
         group_spines = getattr(self, group)
         group_traces = compress(traces, group_spines)
-        mean_traces = [x.mean(axis=1) for x in group_traces]
+        mean_traces = [np.nanmean(x, axis=1) for x in group_traces]
         sem_traces = [stats.sem(x, axis=1) for x in group_traces]
 
         if self.parameters["zscore"]:
@@ -519,6 +521,7 @@ class Coactivity_Plasticity:
     def plot_spine_coactivity_distance(
         self,
         group_type,
+        norm=False,
         figsize=(5, 5),
         colors=["darkorange", "forestgreen", "silver"],
         ylim=None,
@@ -526,8 +529,11 @@ class Coactivity_Plasticity:
         save_path=None,
     ):
         """Method to plot distance-dependent spine coactivity for different spine groups"""
-        coactivity_data = self.distance_coactivity_rate
-        bins = self.parameters["Distance Bins"]
+        if norm:
+            coactivity_data = self.distance_coactivity_rate_norm
+        else:
+            coactivity_data = self.distance_coactivity_rate
+        bins = self.parameters["Distance Bins"][1:]
 
         if group_type == "plastic_spines":
             spine_groups = [
