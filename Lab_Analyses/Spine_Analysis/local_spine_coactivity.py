@@ -7,10 +7,7 @@ from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_dend_spine_traces_and_onsets,
     nearby_spine_conjunctive_events,
 )
-from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    find_spine_classes,
-    spine_volume_norm_constant,
-)
+from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 from scipy import stats
@@ -128,7 +125,7 @@ def local_spine_coactivity_analysis(
         spine_dFoF = d_utils.z_score(spine_dFoF)
         spine_calcium = d_utils.z_score(spine_calcium)
 
-    if volume_norm:
+    if volume_norm is not None:
         glu_norm_constants = volume_norm[0]
         ca_norm_constants = volume_norm[1]
 
@@ -162,6 +159,8 @@ def local_spine_coactivity_analysis(
     local_correlation = np.zeros(spine_activity.shape[1]) * np.nan
     local_coactivity_rate = np.zeros(spine_activity.shape[1])
     local_coactivity_rate_norm = np.zeros(spine_activity.shape[1])
+    local_coactivity_rate_alt = np.zeros(spine_activity.shape[1])
+    local_dot_corr = np.zeros(spine_activity.shape[1])
     local_coactivity_matrix = np.zeros(spine_activity.shape)
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     local_coactive_spine_num = np.zeros(spine_activity.shape[1])
@@ -182,6 +181,10 @@ def local_spine_coactivity_analysis(
     local_coactive_calcium_traces = [None for i in local_correlation]
     nearby_spine_idxs = [None for i in local_correlation]
     frac_nearby_movement = np.zeros(spine_activity.shape[1])
+    nearby_movement_corr = np.zeros(spine_activity.shape[1])
+    nearby_move_frac_active = np.zeros(spine_activity.shape[1])
+    nearby_learned_move_frac_active = np.zeros(spine_activity.shape[1])
+    nearby_active_move_frac_learned = np.zeros(spine_activity.shape[1])
 
     # Process distance dependence coactivity rates
     distance_coactivity_rate, distance_bins = local_coactivity_rate_analysis(
@@ -259,11 +262,49 @@ def local_spine_coactivity_analysis(
             nearby_glu_constants = curr_glu_norm_constants[nearby_spines]
             nearby_ca_constants = curr_ca_norm_constants[nearby_spines]
 
+            # Assess nearby spine movement quality
+            (
+                _,
+                _,
+                _,
+                nearby_move_corr,
+                nearby_move_frac_act,
+                nearby_learned_move_frac_act,
+                nearby_act_move_frac_learned,
+                _,
+            ) = quantify_movement_quality(
+                data.mouse_id,
+                nearby_s_activity,
+                data.lever_active,
+                data.lever_force,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            nearby_movement_corr[spines[spine]] = np.nanmean(nearby_move_corr)
+            nearby_move_frac_active[spines[spine]] = np.nanmean(nearby_move_frac_act)
+            nearby_learned_move_frac_active[spines[spine]] = np.nanmean(
+                nearby_learned_move_frac_act
+            )
+            nearby_active_move_frac_learned[spines[spine]] = np.nanmean(
+                nearby_act_move_frac_learned
+            )
+
             # Get local coactivity trace, where at least one nearby spine is coactive with targe
             combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
             combined_nearby_activity[combined_nearby_activity > 1] = 1
-            curr_local_coactivity = combined_nearby_activity * curr_s_activity
-            local_coactivity_matrix[:, spines[spine]] = curr_local_coactivity
+
+            # Start analyzing the local coactivity
+            (
+                event_rate,
+                event_rate_norm,
+                event_rate_alt,
+                spine_frac,
+                _,
+                curr_local_coactivity,
+                dot_corr,
+            ) = get_coactivity_rate(
+                curr_s_activity, combined_nearby_activity, sampling_rate=sampling_rate,
+            )
 
             # Skip further analysis if no local coactivity for current spine
             if not np.sum(curr_local_coactivity):
@@ -274,16 +315,12 @@ def local_spine_coactivity_analysis(
             if not local_timestamps:
                 continue
 
-            # Start analyzing the local coactivity
-            _, event_rate, event_rate_norm, spine_frac, _ = get_coactivity_rate(
-                curr_s_activity,
-                curr_local_coactivity,
-                curr_local_coactivity,
-                sampling_rate=sampling_rate,
-            )
             local_coactivity_rate[spines[spine]] = event_rate
             local_coactivity_rate_norm[spines[spine]] = event_rate_norm
+            local_coactivity_rate_alt[spines[spine]] = event_rate_alt
             spine_fraction_coactive[spines[spine]] = spine_frac
+            local_dot_corr[spines[spine]] = dot_corr
+            local_coactivity_matrix[:, spines[spine]] = curr_local_coactivity
 
             # Analyze the activity of the target spine
             (
@@ -378,6 +415,8 @@ def local_spine_coactivity_analysis(
         local_correlation,
         local_coactivity_rate,
         local_coactivity_rate_norm,
+        local_coactivity_rate_alt,
+        local_dot_corr,
         local_coactivity_matrix,
         spine_fraction_coactive,
         local_coactive_spine_num,
@@ -398,6 +437,10 @@ def local_spine_coactivity_analysis(
         local_coactive_calcium_traces,
         nearby_spine_idxs,
         frac_nearby_movement,
+        nearby_movement_corr,
+        nearby_move_frac_active,
+        nearby_learned_move_frac_active,
+        nearby_active_move_frac_learned,
     )
 
 
