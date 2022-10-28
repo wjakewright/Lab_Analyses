@@ -306,9 +306,6 @@ def batch_spine_volume_norm_constant(mice_list, day, activity_type):
         padded_a_traces.append(t)
         padded_d_traces.append(td)
 
-    for a, p in zip(activity_traces, padded_a_traces):
-        print(a.shape)
-        print(p.shape)
     activity_traces = np.hstack(padded_a_traces)
     dFoF_traces = np.hstack(padded_d_traces)
     volumes_um = np.array(volumes_um)
@@ -321,8 +318,6 @@ def batch_spine_volume_norm_constant(mice_list, day, activity_type):
     # Exclude eliminated spines
     el_spines = find_spine_classes(flags, "Eliminated Spine")
     spine_idxs = np.nonzero([not i for i in el_spines])[0]
-    print(el_spines)
-    print(spine_idxs)
     good_activity = activity_traces[:, spine_idxs]
     good_dFoF = dFoF_traces[:, spine_idxs]
     good_volumes = volumes_um[spine_idxs]
@@ -330,7 +325,6 @@ def batch_spine_volume_norm_constant(mice_list, day, activity_type):
     good_constants = spine_volume_norm_constant(
         good_activity, good_dFoF, good_volumes, sampling_rate, iterations=1000
     )
-    print(good_constants)
     norm_constants[spine_idxs] = good_constants
 
     for mouse, value in constant_dict.items():
