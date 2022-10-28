@@ -388,7 +388,7 @@ def plot_grouped_swarm_bar_plot(
     strip = sns.stripplot(
         data=plot_df,
         x=groups[0],
-        y="value",
+        y=ytitle,
         hue=groups[1],
         palette=s_colors,
         dodge=True,
