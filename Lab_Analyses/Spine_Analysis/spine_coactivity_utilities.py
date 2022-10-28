@@ -7,68 +7,100 @@ from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_qu
 from scipy import stats
 
 
-def get_coactivity_rate(spine, dendrite, coactivity, sampling_rate):
-    """Helper function to calculate the coactivity frequency between a spine and 
-        its parent dendrite. These rates are normalized by geometric mean of the spine
-        and dendrite activity rates
+def get_coactivity_rate(trace_1, trace_2, sampling_rate):
+    """Function to analyze the coactivity rate between two different activity traces.
+        Calculates several different measures of coactivity as well as the fraction
+        of activity for each trace that is coactive. 
         
         INPUT PARAMETERS
-            spine - np.array of spine binary activity trace
+            trace_1 - np.array of the binary activity trace
             
-            dendrite - np.array of dendrite binary activity traces
-
-            coactivity - np.array of the coactivity trace to be used
+            trace_2 - np.array of the binary activity trace
             
             sampling_rate - int or float of the sampling rate
             
         OUTPUT PARAMETERS
-            coactivity_event_num - int of the number of coactive events
+            coactivity_event_rate - float of absolute coactivity event rate
+            
+            coactivity_event_rate_norm - float of the normalized coactivity event rate
+            
+            coactivity_event_rate_alt - float of absolute coactivity event rate calulated
+                                        using an alternative method
+            
+            trace_1_frac_coactive - float of the fraction of activity that is coactive
+                                    for trace_1
+            
+            trace_2_frac_coative - float of the fraction of activity that is coactive
+                                    for trace_2
+                                    
+            coactivity_trace - np.array of the binarized coactivity between the two traces
 
-            coactivit_event_rate - float of absolute coactivity event rate
-            
-            coactivity_event_rate_nor - float of normalized coactivity event rate
-            
-            spine_fraction_coactive - float of fraction of spine activity events that
-                                      are also coactive
-            
-            dend_fraction_coactive - float of fraction of dendrite activity events that
-                                     are also coactive with the given spine
+            dot_corr - float of the dot_product / corr of the two traces
     """
+
     # Get the total time in seconds
-    duration = len(spine) / sampling_rate
+    duration = len(trace_1) / sampling_rate
 
-    # Get coactivity binary trace
-    # Count coactive events
-    events = np.nonzero(np.diff(coactivity) == 1)[0]
-    coactivity_event_num = len(events)
-
-    # Calculate raw event rate
-    coactivity_event_rate = coactivity_event_num / duration
-
-    # Normalize rate based on spine and dendrite event rates
-    spine_event_rate = len(np.nonzero(np.diff(spine) == 1)[0]) / duration
-    dend_event_rate = len(np.nonzero(np.diff(dendrite) == 1)[0]) / duration
-    geo_mean = stats.gmean([spine_event_rate, dend_event_rate])
+    # Calculate the traditional coactivity_rate
+    coactivity = trace_1 * trace_2
+    events = np.nonzeor(np.diff(coactivity) == 1)[0]
+    event_num = len(events)
+    # Raw coactivity rate
+    coactivity_event_rate = event_num / duration
+    # normalized coactivity rate
+    trace_1_event_num = len(np.nonzero(np.diff(trace_1) == 1)[0])
+    trace_2_event_num = len(np.nonzero(np.diff(trace_2) == 1)[0])
+    trace_1_event_rate = trace_1_event_num / duration
+    trace_2_event_rate = trace_2_event_num / duration
+    geo_mean = stats.gmean([trace_1_event_rate, trace_2_event_rate])
     coactivity_event_rate_norm = coactivity_event_rate / geo_mean
 
-    # Get spine and dendrite fractions
-    try:
-        spine_fraction_coactive = coactivity_event_rate / spine_event_rate
-    except ZeroDivisionError:
-        spine_fraction_coactive = 0
-    try:
-        dend_fraction_coactive = coactivity_event_rate / dend_event_rate
-    except ZeroDivisionError:
-        dend_fraction_coactive = 0
+    # Calculate alternaative coactivity rate and fraction coactive
+    ## break up activity trace
+    active_boundaries = np.insert(np.diff(trace_1), 0, 0, axis=0)
+    active_onsets = np.nonzero(active_boundaries == 1)[0]
+    active_offsets = np.nonzero(active_boundaries == -1)[0]
+    ## Check onset offset order
+    if active_onsets[0] > active_offsets[0]:
+        active_offsets = active_offsets[1:]
+    ## Check onsets and offests are same length
+    if len(active_onsets) > len(active_offsets):
+        active_onsets = active_onsets[:-1]
+    # compare active epochs to other trace
+    coactive_idxs = []
+    for onset, offset in zip(active_onsets, active_offsets):
+        if np.sum(trace_2[onset:offset]):
+            coactive_idxs.append((onset, offset))
+    # Calculate coactivity rate
+    coactivity_event_rate_alt = len(coactive_idxs) / duration
+    # Generate coactivity trace
+    coactivity_trace = np.zeros(len(trace_1))
+    for epoch in coactive_idxs:
+        coactivity_trace[epoch[0] : epoch[1]] = 1
 
-    coactivity_event_rate = coactivity_event_rate * 60  # convert to minutes
+    # Calculate fraction coactive
+    try:
+        trace_1_frac_coactive = len(coactive_idxs) / trace_1_event_num
+    except ZeroDivisionError:
+        trace_1_frac_coactive = 0
+    try:
+        trace_2_frac_coactive = len(coactive_idxs) / trace_2_event_num
+    except ZeroDivisionError:
+        trace_2_frac_coactive = 0
+
+    # calculate dot_product / corr
+    dot_product = np.dot(trace_1, trace_2)
+    corr = stats.pearsonr(trace_1, trace_2)[0]
+    dot_corr = dot_product / corr
 
     return (
-        coactivity_event_num,
         coactivity_event_rate,
         coactivity_event_rate_norm,
-        spine_fraction_coactive,
-        dend_fraction_coactive,
+        coactivity_event_rate_alt,
+        trace_1_frac_coactive,
+        trace_2_frac_coactive,
+        coactivity_trace,
+        dot_corr,
     )
 
 
@@ -368,8 +400,10 @@ def find_activity_onset(activity_means, sampling_rate=60):
             trace_amplitudes[i] = trace_amp
             continue
         # Get the trace velocity
-        trace_search_trace = trace[:trace_offset]
-        trace_deriv = np.gradient(trace)[:trace_offset]
+        ## smooth trace for better estimation of onset
+        smooth_trace = sysignal.savgol_filter(trace, 31, 3)
+        trace_search_trace = smooth_trace[:trace_offset]
+        trace_deriv = np.gradient(smooth_trace)[:trace_offset]
         # Find where the velocity goes below zero
         trace_below_zero = trace_deriv <= 0
         if np.sum(trace_below_zero):
