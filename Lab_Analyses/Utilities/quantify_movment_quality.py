@@ -48,7 +48,7 @@ def quantify_movement_quality(
             
     """
     CORR_INT = 1.5
-    EXPANSION = 0.5 * sampling_rate
+    EXPANSION = int(0.5 * sampling_rate)
 
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
@@ -92,17 +92,17 @@ def quantify_movement_quality(
     exp_movement_diff = np.insert(np.diff(exp_lever_active), 0, 0, axis=0)
     exp_movement_onsets = np.nonzero(exp_movement_diff == 1)[0]
     exp_movement_offsets = np.nonzero(exp_movement_diff == -1)[0]
-    ## Make sure the onsets and offsets are the same length
+    ## Check onset offset order
+    if movement_onsets[0] > movement_offsets[0]:
+        movement_offsets = movement_offsets[1:]
+    if exp_movement_onsets[0] > exp_movement_offsets[0]:
+        exp_movement_offsets = exp_movement_offsets[1:]
+    ## Check onset offset lengths
     if len(movement_onsets) > len(movement_offsets):
         # Drop last onset if there is no corresponding offset
         movement_onsets = movement_onsets[:-1]
-    elif len(movement_onsets) < len(movement_offsets):
-        # Drop the first offset if there is no onset for it
-        movement_offsets = movement_offsets[1:]
     if len(exp_movement_onsets) > len(exp_movement_offsets):
         exp_movement_onsets = exp_movement_onsets[:-1]
-    elif len(exp_movement_onsets) < len(exp_movement_offsets):
-        exp_movement_offsets = exp_movement_offsets[1:]
 
     move_idxs = []
     exp_move_idxs = []
@@ -167,7 +167,7 @@ def quantify_movement_quality(
             )
 
         except ValueError:
-            all_active_movements.append(np.zeros(corr_duration))
+            all_active_movements.append(np.zeros(corr_duration).reshape(1, -1))
             avg_active_movements.append(np.zeros(corr_duration))
             median_movement_correlations.append(np.nan)
             move_frac_active.append(0)
@@ -176,7 +176,9 @@ def quantify_movement_quality(
 
     # convert outputs to arrays
     median_movement_correlations = np.array(median_movement_correlations)
-    learned_move_num = np.array(learned_move_num)
+    move_frac_active = np.array(move_frac_active)
+    learned_move_frac_active = np.array(learned_move_frac_active)
+    active_move_frac_learned = np.array(active_move_frac_learned)
 
     return (
         lever_learned_binary,
