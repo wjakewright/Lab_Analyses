@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 from Lab_Analyses.Behavior.align_lever_behavior import align_lever_behavior
 from Lab_Analyses.Utilities.data_utilities import join_dictionaries
-from Lab_Analyses.Utilities.movement_responsiveness import movement_responsiveness
+from Lab_Analyses.Utilities.movement_responsiveness_v2 import movement_responsiveness
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
