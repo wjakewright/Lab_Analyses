@@ -132,7 +132,7 @@ def total_coactivity_analysis(
         spine_calcium = d_utils.z_score(spine_calcium)
         dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
 
-    if volume_norm:
+    if volume_norm is not None:
         glu_norm_constants = volume_norm[0]
         ca_norm_constants = volume_norm[1]
     else:
@@ -162,9 +162,10 @@ def total_coactivity_analysis(
 
     # Set up output variables
     global_correlation = np.zeros(spine_activity.shape[1]) * np.nan
-    coactivity_event_num = np.zeros(spine_activity.shape[1])
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
     coactivity_event_rate_norm = np.zeros(spine_activity.shape[1])
+    coactivity_event_rate_alt = np.zeros(spine_activity.shape[1])
+    dot_corr = np.zeroso(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
@@ -228,30 +229,32 @@ def total_coactivity_analysis(
                 corr, _ = stats.pearsonr(s_dFoF[:, spine], d_dFoF)
             global_correlation[spines[spine]] = corr
 
-            # Calculate coactivity rate
-            curr_coactivity = d_activity * s_activity[:, spine]
-
             # Skip further analysis if there is no coactivity
             if not np.sum(curr_coactivity):
                 continue
 
             (
-                event_num,
                 event_rate,
                 event_rate_norm,
+                event_rate_alt,
                 spine_frac,
                 dend_frac,
-            ) = get_coactivity_rate(
-                s_activity[:, spine],
-                d_activity,
                 curr_coactivity,
-                sampling_rate=sampling_rate,
+                d_corr,
+            ) = get_coactivity_rate(
+                s_activity[:, spine], d_activity, sampling_rate=sampling_rate,
             )
-            coactivity_event_num[spines[spine]] = event_num
+
+            # Skip further analysis if there is no coactivity
+            if not np.sum(curr_coactivity):
+                continue
+
             coactivity_event_rate[spines[spine]] = event_rate
             coactivity_event_rate_norm[spines[spine]] = event_rate_norm
+            coactivity_event_rate_alt[spines[spine]] = event_rate_alt
             spine_fraction_coactive[spines[spine]] = spine_frac
             dend_fraction_coactive[spines[spine]] = dend_frac
+            dot_corr[spines[spine]] = d_corr
             coactivity_matrix[:, spines[spine]] = curr_coactivity
             curr_coactivity_matrix[:, spine] = curr_coactivity
 
@@ -363,9 +366,10 @@ def total_coactivity_analysis(
     # Return the output
     return (
         global_correlation,
-        coactivity_event_num,
         coactivity_event_rate,
         coactivity_event_rate_norm,
+        coactivity_event_rate_alt,
+        dot_corr,
         spine_fraction_coactive,
         dend_fraction_coactive,
         spine_coactive_amplitude,
