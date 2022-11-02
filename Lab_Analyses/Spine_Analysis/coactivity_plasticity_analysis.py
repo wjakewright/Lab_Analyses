@@ -135,6 +135,7 @@ class Coactivity_Plasticity:
         s_alpha=0.5,
         line_color="mediumblue",
         line_width=1,
+        log_trans=True,
         save=False,
         save_path=None,
     ):
@@ -146,7 +147,10 @@ class Coactivity_Plasticity:
 
         # Log transform relative volumes
         if volume_type == "relative_volume":
-            volume = np.log10(self.relative_volumes)
+            if log_trans:
+                volume = np.log10(self.relative_volumes)
+            else:
+                volume = self.relative_volumes
             xtitle = "\u0394" + " spine volume"
         elif volume_type == "volume_um":
             volume = self.spine_volumes_um
@@ -530,8 +534,10 @@ class Coactivity_Plasticity:
     ):
         """Method to plot distance-dependent spine coactivity for different spine groups"""
         if norm:
+            ytitle = "Normalized coactivity rate"
             coactivity_data = self.distance_coactivity_rate_norm
         else:
+            ytitle = "Coactivity rate (events/min)"
             coactivity_data = self.distance_coactivity_rate
         bins = self.parameters["Distance Bins"][1:]
 
@@ -565,6 +571,7 @@ class Coactivity_Plasticity:
             title_suff=group_type,
             figsize=figsize,
             ylim=ylim,
+            ytitle=ytitle,
             save=save,
             save_path=save_path,
         )
@@ -626,12 +633,20 @@ class Coactivity_Plasticity:
 
         trace_dict = {}
         for group in spine_groups:
-            spines = getattr(self, group)
-            group_traces = compress(traces, spines)
-            means = [x.nanmean(axis=1) for x in group_traces if type(x) == np.ndarray]
-            means = np.vstack(means)
-            means = np.unique(means, axis=0).T
-            trace_dict[group] = means
+            if group != "all":
+                spines = getattr(self, group)
+                group_traces = compress(traces, spines)
+                means = [
+                    np.nanmean(x, axis=1) for x in group_traces if type(x) == np.ndarray
+                ]
+                means = np.vstack(means)
+                means = np.unique(means, axis=0).T
+                trace_dict[group] = means
+            else:
+                means = [np.nanmean(x, axis=1) for x in traces if type(x) == np.ndarray]
+                means = np.vstack(means)
+                means = np.unique(means, axis=0).T
+                trace_dict[group] = means
 
         if self.parameters["zscore"]:
             cbar_label = "zscore"
