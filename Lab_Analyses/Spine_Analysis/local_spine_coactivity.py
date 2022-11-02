@@ -185,6 +185,7 @@ def local_spine_coactivity_analysis(
     nearby_move_frac_active = np.zeros(spine_activity.shape[1])
     nearby_learned_move_frac_active = np.zeros(spine_activity.shape[1])
     nearby_active_move_frac_learned = np.zeros(spine_activity.shape[1])
+    nearby_active_frac_move = np.zeros(spine_activity.shape[1])
 
     # Process distance dependence coactivity rates
     distance_coactivity_rate, distance_bins = local_coactivity_rate_analysis(
@@ -271,12 +272,13 @@ def local_spine_coactivity_analysis(
                 nearby_move_frac_act,
                 nearby_learned_move_frac_act,
                 nearby_act_move_frac_learned,
+                nearby_act_frac_move,
                 _,
             ) = quantify_movement_quality(
                 data.mouse_id,
                 nearby_s_activity,
                 data.lever_active,
-                data.lever_force,
+                data.lever_force_smooth,
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
@@ -288,6 +290,7 @@ def local_spine_coactivity_analysis(
             nearby_active_move_frac_learned[spines[spine]] = np.nanmean(
                 nearby_act_move_frac_learned
             )
+            nearby_active_frac_move[spines[spine]] = np.nanmean(nearby_act_frac_move)
 
             # Get local coactivity trace, where at least one nearby spine is coactive with targe
             combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
@@ -441,6 +444,7 @@ def local_spine_coactivity_analysis(
         nearby_move_frac_active,
         nearby_learned_move_frac_active,
         nearby_active_move_frac_learned,
+        nearby_active_frac_move,
     )
 
 
