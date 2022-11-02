@@ -403,12 +403,12 @@ def plot_grouped_swarm_bar_plot(
         offsets = c.get_offsets()
         if len(offsets) != 0:
             xs = [x[0] for x in offsets]
-            x_coords.append(np.mean(xs))
+            x_coords.append(np.nanmean(xs))
 
     err_colors = [m_colors for x in g1_keys]
     err_colors = [x for y in err_colors for x in y]
     # Plot the mean and error
-    for x, mean, err, c in zip(x_coords, data_mean, data_err, m_colors):
+    for x, mean, err, c in zip(x_coords, data_mean, data_err, err_colors):
         ax.errorbar(
             x,
             mean,
@@ -580,7 +580,7 @@ def plot_mean_activity_traces(
         for m, s, c, n in zip(mean, sem, colors, group_names):
             x = np.linspace(activity_window[0], activity_window[1], len(m))
             plt.plot(x, m, color=c, label=n)
-            plt.fill_between(x, m - s, m + s, c, alpha=0.2)
+            plt.fill_between(x, m - s, m + s, color=c, alpha=0.2)
     if avlines:
         for line in avlines:
             plt.axvline(x=line / sampling_rate, linestyle="--", color="black")
@@ -594,7 +594,7 @@ def plot_mean_activity_traces(
         labels=[activity_window[0], 0, activity_window[1]],
     )
     plt.tick_params(axis="both", which="both", direction="in", length=4)
-    plt.legend(loc="upper right")
+    plt.legend(loc="upper left")
     fig.tight_layout()
     if save:
         if save_path is None:
@@ -795,8 +795,9 @@ def plot_histogram(
 
     plt.figure(figsize=figsize)
     plt.hist(data, bins, color=color, alpha=alpha)
-    for line in avlines:
-        plt.avxline(line, lineStyles="--", color="black")
+    if avlines:
+        for line in avlines:
+            plt.axvline(line, linestyle="--", color="black")
     plt.title(title)
     plt.xlabel(xtitle)
 
@@ -816,6 +817,7 @@ def plot_spine_coactivity_distance(
     title_suff=None,
     figsize=(5, 5),
     ylim=None,
+    ytitle=None,
     save=False,
     save_path=None,
 ):
@@ -858,7 +860,7 @@ def plot_spine_coactivity_distance(
 
     plt.xticks(ticks=x, labels=bins)
     plt.xlabel("Distance (um)")
-    plt.ylabel("Normalized coactivity rate")
+    plt.ylabel(ytitle)
     if ylim:
         plt.ylim(bottom=ylim[0], top=ylim[1])
     fig.tight_layout()
@@ -955,7 +957,7 @@ def plot_spine_heatmap(
         data_t = data.T
 
         # Plot
-        ax = fig.add_subplot(row_num, COL_NUM, count)
+        ax = fig.add_subplot(row_num, COL_NUM, count + 1)
         ax.set_title(key)
         hax = sns.heatmap(
             data_t,
