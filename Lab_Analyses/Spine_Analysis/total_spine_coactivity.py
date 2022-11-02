@@ -165,7 +165,7 @@ def total_coactivity_analysis(
     coactivity_event_rate = np.zeros(spine_activity.shape[1])
     coactivity_event_rate_norm = np.zeros(spine_activity.shape[1])
     coactivity_event_rate_alt = np.zeros(spine_activity.shape[1])
-    dot_corr = np.zeroso(spine_activity.shape[1])
+    dot_corr = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     dend_fraction_coactive = np.zeros(spine_activity.shape[1])
     spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
@@ -228,10 +228,6 @@ def total_coactivity_analysis(
             else:
                 corr, _ = stats.pearsonr(s_dFoF[:, spine], d_dFoF)
             global_correlation[spines[spine]] = corr
-
-            # Skip further analysis if there is no coactivity
-            if not np.sum(curr_coactivity):
-                continue
 
             (
                 event_rate,
