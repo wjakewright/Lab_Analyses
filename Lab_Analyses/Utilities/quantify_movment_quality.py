@@ -133,6 +133,7 @@ def quantify_movement_quality(
     learned_move_frac_active = []
     learned_move_frac_active = []
     active_move_frac_learned = []
+    active_frac_move = []
     all_active_movements = []
     avg_active_movements = []
     for i in range(activity_matrix.shape[1]):
@@ -174,11 +175,33 @@ def quantify_movement_quality(
             learned_move_frac_active.append(0)
             active_move_frac_learned.append(0)
 
+        # Assess fraction of activity occuring during movement
+        ## break up activity trace
+        active_boundaries = np.insert(np.diff(active_trace), 0, 0, axis=0)
+        try:
+            active_onsets = np.nonzero(active_boundaries == 1)[0]
+            active_offsets = np.nonzero(active_boundaries == -1)[0]
+            # Check onset offset order
+            if active_onsets[0] > active_offsets[0]:
+                active_offsets = active_offsets[1:]
+            ## Check onsets and offests are same length
+            if len(active_onsets) > len(active_offsets):
+                active_onsets = active_onsets[:-1]
+            active_move_events = 0
+            for a_onset, a_offset in zip(active_onsets, active_offsets):
+                if np.sum(exp_lever_active[a_onset:a_offset]):
+                    active_move_events = active_move_events + 1
+
+            active_frac_move.append(active_move_events / len(active_onsets))
+        except:
+            active_frac_move.append(0)
+
     # convert outputs to arrays
     median_movement_correlations = np.array(median_movement_correlations)
     move_frac_active = np.array(move_frac_active)
     learned_move_frac_active = np.array(learned_move_frac_active)
     active_move_frac_learned = np.array(active_move_frac_learned)
+    active_frac_move = np.array(active_frac_move)
 
     return (
         lever_learned_binary,
@@ -188,5 +211,6 @@ def quantify_movement_quality(
         move_frac_active,
         learned_move_frac_active,
         active_move_frac_learned,
+        active_frac_move,
         learned_move_resample,
     )
