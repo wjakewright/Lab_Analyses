@@ -134,6 +134,7 @@ def grouped_coactivity_analysis(
                 nearby_move_frac_active,
                 nearby_learned_move_frac_active,
                 nearby_active_move_frac_learned,
+                nearby_active_frac_move,
             ) = local_spine_coactivity_analysis(
                 data,
                 activity_window=activity_window,
@@ -266,6 +267,7 @@ def grouped_coactivity_analysis(
                 spine_movement_frac_active,
                 spine_learned_move_frac_active,
                 spine_active_move_frac_learned,
+                spine_active_frac_move,
                 learned_movement,
             ) = quantify_movement_quality(
                 mouse,
@@ -294,6 +296,7 @@ def grouped_coactivity_analysis(
                 dend_movement_frac_active,
                 dend_learned_movement_frac_active,
                 dend_active_movement_frac_learned,
+                dend_active_frac_move,
                 _,
             ) = quantify_movement_quality(
                 mouse,
@@ -311,6 +314,7 @@ def grouped_coactivity_analysis(
                 local_movement_frac_active,
                 local_learned_movement_frac_active,
                 local_active_movement_frac_learned,
+                local_active_frac_move,
                 _,
             ) = quantify_movement_quality(
                 mouse,
@@ -328,6 +332,7 @@ def grouped_coactivity_analysis(
                 global_movement_frac_active,
                 global_learned_movement_frac_active,
                 global_active_movement_frac_learned,
+                global_active_frac_move,
                 _,
             ) = quantify_movement_quality(
                 mouse,
@@ -345,6 +350,7 @@ def grouped_coactivity_analysis(
                 conj_movement_frac_active,
                 conj_learned_movement_frac_active,
                 conj_active_movement_frac_learned,
+                conj_active_frac_move,
                 _,
             ) = quantify_movement_quality(
                 mouse,
@@ -624,6 +630,7 @@ def grouped_coactivity_analysis(
             grouped_data["spine_active_movement_frac_learned"].append(
                 spine_active_move_frac_learned
             )
+            grouped_data["spine_active_frac_move"].append(spine_active_frac_move)
             grouped_data["dend_movements"].append(dend_movements)
             grouped_data["dend_movement_corr"].append(dend_movement_corr)
             grouped_data["dend_movement_frac_active"].append(dend_movement_frac_active)
@@ -633,6 +640,7 @@ def grouped_coactivity_analysis(
             grouped_data["dend_active_movement_frac_learned"].append(
                 dend_active_movement_frac_learned
             )
+            grouped_data["dend_active_frac_move"].append(dend_active_frac_move)
             grouped_data["local_movements"].append(local_movements)
             grouped_data["local_movement_corr"].append(local_movement_corr)
             grouped_data["local_movement_frac_active"].append(
@@ -644,6 +652,7 @@ def grouped_coactivity_analysis(
             grouped_data["local_active_movement_frac_learned"].append(
                 local_active_movement_frac_learned
             )
+            grouped_data["local_active_frac_move"].append(local_active_frac_move)
             grouped_data["global_movements"].append(global_movements)
             grouped_data["global_movement_corr"].append(global_movement_corr)
             grouped_data["global_movement_frac_active"].append(
@@ -654,7 +663,8 @@ def grouped_coactivity_analysis(
             )
             grouped_data["global_active_movement_frac_learned"].append(
                 global_active_movement_frac_learned
-            ),
+            )
+            grouped_data["global_active_frac_move"].append(global_active_frac_move)
             grouped_data["conj_movements"].append(conj_movements)
             grouped_data["conj_movement_corr"].append(conj_movement_corr)
             grouped_data["conj_movement_frac_active"].append(conj_movement_frac_active)
@@ -664,6 +674,7 @@ def grouped_coactivity_analysis(
             grouped_data["conj_active_movement_frac_learned"].append(
                 conj_active_movement_frac_learned
             )
+            grouped_data["conj_active_frac_move"].append(conj_active_frac_move)
             grouped_data["relative_spine_dend_move_corr"].append(
                 rel_spine_dend_move_corr
             )
@@ -675,6 +686,7 @@ def grouped_coactivity_analysis(
             grouped_data["nearby_active_move_frac_learned"].append(
                 nearby_active_move_frac_learned
             )
+            grouped_data["nearby_active_frac_move"].append(nearby_active_frac_move)
             grouped_data["spine_dendrite_move_corr"].append(spine_dendrite_corr)
             grouped_data["spine_nearby_move_corr"].append(spine_nearby_corr)
 
@@ -881,6 +893,7 @@ def grouped_coactivity_analysis(
         spine_active_movement_frac_learned=regrouped_data[
             "spine_active_movement_frac_learned"
         ],
+        spine_active_frac_move=regrouped_data["spine_active_frac_move"],
         dend_movements=regrouped_data["dend_movements"],
         dend_movement_corr=regrouped_data["dend_movement_corr"],
         dend_movement_frac_active=regrouped_data["dend_movement_frac_active"],
@@ -890,6 +903,7 @@ def grouped_coactivity_analysis(
         dend_active_movement_frac_learned=regrouped_data[
             "dend_active_movement_frac_learned"
         ],
+        dend_active_frac_move=regrouped_data["dend_active_frac_move"],
         local_movements=regrouped_data["local_movements"],
         local_movement_corr=regrouped_data["local_movement_corr"],
         local_movement_frac_active=regrouped_data["local_movement_frac_active"],
@@ -899,6 +913,7 @@ def grouped_coactivity_analysis(
         local_active_movement_frac_learned=regrouped_data[
             "local_active_movement_frac_learned"
         ],
+        local_active_frac_move=regrouped_data["local_active_frac_move"],
         global_movements=regrouped_data["global_movements"],
         global_movement_corr=regrouped_data["global_movement_corr"],
         global_movement_frac_active=regrouped_data["global_movement_frac_active"],
@@ -908,6 +923,7 @@ def grouped_coactivity_analysis(
         global_active_movement_frac_learned=regrouped_data[
             "global_active_movement_frac_learned"
         ],
+        global_active_frac_move=regrouped_data["global_active_frac_move"],
         conj_movements=regrouped_data["conj_movements"],
         conj_movement_corr=regrouped_data["conj_movement_corr"],
         conj_movement_frac_active=regrouped_data["conj_movement_frac_active"],
@@ -917,6 +933,7 @@ def grouped_coactivity_analysis(
         conj_active_movement_frac_learned=regrouped_data[
             "conj_active_movement_frac_learned"
         ],
+        conj_active_frac_move=regrouped_data["conj_active_frac_move"],
         relative_spine_dend_move_corr=regrouped_data["relative_spine_dend_move_corr"],
         nearby_movement_corr=regrouped_data["nearby_movement_corr"],
         nearby_move_frac_active=regrouped_data["nearby_move_frac_active"],
@@ -926,6 +943,7 @@ def grouped_coactivity_analysis(
         nearby_active_move_frac_learned=regrouped_data[
             "nearby_active_move_frac_learned"
         ],
+        nearby_active_frac_move=regrouped_data["nearby_active_frac_move"],
         spine_dendrite_move_corr=regrouped_data["spine_dendrite_move_corr"],
         spine_nearby_move_corr=regrouped_data["spine_nearby_move_corr"],
     )
@@ -1083,31 +1101,37 @@ class Spine_Coactivity_Data:
     spine_movement_frac_active: np.array
     spine_learned_movement_frac_active: np.array
     spine_active_movement_frac_learned: np.array
+    spine_active_frac_move: np.array
     dend_movements: list
     dend_movement_corr: np.array
     dend_movement_frac_active: np.array
     dend_learned_movement_frac_active: np.array
     dend_active_movement_frac_learned: np.array
+    dend_active_frac_move: np.array
     local_movements: list
     local_movement_corr: np.array
     local_movement_frac_active: np.array
     local_learned_movement_frac_active: np.array
     local_active_movement_frac_learned: np.array
+    local_active_frac_move: np.array
     global_movements: list
     global_movement_corr: np.array
     global_movement_frac_active: np.array
     global_learned_movement_frac_active: np.array
     global_active_movement_frac_learned: np.array
+    global_active_frac_move: np.array
     conj_movements: list
     conj_movement_corr: np.array
     conj_movement_frac_active: np.array
     conj_learned_movement_frac_active: np.array
     conj_active_movement_frac_learned: np.array
+    conj_active_frac_move: np.array
     relative_spine_dend_move_corr: np.array
     nearby_movement_corr: np.array
     nearby_move_frac_active: np.array
     nearby_learned_move_frac_active: np.array
     nearby_active_move_frac_learned: np.array
+    nearby_active_frac_move: np.array
     spine_dendrite_move_corr: np.array
     spine_nearby_move_corr: np.array
 
