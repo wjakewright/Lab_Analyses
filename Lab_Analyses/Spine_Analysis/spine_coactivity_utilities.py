@@ -37,13 +37,48 @@ def get_coactivity_rate(trace_1, trace_2, sampling_rate):
 
             dot_corr - float of the dot_product / corr of the two traces
     """
-
+    # Check there is activity in the traces
+    if (np.sum(trace_1) == 0) or (np.sum(trace_2) == 0):
+        coactivity_event_rate = 0
+        coactivity_event_rate_norm = 0
+        coactivity_event_rate_alt = 0
+        trace_1_frac_coactive = 0
+        trace_2_frac_coactive = 0
+        coactivity_trace = np.zeros(len(trace_1))
+        dot_corr = 0
+        return (
+            coactivity_event_rate,
+            coactivity_event_rate_norm,
+            coactivity_event_rate_alt,
+            trace_1_frac_coactive,
+            trace_2_frac_coactive,
+            coactivity_trace,
+            dot_corr,
+        )
     # Get the total time in seconds
     duration = len(trace_1) / sampling_rate
 
     # Calculate the traditional coactivity_rate
     coactivity = trace_1 * trace_2
-    events = np.nonzeor(np.diff(coactivity) == 1)[0]
+    if not np.sum(coactivity):
+        coactivity_event_rate = 0
+        coactivity_event_rate_norm = 0
+        coactivity_event_rate_alt = 0
+        trace_1_frac_coactive = 0
+        trace_2_frac_coactive = 0
+        coactivity_trace = np.zeros(len(trace_1))
+        dot_corr = 0
+        return (
+            coactivity_event_rate,
+            coactivity_event_rate_norm,
+            coactivity_event_rate_alt,
+            trace_1_frac_coactive,
+            trace_2_frac_coactive,
+            coactivity_trace,
+            dot_corr,
+        )
+
+    events = np.nonzero(np.diff(coactivity) == 1)[0]
     event_num = len(events)
     # Raw coactivity rate
     coactivity_event_rate = event_num / duration
@@ -72,7 +107,8 @@ def get_coactivity_rate(trace_1, trace_2, sampling_rate):
         if np.sum(trace_2[onset:offset]):
             coactive_idxs.append((onset, offset))
     # Calculate coactivity rate
-    coactivity_event_rate_alt = len(coactive_idxs) / duration
+    coactivity_event_rate_alt = len(coactive_idxs) / duration * 60
+    coactivity_event_rate = coactivity_event_rate * 60
     # Generate coactivity trace
     coactivity_trace = np.zeros(len(trace_1))
     for epoch in coactive_idxs:
@@ -601,10 +637,30 @@ def nearby_spine_conjunctive_events(
     try:
         sum_coactive_spine_traces = np.vstack(sum_coactive_spine_traces).T
     except ValueError:
-        print(timestamps)
-        print(sum_coactive_spine_traces)
-        print(d_mean)
-        print(d_onset)
+        avg_coactive_correlation = np.nan
+        avg_coactive_num = 0
+        avg_coactive_volume = np.nan
+        activity_amplitude = np.nan
+        ca_activity_amplitude = np.nan
+        activity_std = np.nan
+        ca_activity_std = np.nan
+        ca_activity_auc = np.nan
+        sum_coactive_spine_traces = None
+        sum_coactive_spine_ca_traces = None
+
+        return (
+            avg_coactive_correlation,
+            avg_coactive_num,
+            avg_coactive_volume,
+            activity_amplitude,
+            ca_activity_amplitude,
+            activity_std,
+            ca_activity_std,
+            ca_activity_auc,
+            sum_coactive_spine_traces,
+            sum_coactive_spine_ca_traces,
+        )
+
     sum_coactive_spine_ca_traces = np.vstack(sum_coactive_spine_ca_traces).T
 
     # Average correlations, nums, and volumes,
