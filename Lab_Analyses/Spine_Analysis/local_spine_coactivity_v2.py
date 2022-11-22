@@ -4,9 +4,11 @@ import numpy as np
 from scipy import stats
 
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
+    analyze_activity_trace,
     get_trace_coactivity_rates,
 )
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
+from Lab_Analyses.Utilities import activity_timestamps as tstamps
 from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 
 
@@ -265,6 +267,12 @@ def absolute_local_coactivity(
     local_coactivity_rate_norm = np.zeros(spine_activity.shape[1])
     spine_fraction_coactive = np.zeros(spine_activity.shape[1])
     local_coactivity_matrix = np.zeros(spine_activity.shape)
+    spine_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_coactive_traces = [None for i in range(spine_activity.shape[1])]
+    spine_coactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
 
     # Iterate through each dendrite grouping
     for spines in spine_groupings:
@@ -353,7 +361,41 @@ def absolute_local_coactivity(
             spine_fraction_coactive[spines[spine]] = spine_frac_active
             local_coactivity_matrix[:, spines[spine]] = coactivity_trace
 
+            # Get local coactivity timestamps
+            coactivity_stamps = tstamps.get_activity_timestamps(coactivity_trace)
+            if not coactivity_stamps:
+                continue
+
             # Analyze activity traces
+            ## Glutamate traces
+            (s_traces, s_amp, s_auc, s_onset,) = analyze_activity_trace(
+                curr_s_dFoF,
+                coactivity_stamps,
+                activity_window=activity_window,
+                center_onset=True,
+                norm_constant=glu_constant,
+                sampling_rate=sampling_rate,
+            )
+            ## Calcium traces
+            (s_ca_traces, s_ca_amp, s_ca_auc, _) = analyze_activity_trace(
+                curr_s_calcium,
+                coactivity_stamps,
+                activity_window=activity_window,
+                center_onset=True,
+                norm_constant=ca_constant,
+                sampling_rate=sampling_rate,
+            )
+            spine_coactive_amplitude[spines[spine]] = s_amp
+            spine_coactive_calcium[spines[spine]] = s_ca_amp
+            spine_coactive_auc[spines[spine]] = s_auc
+            spine_coactive_calcium_auc[spines[spine]] = s_ca_auc
+            spine_coactive_traces[spines[spine]] = s_traces
+            spine_coactive_calcium_traces[spines[spine]] = s_ca_traces
+
+            # Center timestamps around activity onset
+            corrected_stamps = tstamps.timestamp_onset_correction(
+                coactivity_stamps, activity_window, s_onset, sampling_rate
+            )
 
 
 def distance_coactivity_rate_analysis(
