@@ -64,3 +64,26 @@ def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
     refined_stamps = list(compress(timestamps, refined_idxs))
 
     return refined_stamps
+
+
+def timestamp_onset_correction(timestamps, activity_window, onset, sampling_rate):
+    """Function to correct timestamps to be at activity onset
+        
+        INPUT PARAMETERS
+             timestamps - list of timestamps
+            
+            activity_window - tuple specifying the activity window the activity is 
+                              referenced to
+            
+            onset - int specifying the onset frame in reference to the activity
+                    window
+        
+        OUTPUT PARAMETERS
+            corrected_timestamps - list of the ocrrected timestamps
+    """
+    center_point = int(np.absolute(activity_window[0] * sampling_rate))
+    offset = center_point - onset
+    corrected_timestamps = [int(x - offset) for x in timestamps]
+
+    return corrected_timestamps
+
