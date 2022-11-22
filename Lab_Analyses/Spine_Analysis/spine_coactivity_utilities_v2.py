@@ -1,6 +1,10 @@
 import numpy as np
 from scipy import stats
 
+from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.activity_onset import find_activity_onset
+from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
+
 
 def get_trace_coactivity_rates(trace_1, trace_2, sampling_rate):
     """Function to analyze the coactivity rate between two different activity
@@ -114,3 +118,81 @@ def get_trace_coactivity_rates(trace_1, trace_2, sampling_rate):
         trace_2_frac,
         coactivity_trace,
     )
+
+
+def analyze_activity_trace(
+    dFoF_trace,
+    timestamps,
+    activity_window=(-2, 4),
+    center_onset=False,
+    norm_constant=None,
+    sampling_rate=60,
+):
+    """Function to analyze of the mean activity trace around specific timestamped events 
+        (e.g., coactivity)
+        
+        INPUT PARAMETERS
+            dFoF_trace - np.array of the dFoF activity trace
+
+            timestamps - list of the event timestamps
+
+            activity_window - tuple specifying the window around which you want to analyze
+                            the activity from (e.g., (-2,4) for 2 sec before and 4 sec after)
+
+            center_onset - boolean of whether or not you wish to center traces on the mean onset
+            
+            norm_constants - np.array of constants to normalize the activity by volume
+
+            sampling_rate - int specifying the sampling rate
+        
+        OUTPUT PARAMETERS
+            activity_traces - 2d np.array of activity around each event. columns=events, rows=time (in frames)
+
+            activity_amplitude - float of the mean peak activity amplitude
+
+            activity_auc - float of the area under the activity curve
+
+            activity_onset - int specifying the activity onset within the activity window
+
+    """
+    # Get the activity around the timestamps
+    activity_traces, mean_trace = d_utils.get_trace_mean_sem(
+        dFoF_trace.reshape(-1, 1),
+        ["Activity"],
+        timestamps,
+        window=activity_window,
+        sampling_rate=sampling_rate,
+    )
+    mean_trace = mean_trace["Activity"][0]
+    activity_traces = activity_traces["Activity"]
+    if norm_constant is not None:
+        mean_trace = mean_trace / norm_constant
+        activity_traces = activity_traces / norm_constant
+    # Find onset
+    activity_onset, activity_amplitude = find_activity_onset(
+        [mean_trace], sampling_rate=sampling_rate
+    )
+    activity_onset = activity_onset[0]
+    activity_amplitude = activity_amplitude[0]
+    # Get area under the curve
+    area_trace = mean_trace[activity_onset:]
+    activity_auc = np.trapz(area_trace)
+
+    # Center around onset if specified
+    if center_onset:
+        c_timestamps = timestamp_onset_correction(
+            timestamps, activity_window, activity_onset, sampling_rate
+        )
+        activity_traces, mean_trace = d_utils.get_trace_mean_sem(
+            dFoF_trace.reshape(-1, 1),
+            ["Activity"],
+            c_timestamps,
+            window=activity_window,
+            sampling_rate=sampling_rate,
+        )
+        activity_traces = activity_traces["Activity"][0]
+        if norm_constant is not None:
+            activity_traces = activity_traces / norm_constant
+
+    return activity_traces, activity_amplitude, activity_auc, activity_onset
+
