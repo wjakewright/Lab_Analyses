@@ -3,7 +3,11 @@ import random
 import numpy as np
 from scipy import stats
 
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
+    get_trace_coactivity_rates,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
+from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 
 
 def local_spine_coactivity_analysis(
@@ -24,7 +28,41 @@ def local_spine_coactivity_analysis(
     sampling_rate=60,
     volume_norm=None,
 ):
-    """Function to handle the local spine coactivity analysis functions"""
+    """Function to handle the local spine coactivity analysis functions
+    
+        INPUT PARAMETERS
+            spine_activity-  2d np.array of the binarrized spine activity. Columns=spines
+            
+            spine_dFoF - 2d np.array of the spine dFoF traces. Columns = spines
+            
+            spine_calcium - 2d np.array of spine calcium traces. Columns = spines
+            
+            spine_groupings - list of spine groupings
+            
+            spine_flags - list containing the spine flags
+            
+            spine_volumes - list or array of the estimated spine volumes (um)
+            
+            spine_positions - list or array of the spine positions along their parent dendrite
+            
+            movement_spines - boolean list of whether each spine is a MRS
+            
+            non_movement_spines - boolean list of whether each spine is not a MRS
+            
+            rwd_movement_spines - boolean list of whether each spine is a rMRS
+            
+            lever_active - np.array of the binarized lever activity
+            
+            lever_unactive - np.array of the binarized lever inactivity
+            
+            activity_window - tuple specifying the time window in sec over which to analyze
+            
+            cluster_dist - int specifying the distance in um tht is considered local
+            
+            sampling_rate - int specifying the imaging sampling rate
+            
+            volume_norm - tuple list of constants to normalize spine dFoF and calcium by
+    """
 
     # Get distance-dependent coactivity rates
     ## Non-specified
@@ -153,6 +191,169 @@ def local_spine_coactivity_analysis(
         partner_list=None,
         iterations=100,
     )
+
+
+def absolute_local_coactivity(
+    spine_activity,
+    spine_dFoF,
+    spine_calcium,
+    spine_groupings,
+    spine_flags,
+    spine_volumes,
+    spine_positions,
+    move_spines,
+    partner_list=None,
+    activity_window=(-2, 4),
+    cluster_dist=5,
+    sampling_rate=60,
+    volume_norm=None,
+):
+    """Function to examine absolute local coactivity, or events when any other local spine
+        is coactive with the target spine
+        
+        INPUT PARAMETERS
+            spine_activity-  2d np.array of the binarrized spine activity. Columns=spines
+            
+            spine_dFoF - 2d np.array of the spine dFoF traces. Columns = spines
+            
+            spine_calcium - 2d np.array of spine calcium traces. Columns = spines
+            
+            spine_groupings - list of spine groupings
+            
+            spine_flags - list containing the spine flags
+            
+            spine_volumes - list or array of the estimated spine volumes (um)
+            
+            spine_positions - list or array of the spine positions along their parent dendrite
+            
+            move_spines - list of boolean containing movement spine idxs
+
+            partner_list - boolean list specifying a subset of spines to analyze
+                            coactivity rates for
+            
+            activity_window - tuple specifying the time window in sec over which to analyze
+            
+            cluster_dist - int specifying the distance in um tht is considered local
+            
+            sampling_rate - int specifying the imaging sampling rate
+            
+            volume_norm - tuple list of constants to normalize spine dFoF and calcium by
+    """
+
+    # Sort out the spine_groupings to make sure it is iterable
+    if type(spine_groupings[0]) != list:
+        spine_grouping = [spine_grouping]
+
+    el_spines = find_spine_classes(spine_flags, "Eliminated Spine")
+    el_spines = np.array(el_spines)
+
+    if volume_norm is not None:
+        glu_norm_constants = volume_norm[0]
+        ca_norm_constants = volume_norm[1]
+    else:
+        glu_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
+        ca_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
+
+    if partner_list is None:
+        partner_list = [True for x in range(spine_activity.shape[1])]
+
+    # Set up outputs
+    nearby_coactive_spine_idxs = [None for i in range(spine_activity.shape[1])]
+    frac_nearby_MRSs = np.zeros(spine_activity.shape[1]) * np.nan
+    nearby_coactive_spine_volumes = np.zeros(spine_activity.shape[1]) * np.nan
+    local_coactivity_rate = np.zeros(spine_activity.shape[1])
+    local_coactivity_rate_norm = np.zeros(spine_activity.shape[1])
+    spine_fraction_coactive = np.zeros(spine_activity.shape[1])
+    local_coactivity_matrix = np.zeros(spine_activity.shape)
+
+    # Iterate through each dendrite grouping
+    for spines in spine_groupings:
+        # Pull current spine grouping data
+        s_dFoF = spine_dFoF[:, spines]
+        s_activity = spine_activity[:, spines]
+        s_calcium = spine_calcium[:, spines]
+        curr_positions = spine_positions[spines]
+        curr_el_spines = el_spines[spines]
+        curr_volumes = spine_volumes[spines]
+        curr_move_spines = move_spines[spines]
+        curr_glu_norm_constants = glu_norm_constants[spines]
+        curr_ca_norm_constants = ca_norm_constants[spines]
+        curr_partner_spines = partner_list[spines]
+
+        # Analyze each spine individually
+        for spine in range(s_dFoF.shape[1]):
+            # Get positional information and nearby spine idxs
+            target_position = curr_positions[spine]
+            relative_positions = np.array(curr_positions) - target_position
+            relative_positions = np.absolute(relative_positions)
+            nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
+            nearby_spines = [
+                x for x in nearby_spines if not curr_el_spines[x] and x != spine
+            ]
+
+            # Assess whether nearby spines display any coactivity
+            nearby_coactive_spines = []
+            for ns in nearby_spines:
+                if np.sum(s_activity[:, spine] * s_activity[:, ns]):
+                    nearby_coactive_spines.append(ns)
+            # Refine nearby coactive spines based on partner list
+            nearby_coactive_spines = [
+                x for x in nearby_coactive_spines if curr_partner_spines[x] is True
+            ]
+            # Skip further analysis if no nearby coactive spines
+            if len(nearby_coactive_spines) == 0:
+                continue
+            nearby_coactive_spines = np.array(nearby_coactive_spines)
+            nearby_coactive_spine_idxs[spines[spine]] = spines[nearby_coactive_spines]
+
+            # Get fraction of coactive spines that are MRSs
+            nearby_move_spines = curr_move_spines[nearby_coactive_spines].astype(int)
+            frac_nearby_MRSs[spines[spine]] = np.sum(nearby_move_spines) / len(
+                nearby_move_spines
+            )
+
+            # Get average coactive spine volumes
+            nearby_coactive_spine_volumes[spines[spine]] = np.nanmean(
+                curr_volumes[nearby_coactive_spines]
+            )
+
+            # Get relative activity data
+            curr_s_dFoF = s_dFoF[:, spine]
+            curr_s_activity = s_activity[:, spine]
+            curr_s_calcium = s_calcium[:, spine]
+            nearby_s_dFoF = s_dFoF[:, nearby_coactive_spines]
+            nearby_s_activity = s_activity[:, nearby_coactive_spines]
+            nearby_s_calcium = s_calcium[:, nearby_coactive_spines]
+            nearby_volumes = curr_volumes[nearby_coactive_spines]
+            glu_constant = curr_glu_norm_constants[spine]
+            ca_constant = curr_ca_norm_constants[spine]
+            nearby_glu_constants = curr_glu_norm_constants[nearby_coactive_spines]
+            nearby_ca_constants = curr_ca_norm_constants[nearby_coactive_spines]
+
+            # Get local coactivity trace, where at least one spine is coactive
+            combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
+            combined_nearby_activity[combined_nearby_activity > 1] = 1
+
+            # Get local coactivity rates
+            (
+                coactivity_rate,
+                coactivity_rate_norm,
+                spine_frac_active,
+                _,
+                coactivity_trace,
+            ) = get_trace_coactivity_rates(
+                curr_s_activity, combined_nearby_activity, sampling_rate
+            )
+            # Skip further analysis if no local coactivity for current spine
+            if not np.sum(coactivity_trace):
+                continue
+
+            local_coactivity_rate[spines[spine]] = coactivity_rate
+            local_coactivity_rate_norm[spines[spine]] = coactivity_rate_norm
+            spine_fraction_coactive[spines[spine]] = spine_frac_active
+            local_coactivity_matrix[:, spines[spine]] = coactivity_trace
+
+            # Analyze activity traces
 
 
 def distance_coactivity_rate_analysis(
