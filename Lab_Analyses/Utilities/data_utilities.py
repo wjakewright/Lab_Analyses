@@ -308,3 +308,20 @@ def join_dictionaries(dict_list):
                     new_dict[key][i] = np.concatenate((new_dict[key][i], v))
 
     return new_dict
+
+
+def unique_array_list(array_list):
+    """helper function to get only unique arrays from list of arrays"""
+    new_list = []
+    for arr in array_list:
+        if len(new_list) == 0:
+            new_list.append(arr)
+            continue
+        for n_arr in new_list:
+            if np.array_equal(arr, n_arr):
+                continue
+            else:
+                new_list.append(arr)
+                break
+
+    return new_list
