@@ -6,8 +6,11 @@ from copy import copy
 from dataclasses import dataclass
 
 import numpy as np
+
 from Lab_Analyses.Behavior.align_lever_behavior import align_lever_behavior
+from Lab_Analyses.Utilities.check_file_exists import get_existing_files
 from Lab_Analyses.Utilities.data_utilities import join_dictionaries
+from Lab_Analyses.Utilities.event_detection import event_detection
 from Lab_Analyses.Utilities.movement_responsiveness_v2 import movement_responsiveness
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
@@ -15,6 +18,7 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 def organize_dual_spine_data(
     mouse_id,
     channels={"GluSnFr": "GreenCh", "Calcium": "RedCh"},
+    redetection=False,
     save=False,
     structural=False,
 ):
@@ -207,6 +211,22 @@ def organize_dual_spine_data(
             calcium_processed_dFoF = join_dictionaries(aligned_Calcium.processed_dFoF)
             calcium_activity = join_dictionaries(aligned_Calcium.activity_trace)
             calcium_floored = join_dictionaries(aligned_Calcium.floored_trace)
+
+            if redetection is True:
+                GluSnFr_activity, GluSnFr_floored, _ = event_detection(
+                    GluSnFr_processed_dFoF,
+                    threshold=2,
+                    lower_threshold=1,
+                    lower_limit=0.2,
+                    sampling_rate=aligned_GluSnFr.imaging_parameters["Sampling Rate"],
+                )
+                calcium_activity, calcium_floored, _ = event_detection(
+                    calcium_processed_dFoF,
+                    threshold=2,
+                    lower_threshold=1,
+                    lower_limit=0.2,
+                    sampling_rate=aligned_GluSnFr.imaging_parameters["Sampling Rate"],
+                )
 
             dual_spine_data.spine_GluSnFr_dFoF = GluSnFr_dFoF["Spine"]
             dual_spine_data.spine_GluSnFr_processed_dFoF = GluSnFr_processed_dFoF[
