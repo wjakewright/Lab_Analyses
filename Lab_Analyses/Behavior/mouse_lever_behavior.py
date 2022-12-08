@@ -7,9 +7,10 @@ import re
 from dataclasses import dataclass
 
 import numpy as np
+
 from Lab_Analyses.Behavior.process_lever_behavior import process_lever_behavior
 from Lab_Analyses.Behavior.summarize_lever_behavior import summarize_lever_behavior
-from Lab_Analyses.Utilities.check_file_exists import check_file_exists
+from Lab_Analyses.Utilities.check_file_exists import get_existing_files
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
@@ -344,26 +345,6 @@ def get_summarized_data(file, sname, save, suffix, save_path, reanalyze):
     summed_data = summarize_lever_behavior(file, save=save, save_suffix=suffix)
 
     return summed_data
-
-
-def get_existing_files(path, name, includes):
-    """Helper function to check and load existing files"""
-    exists, exist_files = check_file_exists(path, name, includes)
-    if exists is True:
-        if len(exist_files) > 1:
-            print("")
-            print("More than one matching file exists")
-            for n, file in enumerate(exist_files):
-                print(f"{n}). {file}")
-            fnum = input("Which file number would you like to load: ")
-            fnum = fnum - 1
-            fname = exist_files[fnum]
-        else:
-            fname = exist_files[0]
-    else:
-        fname = None
-
-    return fname
 
 
 # --------------------------------DATACLASS USED--------------------------------------------
