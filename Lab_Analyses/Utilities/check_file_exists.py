@@ -37,3 +37,23 @@ def check_file_exists(path, name, includes):
         exists = True
 
     return exists, exist_files
+
+
+def get_existing_files(path, name, includes):
+    """Helper function to check and load existing files"""
+    exists, exist_files = check_file_exists(path, name, includes)
+    if exists is True:
+        if len(exist_files) > 1:
+            print("")
+            print("More than one matching file exists")
+            for n, file in enumerate(exist_files):
+                print(f"{n}). {file}")
+            fnum = input("Which file number would you like to load: ")
+            fnum = fnum - 1
+            fname = exist_files[fnum]
+        else:
+            fname = exist_files[0]
+    else:
+        fname = None
+
+    return fname
