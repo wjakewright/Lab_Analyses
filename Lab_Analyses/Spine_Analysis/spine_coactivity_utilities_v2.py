@@ -155,6 +155,7 @@ def analyze_activity_trace(
             activity_onset - int specifying the activity onset within the activity window
 
     """
+    timestamps = [x[0] for x in timestamps]
     # Get the activity around the timestamps
     activity_traces, mean_trace = d_utils.get_trace_mean_sem(
         dFoF_trace.reshape(-1, 1),
@@ -195,4 +196,41 @@ def analyze_activity_trace(
             activity_traces = activity_traces / norm_constant
 
     return activity_traces, activity_amplitude, activity_auc, activity_onset
+
+
+def analyze_nearby_coactive_spines(
+    timestamps,
+    nearby_dFoF,
+    nearby_calcium,
+    nearby_activity,
+    glu_constants,
+    ca_constants,
+    activity_window=(-2, 4),
+    sampling_rate=60,
+):
+    """Function to analyze the activity of nearby spines during coactivity events
+    
+        INPUT PARAMETERS    
+            timestamps - list of tuples with the timestamps (onset, offset) of 
+                        each coactivity event
+            
+            nearby_dFoF - 2d np.array of the nearby coactive spines (columns)
+                          dFoF activity
+            
+            nearby_calcium - 2d np.array of the nearby coactive spines (columns)
+                             calcium activity
+            
+            nearby_activity - 2d np.array of the nearby spines (columns) binarized
+                             activity 
+            
+            glu_constants - np.array of GluSnFr constants for nearby spines
+            
+            ca_constants - np.array of the RCaMP2 constants for nearby spines
+            
+            activity_window - tuple specifying the window around which you want the
+                             activity from (e.g., (-2,2) for 2 sec before and after
+                             
+            sampling_rate - int specifying the sampling rate
+            
+    """
 
