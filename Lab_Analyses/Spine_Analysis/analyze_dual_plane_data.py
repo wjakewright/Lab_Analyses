@@ -12,8 +12,9 @@ import seaborn as sns
 from scipy import optimize, stats
 from sklearn import preprocessing
 
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import \
-    get_trace_coactivity_rates
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
+    get_trace_coactivity_rates,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
 from Lab_Analyses.Utilities.event_detection import event_detection
@@ -93,7 +94,7 @@ def analyze_dual_plane_data(mouse_list, save=False):
         dend_activity, _, _ = event_detection(
             dend_dFoF,
             threshold=2,
-            lower_threshold=0,
+            lower_threshold=1,
             lower_limit=None,
             sampling_rate=sampling_rate,
         )
@@ -350,8 +351,8 @@ def analyze_paired_events(
         d_smooth = sysignal.savgol_filter(d_trace, 15, 3)
         s_smooth = sysignal.savgol_filter(s_trace, 15, 3)
         ## Get trace after the peak
-        d_decay_trace = d_trace[d_max_peak:]
-        s_decay_trace = s_trace[s_max_peak:]
+        d_decay_trace = d_smooth[d_max_peak:]
+        s_decay_trace = s_smooth[s_max_peak:]
         # ## Fit exponential
         # dx = np.arange(len(d_decay_trace)) + 7
         # sx = np.arange(len(s_decay_trace)) + 7
