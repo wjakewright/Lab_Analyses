@@ -212,22 +212,6 @@ def organize_dual_spine_data(
             calcium_activity = join_dictionaries(aligned_Calcium.activity_trace)
             calcium_floored = join_dictionaries(aligned_Calcium.floored_trace)
 
-            if redetection is True:
-                GluSnFr_activity, GluSnFr_floored, _ = event_detection(
-                    GluSnFr_processed_dFoF,
-                    threshold=2,
-                    lower_threshold=1,
-                    lower_limit=0.2,
-                    sampling_rate=aligned_GluSnFr.imaging_parameters["Sampling Rate"],
-                )
-                calcium_activity, calcium_floored, _ = event_detection(
-                    calcium_processed_dFoF,
-                    threshold=2,
-                    lower_threshold=1,
-                    lower_limit=0.2,
-                    sampling_rate=aligned_GluSnFr.imaging_parameters["Sampling Rate"],
-                )
-
             dual_spine_data.spine_GluSnFr_dFoF = GluSnFr_dFoF["Spine"]
             dual_spine_data.spine_GluSnFr_processed_dFoF = GluSnFr_processed_dFoF[
                 "Spine"
@@ -246,6 +230,27 @@ def organize_dual_spine_data(
             ]
             dual_spine_data.dendrite_calcium_activity = calcium_activity["Dendrite"]
             dual_spine_data.dendrite_calcium_floored = calcium_floored["Dendrite"]
+
+            # redo event detection if specified
+            if redetection is True:
+                g_a, g_f, _ = event_detection(
+                    dual_spine_data.spine_GluSnFr_processed_dFoF,
+                    threshold=2,
+                    lower_threshold=1,
+                    lower_limit=0.2,
+                    samplingg_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
+                )
+                c_a, c_f, _ = event_detection(
+                    dual_spine_data.dendrite_calcium_processed_dFoF,
+                    threshold=2,
+                    lower_threshold=1,
+                    lower_limit=0.2,
+                    samplingg_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
+                )
+                dual_spine_data.spine_GluSnFr_activity = g_a
+                dual_spine_data.spine_GluSnFr_floored = g_f
+                dual_spine_data.dendrite_calcium_activity = (c_a,)
+                dual_spine_data.dendrite_calcium_floored = c_f
 
             # Add movement-related information
             print("----- analyzing movement responses")
