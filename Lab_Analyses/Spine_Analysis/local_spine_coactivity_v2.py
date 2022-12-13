@@ -11,6 +11,7 @@ from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
 )
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import activity_timestamps as tstamps
+from Lab_Analyses.Utilities.data_utilities import calculate_activity_event_rate
 from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 
 
@@ -262,6 +263,7 @@ def absolute_local_coactivity(
         partner_list = [True for x in range(spine_activity.shape[1])]
 
     # Set up outputs
+    nearby_spine_idxs = [None for i in range(spine_activity.shape[1])]
     nearby_coactive_spine_idxs = [None for i in range(spine_activity.shape[1])]
     frac_nearby_MRSs = np.zeros(spine_activity.shape[1]) * np.nan
     nearby_coactive_spine_volumes = np.zeros(spine_activity.shape[1]) * np.nan
@@ -300,7 +302,7 @@ def absolute_local_coactivity(
             nearby_spines = [
                 x for x in nearby_spines if not curr_el_spines[x] and x != spine
             ]
-
+            nearby_spine_idxs[spine] = nearby_spines
             # Assess whether nearby spines display any coactivity
             nearby_coactive_spines = []
             for ns in nearby_spines:
