@@ -3,7 +3,8 @@ from scipy import stats
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_onset import find_activity_onset
-from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
+from Lab_Analyses.Utilities.activity_timestamps import \
+    timestamp_onset_correction
 
 
 def get_trace_coactivity_rates(trace_1, trace_2, sampling_rate):
