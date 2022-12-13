@@ -325,3 +325,21 @@ def unique_array_list(array_list):
                 break
 
     return new_list
+
+
+def calculate_activity_event_rate(activity_array, sampling_rate=60):
+    """Function to calculate the activity frequency of rois
+    
+        INPUT PARAMETERS
+            activity_array - 2d np.array of binary activity for each roi (columns)
+    """
+    activity_rate = np.zeros(activity_array.shape[1])
+    for i in range(activity_array.shape[1]):
+        activity = activity[:, i]
+        duration = len(activity) / sampling_rate
+        events = np.nonzero(np.diff(activity) == 1)[0]
+        rate = (len(events) / duration) * 60  ## Per minute
+        activity_rate[i] = rate
+
+    return activity_rate
+
