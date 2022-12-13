@@ -277,6 +277,12 @@ def absolute_local_coactivity(
     spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
     spine_coactive_traces = [None for i in range(spine_activity.shape[1])]
     spine_coactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
+    spine_noncoactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_noncoactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_noncoactive_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_noncoactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
+    spine_noncoactive_traces = [None for i in range(spine_activity.shape[1])]
+    spine_noncoactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
 
     # Iterate through each dendrite grouping
     for spines in spine_groupings:
@@ -367,10 +373,10 @@ def absolute_local_coactivity(
 
             # Get local coactivity timestamps
             coactivity_stamps = tstamps.get_activity_timestamps(coactivity_trace)
-            if not coactivity_stamps:
+            if len(coactivity_stamps) == 0:
                 continue
 
-            # Analyze activity traces
+            # Analyze activity traces when coactive
             ## Glutamate traces
             (s_traces, s_amp, s_auc, s_onset,) = analyze_activity_trace(
                 curr_s_dFoF,
@@ -395,6 +401,38 @@ def absolute_local_coactivity(
             spine_coactive_calcium_auc[spines[spine]] = s_ca_auc
             spine_coactive_traces[spines[spine]] = s_traces
             spine_coactive_calcium_traces[spines[spine]] = s_ca_traces
+
+            # Analyze activity traces when not coactive
+            ## Get noncoactive trace
+            noncoactive_trace = curr_s_activity - coactivity_trace
+            noncoactive_trace[noncoactive_trace < 0] = 0
+            noncoactive_stamps = tstamps.get_activity_timestamps(noncoactive_trace)
+            ## skip if no isolated events
+            if len(noncoactive_stamps) != 0:
+                ## Glutamate traces
+                (ns_traces, ns_amp, ns_auc, _) = analyze_activity_trace(
+                    curr_s_dFoF,
+                    noncoactive_stamps,
+                    activity_window=activity_window,
+                    center_onset=True,
+                    norm_constant=glu_constant,
+                    sampling_rate=sampling_rate,
+                )
+                ## Calcium traces
+                (ns_ca_traces, ns_ca_amp, ns_ca_auc, _) = analyze_activity_trace(
+                    curr_s_calcium,
+                    noncoactive_stamps,
+                    activity_window=activity_window,
+                    center_onset=True,
+                    norm_constant=ca_constant,
+                    sampling_rate=sampling_rate,
+                )
+                spine_noncoactive_amplitude[spines[spine]] = ns_amp
+                spine_noncoactive_calcium[spines[spine]] = ns_ca_amp
+                spine_noncoactive_auc[spines[spine]] = ns_auc
+                spine_noncoactive_calcium_auc[spines[spine]] = ns_ca_auc
+                spine_noncoactive_traces[spines[spine]] = ns_traces
+                spine_noncoactive_calcium_traces[spines[spine]] = ns_ca_traces
 
             # Get only the onset stamps
             coactivity_stamps = [x[0] for x in coactivity_stamps]
