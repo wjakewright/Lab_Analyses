@@ -129,5 +129,11 @@ def grouped_coactivity_analysis(
             spine_volume_um = (np.sqrt(spine_volume) / pix_to_um) ** 2
             followup_volume_um = (np.sqrt(followup_volume) / pix_to_um) ** 2
 
+            # Get activity frequencies
+            spine_activity_rate = d_utils.calculate_activity_event_rate(spine_activity)
+            dend_activity_rate = d_utils.calculate_activity_event_rate(
+                dendrite_activity
+            )
+
             # Perform local spine coactivity analysis
 
