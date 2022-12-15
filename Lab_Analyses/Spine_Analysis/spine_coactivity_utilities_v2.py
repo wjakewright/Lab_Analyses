@@ -3,8 +3,7 @@ from scipy import stats
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_onset import find_activity_onset
-from Lab_Analyses.Utilities.activity_timestamps import \
-    timestamp_onset_correction
+from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
 
 
 def get_trace_coactivity_rates(trace_1, trace_2, sampling_rate):
@@ -201,6 +200,7 @@ def analyze_activity_trace(
 
 def analyze_nearby_coactive_spines(
     timestamps,
+    target_activity,
     nearby_dFoF,
     nearby_calcium,
     nearby_activity,
@@ -214,6 +214,8 @@ def analyze_nearby_coactive_spines(
         INPUT PARAMETERS    
             timestamps - list of tuples with the timestamps (onset, offset) of 
                         each coactivity event
+
+            target_activity - np.array of the target spine activity trace
             
             nearby_dFoF - 2d np.array of the nearby coactive spines (columns)
                           dFoF activity
@@ -234,4 +236,76 @@ def analyze_nearby_coactive_spines(
             sampling_rate - int specifying the sampling rate
             
     """
+    if glu_constants is not None:
+        NORM = True
+    else:
+        NORM = False
 
+    # Get window in frames
+    before_f = int(activity_window[0] * sampling_rate)
+    after_f = int(activity_window[1] * sampling_rate)
+    center_point = np.abs(activity_window[0] * sampling_rate)
+
+    # Get coactivity matrix for each nearby spine
+    coactivity = nearby_activity * target_activity.reshape(-1, 1)
+
+    # Analyze each co-activity event
+    coactive_spine_num = []
+    sum_coactive_binary_traces = []
+    sum_coactive_spine_traces = []
+    avg_coactive_spine_traces = []
+    sum_coactive_ca_traces = []
+    avg_coactive_ca_traces = []
+
+    for event in timestamps:
+        coactive_s_traces = []
+        coactive_ca_traces = []
+        coactive_b_traces = []
+        # Check the activity of each nearby spine
+        for i in range(nearby_activity.shape[1]):
+            nearby_spine_a = nearby_activity[:, i]
+            nearby_spine_dFoF = nearby_dFoF[:, i]
+            nearby_spine_ca = nearby_calcium[:, i]
+            event_coactivity = coactivity[:, i][event + before_f : event + after_f]
+
+            # Append traces if there is coactivity during the event
+            if np.sum(event_coactivity):
+                activity = nearby_spine_a[event + before_f : event + after_f]
+                dFoF = nearby_spine_dFoF[event + before_f : event + after_f]
+                calcium = nearby_spine_ca[event + before_f : event + after_f]
+                if NORM:
+                    dFoF = dFoF / glu_constants[i]
+                    calcium = calcium / ca_constants[i]
+                coactive_s_traces.append(dFoF)
+                coactive_ca_traces.append(calcium)
+                coactive_b_traces.append(activity)
+
+        # Process the activity traces
+        ## Skip of no spines
+        if len(coactive_s_traces) == 0:
+            continue
+        ## Append values if only one spine is coactive
+        if len(coactive_s_traces) == 1:
+            coactive_spine_num.append(1)
+            sum_coactive_binary_traces.append(coactive_b_traces[0])
+            sum_coactive_spine_traces.append(coactive_s_traces[0])
+            avg_coactive_spine_traces.append(coactive_s_traces[0])
+            sum_coactive_ca_traces.append(coactive_ca_traces[0])
+            avg_coactive_ca_traces.append(coactive_ca_traces[0])
+            continue
+        ## sum and average multiple coactive spine traces
+        spine_b_trace_array = np.vstack(coactive_b_traces).T
+        spine_d_trace_array = np.vstack(coactive_s_traces).T
+        spine_ca_trace_array = np.vstack(coactive_ca_traces).T
+        sum_b_trace = np.nansum(spine_b_trace_array, axis=1)
+        sum_d_trace = np.nansum(spine_d_trace_array, axis=1)
+        sum_ca_trace = np.nansum(spine_ca_trace_array, axis=1)
+        avg_d_trace = np.nanmean(spine_d_trace_array, axis=1)
+        avg_ca_trace = np.nanmean(spine_ca_trace_array, axis=1)
+        ## append values
+        coactive_spine_num.append(len(coactive_s_traces))
+        sum_coactive_binary_traces.append(sum_b_trace)
+        sum_coactive_spine_traces.append(sum_d_trace)
+        avg_coactive_spine_traces.append(avg_d_trace)
+        sum_coactive_ca_traces.append(sum_ca_trace)
+        avg_coactive_ca_traces.append(avg_ca_trace)
