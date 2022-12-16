@@ -434,9 +434,10 @@ def absolute_local_coactivity(
                 spine_noncoactive_traces[spines[spine]] = ns_traces
                 spine_noncoactive_calcium_traces[spines[spine]] = ns_ca_traces
 
-            # Get only the onset stamps
+            # Analyze activity of nearby spines during coactivity
+            ## Get only the onset stamps
             coactivity_stamps = [x[0] for x in coactivity_stamps]
-            # Center timestamps around activity onset
+            ## Center timestamps around activity onset
             corrected_stamps = tstamps.timestamp_onset_correction(
                 coactivity_stamps, activity_window, s_onset, sampling_rate
             )
