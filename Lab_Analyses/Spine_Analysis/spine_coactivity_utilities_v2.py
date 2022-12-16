@@ -309,3 +309,131 @@ def analyze_nearby_coactive_spines(
         avg_coactive_spine_traces.append(avg_d_trace)
         sum_coactive_ca_traces.append(sum_ca_trace)
         avg_coactive_ca_traces.append(avg_ca_trace)
+
+    # Check how many coactive events there are
+    ## Return nan values if there are no coactive events
+    if len(sum_coactive_spine_traces) == 0:
+        avg_coactive_spine_num = 0
+        sum_nearby_amplitude = np.nan
+        avg_nearby_amplitude = np.nan
+        sum_nearby_calcium = np.nan
+        avg_nearby_calcium = np.nan
+        sum_nearby_calcium_auc = np.nan
+        avg_nearby_calcium_auc = np.nan
+        avg_coactive_num_before = np.nan
+        sum_nearby_amplitude_before = np.nan
+        avg_nearby_amplitude_before = np.nan
+        sum_nearby_calcium_before = np.nan
+        avg_nearby_calcium_before = np.nan
+        avg_nearby_onset = np.nan
+        sum_coactive_binary_traces = None
+        sum_coactive_spine_traces = None
+        avg_coactive_spine_traces = None
+        sum_coactive_ca_traces = None
+        avg_coactive_ca_traces = None
+
+        return (
+            avg_coactive_spine_num,
+            sum_nearby_amplitude,
+            avg_nearby_amplitude,
+            sum_nearby_calcium,
+            avg_nearby_calcium,
+            sum_nearby_calcium_auc,
+            avg_nearby_calcium_auc,
+            avg_coactive_num_before,
+            sum_nearby_amplitude_before,
+            avg_nearby_amplitude_before,
+            sum_nearby_calcium_before,
+            avg_nearby_calcium_before,
+            avg_nearby_onset,
+            sum_coactive_binary_traces,
+            sum_coactive_spine_traces,
+            avg_coactive_spine_traces,
+            sum_coactive_ca_traces,
+            avg_coactive_ca_traces,
+        )
+    # Convert arrays into proper format
+    if len(sum_coactive_spine_traces) == 1:
+        sum_coactive_binary_traces = sum_coactive_binary_traces[0].reshape(-1, 1)
+        sum_coactive_spine_traces = sum_coactive_spine_traces[0].reshape(-1, 1)
+        avg_coactive_spine_traces = avg_coactive_spine_traces[0].reshape(-1, 1)
+        sum_coactive_ca_traces = sum_coactive_ca_traces[0].reshape(-1, 1)
+        avg_coactive_ca_traces = avg_coactive_ca_traces[0].reshape(-1, 1)
+    else:
+        sum_coactive_binary_traces = np.vstack(sum_coactive_binary_traces).T
+        sum_coactive_spine_traces = np.vstack(sum_coactive_spine_traces).T
+        avg_coactive_spine_traces = np.vstack(avg_coactive_spine_traces).T
+        sum_coactive_ca_traces = np.vstack(sum_coactive_ca_traces).T
+        avg_coactive_ca_traces = np.vstack(avg_coactive_ca_traces).T
+
+    # Perform final calculations
+    ## Average number of coactive spines
+    avg_coative_spine_num = np.nanmean(coactive_spine_num)
+
+    ## Avg traces across all events
+    avg_sum_binary_traces = np.nanmean(sum_coactive_binary_traces, axis=1)
+    avg_sum_spine_traces = np.nanmean(sum_coactive_spine_traces, axis=1)
+    avg_avg_spine_traces = np.nanmean(avg_coactive_spine_traces, axis=1)
+    avg_sum_ca_traces = np.nanmean(sum_coactive_ca_traces, axis=1)
+    avg_avg_ca_traces = np.nanmean(avg_coactive_ca_traces, axis=1)
+
+    ## Get peak and auc of traces
+    onsets, amps = find_activity_onset(
+        [
+            avg_sum_spine_traces,
+            avg_avg_spine_traces,
+            avg_sum_ca_traces,
+            avg_avg_ca_traces,
+        ],
+        sampling_rate=sampling_rate,
+    )
+
+    avg_nearby_onset = onsets[1]
+    sum_nearby_amplitude = amps[0]
+    avg_nearby_amplitude = amps[1]
+    sum_nearby_calcium = amps[2]
+    avg_nearby_calcium = amps[3]
+
+    ## Get AUC of calcium traces
+    if not np.isnan(sum_nearby_calcium):
+        ca_onset_sum = int(onsets[2])
+        ca_sum_area = avg_sum_ca_traces[ca_onset_sum:]
+        ca_sum_area = ca_sum_area - ca_sum_area[0]
+        sum_nearby_calcium_auc = np.trapz(ca_sum_area)
+    else:
+        sum_nearby_calcium_auc = np.nan
+    if not np.isnan(avg_nearby_calcium):
+        ca_onset_avg = int(onsets[3])
+        ca_avg_area = avg_avg_ca_traces[ca_onset_avg:]
+        ca_avg_area = ca_avg_area - ca_avg_area[0]
+        avg_nearby_calcium_auc = np.trapz(ca_avg_area)
+    else:
+        avg_nearby_calcium_auc = np.nan
+
+    ## Get activity variables before target onset
+    avg_coactive_num_before = np.nanmax(avg_sum_binary_traces[:center_point])
+    sum_nearby_amplitude_before = np.nanmax(avg_sum_spine_traces[:, center_point])
+    avg_nearby_amplitude_before = np.nanmax(avg_avg_spine_traces[:center_point])
+    sum_nearby_calcium_before = np.nanmax(avg_sum_ca_traces[:center_point])
+    avg_nearby_calcium_before = np.nanmax(avg_avg_ca_traces[:center_point])
+
+    return (
+        avg_coactive_spine_num,
+        sum_nearby_amplitude,
+        avg_nearby_amplitude,
+        sum_nearby_calcium,
+        avg_nearby_calcium,
+        sum_nearby_calcium_auc,
+        avg_nearby_calcium_auc,
+        avg_coactive_num_before,
+        sum_nearby_amplitude_before,
+        avg_nearby_amplitude_before,
+        sum_nearby_calcium_before,
+        avg_nearby_calcium_before,
+        avg_nearby_onset,
+        sum_coactive_binary_traces,
+        sum_coactive_spine_traces,
+        avg_coactive_spine_traces,
+        sum_coactive_ca_traces,
+        avg_coactive_ca_traces,
+    )
