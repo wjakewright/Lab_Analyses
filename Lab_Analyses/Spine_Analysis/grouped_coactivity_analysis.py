@@ -3,7 +3,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
-
+from Lab_Analyses.Spine_Analysis.local_spine_coactivity_v2 import (
+    local_spine_coactivity_analysis,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     batch_spine_volume_norm_constant,
     load_spine_datasets,
@@ -49,7 +51,8 @@ def grouped_coactivity_analysis(
 
     # Analyze each mouse seperately
     for mouse in mice_list:
-        print(f"--- Analyzing {mouse}")
+        print("---------------------------------")
+        print(f"- Analyzing {mouse}")
         if followup is True:
             datasets = load_spine_datasets(mouse, [day], followup=True)
         else:
@@ -136,4 +139,96 @@ def grouped_coactivity_analysis(
             )
 
             # Perform local spine coactivity analysis
+            print("-- Local Coactivity Analysis")
+            (
+                distance_bins,
+                distance_coactivity_rate,
+                distance_coactivity_rate_norm,
+                MRS_distance_coactivity_rate,
+                MRS_distance_coactivity_rate_norm,
+                nMRS_distance_coactivity_rate,
+                nMRS_distance_coactivity_rate_norm,
+                avg_local_coactivity_rate,
+                avg_local_coactivity_rate_norm,
+                avg_MRS_local_coactivity_rate,
+                avg_MRS_local_coactivity_rate_norm,
+                avg_nMRS_local_coactivity_rate,
+                avg_nMRS_local_coactivity_rate_norm,
+                cluster_score,
+                coactive_num,
+                MRS_cluster_score,
+                MRS_coactive_num,
+                nMRS_cluster_score,
+                nMRS_coactive_num,
+                movement_cluster_score,
+                movement_coactive_num,
+                nonmovement_cluster_score,
+                nonmovement_coactive_num,
+                nearby_spine_idxs,
+                nearby_coactive_spine_idxs,
+                avg_nearby_spine_freq,
+                avg_nearby_coactive_spine_freq,
+                rel_nearby_spine_freq,
+                rel_nearby_coactive_spine_freq,
+                frac_nearby_MRSs,
+                nearby_coactive_spine_volumes,
+                local_coactivity_rate,
+                local_coactivity_rate_norm,
+                spine_fraction_coactive,
+                local_coactivity_matrix,
+                spine_coactive_amplitude,
+                spine_coactive_calcium,
+                spine_coactive_auc,
+                spine_coactive_calcium_auc,
+                spine_coactive_traces,
+                spine_coactive_calcium_traces,
+                spine_noncoactive_amplitude,
+                spine_noncoactive_calcium,
+                spine_noncoactive_auc,
+                spine_noncoactive_calcium_auc,
+                spine_noncoactive_traces,
+                spine_noncoactive_calcium_traces,
+                avg_coactive_spine_num,
+                sum_nearby_amplitude,
+                avg_nearby_amplitude,
+                sum_nearby_calcium,
+                avg_nearby_calcium,
+                sum_nearby_calcium_auc,
+                avg_nearby_calcium_auc,
+                avg_coactive_num_before,
+                sum_nearby_amplitude_before,
+                avg_nearby_amplitude_before,
+                sum_nearby_calcium_before,
+                avg_nearby_calcium_before,
+                avg_relative_nearby_onset,
+                sum_coactive_binary_traces,
+                sum_coactive_spine_traces,
+                avg_coactive_spine_traces,
+                sum_coactive_calcium_traces,
+                avg_coactive_calcium_traces,
+                avg_nearby_move_corr,
+                avg_nearby_move_reliability,
+                avg_nearby_move_specificity,
+                avg_nearby_coactivity_rate,
+                relative_coactivity_rate,
+                frac_local_coactivity_participation,
+            ) = local_spine_coactivity_analysis(
+                mouse,
+                spine_activity,
+                spine_dFoF,
+                spine_calcium,
+                spine_groupings,
+                spine_flags,
+                spine_volume_um,
+                spine_positions,
+                movement_spines,
+                non_movement_spines,
+                lever_active,
+                lever_unactive,
+                lever_force_smooth,
+                activity_window,
+                CLUSTER_DIST,
+                sampling_rate,
+                volume_norm=constants,
+            )
 
