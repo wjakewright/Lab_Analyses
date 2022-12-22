@@ -5,8 +5,9 @@ from Lab_Analyses.Spine_Analysis.calculate_cluster_score import calculate_cluste
 from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import (
     distance_coactivity_rate_analysis,
 )
-from Lab_Analyses.Utilities.data_utilities import calculate_activity_event_rate
-from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
+from Lab_Analyses.Spine_Analysis.relative_coactivity_analysis import (
+    relative_coactivity_analysis,
+)
 
 
 def local_spine_coactivity_analysis(
@@ -67,6 +68,7 @@ def local_spine_coactivity_analysis(
     """
 
     # Get distance-dependent coactivity rates
+    print("--- Analyzing Distance-Dependence Coactivity")
     ## Non-specified
     distance_coactivity_rate, distance_bins = distance_coactivity_rate_analysis(
         spine_activity,
@@ -146,6 +148,7 @@ def local_spine_coactivity_analysis(
     avg_nMRS_local_coactivity_rate_norm = nMRS_distance_coactivity_rate_norm[0, :]
 
     # Cluster Score
+    print("--- Calculating Cluster Score")
     ## Nonconstrained
     cluster_score, coactive_num = calculate_cluster_score(
         spine_activity,
@@ -195,11 +198,14 @@ def local_spine_coactivity_analysis(
     )
 
     # Analyze absolute local coactivity
+    print("--- Analyzing Absolute Coactivity")
     (
         nearby_spine_idxs,
         nearby_coactive_spine_idxs,
         avg_nearby_spine_freq,
-        avg_nearby_coactive_spine_feq,
+        avg_nearby_coactive_spine_freq,
+        rel_nearby_spine_freq,
+        rel_nearby_coactive_spine_freq,
         frac_nearby_MRSs,
         nearby_coactive_spine_volumes,
         local_coactivity_rate,
@@ -256,5 +262,88 @@ def local_spine_coactivity_analysis(
         cluster_dist=cluster_dist,
         sampling_rate=sampling_rate,
         volume_norm=volume_norm,
+    )
+
+    # Compare coactivity with and without target spine
+    (
+        avg_nearby_coactivity_rate,
+        relative_coactivity_rate,
+        frac_local_coactivity_participation,
+    ) = relative_coactivity_analysis(
+        spine_activity, nearby_spine_idxs, avg_local_coactivity_rate
+    )
+
+    return (
+        distance_bins,
+        distance_coactivity_rate,
+        distance_coactivity_rate_norm,
+        MRS_distance_coactivity_rate,
+        MRS_distance_coactivity_rate_norm,
+        nMRS_distance_coactivity_rate,
+        nMRS_distance_coactivity_rate_norm,
+        avg_local_coactivity_rate,
+        avg_local_coactivity_rate_norm,
+        avg_MRS_local_coactivity_rate,
+        avg_MRS_local_coactivity_rate_norm,
+        avg_nMRS_local_coactivity_rate,
+        avg_nMRS_local_coactivity_rate_norm,
+        cluster_score,
+        coactive_num,
+        MRS_cluster_score,
+        MRS_coactive_num,
+        nMRS_cluster_score,
+        nMRS_coactive_num,
+        movement_cluster_score,
+        movement_coactive_num,
+        nonmovement_cluster_score,
+        nonmovement_coactive_num,
+        nearby_spine_idxs,
+        nearby_coactive_spine_idxs,
+        avg_nearby_spine_freq,
+        avg_nearby_coactive_spine_freq,
+        rel_nearby_spine_freq,
+        rel_nearby_coactive_spine_freq,
+        frac_nearby_MRSs,
+        nearby_coactive_spine_volumes,
+        local_coactivity_rate,
+        local_coactivity_rate_norm,
+        spine_fraction_coactive,
+        local_coactivity_matrix,
+        spine_coactive_amplitude,
+        spine_coactive_calcium,
+        spine_coactive_auc,
+        spine_coactive_calcium_auc,
+        spine_coactive_traces,
+        spine_coactive_calcium_traces,
+        spine_noncoactive_amplitude,
+        spine_noncoactive_calcium,
+        spine_noncoactive_auc,
+        spine_noncoactive_calcium_auc,
+        spine_noncoactive_traces,
+        spine_noncoactive_calcium_traces,
+        avg_coactive_spine_num,
+        sum_nearby_amplitude,
+        avg_nearby_amplitude,
+        sum_nearby_calcium,
+        avg_nearby_calcium,
+        sum_nearby_calcium_auc,
+        avg_nearby_calcium_auc,
+        avg_coactive_num_before,
+        sum_nearby_amplitude_before,
+        avg_nearby_amplitude_before,
+        sum_nearby_calcium_before,
+        avg_nearby_calcium_before,
+        avg_relative_nearby_onset,
+        sum_coactive_binary_traces,
+        sum_coactive_spine_traces,
+        avg_coactive_spine_traces,
+        sum_coactive_calcium_traces,
+        avg_coactive_calcium_traces,
+        avg_nearby_move_corr,
+        avg_nearby_move_reliability,
+        avg_nearby_move_specificity,
+        avg_nearby_coactivity_rate,
+        relative_coactivity_rate,
+        frac_local_coactivity_participation,
     )
 
