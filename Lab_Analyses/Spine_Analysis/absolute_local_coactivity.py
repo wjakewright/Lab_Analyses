@@ -1,5 +1,4 @@
 import numpy as np
-
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
     analyze_activity_trace,
     analyze_nearby_coactive_spines,
@@ -83,6 +82,8 @@ def absolute_local_coactivity(
     nearby_coactive_spine_idxs = [None for i in range(spine_activity.shape[1])]
     avg_nearby_spine_freq = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_coactive_spine_freq = np.zeros(spine_activity.shape[1]) * np.nan
+    rel_nearby_spine_freq = np.zeros(spine_activity.shape[1]) * np.nan
+    rel_nearby_coactive_spine_freq = np.zeros(spine_activity.shape[1]) * np.nan
     frac_nearby_MRSs = np.zeros(spine_activity.shape[1]) * np.nan
     nearby_coactive_spine_volumes = np.zeros(spine_activity.shape[1]) * np.nan
     local_coactivity_rate = np.zeros(spine_activity.shape[1])
@@ -197,8 +198,15 @@ def absolute_local_coactivity(
                 a = s_activity[:, i]
                 freq = calculate_activity_event_rate(a, sampling_rate)
                 nearby_coactive_freqs.append(freq)
-            avg_nearby_spine_freq.append(np.nanmean(nearby_freqs))
-            avg_nearby_coactive_spine_freq.append(np.nanmean(nearby_coactive_freqs))
+            avg_nearby_spine_freq[spine] = np.nanmean(nearby_freqs)
+            avg_nearby_coactive_spine_freq[spine] = np.nanmean(nearby_coactive_freqs)
+
+            # Get relative activity levels
+            target_freq = calculate_activity_event_rate(curr_s_activity, sampling_rate)
+            rel_nearby_spine_freq[spine] = target_freq / np.nanmean(nearby_freqs)
+            rel_nearby_coactive_spine_freq[spine] = target_freq / np.nanmean(
+                nearby_coactive_freqs
+            )
 
             # Get local coactivity trace, where at least one spine is coactive
             combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
@@ -373,6 +381,8 @@ def absolute_local_coactivity(
         nearby_coactive_spine_idxs,
         avg_nearby_spine_freq,
         avg_nearby_coactive_spine_freq,
+        rel_nearby_spine_freq,
+        rel_nearby_coactive_spine_freq,
         frac_nearby_MRSs,
         nearby_coactive_spine_volumes,
         local_coactivity_rate,
