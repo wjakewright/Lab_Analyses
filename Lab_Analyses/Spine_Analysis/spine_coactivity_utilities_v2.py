@@ -1,9 +1,9 @@
 import numpy as np
-from scipy import stats
-
+from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_onset import find_activity_onset
 from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
+from scipy import stats
 
 
 def get_trace_coactivity_rates(trace_1, trace_2, sampling_rate):
@@ -388,7 +388,7 @@ def analyze_nearby_coactive_spines(
         sampling_rate=sampling_rate,
     )
 
-    avg_nearby_onset = onsets[1]
+    avg_nearby_onset = onsets[1] - center_point
     sum_nearby_amplitude = amps[0]
     avg_nearby_amplitude = amps[1]
     sum_nearby_calcium = amps[2]
@@ -437,3 +437,60 @@ def analyze_nearby_coactive_spines(
         sum_coactive_ca_traces,
         avg_coactive_ca_traces,
     )
+
+
+def get_nearby_spine_activity(
+    spine_activity, spine_groupings, spine_flags, spine_positions, cluster_dist=5,
+):
+    """Helper function to get the idxs of nearby coactive spines
+        and their combined activity traces"""
+
+    # Set up main output
+    nearby_coactive_spines = [None for x in range(spine_activity.shape[1])]
+    nearby_combined_activity_matrix = np.zeros(spine_activity.shape)
+
+    # Organize spine groupings and find eliminated spines
+    if type(spine_groupings[0]) != list:
+        spine_groupings = [spine_groupings]
+
+    el_spines = find_spine_classes(spine_flags, "Eliminated Spine")
+    el_spines = np.array(el_spines)
+
+    # Iterate through each dendrite grouping
+    for spines in spine_groupings:
+        # Pull current spine data
+        s_activity = spine_activity[:, spines]
+        curr_positions = spine_positions[spines]
+        curr_el_spines = el_spines[spines]
+
+        # Analyze each spine individually
+        for spine in range(s_activity.shape[1]):
+            target_position = curr_positions[spine]
+            relative_positions = np.array(curr_positions) - target_position
+            relative_positions = np.absolute(relative_positions)
+            nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
+            nearby_spines = [
+                x for x in nearby_spines if not curr_el_spines[x] and x != spine
+            ]
+            nearby_coactive_idxs = []
+            for ns in nearby_spines:
+                if np.sum(s_activity[:, spine] * s_activity[:, ns]):
+                    nearby_coactive_idxs.append(ns)
+
+            # Skip if no coactive nearby spines
+            if len(nearby_coactive_idxs) == 0:
+                continue
+
+            # Store idxs
+            nearby_coactive_idxs = np.array(nearby_coactive_idxs)
+            nearby_coactive_spines[spines[spine]] = nearby_coactive_idxs
+
+            # Get combined activity trace
+            combined_nearby_activity = np.sum(
+                s_activity[:, nearby_coactive_idxs], axis=1
+            )
+            combined_nearby_activity[combined_nearby_activity > 1] = 1
+            combined_nearby_activity_matrix[:, spines[spine]] = combined_nearby_activity
+
+    return nearby_coactive_spines, combined_nearby_activity_matrix
+
