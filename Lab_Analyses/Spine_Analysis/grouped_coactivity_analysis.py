@@ -3,13 +3,15 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
-from Lab_Analyses.Spine_Analysis.local_spine_coactivity_v2 import \
-    local_spine_coactivity_analysis
+from Lab_Analyses.Spine_Analysis.local_spine_coactivity_v2 import (
+    local_spine_coactivity_analysis,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
-    batch_spine_volume_norm_constant, load_spine_datasets)
+    batch_spine_volume_norm_constant,
+    load_spine_datasets,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.quantify_movment_quality import \
-    quantify_movement_quality
+from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 
 
 def grouped_coactivity_analysis(
@@ -110,7 +112,7 @@ def grouped_coactivity_analysis(
                     dendrite_activity[:, s] = data.dendrite_calcium_activity[:, d]
                     dendrite_dFoF[:, s] = data.dendrite_calcium_processed_dFoF[:, d]
                     movement_dendrites[s] = data.movement_dendrites[d]
-                    rwd_movement_dendrites[s] = data.reward_movement_dendrites
+                    rwd_movement_dendrites[s] = data.reward_movement_dendrites[d]
             non_movement_dendrites = [not x for x in movement_dendrites]
 
             ## Behavioral data
