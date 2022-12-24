@@ -83,7 +83,12 @@ def timestamp_onset_correction(timestamps, activity_window, onset, sampling_rate
     """
     center_point = int(np.absolute(activity_window[0] * sampling_rate))
     offset = center_point - onset
-    corrected_timestamps = [int(x - offset) for x in timestamps]
+    if type(timestamps[0]) == tuple:
+        corrected_timestamps = [
+            (int(x[0] - offset), int(x[1] - offset)) for x in timestamps
+        ]
+    else:
+        corrected_timestamps = [int(x - offset) for x in timestamps]
 
     return corrected_timestamps
 
