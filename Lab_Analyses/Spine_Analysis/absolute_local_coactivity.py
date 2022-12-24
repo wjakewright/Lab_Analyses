@@ -345,7 +345,9 @@ def absolute_local_coactivity(
             avg_nearby_amplitude_before[spines[spine]] = avg_n_amplitude_before
             sum_nearby_calcium_before[spines[spine]] = sum_n_calcium_before
             avg_nearby_calcium_before[spines[spine]] = avg_n_calcium_before
-            avg_relative_nearby_onset[spines[spine]] = avg_n_onset - s_onset
+            avg_relative_nearby_onset[spines[spine]] = (
+                int(avg_n_onset) - int(s_onset)
+            ) / sampling_rate
             sum_coactive_binary_traces[spines[spine]] = sum_coactive_b_traces
             sum_coactive_spine_traces[spines[spine]] = sum_coactive_s_traces
             avg_coactive_spine_traces[spines[spine]] = avg_coactive_s_traces
