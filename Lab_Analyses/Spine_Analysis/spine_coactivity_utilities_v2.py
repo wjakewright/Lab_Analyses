@@ -2,7 +2,8 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_onset import find_activity_onset
-from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
+from Lab_Analyses.Utilities.activity_timestamps import \
+    timestamp_onset_correction
 from scipy import stats
 
 
@@ -490,7 +491,7 @@ def get_nearby_spine_activity(
                 s_activity[:, nearby_coactive_idxs], axis=1
             )
             combined_nearby_activity[combined_nearby_activity > 1] = 1
-            combined_nearby_activity_matrix[:, spines[spine]] = combined_nearby_activity
+            nearby_combined_activity_matrix[:, spines[spine]] = combined_nearby_activity
 
-    return nearby_coactive_spines, combined_nearby_activity_matrix
+    return nearby_coactive_spines, nearby_combined_activity_matrix
 
