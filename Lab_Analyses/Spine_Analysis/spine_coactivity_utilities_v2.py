@@ -2,8 +2,7 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_onset import find_activity_onset
-from Lab_Analyses.Utilities.activity_timestamps import \
-    timestamp_onset_correction
+from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
 from scipy import stats
 
 
@@ -369,7 +368,7 @@ def analyze_nearby_coactive_spines(
 
     # Perform final calculations
     ## Average number of coactive spines
-    avg_coative_spine_num = np.nanmean(coactive_spine_num)
+    avg_coactive_spine_num = np.nanmean(coactive_spine_num)
 
     ## Avg traces across all events
     avg_sum_binary_traces = np.nanmean(sum_coactive_binary_traces, axis=1)
