@@ -156,3 +156,97 @@ def dendrite_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         volume_norm=volume_norm,
     )
+
+    # Get distance-dependent coactivity rates
+    print("--- Analyzing Distance-Dependence Coactivity")
+    distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=dend_activity,
+        partner_list=None,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=False,
+    )
+    distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=dend_activity,
+        partner_list=None,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=True,
+    )
+    ## Local values only (< 5um)
+    avg_local_coactivity_rate = distance_coactivity_rate[0, :]
+    avg_local_coactivity_rate_norm = distance_coactivity_rate_norm[0, :]
+
+    # Calculate cluster score
+    print("--- Calculating Cluster Score")
+    cluster_score, coactive_num = calculate_cluster_score(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=dend_activity,
+        partner_list=None,
+        iterations=100,
+    )
+
+    return (
+        all_coactivity_matrix,
+        all_coactivity_rate,
+        all_coactivity_rate_norm,
+        all_spine_fraction_coactive,
+        all_dend_fraction_coactive,
+        all_spine_coactive_amplitude,
+        all_spine_coactive_calcium,
+        all_spine_coactive_auc,
+        all_spine_coactive_calcium_auc,
+        all_dend_coactive_amplitude,
+        all_dend_coactive_auc,
+        all_relative_onset,
+        all_spine_coactive_traces,
+        all_spine_coactive_calcium_traces,
+        all_dend_coactive_traces,
+        conj_coactivity_matrix,
+        conj_coactivity_rate,
+        conj_coactivity_rate_norm,
+        conj_spine_fraction_coactive,
+        conj_dend_fraction_coactive,
+        conj_spine_coactive_amplitude,
+        conj_spine_coactive_calcium,
+        conj_spine_coactive_auc,
+        conj_spine_coactive_calcium_auc,
+        conj_dend_coactive_amplitude,
+        conj_dend_coactive_auc,
+        conj_relative_onset,
+        conj_spine_coactive_traces,
+        conj_spine_coactive_calcium_traces,
+        conj_dend_coactive_traces,
+        nonconj_coactivity_matrix,
+        nonconj_coactivity_rate,
+        nonconj_coactivity_rate_norm,
+        nonconj_spine_fraction_coactive,
+        nonconj_dend_fraction_coactive,
+        nonconj_spine_coactive_amplitude,
+        nonconj_spine_coactive_calcium,
+        nonconj_spine_coactive_auc,
+        nonconj_spine_coactive_calcium_auc,
+        nonconj_dend_coactive_amplitude,
+        nonconj_dend_coactive_auc,
+        nonconj_relative_onset,
+        nonconj_spine_coactive_traces,
+        nonconj_spine_coactive_calcium_traces,
+        nonconj_dend_coactive_traces,
+        distance_coactivity_rate,
+        distance_coactivity_rate_norm,
+        avg_local_coactivity_rate,
+        avg_local_coactivity_rate_norm,
+        cluster_score,
+        coactive_num,
+    )
