@@ -3,6 +3,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import numpy as np
+
+from Lab_Analyses.Spine_Analysis.dendrite_spine_coactivity_analysis import (
+    dendrite_spine_coactivity_analysis,
+)
 from Lab_Analyses.Spine_Analysis.local_spine_coactivity_v2 import (
     local_spine_coactivity_analysis,
 )
@@ -235,10 +239,78 @@ def grouped_coactivity_analysis(
 
             # Perform Dendrite-Spine coactivity analysis
             print("-- Spine-Dendrite Coactivity Analysis")
+            (
+                spine_dend_coactivity_matrix,
+                spine_dend_coactivity_rate,
+                spine_dend_coactivity_rate_norm,
+                spine_dend_spine_fraction_coactive,
+                spine_dend_dend_fraction_coactive,
+                spine_dend_spine_coactive_amplitude,
+                spine_dend_spine_coactive_calcium,
+                spine_dend_spine_coactive_auc,
+                spine_dend_spine_coactive_calcium_auc,
+                spine_dend_dend_coactive_amplitude,
+                spine_dend_dend_coactive_auc,
+                spine_dend_relative_onset,
+                spine_dend_spine_coactive_traces,
+                spine_dend,
+                _spine_coactive_calcium_traces,
+                spine_dend_dend_coactive_traces,
+                conj_coactivity_matrix,
+                conj_coactivity_rate,
+                conj_coactivity_rate_norm,
+                conj_spine_fraction_coactive,
+                conj_dend_fraction_coactive,
+                conj_spine_coactive_amplitude,
+                conj_spine_coactive_calcium,
+                conj_spine_coactive_auc,
+                conj_spine_coactive_calcium_auc,
+                conj_dend_coactive_amplitude,
+                conj_dend_coactive_auc,
+                conj_relative_onset,
+                conj_spine_coactive_traces,
+                conj_spine_coactive_calcium_traces,
+                conj_dend_coactive_traces,
+                nonconj_coactivity_matrix,
+                nonconj_coactivity_rate,
+                nonconj_coactivity_rate_norm,
+                nonconj_spine_fraction_coactive,
+                nonconj_dend_fraction_coactive,
+                nonconj_spine_coactive_amplitude,
+                nonconj_spine_coactive_calcium,
+                nonconj_spine_coactive_auc,
+                nonconj_spine_coactive_calcium_auc,
+                nonconj_dend_coactive_amplitude,
+                nonconj_dend_coactive_auc,
+                nonconj_relative_onset,
+                nonconj_spine_coactive_traces,
+                nonconj_spine_coactive_calcium_traces,
+                nonconj_dend_coactive_traces,
+                spine_dend_distance_coactivity_rate,
+                spine_dend_distance_coactivity_rate_norm,
+                spine_dend_avg_local_coactivity_rate,
+                spine_dend_avg_local_coactivity_rate_norm,
+                spine_dend_cluster_score,
+                spine_dend_coactive_num,
+            ) = dendrite_spine_coactivity_analysis(
+                spine_activity,
+                spine_dFoF,
+                spine_calcium,
+                dendrite_activity,
+                dendrite_dFoF,
+                spine_groupings,
+                spine_flags,
+                spine_positions,
+                activity_window=activity_window,
+                cluster_dist=CLUSTER_DIST,
+                sampling_rate=sampling_rate,
+                volume_norm=volume_norm,
+            )
 
             # Analyze movement-related activity
 
             # Get movement quality encoding for spines and dendrites
+            print("-- Assessing Movement Quality")
             ## Spines
             (
                 _,
