@@ -779,3 +779,25 @@ def grouped_coactivity_analysis(
                 spine_to_nearby_correlation
             )
 
+    # Merge all the data across FOVs and mice
+    regrouped_data = {}
+    for key, value in grouped_data.items():
+        if type(value[0]) == list:
+            regrouped_data[key] = [y for x in value for y in x]
+        elif type(value[0]) == np.ndarray:
+            if len(value[0].shape) == 1:
+                regrouped_data[key] = np.concatenate(value)
+            elif len(value[0].shape) == 2:
+                regrouped_data[key] = np.hstack(value)
+        else:
+            print(f"{key} has not been added!!!")
+
+    parameters = {
+        "Sampling Rate": sampling_rate,
+        "Cluster Dist": CLUSTER_DIST,
+        "Distance Bins": distance_bins,
+        "zscore": zscore,
+        "Volume Norm": volume_norm,
+        "Activity Window": activity_window,
+    }
+
