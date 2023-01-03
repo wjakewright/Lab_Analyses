@@ -1,3 +1,5 @@
+import numpy as np
+
 from Lab_Analyses.Spine_Analysis.absolute_dendrite_coactivity import (
     absolute_dendrite_coactivity,
 )
@@ -80,6 +82,7 @@ def dendrite_spine_coactivity_analysis(
         spine_groupings,
         spine_flags,
         contrain_matrix=None,
+        activity_window=activity_window,
         sampling_rate=sampling_rate,
         volume_norm=volume_norm,
     )
@@ -88,4 +91,68 @@ def dendrite_spine_coactivity_analysis(
     nearby_coactive_spines, nearby_combined_activity = get_nearby_spine_activity(
         spine_activity, spine_groupings, spine_flags, spine_positions, cluster_dist,
     )
+    ## Get noncoactive matricies
+    nearby_combined_nonactivity = np.zeros(nearby_combined_activity.shape)
+    nearby_combined_nonactivity[nearby_combined_activity == 0] = 1
 
+    ## conj coactivity events
+    (
+        conj_coactivity_matrix,
+        conj_coactivity_rate,
+        conj_coactivity_rate_norm,
+        conj_spine_fraction_coactive,
+        conj_dend_fraction_coactive,
+        conj_spine_coactive_amplitude,
+        conj_spine_coactive_calcium,
+        conj_spine_coactive_auc,
+        conj_spine_coactive_calcium_auc,
+        conj_dend_coactive_amplitude,
+        conj_dend_coactive_auc,
+        conj_relative_onset,
+        conj_spine_coactive_traces,
+        conj_spine_coactive_calcium_traces,
+        conj_dend_coactive_traces,
+    ) = absolute_dendrite_coactivity(
+        spine_activity,
+        spine_dFoF,
+        spine_calcium,
+        dend_activity,
+        dend_dFoF,
+        spine_groupings,
+        spine_flags,
+        contrain_matrix=nearby_combined_activity,
+        activity_window=activity_window,
+        sampling_rate=sampling_rate,
+        volume_norm=volume_norm,
+    )
+
+    ## non conj coactivity events
+    (
+        nonconj_coactivity_matrix,
+        nonconj_coactivity_rate,
+        nonconj_coactivity_rate_norm,
+        nonconj_spine_fraction_coactive,
+        nonconj_dend_fraction_coactive,
+        nonconj_spine_coactive_amplitude,
+        nonconj_spine_coactive_calcium,
+        nonconj_spine_coactive_auc,
+        nonconj_spine_coactive_calcium_auc,
+        nonconj_dend_coactive_amplitude,
+        nonconj_dend_coactive_auc,
+        nonconj_relative_onset,
+        nonconj_spine_coactive_traces,
+        nonconj_spine_coactive_calcium_traces,
+        nonconj_dend_coactive_traces,
+    ) = absolute_dendrite_coactivity(
+        spine_activity,
+        spine_dFoF,
+        spine_calcium,
+        dend_activity,
+        dend_dFoF,
+        spine_groupings,
+        spine_flags,
+        contrain_matrix=nearby_combined_activity,
+        activity_window=activity_window,
+        sampling_rate=sampling_rate,
+        volume_norm=volume_norm,
+    )
