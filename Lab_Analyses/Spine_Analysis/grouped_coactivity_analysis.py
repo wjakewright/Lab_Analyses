@@ -420,6 +420,10 @@ def grouped_coactivity_analysis(
                 sampling_rate=sampling_rate,
             )
 
+            learned_movement_pattern = [
+                learned_movement for i in range(spine_activity.shape[1])
+            ]
+
             # Compare movement encoding between spines and parent dendrite
             rel_spine_vs_dend_move_corr = spine_move_correlation - dend_move_correlation
             (
@@ -737,4 +741,41 @@ def grouped_coactivity_analysis(
             grouped_data["spine_dend_cluster_score"].append(spine_dend_cluster_score)
             grouped_data["spine_dend_coactive_num"].append(spine_dend_coactive_num)
             ## Adding movement-related activity variables
+            grouped_data["movement_spine_traces"].append(move_spine_traces)
+            grouped_data["movement_spine_amplitude"].append(move_spine_amplitude)
+            grouped_data["movement_spine_onset"].append(move_spine_onset)
+            grouped_data["movement_dend_traces"].append(move_dend_traces)
+            grouped_data["movement_dend_amplitude"].append(move_dend_amplitude)
+            grouped_data["movement_dend_onset"].append(move_dend_onset)
+            ## Adding movement quality variables
+            grouped_data["learned_movement_pattern"].append(learned_movement_pattern)
+            grouped_data["spine_movements"].append(spine_movements)
+            grouped_data["spine_movement_correlation"].append(spine_move_correlation)
+            grouped_data["spine_movement_reliability"].append(spine_move_reliability)
+            grouped_data["spine_movement_specificity"].append(spine_move_specificity)
+            grouped_data["dend_movements"].append(dend_movements)
+            grouped_data["dend_movement_correlation"].append(dend_move_correlation)
+            grouped_data["dend_movement_reliability"].append(dend_move_reliability)
+            grouped_data["dend_movement_specificity"].append(dend_move_specificity)
+            grouped_data["local_movements"].append(local_movements)
+            grouped_data["local_movement_correlation"].append(local_move_correlation)
+            grouped_data["local_movement_reliability"].append(local_move_reliability)
+            grouped_data["local_movement_specificity"].append(local_move_specificity)
+            grouped_data["spine_dend_movements"].append(spine_dend_movements)
+            grouped_data["spine_dend_movement_correlation"].append(
+                spine_dend_move_correlation
+            )
+            grouped_data["spine_dend_movement_reliability"].append(
+                spine_dend_move_reliability
+            )
+            grouped_data["spine_dend_movement_specificity"].append(
+                spine_dend_move_specificity
+            )
+            grouped_data["rel_spine_vs_dend_move_corr"].append(
+                rel_spine_vs_dend_move_corr
+            )
+            grouped_data["spine_to_dend_correlation"].append(spine_to_dend_correlation)
+            grouped_data["spine_to_nearby_correlation"].append(
+                spine_to_nearby_correlation
+            )
 
