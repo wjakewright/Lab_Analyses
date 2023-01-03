@@ -83,6 +83,8 @@ def grouped_coactivity_analysis(
                 curr_ca_constants = ca_constants[mouse][FOV]
                 constants = (curr_glu_constants, curr_ca_constants)
             else:
+                curr_glu_constants = None
+                curr_ca_constants = None
                 constants = None
 
             # Pull relevant data
