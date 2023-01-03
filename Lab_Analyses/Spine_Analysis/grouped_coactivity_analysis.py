@@ -15,6 +15,7 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
     load_spine_datasets,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.movement_related_activity import movement_related_activity
 from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
 
 
@@ -310,6 +311,31 @@ def grouped_coactivity_analysis(
             )
 
             # Analyze movement-related activity
+            print("-- Movement-Related Activity Analysis")
+            ## Spines
+            (
+                move_spine_traces,
+                move_spine_amplitude,
+                move_spine_onset,
+            ) = movement_related_activity(
+                lever_active,
+                spine_dFoF,
+                norm=curr_glu_constants,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
+            ## Dendrites
+            (
+                move_dend_traces,
+                move_dend_amplitude,
+                move_dend_onset,
+            ) = movement_related_activity(
+                lever_active,
+                dendrite_dFoF,
+                norm=None,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
 
             # Get movement quality encoding for spines and dendrites
             print("-- Assessing Movement Quality")
