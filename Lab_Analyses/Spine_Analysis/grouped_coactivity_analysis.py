@@ -16,7 +16,10 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.movement_related_activity import movement_related_activity
-from Lab_Analyses.Utilities.quantify_movment_quality import quantify_movement_quality
+from Lab_Analyses.Utilities.quantify_movment_quality import (
+    quantify_movement_quality,
+    spine_dendrite_movement_similarity,
+)
 
 
 def grouped_coactivity_analysis(
@@ -104,6 +107,7 @@ def grouped_coactivity_analysis(
             movement_spines = data.movement_spines
             non_movement_spines = [not x for x in movement_spines]
             rwd_movement_spines = data.reward_movement_spines
+            rwd_nonmovement_spines = [not x for x in rwd_movement_spines]
 
             ## Dendrite activity and movement encoding
             dendrite_activity = np.zeros(spine_activity.shape)
@@ -121,6 +125,7 @@ def grouped_coactivity_analysis(
                     movement_dendrites[s] = data.movement_dendrites[d]
                     rwd_movement_dendrites[s] = data.reward_movement_dendrites[d]
             non_movement_dendrites = [not x for x in movement_dendrites]
+            rwd_nonmovement_dendrites = [not x for x in rwd_movement_dendrites]
 
             ## Behavioral data
             lever_active = data.lever_active
@@ -256,8 +261,7 @@ def grouped_coactivity_analysis(
                 spine_dend_dend_coactive_auc,
                 spine_dend_relative_onset,
                 spine_dend_spine_coactive_traces,
-                spine_dend,
-                _spine_coactive_calcium_traces,
+                spine_dend_spine_coactive_calcium_traces,
                 spine_dend_dend_coactive_traces,
                 conj_coactivity_matrix,
                 conj_coactivity_rate,
@@ -415,4 +419,81 @@ def grouped_coactivity_analysis(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
+
+            # Compare movement encoding between spines and parent dendrite
+            rel_spine_vs_dend_move_corr = spine_move_correlation - dend_move_correlation
+            (
+                spine_to_dend_correlation,
+                spine_to_nearby_correlation,
+            ) = spine_dendrite_movement_similarity(
+                spine_movements, dend_movements, nearby_spine_idxs,
+            )
+
+            # Generate FOV and Mouse ID lists
+            fovs = [FOV for i in range(spine_activity.shape[1])]
+            ids = [mouse for i in range(spine_activity.shape[1])]
+
+            # Store data from this mouse in grouped_data dictionary
+            ## Adding general variables
+            grouped_data["mouse_id"].append(ids)
+            grouped_data["FOVs"].append(fovs)
+            grouped_data["spine_flags"].append(spine_flags)
+            grouped_data["followup_flags"].append(followup_flags)
+            grouped_data["spine_volumes"].append(spine_volume)
+            grouped_data["spine_volumes_um"].append(spine_volume_um)
+            grouped_data["followup_volumes"].append(followup_volume)
+            grouped_data["followup_volumes_um"].append(followup_volume_um)
+            grouped_data["movement_spines"].append(movement_spines)
+            grouped_data["nonmovement_spines"].append(non_movement_spines)
+            grouped_data["rwd_movement_spines"].append(rwd_movement_spines)
+            grouped_data["rwd_nonmovement_spines"].append(rwd_nonmovement_spines)
+            grouped_data["movement_dendrites"].append(movement_dendrites)
+            grouped_data["nonmovement_dendrites"].append(non_movement_dendrites)
+            grouped_data["rwd_movement_dendrites"].append(rwd_movement_dendrites)
+            grouped_data["rwd_nonmovement_dendrites"].append(rwd_nonmovement_dendrites)
+            grouped_data["spine_activity_rate"].append(spine_activity_rate)
+            grouped_data["dend_activity_rate"].append(dend_activity_rate)
+            ## Adding local coactivity variables
+            grouped_data["distance_coactivity_rate"].append(distance_coactivity_rate)
+            grouped_data["distance_coactivity_rate_norm"].append(
+                distance_coactivity_rate_norm
+            )
+            grouped_data["MRS_distance_coactivity_rate"].append(
+                MRS_distance_coactivity_rate
+            )
+            grouped_data["MRS_distance_coactivity_rate_norm"].append(
+                MRS_distance_coactivity_rate_norm
+            )
+            grouped_data["nMRS_distance_coactivity_rate"].append(
+                nMRS_distance_coactivity_rate
+            )
+            grouped_data["nMRS_distance_coactivity_rate_norm"].append(
+                nMRS_distance_coactivity_rate_norm
+            )
+            grouped_data["avg_local_coactivity_rate"].append(avg_local_coactivity_rate)
+            grouped_data["avg_local_coactivity_rate_norm"].append(
+                avg_local_coactivity_rate_norm
+            )
+            grouped_data["avg_MRS_local_coactivity_rate"].append(
+                avg_MRS_local_coactivity_rate
+            )
+            grouped_data["avg_MRS_local_coactivity_rate_norm"].append(
+                avg_MRS_local_coactivity_rate_norm
+            )
+            grouped_data["avg_nMRS_local_coactivity_rate"].append(
+                avg_nMRS_local_coactivity_rate
+            )
+            grouped_data["avg_nMRS_local_coactivity_rate_norm"].append(
+                avg_nMRS_local_coactivity_rate_norm
+            )
+            grouped_data["spine_cluster_score"].append(spine_cluster_score)
+            grouped_data["spine_coactive_num"].append(spine_coactive_num)
+            grouped_data["MRS_cluster_score"].append(MRS_cluster_score)
+            grouped_data["MRS_coactive_num"].append(MRS_coactive_num)
+            grouped_data["nMRS_cluster_score"].append(nMRS_cluster_score)
+            grouped_data["nMRS_coactive_num"].append(nMRS_coactive_num)
+            grouped_data["movement_cluster_score"].append(movement_cluster_score)
+            grouped_data["movement_coactive_num"].append(movement_coactive_num)
+            grouped_data["nonmovement_cluster_score"].append(nonmovement_cluster_score)
+            grouped_data["nonmovement_coactive_num"].append(nonmovement_coactive_num)
 
