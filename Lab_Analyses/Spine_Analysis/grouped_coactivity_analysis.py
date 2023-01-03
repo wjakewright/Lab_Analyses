@@ -603,11 +603,11 @@ def grouped_coactivity_analysis(
             grouped_data["local_avg_nearby_calcium_traces"].append(
                 local_avg_coactive_calcium_traces
             )
-            grouped_data["avg_nearby_move_corr"].append(avg_nearby_move_corr)
-            grouped_data["avg_nearby_move_reliability"].append(
+            grouped_data["avg_nearby_movement_correlation"].append(avg_nearby_move_corr)
+            grouped_data["avg_nearby_movement_reliability"].append(
                 avg_nearby_move_reliability
             )
-            grouped_data["avg_nearby_move_specificity"].append(
+            grouped_data["avg_nearby_movement_specificity"].append(
                 avg_nearby_move_specificity
             )
             grouped_data["avg_nearby_coactivity_rate"].append(
