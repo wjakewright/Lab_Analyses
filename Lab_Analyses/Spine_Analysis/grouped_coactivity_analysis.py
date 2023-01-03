@@ -368,4 +368,23 @@ def grouped_coactivity_analysis(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
+            ## Spine-Dendrite Coactivity
+            (
+                _,
+                spine_dend_movements,
+                _,
+                spine_dend_move_correlation,
+                spine_dend_move_reliability,
+                _,
+                _,
+                spine_dend_move_specificity,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                spine_dend_coactivity_matrix,
+                lever_active,
+                lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
 
