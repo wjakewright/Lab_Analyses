@@ -20,6 +20,7 @@ from Lab_Analyses.Utilities.quantify_movment_quality import (
     quantify_movement_quality,
     spine_dendrite_movement_similarity,
 )
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def grouped_coactivity_analysis(
@@ -1055,3 +1056,25 @@ def grouped_coactivity_analysis(
         spine_to_dend_correlation=regrouped_data["spine_to_dend_correlation"],
         spine_to_nearby_correlation=regrouped_data["spine_to_nearby_correlation"],
     )
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Desktop\Analyzed_data\grouped"
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+
+        # Set up name to include parameters
+        if zscore:
+            a_type = "zscore"
+        else:
+            a_type = "dFoF"
+        if volume_norm:
+            norm = "_norm"
+        else:
+            norm = ""
+
+        save_name = f"{day}_{a_type}{norm}_spine_coactivity_data"
+        save_pickle(save_name, spine_coactivity_data, save_path)
+
+    return spine_coactivity_data
