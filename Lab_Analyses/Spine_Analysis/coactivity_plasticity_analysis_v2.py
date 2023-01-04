@@ -110,6 +110,68 @@ class Coactivity_Plasticity:
             # Store the attribute
             setattr(self, attribute, new_variable)
 
+    def plot_volume_correlation(
+        self,
+        variable_name,
+        volume_type,
+        CI=None,
+        figsize=(5, 5),
+        ytitle=None,
+        xlim=None,
+        ylim=None,
+        face_color="mediumblue",
+        edge_color="white",
+        edge_width=0.3,
+        s_alpha=0.5,
+        line_color="mediumblue",
+        line_width=1,
+        log_trans=True,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot and correlation a given variable against spine volume change"""
+        variable = getattr(self, variable_name)
+
+        # Remove nan values
+        non_nan = np.nonzero(~np.isnan(variable))[0]
+        variable = variable[non_nan]
+
+        # Log transform relative volumes if specified
+        if volume_type == "relative_volume":
+            if log_trans:
+                volume = np.log10(self.relative_volumes)
+            else:
+                volume = self.relative_volumes
+            xtitle = "\u0394" + " spine volume"
+        elif volume_type == "volume_um":
+            volume = self.spine_volumes_um
+            xtitle = "spine area (um)"
+        elif volume_type == "volume":
+            volume = self.spine_volumes
+            xtitle = "spine area (au)"
+
+        volume = volume[non_nan]
+
+        sp.plot_sns_scatter_correlation(
+            volume,
+            variable,
+            CI,
+            title=variable_name,
+            xtitle=xtitle,
+            ytitle=ytitle,
+            figsize=figsize,
+            xlim=xlim,
+            ylim=ylim,
+            face_color=face_color,
+            edge_color=edge_color,
+            edge_width=edge_width,
+            s_alpha=s_alpha,
+            line_color=line_color,
+            line_width=line_width,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
