@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from Lab_Analyses.Utilities import data_utilities as d_utils
 from scipy import stats
+
+from Lab_Analyses.Utilities import data_utilities as d_utils
 
 sns.set()
 sns.set_style("ticks")
@@ -23,6 +24,7 @@ def plot_sns_scatter_correlation(
     figsize=(5, 5),
     xlim=None,
     ylim=None,
+    marker_size=3,
     face_color="mediumblue",
     edge_color="mediumblue",
     edge_width=0.3,
@@ -87,6 +89,7 @@ def plot_sns_scatter_correlation(
         "edgecolor": edge_color,
         "alpha": s_alpha,
         "linewidth": edge_width,
+        "s": marker_size,
     }
     line_kws = {"linewidth": line_width, "color": line_color}
 
@@ -114,18 +117,20 @@ def plot_swarm_bar_plot(
     data_dict,
     mean_type="mean",
     err_type="sem",
-    marker="o",
     figsize=(5, 5),
     title=None,
     xtitle=None,
     ytitle=None,
     ylim=None,
-    linestyle="",
-    m_colors="mediumblue",
-    m_size=6,
+    b_colors="mediumblue",
+    b_edgecolors="black",
+    b_err_colors="black",
+    b_width=0.5,
+    b_linewidth=0,
+    b_alpha=0.3,
     s_colors="mediumblue",
     s_size=5,
-    s_alpha=0.3,
+    s_alpha=0.8,
     ahlines=None,
     save=False,
     save_path=None,
@@ -224,20 +229,20 @@ def plot_swarm_bar_plot(
     sns.stripplot(data=data_df, palette=s_colors, alpha=s_alpha, zorder=0, size=s_size)
 
     # Plot means
-    for pos, mean, sem, c in zip(x, data_mean, data_sems, m_colors):
-        ax.errorbar(
-            pos,
-            mean,
-            sem,
-            color=c,
-            fmt=marker,
-            markerfacecolor=c,
-            ecolor=c,
-            linestyle=linestyle,
-            markersize=m_size,
-        )
+    plt.bar(
+        x=x,
+        height=data_mean,
+        yerr=data_sems,
+        width=b_width,
+        color=b_colors,
+        edgecolor=b_edgecolors,
+        ecolor=b_err_colors,
+        linewidth=b_linewidth,
+        alpha=b_alpha,
+    )
 
     # Format axes
+    sns.despine()
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
     ax.set_ylabel(ytitle)
@@ -263,15 +268,17 @@ def plot_grouped_swarm_bar_plot(
     groups,
     mean_type="mean",
     err_type="sem",
-    marker="o",
     figsize=(5, 5),
     title=None,
     xtitle=None,
     ytitle="value",
     ylim=None,
-    linestyle="",
-    m_colors="mediumblue",
-    m_size=6,
+    b_colors="mediumblue",
+    b_edgecolors="black",
+    b_err_colors="black",
+    b_width=0.5,
+    b_linewidth=0,
+    b_alpha=0.3,
     s_colors="mediumblue",
     s_size=5,
     s_alpha=0.3,
@@ -408,20 +415,20 @@ def plot_grouped_swarm_bar_plot(
     err_colors = [m_colors for x in g1_keys]
     err_colors = [x for y in err_colors for x in y]
     # Plot the mean and error
-    for x, mean, err, c in zip(x_coords, data_mean, data_err, err_colors):
-        ax.errorbar(
-            x,
-            mean,
-            err,
-            color=c,
-            fmt=marker,
-            markerfacecolor=c,
-            ecolor=c,
-            linestyle=linestyle,
-            markersize=m_size,
-        )
+    plt.bar(
+        x=x_coords,
+        height=data_mean,
+        yerr=data_err,
+        width=b_width,
+        color=b_colors,
+        edgecolor=b_edgecolors,
+        ecolor=b_err_colors,
+        linewidth=b_linewidth,
+        alpha=b_alpha,
+    )
 
     # Format axes
+    sns.despine()
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
     ax.set_ylabel(ytitle)
@@ -516,6 +523,7 @@ def mean_and_lines_plot(
             plt.plot(x, data, color=l_colors[i], alpha=l_alpha)
 
     # Format axes
+    sns.despine()
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
     ax.set_ylabel(ytitle)
