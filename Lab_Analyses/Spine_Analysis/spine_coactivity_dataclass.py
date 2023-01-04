@@ -120,7 +120,7 @@ class Spine_Coactivity_Data:
     conj_dend_coactive_amplitude: np.array
     conj_denc_coactive_auc: np.array
     conj_relative_onset: np.array
-    conj_spine_coactve_traces: list
+    conj_spine_coactive_traces: list
     conj_spine_coactive_calcium_traces: list
     conj_dend_coactive_traces: list
     nonconj_coactivity_rate: np.array
@@ -132,9 +132,9 @@ class Spine_Coactivity_Data:
     nonconj_spine_coactive_auc: np.array
     nonconj_spine_coactive_calcium_auc: np.array
     nonconj_dend_coactive_amplitude: np.array
-    nonconj_denc_coactive_auc: np.array
+    nonconj_dend_coactive_auc: np.array
     nonconj_relative_onset: np.array
-    nonconj_spine_coactve_traces: list
+    nonconj_spine_coactive_traces: list
     nonconj_spine_coactive_calcium_traces: list
     nonconj_dend_coactive_traces: list
     spine_dend_distance_coactivity_rate: np.array
