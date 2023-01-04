@@ -854,7 +854,7 @@ def plot_spine_coactivity_distance(
     ax = fig.add_subplot()
     title = "Distance-depdendent spine coactivity"
     if title_suff:
-        title = title + "_" + title_suff
+        title = title + " " + title_suff
     ax.set_title(title)
     x = list(range(len(bins)))
 
@@ -871,6 +871,7 @@ def plot_spine_coactivity_distance(
     plt.ylabel(ytitle)
     if ylim:
         plt.ylim(bottom=ylim[0], top=ylim[1])
+    sns.despine()
     fig.tight_layout()
 
     if save:
