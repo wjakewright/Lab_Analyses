@@ -172,6 +172,77 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_group_scatter_plot(
+        self,
+        variable_name,
+        group_type,
+        mean_type,
+        err_type,
+        figsize=(5, 5),
+        ytitle=None,
+        ylim=None,
+        b_colors=["darkorange", "forestgreen", "silver"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=["darkorange", "forestgreen", "silver"],
+        s_size=5,
+        s_alpha=0.8,
+        save=False,
+        save_path=None,
+    ):
+        """Method for plotting the means and individual points for a given variable for 
+            specified groups"""
+
+        variable = getattr(self, variable_name)
+
+        # Get the appropriate groups and store data
+        data_dict = {}
+        if group_type == "plastic_spines":
+            spine_groups = [
+                "enlarged_spines",
+                "shrunken_spines",
+                "stable_spines",
+            ]
+        if group_type == "movement_spines":
+            spine_groups = ["movement_spines", "nonmovement_spines"]
+        if group_type == "rwd_movement_spines":
+            spine_groups = ["rwd_movement_spines", "rwd_nonmovement_spines"]
+        if group_type == "movement_dendrites":
+            spine_groups = ["movement_dendrites", "nonmovement_dendrites"]
+
+        for group in spine_groups:
+            group_spines = getattr(self, group)
+            group_data = variable[group_spines]
+            group_data = group_data[~np.isnan(group_data)]
+            data_dict[group] = group_data
+
+        # Plot data
+        sp.plot_swam_bar_plot(
+            data_dict,
+            mean_type=mean_type,
+            err_type=err_type,
+            figsize=figsize,
+            title=variable_name,
+            xtitle=None,
+            ytitle=ytitle,
+            ylim=ylim,
+            b_colors=b_colors,
+            b_edgecolors=b_edgecolors,
+            b_err_colors=b_err_colors,
+            b_width=b_width,
+            b_linewidth=b_linewidth,
+            b_alpha=b_alpha,
+            s_colors=s_colors,
+            s_size=s_size,
+            s_alpha=s_alpha,
+            ahlines=None,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
