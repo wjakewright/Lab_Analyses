@@ -414,6 +414,44 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_spine_coactivity_distance(
+        self,
+        variable_name,
+        group_type,
+        figsize=(5, 5),
+        colors=["darkorange", "forestgreen", "silver"],
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot distance-depencent spine coactivity for different groups"""
+        coactivity_data = getattr(self, variable_name)
+        spine_groups = self.group_dict[group_type]
+        bins = self.parameters["Distance Bins"][1:]
+
+        if "norm" in variable_name:
+            ytitle = "Normalized coactivity rate"
+        else:
+            ytitle = "Coactivity rate (events/min)"
+
+        data_dict = {}
+        for group in spine_groups:
+            spines = getattr(self, group)
+            data = coactivity_data[:, spines]
+            data_dict[group] = data
+
+        sp.plot_spine_coactivity_distance(
+            data_dict=data_dict,
+            bins=bins,
+            colors=colors,
+            title_suff=group_type,
+            figsize=figsize,
+            ylim=ylim,
+            ytitle=ytitle,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
