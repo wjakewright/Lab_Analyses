@@ -452,6 +452,47 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_histogram(
+        self,
+        variable,
+        bins,
+        group_type=None,
+        exclude=None,
+        avlines=None,
+        figsize=(5, 5),
+        color="mediumblue",
+        alpha=0.4,
+        save=False,
+        save_path=None,
+    ):
+        """method to plot data variables as a histogram"""
+        if group_type is None:
+            data = getattr(self, variable)
+        else:
+            groups = self.group_dict[group_type]
+            data = []
+            for group in groups:
+                if group in exclude:
+                    continue
+                else:
+                    d = getattr(self, variable)
+                    g = getattr(self, group)
+                    group_data = compress(d, g)
+                    data.append(group_data)
+
+        sp.plot_histogram(
+            data,
+            bins,
+            avlines,
+            variable,
+            variable,
+            figsize,
+            color,
+            alpha,
+            save,
+            save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
