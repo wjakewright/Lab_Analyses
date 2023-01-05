@@ -25,7 +25,7 @@ sns.set_style("ticks")
 warnings.simplefilter("error", optimize.OptimizeWarning)
 
 
-def analyze_dual_plane_data(mouse_list, save=False):
+def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     """Function to handle the analysis of dual plane somatic and 
         dendritic imaging datasets. Combines data across mice and FOVs
         
@@ -95,7 +95,7 @@ def analyze_dual_plane_data(mouse_list, save=False):
             dend_dFoF,
             threshold=2,
             lower_threshold=1,
-            lower_limit=None,
+            lower_limit=0.2,
             sampling_rate=sampling_rate,
         )
         soma_activity, _, _ = event_detection(
@@ -249,7 +249,8 @@ def analyze_dual_plane_data(mouse_list, save=False):
 
     # Save Section
     if save:
-        save_path = r"C:Users\Desktop\Analyzed_data\grouped\dual_plane_imaging"
+        if save_path is None:
+            save_path = r"C:Users\Desktop\Analyzed_data\grouped\dual_plane_imaging"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         save_name = f"dual_plane_soma_dendrite_activity_data"
