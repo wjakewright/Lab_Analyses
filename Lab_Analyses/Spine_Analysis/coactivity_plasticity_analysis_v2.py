@@ -547,6 +547,50 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_group_trial_heatmaps(
+        self,
+        trace_type,
+        group,
+        figsize=(4, 5),
+        hmap_range=None,
+        center=None,
+        sorted=False,
+        normalize=False,
+        cmap="plasma",
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot individual trial activity of each spine within a given group"""
+
+        traces = getattr(self, trace_type)
+        spines = getattr(self, group)
+        group_traces = compress(traces, spines)
+        data_dict = {}
+        for i, s in enumerate(group_traces):
+            name = f"Spine {i+1}"
+            data_dict[name] = s
+
+        if self.parameters["zscore"]:
+            cbar_label = "zscore"
+        else:
+            cbar_label = "\u0394" + "F/F\u2080"
+
+        sp.plot_spine_heatmap(
+            data_dict,
+            figsize=figsize,
+            sampling_rate=self.parameters["Sampling Rate"],
+            activity_window=self.parameters["Activity Window"],
+            title=trace_type,
+            cbar_label=cbar_label,
+            hmap_range=hmap_range,
+            center=center,
+            sorted=sorted,
+            normalize=normalize,
+            cmap=cmap,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
