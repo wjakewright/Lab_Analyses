@@ -375,6 +375,45 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_ind_spine_mean_traces(
+        self,
+        trace_type,
+        group,
+        avlines=None,
+        figsize=(10, 4),
+        color="darkorange",
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot the mean activity traces for each spine in a given group"""
+
+        traces = getattr(self, trace_type)
+        group_spines = getattr(self, group)
+        group_traces = compress(traces, group_spines)
+        mean_traces = [np.nanmean(x, axis=1) for x in group_traces]
+        sem_traces = [stats.sem(x, axis=1, nan_policy="omit") for x in group_traces]
+
+        if self.parameters["zscore"]:
+            ytitle = "zscore"
+        else:
+            ytitle = "\u0394" + "F/F\u2080"
+
+        sp.ind_mean_activity_traces(
+            mean_traces,
+            sem_traces,
+            sampling_rate=self.parameters["Sampling Rate"],
+            activity_window=self.parameters["Activity Window"],
+            avlines=avlines,
+            figsize=figsize,
+            color=color,
+            title=f"{trace_type} {group}",
+            ytitle=ytitle,
+            ylim=ylim,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
