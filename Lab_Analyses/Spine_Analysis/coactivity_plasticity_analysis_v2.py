@@ -6,9 +6,7 @@ from scipy import stats
 
 from Lab_Analyses.Spine_Analysis import spine_plotting as sp
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
-    calculate_volume_change,
-    classify_plasticity,
-)
+    calculate_volume_change, classify_plasticity)
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
@@ -48,6 +46,17 @@ class Coactivity_Plasticity:
         self.parameters = dataset.parameters
         self.save = save
         self.save_path = save_path
+
+        self.group_dict = {
+            "plastic_spines": ["enlarged_spines", "shrunken_spines", "stable_spines"],
+            "movement_spines": ["movement_spines", "nonmovement_spines"],
+            "rwd_movement_spines": ["rwd_movement_spines", "rwd_nonmovement_spines"],
+            "movement_dendrites": ["movement_dendrites", "nonmovement_dendrites"],
+            "rwd_movement_dendrites": [
+                "rwd_movement_dendrities",
+                "rwd_nonmovement_dendrites",
+            ],
+        }
 
         # Analyze the data
         self.analyze_plasticity(dataset, subsequent_flags, subsequent_volumes)
@@ -200,18 +209,7 @@ class Coactivity_Plasticity:
 
         # Get the appropriate groups and store data
         data_dict = {}
-        if group_type == "plastic_spines":
-            spine_groups = [
-                "enlarged_spines",
-                "shrunken_spines",
-                "stable_spines",
-            ]
-        if group_type == "movement_spines":
-            spine_groups = ["movement_spines", "nonmovement_spines"]
-        if group_type == "rwd_movement_spines":
-            spine_groups = ["rwd_movement_spines", "rwd_nonmovement_spines"]
-        if group_type == "movement_dendrites":
-            spine_groups = ["movement_dendrites", "nonmovement_dendrites"]
+        spine_groups = self.group_dict[group_type]
 
         for group in spine_groups:
             group_spines = getattr(self, group)
@@ -222,6 +220,80 @@ class Coactivity_Plasticity:
         # Plot data
         sp.plot_swam_bar_plot(
             data_dict,
+            mean_type=mean_type,
+            err_type=err_type,
+            figsize=figsize,
+            title=variable_name,
+            xtitle=None,
+            ytitle=ytitle,
+            ylim=ylim,
+            b_colors=b_colors,
+            b_edgecolors=b_edgecolors,
+            b_err_colors=b_err_colors,
+            b_width=b_width,
+            b_linewidth=b_linewidth,
+            b_alpha=b_alpha,
+            s_colors=s_colors,
+            s_size=s_size,
+            s_alpha=s_alpha,
+            ahlines=None,
+            save=save,
+            save_path=save_path,
+        )
+
+    def plot_multi_group_scatter_plots(
+        self, 
+        variable_name,
+        group_type,
+        subgroup_type,
+        mean_type,
+        err_type,
+        figsize=(5,5),
+        ytitle=None,
+        ylim=None,
+        b_colors=["darkorange", "forestgreen", "silver"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=["darkorange", "forestgreen", "silver"],
+        s_size=5,
+        s_alpha=0.8,
+        save=False,
+        save_path=None,
+    ):
+        """Method for plotting means and individual points for a given variable of specified
+            groups and subgroups"""
+
+        if ytitle is None:
+            ytitle = variable_name
+        
+        # Get the data
+        variable = getattr(self, variable_name)
+
+        # Setup groups
+        group_list = [subgroup_type, group_type]
+        groups = self.group_dict[group_type]
+        subgroups = self.group_dict[subgroup_type]
+
+        # Divide data into appropriate groups
+        data_dict = {}
+        for subgroup in subgroups:
+            sub_dict = {}
+            sg_spines = getattr(self, subgroup)
+            for group in groups:
+                g_spines = getattr(self, group)
+                spines = np.array(sg_spines) * np.array(g_spines)
+                spine_data = variable[spines]
+                spine_data = spine_data[~np.isnan(spine_data)]
+                sub_dict[group] = spine_data
+            data_dict[subgroup] = sub_dict
+        
+        # Make the plot
+        sp.plot_grouped_swarm_bar_plot(
+            data_dict,
+            group_list,
             mean_type=mean_type,
             err_type=err_type,
             figsize=figsize,
