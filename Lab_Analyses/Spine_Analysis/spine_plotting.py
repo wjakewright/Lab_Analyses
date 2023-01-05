@@ -802,7 +802,11 @@ def plot_histogram(
     """
 
     plt.figure(figsize=figsize)
-    plt.hist(data, bins, color=color, alpha=alpha)
+    if type(data) == list:
+        for d, c in zip(data, color):
+            plt.hist(d, bins, color=c, alpha=alpha)
+    else:
+        plt.hist(data, bins, color=color, alpha=alpha)
     if avlines:
         for line in avlines:
             plt.axvline(line, linestyle="--", color="black")
