@@ -493,6 +493,60 @@ class Coactivity_Plasticity:
             save_path,
         )
 
+    def plot_group_mean_heatmaps(
+        self,
+        trace_type,
+        group_type,
+        figsize=(4, 5),
+        hmap_range=None,
+        center=None,
+        sorted=False,
+        normalize=False,
+        cmap="plasma",
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot the trial averaged activity across different groups"""
+
+        traces = getattr(self, trace_type)
+        spine_groups = self.group_dict[group_type]
+        spine_groups.insert(0, "all")
+
+        trace_dict = {}
+        for group in spine_groups:
+            if group != "all":
+                spines = getattr(self, group)
+                group_traces = compress(traces, spines)
+                means = [
+                    np.nanmean(x, axis=1) for x in group_traces if type(x) == np.ndarray
+                ]
+            else:
+                means = [np.nanmean(x, axis=1) for x in traces if type(x) == np.ndarray]
+            means = np.vstack(means)
+            means = np.unique(means, axis=0).T
+            trace_dict[group] = means
+
+        if self.parameters["zscore"]:
+            cbar_label = "zscore"
+        else:
+            cbar_label = "\u0394" + "F/F\u2080"
+
+        sp.plot_spine_heatmap(
+            trace_dict,
+            figsize=figsize,
+            sampling_rate=self.parameters["Sampling Rate"],
+            activity_window=self.parameters["Activity Window"],
+            title=trace_type,
+            cbar_label=cbar_label,
+            hmap_range=hmap_range,
+            center=center,
+            sorted=sorted,
+            normalize=normalize,
+            cmap=cmap,
+            save=save,
+            save_path=save_path,
+        )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
