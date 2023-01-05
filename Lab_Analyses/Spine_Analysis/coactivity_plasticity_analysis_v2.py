@@ -6,7 +6,9 @@ from scipy import stats
 
 from Lab_Analyses.Spine_Analysis import spine_plotting as sp
 from Lab_Analyses.Spine_Analysis.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
+    calculate_volume_change,
+    classify_plasticity,
+)
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
@@ -242,13 +244,13 @@ class Coactivity_Plasticity:
         )
 
     def plot_multi_group_scatter_plots(
-        self, 
+        self,
         variable_name,
         group_type,
         subgroup_type,
         mean_type,
         err_type,
-        figsize=(5,5),
+        figsize=(5, 5),
         ytitle=None,
         ylim=None,
         b_colors=["darkorange", "forestgreen", "silver"],
@@ -268,7 +270,7 @@ class Coactivity_Plasticity:
 
         if ytitle is None:
             ytitle = variable_name
-        
+
         # Get the data
         variable = getattr(self, variable_name)
 
@@ -289,7 +291,7 @@ class Coactivity_Plasticity:
                 spine_data = spine_data[~np.isnan(spine_data)]
                 sub_dict[group] = spine_data
             data_dict[subgroup] = sub_dict
-        
+
         # Make the plot
         sp.plot_grouped_swarm_bar_plot(
             data_dict,
@@ -311,6 +313,64 @@ class Coactivity_Plasticity:
             s_size=s_size,
             s_alpha=s_alpha,
             ahlines=None,
+            save=save,
+            save_path=save_path,
+        )
+
+    def plot_group_spine_mean_traces(
+        self,
+        group_type,
+        trace_type,
+        exclude=None,
+        avlines=None,
+        figsize=(5, 5),
+        colors=["darkorange", "forestgreen", "silver"],
+        ylim=None,
+        save=False,
+        save_path=None,
+    ):
+        """Method to plot the mean activity of traces for specified spine groups"""
+
+        traces = getattr(self, trace_type)
+
+        spine_groups = self.group_dict[group_type]
+
+        mean_traces = []
+        sem_traces = []
+        used_groups = []
+        for group in spine_groups:
+            if group in exclude:
+                continue
+            spines = getattr(self, group)
+            group_traces = compress(traces, spines)
+            means = [
+                np.nanmean(x, axis=1) for x in group_traces if type(x) == np.ndarray
+            ]
+            means = np.vstackk(means)
+            means = np.unique(means, axis=0)
+            group_mean = np.nanmean(means, axis=0)
+            group_sem = stats.sem(means, axis=0, nan_policy="omit")
+            mean_traces.append(group_mean)
+            sem_traces.append(group_sem)
+            used_groups.append(group)
+
+        if self.parameters["zscore"]:
+            ytitle = "zscore"
+        else:
+            ytitle = "\u0394" + "F/F\u2080"
+
+        sp.plot_mean_activity_traces(
+            mean_traces,
+            sem_traces,
+            used_groups,
+            sampling_rate=self.parameters["Sampling Rate"],
+            activity_window=self.parameters["Activity Window"],
+            avlines=avlines,
+            figsize=figsize,
+            colors=colors,
+            title=trace_type,
+            ytitle=ytitle,
+            ylim=ylim,
             save=save,
             save_path=save_path,
         )
