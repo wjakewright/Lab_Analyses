@@ -51,6 +51,8 @@ def calculate_cluster_score(
 
     # Constrain data if specified
     if constrain_matrix is not None:
+        if len(constrain_matrix.shape) == 1:
+            constrain_matrix = constrain_matrix.reshape(-1, 1)
         activity_matrix = spine_activity * constrain_matrix
     else:
         activity_matrix = spine_activity
@@ -78,10 +80,10 @@ def calculate_cluster_score(
             # Get partner indexes
             p_idxs = [x for x in range(s_activity.shape[1]) if x != spine]
             # Remove eliminated spines from partner spines
-            partner_idxs = [i for i in p_idxs if curr_el_spines[i] is False]
+            partner_idxs = [i for i in p_idxs if curr_el_spines[i] == False]
             # Subselect partners if specified
             if partner_list is not None:
-                partner_idxs = [j for j in partner_idxs if partner_list[i] is True]
+                partner_idxs = [j for j in partner_idxs if partner_list[j] == True]
             partner_spines = s_activity[:, partner_idxs]
             # Get positional information
             curr_pos = positions[spine]
@@ -92,10 +94,13 @@ def calculate_cluster_score(
             nn_distance, coactive_n = find_nearest_neighbors(
                 curr_spine, partner_spines, partner_pos
             )
+            if np.isnan(nn_distance):
+                cluster_score[spines[spine]] = np.nan
+                coactive_num[spines[spine]] = 0
             # Calculate shuffled nearest neighbor distances
             all_shuff_nn_distances = []
             for i in range(iterations):
-                shuff_pos = random.sample(partner_pos, len(partner_pos))
+                shuff_pos = np.array(random.sample(list(partner_pos), len(partner_pos)))
                 shuff_nn, _ = find_nearest_neighbors(
                     curr_spine, partner_spines, shuff_pos
                 )
@@ -120,6 +125,10 @@ def find_nearest_neighbors(target_spine, partner_spines, partner_positions):
     active_boundaries = np.insert(np.diff(target_spine), 0, 0, axis=0)
     active_onsets = np.nonzero(active_boundaries == 1)[0]
     active_offsets = np.nonzero(active_boundaries == -1)[0]
+    if len(active_onsets) == 0:
+        avg_nearest_neighbor = np.nan
+        avg_num_coactive = 0
+        return avg_nearest_neighbor, avg_num_coactive
     ## Check onset offset order
     if active_onsets[0] > active_offsets[0]:
         active_offsets = active_offsets[1:]
@@ -141,7 +150,7 @@ def find_nearest_neighbors(target_spine, partner_spines, partner_positions):
         nearest_neighbor.append(np.min(active_positions))
         number_coactive.append(len(active_partners))
 
-    avg_nearest_neighbor = np.nanmean(number_coactive)
+    avg_nearest_neighbor = np.nanmean(nearest_neighbor)
     avg_num_coactive = np.nanmean(number_coactive)
 
     return avg_nearest_neighbor, avg_num_coactive
