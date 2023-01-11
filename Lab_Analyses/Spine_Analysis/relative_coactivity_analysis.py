@@ -28,10 +28,14 @@ def relative_coactivity_analysis(
     for spine in range(spine_activity.shape[1]):
         # Get relavent activity traces
         target_activity = spine_activity[:, spine]
-        nearby_activity = spine_activity[:, nearby_spines]
-
+        nearby_activity = spine_activity[:, nearby_spines[spine]]
+        if nearby_spines[spine] is None:
+            avg_nearby_coactivity_rate[spine] = np.nan
+            relative_coactivity_rate[spine] = np.nan
+            frac_local_coactivity_participation[spine] = np.nan
+            continue
         # Get avg nearby local coactivity
-        nearby_coactivity = distance_coactivity_rates[nearby_spines]
+        nearby_coactivity = distance_coactivity_rates[nearby_spines[spine]]
         avg_nearby_coactivity = np.nanmean(nearby_coactivity)
         avg_nearby_coactivity_rate[spine] = avg_nearby_coactivity
 
