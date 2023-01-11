@@ -81,6 +81,9 @@ def timestamp_onset_correction(timestamps, activity_window, onset, sampling_rate
         OUTPUT PARAMETERS
             corrected_timestamps - list of the ocrrected timestamps
     """
+    if np.isnan(onset):
+        return timestamps
+
     center_point = int(np.absolute(activity_window[0] * sampling_rate))
     offset = center_point - onset
     if type(timestamps[0]) == tuple:
