@@ -245,7 +245,6 @@ def spine_dendrite_movement_similarity(
     # Set up outputs
     spine_dendrite_corr = np.zeros(len(spine_movements)) * np.nan
     spine_nearby_corr = np.zeros(len(spine_movements)) * np.nan
-
     # Analyze each spine seperately
     for i in range(len(spine_movements)):
         # get relevant movements
