@@ -1,4 +1,5 @@
 import numpy as np
+
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
     analyze_activity_trace,
     analyze_nearby_coactive_spines,
@@ -62,7 +63,7 @@ def absolute_local_coactivity(
 
     # Sort out the spine_groupings to make sure it is iterable
     if type(spine_groupings[0]) != list:
-        spine_grouping = [spine_grouping]
+        spine_groupings = [spine_groupings]
 
     el_spines = find_spine_classes(spine_flags, "Eliminated Spine")
     el_spines = np.array(el_spines)
@@ -75,7 +76,7 @@ def absolute_local_coactivity(
         ca_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
 
     if partner_list is None:
-        partner_list = [True for x in range(spine_activity.shape[1])]
+        partner_list = np.array([True for x in range(spine_activity.shape[1])])
 
     # Set up outputs
     nearby_spine_idxs = [None for i in range(spine_activity.shape[1])]
@@ -146,9 +147,9 @@ def absolute_local_coactivity(
             relative_positions = np.absolute(relative_positions)
             nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
             nearby_spines = [
-                x for x in nearby_spines if not curr_el_spines[x] and x != spine
+                x for x in nearby_spines if curr_el_spines[x] == False and x != spine
             ]
-            nearby_spine_idxs[spine] = nearby_spines
+            nearby_spine_idxs[spines[spine]] = nearby_spines
             # Assess whether nearby spines display any coactivity
             nearby_coactive_spines = []
             for ns in nearby_spines:
@@ -156,13 +157,15 @@ def absolute_local_coactivity(
                     nearby_coactive_spines.append(ns)
             # Refine nearby coactive spines based on partner list
             nearby_coactive_spines = [
-                x for x in nearby_coactive_spines if curr_partner_spines[x] is True
+                x for x in nearby_coactive_spines if curr_partner_spines[x] == True
             ]
             # Skip further analysis if no nearby coactive spines
             if len(nearby_coactive_spines) == 0:
                 continue
             nearby_coactive_spines = np.array(nearby_coactive_spines)
-            nearby_coactive_spine_idxs[spines[spine]] = spines[nearby_coactive_spines]
+            nearby_coactive_spine_idxs[spines[spine]] = np.array(spines)[
+                nearby_coactive_spines
+            ]
 
             # Get fraction of coactive spines that are MRSs
             nearby_move_spines = curr_move_spines[nearby_coactive_spines].astype(int)
@@ -189,22 +192,28 @@ def absolute_local_coactivity(
 
             # Get activity freq of nearby spines
             nearby_freqs = []
-            for i in nearby_spine_idxs:
-                a = s_activity[:, i]
-                freq = calculate_activity_event_rate(a, sampling_rate)
+            for i in nearby_spines:
+                a = s_activity[:, i].reshape(-1, 1)
+                freq = calculate_activity_event_rate(a, sampling_rate)[0]
                 nearby_freqs.append(freq)
             nearby_coactive_freqs = []
-            for i in nearby_coactive_spine_idxs:
-                a = s_activity[:, i]
-                freq = calculate_activity_event_rate(a, sampling_rate)
+            for i in nearby_coactive_spines:
+                a = s_activity[:, i].reshape(-1, 1)
+                freq = calculate_activity_event_rate(a, sampling_rate)[0]
                 nearby_coactive_freqs.append(freq)
-            avg_nearby_spine_freq[spine] = np.nanmean(nearby_freqs)
-            avg_nearby_coactive_spine_freq[spine] = np.nanmean(nearby_coactive_freqs)
+            avg_nearby_spine_freq[spines[spine]] = np.nanmean(nearby_freqs)
+            avg_nearby_coactive_spine_freq[spines[spine]] = np.nanmean(
+                nearby_coactive_freqs
+            )
 
             # Get relative activity levels
-            target_freq = calculate_activity_event_rate(curr_s_activity, sampling_rate)
-            rel_nearby_spine_freq[spine] = target_freq / np.nanmean(nearby_freqs)
-            rel_nearby_coactive_spine_freq[spine] = target_freq / np.nanmean(
+            target_freq = calculate_activity_event_rate(
+                curr_s_activity.reshape(-1, 1), sampling_rate
+            )
+            rel_nearby_spine_freq[spines[spine]] = target_freq / np.nanmean(
+                nearby_freqs
+            )
+            rel_nearby_coactive_spine_freq[spines[spine]] = target_freq / np.nanmean(
                 nearby_coactive_freqs
             )
 
@@ -235,12 +244,20 @@ def absolute_local_coactivity(
             coactivity_stamps = tstamps.get_activity_timestamps(coactivity_trace)
             if len(coactivity_stamps) == 0:
                 continue
+            # refine the stamps
+            coactivity_stamps = [x[0] for x in coactivity_stamps]
+            refined_stamps = tstamps.refine_activity_timestamps(
+                coactivity_stamps,
+                window=activity_window,
+                max_len=len(curr_s_dFoF),
+                sampling_rate=sampling_rate,
+            )
 
             # Analyze activity traces when coactive
             ## Glutamate traces
             (s_traces, s_amp, s_auc, s_onset,) = analyze_activity_trace(
                 curr_s_dFoF,
-                coactivity_stamps,
+                refined_stamps,
                 activity_window=activity_window,
                 center_onset=True,
                 norm_constant=glu_constant,
@@ -249,7 +266,7 @@ def absolute_local_coactivity(
             ## Calcium traces
             (s_ca_traces, s_ca_amp, s_ca_auc, _) = analyze_activity_trace(
                 curr_s_calcium,
-                coactivity_stamps,
+                refined_stamps,
                 activity_window=activity_window,
                 center_onset=True,
                 norm_constant=ca_constant,
@@ -266,13 +283,22 @@ def absolute_local_coactivity(
             ## Get noncoactive trace
             noncoactive_trace = curr_s_activity - coactivity_trace
             noncoactive_trace[noncoactive_trace < 0] = 0
-            noncoactive_stamps = tstamps.get_activity_timestamps(noncoactive_trace)
+
             ## skip if no isolated events
-            if len(noncoactive_stamps) != 0:
+            if np.sum(noncoactive_trace):
+                ## Get stamps
+                noncoactive_stamps = tstamps.get_activity_timestamps(noncoactive_trace)
+                noncoactive_stamps = [x[0] for x in noncoactive_stamps]
+                nonrefined_stamps = tstamps.refine_activity_timestamps(
+                    noncoactive_stamps,
+                    window=activity_window,
+                    max_len=len(curr_s_dFoF),
+                    sampling_rate=sampling_rate,
+                )
                 ## Glutamate traces
                 (ns_traces, ns_amp, ns_auc, _) = analyze_activity_trace(
                     curr_s_dFoF,
-                    noncoactive_stamps,
+                    nonrefined_stamps,
                     activity_window=activity_window,
                     center_onset=True,
                     norm_constant=glu_constant,
@@ -281,7 +307,7 @@ def absolute_local_coactivity(
                 ## Calcium traces
                 (ns_ca_traces, ns_ca_amp, ns_ca_auc, _) = analyze_activity_trace(
                     curr_s_calcium,
-                    noncoactive_stamps,
+                    nonrefined_stamps,
                     activity_window=activity_window,
                     center_onset=True,
                     norm_constant=ca_constant,
@@ -295,11 +321,9 @@ def absolute_local_coactivity(
                 spine_noncoactive_calcium_traces[spines[spine]] = ns_ca_traces
 
             # Analyze activity of nearby spines during coactivity
-            ## Get only the onset stamps
-            coactivity_stamps = [x[0] for x in coactivity_stamps]
             ## Center timestamps around activity onset
             corrected_stamps = tstamps.timestamp_onset_correction(
-                coactivity_stamps, activity_window, s_onset, sampling_rate
+                refined_stamps, activity_window, s_onset, sampling_rate
             )
 
             (
@@ -333,6 +357,11 @@ def absolute_local_coactivity(
                 sampling_rate=sampling_rate,
             )
 
+            try:
+                rel_onset = int(avg_n_onset) - int(s_onset)
+            except ValueError:
+                rel_onset = np.nan
+
             avg_coactive_spine_num[spines[spine]] = avg_coactive_s_num
             sum_nearby_amplitude[spines[spine]] = sum_n_amplitude
             avg_nearby_amplitude[spines[spine]] = avg_n_amplitude
@@ -345,9 +374,7 @@ def absolute_local_coactivity(
             avg_nearby_amplitude_before[spines[spine]] = avg_n_amplitude_before
             sum_nearby_calcium_before[spines[spine]] = sum_n_calcium_before
             avg_nearby_calcium_before[spines[spine]] = avg_n_calcium_before
-            avg_relative_nearby_onset[spines[spine]] = (
-                int(avg_n_onset) - int(s_onset)
-            ) / sampling_rate
+            avg_relative_nearby_onset[spines[spine]] = rel_onset / sampling_rate
             sum_coactive_binary_traces[spines[spine]] = sum_coactive_b_traces
             sum_coactive_spine_traces[spines[spine]] = sum_coactive_s_traces
             avg_coactive_spine_traces[spines[spine]] = avg_coactive_s_traces
