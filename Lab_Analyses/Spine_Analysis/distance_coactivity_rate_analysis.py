@@ -51,7 +51,7 @@ def distance_coactivity_rate_analysis(
 
     """
     # Set up the position bins
-    MAX_DIST = 30
+    MAX_DIST = 40
     bin_num = int(MAX_DIST / bin_size)
     position_bins = np.linspace(0, MAX_DIST, bin_num + 1)
 
@@ -61,6 +61,8 @@ def distance_coactivity_rate_analysis(
 
     # Constrain data if if specified
     if constrain_matrix is not None:
+        if len(constrain_matrix.shape) == 1:
+            constrain_matrix = constrain_matrix.reshape(-1, 1)
         activity_matrix = spine_activity * constrain_matrix
     else:
         activity_matrix = spine_activity
@@ -97,10 +99,11 @@ def distance_coactivity_rate_analysis(
                     continue
                 # Subselect partners if specified
                 if partner_list is not None:
-                    if partner_list[spines[partner]] is True:
+                    if partner_list[spines[partner]] == True:
                         partner_spine = s_activity[:, partner]
                     else:
                         curr_coactivity.append(np.nan)
+                        continue
                 else:
                     partner_spine = s_activity[:, partner]
 
@@ -136,7 +139,7 @@ def calculate_coactivity(spine_1, spine_2, sampling_rate, norm):
     """Helper function to calculate spine coactivity rate between two spines"""
     duration = len(spine_1) / sampling_rate
     coactivity = spine_1 * spine_2
-    events = np.nonzeor(np.diff(coactivity) == 1)[0]
+    events = np.nonzero(np.diff(coactivity) == 1)[0]
     event_num = len(events)
     event_freq = event_num / duration
 
@@ -162,7 +165,7 @@ def bin_by_position(data, positions, bins):
             if idxs.size == 0:
                 binned_data.append(np.nan)
                 continue
-            binned_data.append(np.nanman(data[idxs]))
+            binned_data.append(np.nanmean(data[idxs]))
 
     return np.array(binned_data)
 
