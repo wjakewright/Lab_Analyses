@@ -76,12 +76,12 @@ class Coactivity_Plasticity:
         )
         relative_volumes = np.array(list(relative_volumes.values())[-1])
         enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-            relative_volumes, self.threshold
+            relative_volumes, self.threshold, norm=self.vol_norm
         )
 
         # Store volume change and plasticity classifications
         self.relative_volumes = relative_volumes
-        self.enlarge_spines = enlarged_spines
+        self.enlarged_spines = enlarged_spines
         self.shrunken_spines = shrunken_spines
         self.stable_spines = stable_spines
 
@@ -220,7 +220,7 @@ class Coactivity_Plasticity:
             data_dict[group] = group_data
 
         # Plot data
-        sp.plot_swam_bar_plot(
+        sp.plot_swarm_bar_plot(
             data_dict,
             mean_type=mean_type,
             err_type=err_type,
@@ -346,7 +346,7 @@ class Coactivity_Plasticity:
             means = [
                 np.nanmean(x, axis=1) for x in group_traces if type(x) == np.ndarray
             ]
-            means = np.vstackk(means)
+            means = np.vstack(means)
             means = np.unique(means, axis=0)
             group_mean = np.nanmean(means, axis=0)
             group_sem = stats.sem(means, axis=0, nan_policy="omit")
@@ -456,6 +456,7 @@ class Coactivity_Plasticity:
         self,
         variable,
         bins,
+        max_lim=None,
         group_type=None,
         exclude=None,
         avlines=None,
@@ -479,7 +480,8 @@ class Coactivity_Plasticity:
                     g = getattr(self, group)
                     group_data = compress(d, g)
                     data.append(group_data)
-
+        if max_lim is not None:
+            data = data[data < max_lim]
         sp.plot_histogram(
             data,
             bins,
