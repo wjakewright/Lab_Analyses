@@ -56,6 +56,8 @@ def organize_dual_spine_data(
     # Get the number of FOVs imaged for this mouse
     FOVs = next(os.walk(imaging_path))[1]
 
+    FOVs = [x for x in FOVs if "FOV" in x]
+
     FOV_data = {}
     # Preprocess each FOV seperately
     for FOV in FOVs:
@@ -199,7 +201,7 @@ def organize_dual_spine_data(
 
             ## Activity
             spine_grouping = aligned_GluSnFr.imaging_parameters["Spine Groupings"]
-            if not spine_grouping:
+            if len(spine_grouping) == 0:
                 spine_grouping = list(range(aligned_GluSnFr.dFoF[0]["Spine"].shape[1]))
             dual_spine_data.spine_grouping = spine_grouping
 
@@ -238,18 +240,18 @@ def organize_dual_spine_data(
                     threshold=2,
                     lower_threshold=1,
                     lower_limit=0.2,
-                    samplingg_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
+                    sampling_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
                 )
                 c_a, c_f, _ = event_detection(
                     dual_spine_data.dendrite_calcium_processed_dFoF,
                     threshold=2,
                     lower_threshold=1,
                     lower_limit=0.2,
-                    samplingg_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
+                    sampling_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
                 )
                 dual_spine_data.spine_GluSnFr_activity = g_a
                 dual_spine_data.spine_GluSnFr_floored = g_f
-                dual_spine_data.dendrite_calcium_activity = (c_a,)
+                dual_spine_data.dendrite_calcium_activity = c_a
                 dual_spine_data.dendrite_calcium_floored = c_f
 
             # Add movement-related information
