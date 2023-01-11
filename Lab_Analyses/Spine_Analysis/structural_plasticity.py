@@ -3,6 +3,7 @@
 from itertools import compress
 
 import numpy as np
+
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     find_spine_classes,
     find_stable_spines,
@@ -74,7 +75,7 @@ def calculate_volume_change(
     return relative_volumes, stable_idxs
 
 
-def classify_plasticity(relative_volumes, threshold=0.25):
+def classify_plasticity(relative_volumes, threshold=0.25, norm=False):
     """Function to classify if spines have undergone plasticity
     
         INPUT PARAMETERS
@@ -95,13 +96,22 @@ def classify_plasticity(relative_volumes, threshold=0.25):
     depressed_spines = [False for x in relative_volumes]
 
     # classify each spine
-    for i, spine in enumerate(relative_volumes):
-        if spine >= (1 + threshold):
-            potentiated_spines[i] = True
-        elif spine <= (1 - threshold):
-            depressed_spines[i] = True
-        else:
-            stable_spines[i] = True
+    if not norm:
+        for i, spine in enumerate(relative_volumes):
+            if spine >= (1 + threshold):
+                potentiated_spines[i] = True
+            elif spine <= (1 - threshold):
+                depressed_spines[i] = True
+            else:
+                stable_spines[i] = True
+    else:
+        for i, spine in enumerate(relative_volumes):
+            if spine >= threshold:
+                potentiated_spines[i] = True
+            elif spine <= -threshold:
+                depressed_spines[i] = True
+            else:
+                stable_spines[i] = True
 
     return potentiated_spines, depressed_spines, stable_spines
 
