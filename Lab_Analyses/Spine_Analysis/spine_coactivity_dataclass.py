@@ -28,6 +28,7 @@ class Spine_Coactivity_Data:
     rwd_nonmovement_dendrites: np.array
     spine_activity_rate: np.array
     dend_activity_rate: np.array
+    distance_activity_rate: np.array
     distance_coactivity_rate: np.array
     distance_coactivity_rate_norm: np.array
     MRS_distance_coactivity_rate: np.array
@@ -118,7 +119,7 @@ class Spine_Coactivity_Data:
     conj_spine_coactive_auc: np.array
     conj_spine_coactive_calcium_auc: np.array
     conj_dend_coactive_amplitude: np.array
-    conj_denc_coactive_auc: np.array
+    conj_dend_coactive_auc: np.array
     conj_relative_onset: np.array
     conj_spine_coactive_traces: list
     conj_spine_coactive_calcium_traces: list
