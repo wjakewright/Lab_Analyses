@@ -1,4 +1,5 @@
 import numpy as np
+
 from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
     analyze_activity_trace,
     get_trace_coactivity_rates,
@@ -67,6 +68,8 @@ def absolute_dendrite_coactivity(
         ca_norm_constants = np.array([None for x in range(spine_activity.shape[1])])
 
     if constrain_matrix is not None:
+        if len(constrain_matrix.shape) == 1:
+            constrain_matrix = constrain_matrix.reshape(-1, 1)
         spine_activity = spine_activity * constrain_matrix
 
     center_point = int(np.absolute(activity_window[0] * sampling_rate))
@@ -129,12 +132,19 @@ def absolute_dendrite_coactivity(
             coactivity_stamps = tstamps.get_activity_timestamps(coactivity_trace)
             if len(coactivity_stamps) == 0:
                 continue
-
+            # refine the stamps
+            coactivity_stamps = [x[0] for x in coactivity_stamps]
+            refined_stamps = tstamps.refine_activity_timestamps(
+                coactivity_stamps,
+                window=activity_window,
+                max_len=len(d_dFoF[:, spine]),
+                sampling_rate=sampling_rate,
+            )
             # Analyze activity traces when coactive
             ## Dendrite traces
             (d_traces, d_amp, d_auc, d_onset) = analyze_activity_trace(
                 d_dFoF[:, spine],
-                coactivity_stamps,
+                refined_stamps,
                 activity_window=activity_window,
                 center_onset=True,
                 norm_constant=None,
@@ -146,7 +156,7 @@ def absolute_dendrite_coactivity(
 
             ##Re-center timestamps around dendrite onsets
             corrected_stamps = tstamps.timestamp_onset_correction(
-                coactivity_stamps, activity_window, d_onset, sampling_rate
+                refined_stamps, activity_window, d_onset, sampling_rate
             )
             (s_traces, s_amp, s_auc, s_onset) = analyze_activity_trace(
                 s_dFoF[:, spine],
@@ -164,7 +174,10 @@ def absolute_dendrite_coactivity(
                 norm_constant=curr_ca_constants[spine],
                 sampling_rate=sampling_rate,
             )
-            rel_onset = (int(s_onset) - center_point) / sampling_rate
+            try:
+                rel_onset = (int(s_onset) - center_point) / sampling_rate
+            except ValueError:
+                rel_onset = np.nan
 
             spine_coactive_traces[spines[spine]] = s_traces
             spine_coactive_amplitude[spines[spine]] = s_amp
