@@ -1,9 +1,10 @@
 import numpy as np
+from scipy import stats
+
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_onset import find_activity_onset
 from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
-from scipy import stats
 
 
 def get_trace_coactivity_rates(trace_1, trace_2, sampling_rate):
@@ -155,7 +156,6 @@ def analyze_activity_trace(
             activity_onset - int specifying the activity onset within the activity window
 
     """
-    timestamps = [x[0] for x in timestamps]
     # Get the activity around the timestamps
     activity_traces, mean_trace = d_utils.get_trace_mean_sem(
         dFoF_trace.reshape(-1, 1),
@@ -173,14 +173,18 @@ def analyze_activity_trace(
     activity_onset, activity_amplitude = find_activity_onset(
         [mean_trace], sampling_rate=sampling_rate
     )
+
     activity_onset = activity_onset[0]
     activity_amplitude = activity_amplitude[0]
     # Get area under the curve
-    area_trace = mean_trace[activity_onset:]
-    activity_auc = np.trapz(area_trace)
+    try:
+        area_trace = mean_trace[int(activity_onset) :]
+        activity_auc = np.trapz(area_trace)
+    except ValueError:
+        activity_auc = np.nan
 
     # Center around onset if specified
-    if center_onset:
+    if center_onset and not np.isnan(activity_onset):
         c_timestamps = timestamp_onset_correction(
             timestamps, activity_window, activity_onset, sampling_rate
         )
@@ -191,7 +195,7 @@ def analyze_activity_trace(
             window=activity_window,
             sampling_rate=sampling_rate,
         )
-        activity_traces = activity_traces["Activity"][0]
+        activity_traces = activity_traces["Activity"]
         if norm_constant is not None:
             activity_traces = activity_traces / norm_constant
 
@@ -388,7 +392,7 @@ def analyze_nearby_coactive_spines(
         sampling_rate=sampling_rate,
     )
 
-    avg_nearby_onset = onsets[1] - center_point
+    avg_nearby_onset = (onsets[1] - center_point) / sampling_rate
     sum_nearby_amplitude = amps[0]
     avg_nearby_amplitude = amps[1]
     sum_nearby_calcium = amps[2]
@@ -412,7 +416,7 @@ def analyze_nearby_coactive_spines(
 
     ## Get activity variables before target onset
     avg_coactive_num_before = np.nanmax(avg_sum_binary_traces[:center_point])
-    sum_nearby_amplitude_before = np.nanmax(avg_sum_spine_traces[:, center_point])
+    sum_nearby_amplitude_before = np.nanmax(avg_sum_spine_traces[:center_point])
     avg_nearby_amplitude_before = np.nanmax(avg_avg_spine_traces[:center_point])
     sum_nearby_calcium_before = np.nanmax(avg_sum_ca_traces[:center_point])
     avg_nearby_calcium_before = np.nanmax(avg_avg_ca_traces[:center_point])
