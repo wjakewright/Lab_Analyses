@@ -335,7 +335,7 @@ def calculate_activity_event_rate(activity_array, sampling_rate=60):
     """
     activity_rate = np.zeros(activity_array.shape[1])
     for i in range(activity_array.shape[1]):
-        activity = activity[:, i]
+        activity = activity_array[:, i]
         duration = len(activity) / sampling_rate
         events = np.nonzero(np.diff(activity) == 1)[0]
         rate = (len(events) / duration) * 60  ## Per minute
