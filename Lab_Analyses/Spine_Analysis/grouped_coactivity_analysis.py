@@ -6,6 +6,9 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis.dendrite_spine_coactivity_analysis import (
     dendrite_spine_coactivity_analysis,
 )
+from Lab_Analyses.Spine_Analysis.distance_activity_rate_analysis import (
+    distance_activity_rate_analysis,
+)
 from Lab_Analyses.Spine_Analysis.local_spine_coactivity_v2 import (
     local_spine_coactivity_analysis,
 )
@@ -105,16 +108,16 @@ def grouped_coactivity_analysis(
             spine_activity = data.spine_GluSnFr_activity
             spine_dFoF = data.spine_GluSnFr_processed_dFoF
             spine_calcium = data.spine_calcium_processed_dFoF
-            movement_spines = data.movement_spines
-            non_movement_spines = [not x for x in movement_spines]
-            rwd_movement_spines = data.reward_movement_spines
-            rwd_nonmovement_spines = [not x for x in rwd_movement_spines]
+            movement_spines = np.array(data.movement_spines)
+            non_movement_spines = np.array([not x for x in movement_spines])
+            rwd_movement_spines = np.array(data.reward_movement_spines)
+            rwd_nonmovement_spines = np.array([not x for x in rwd_movement_spines])
 
             ## Dendrite activity and movement encoding
             dendrite_activity = np.zeros(spine_activity.shape)
             dendrite_dFoF = np.zeros(spine_dFoF.shape)
-            movement_dendrites = np.zeros(movement_spines.shape).astype(bool)
-            rwd_movement_dendrites = np.zeros(rwd_movement_spines.shape).astype(bool)
+            movement_dendrites = np.zeros(len(movement_spines)).astype(bool)
+            rwd_movement_dendrites = np.zeros(len(rwd_movement_spines)).astype(bool)
             for d in range(data.dendrite_calcium_activity.shape[1]):
                 if type(spine_groupings[d]) == list:
                     spines = spine_groupings[d]
@@ -125,8 +128,10 @@ def grouped_coactivity_analysis(
                     dendrite_dFoF[:, s] = data.dendrite_calcium_processed_dFoF[:, d]
                     movement_dendrites[s] = data.movement_dendrites[d]
                     rwd_movement_dendrites[s] = data.reward_movement_dendrites[d]
-            non_movement_dendrites = [not x for x in movement_dendrites]
-            rwd_nonmovement_dendrites = [not x for x in rwd_movement_dendrites]
+            non_movement_dendrites = np.array([not x for x in movement_dendrites])
+            rwd_nonmovement_dendrites = np.array(
+                [not x for x in rwd_movement_dendrites]
+            )
 
             ## Behavioral data
             lever_active = data.lever_active
@@ -150,6 +155,15 @@ def grouped_coactivity_analysis(
             spine_activity_rate = d_utils.calculate_activity_event_rate(spine_activity)
             dend_activity_rate = d_utils.calculate_activity_event_rate(
                 dendrite_activity
+            )
+
+            # Get distance dependent activity frequencies
+            distance_activity_rate = distance_activity_rate_analysis(
+                spine_activity_rate,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
             )
 
             # Perform local spine coactivity analysis
@@ -312,7 +326,7 @@ def grouped_coactivity_analysis(
                 activity_window=activity_window,
                 cluster_dist=CLUSTER_DIST,
                 sampling_rate=sampling_rate,
-                volume_norm=volume_norm,
+                volume_norm=constants,
             )
 
             # Analyze movement-related activity
@@ -458,6 +472,7 @@ def grouped_coactivity_analysis(
             grouped_data["rwd_nonmovement_dendrites"].append(rwd_nonmovement_dendrites)
             grouped_data["spine_activity_rate"].append(spine_activity_rate)
             grouped_data["dend_activity_rate"].append(dend_activity_rate)
+            grouped_data["distance_activity_rate"].append(distance_activity_rate)
             ## Adding local coactivity variables
             grouped_data["distance_coactivity_rate"].append(distance_coactivity_rate)
             grouped_data["distance_coactivity_rate_norm"].append(
@@ -807,7 +822,7 @@ def grouped_coactivity_analysis(
         day=day,
         mouse_id=regrouped_data["mouse_id"],
         FOV=regrouped_data["FOVs"],
-        paramters=parameters,
+        parameters=parameters,
         spine_flags=regrouped_data["spine_flags"],
         followup_flags=regrouped_data["followup_flags"],
         spine_volumes=regrouped_data["spine_volumes"],
@@ -824,6 +839,7 @@ def grouped_coactivity_analysis(
         rwd_nonmovement_dendrites=regrouped_data["rwd_nonmovement_dendrites"],
         spine_activity_rate=regrouped_data["spine_activity_rate"],
         dend_activity_rate=regrouped_data["dend_activity_rate"],
+        distance_activity_rate=regrouped_data["distance_activity_rate"],
         distance_coactivity_rate=regrouped_data["distance_coactivity_rate"],
         distance_coactivity_rate_norm=regrouped_data["distance_coactivity_rate_norm"],
         MRS_distance_coactivity_rate=regrouped_data["MRS_distance_coactivity_rate"],
@@ -883,7 +899,7 @@ def grouped_coactivity_analysis(
         local_spine_noncoactive_calcium_auc=regrouped_data[
             "local_spine_noncoactive_calcium_auc"
         ],
-        local_spine_noncoactive_traces=regrouped_data["local_spine_noncoactive_trace"],
+        local_spine_noncoactive_traces=regrouped_data["local_spine_noncoactive_traces"],
         local_spine_noncoactive_calcium_traces=regrouped_data[
             "local_spine_noncoactive_calcium_traces"
         ],
@@ -928,7 +944,7 @@ def grouped_coactivity_analysis(
         avg_nearby_movement_specificity=regrouped_data[
             "avg_nearby_movement_specificity"
         ],
-        avg_nearby_coactive_rate=regrouped_data["avg_nearby_coactive_rate"],
+        avg_nearby_coactivity_rate=regrouped_data["avg_nearby_coactivity_rate"],
         relative_local_coactivity_rate=regrouped_data["relative_local_coactivity_rate"],
         frac_local_coactivity_participation=regrouped_data[
             "frac_local_coactivity_participation"
