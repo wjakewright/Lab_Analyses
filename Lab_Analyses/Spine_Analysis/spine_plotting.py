@@ -24,7 +24,7 @@ def plot_sns_scatter_correlation(
     figsize=(5, 5),
     xlim=None,
     ylim=None,
-    marker_size=3,
+    marker_size=5,
     face_color="mediumblue",
     edge_color="mediumblue",
     edge_width=0.3,
@@ -171,8 +171,8 @@ def plot_swarm_bar_plot(
             save_path - str specifying where to save the figure
     """
     # Make list of colors if only one is provided
-    if type(m_colors) == str:
-        m_colors = [m_colors for i in range(len(list(data_dict.keys())))]
+    if type(b_colors) == str:
+        b_colors = [b_colors for i in range(len(list(data_dict.keys())))]
     if type(s_colors) == str:
         s_colors = [s_colors for i in range(len(list(data_dict.keys())))]
 
@@ -328,9 +328,9 @@ def plot_grouped_swarm_bar_plot(
         s_colors = [s_colors for i in range(len(list(data_dict.keys())))]
     elif (type(s_colors) == list) & (len(s_colors) != len(list(data_dict.keys()))):
         return "Number of scatter colors does not match number of groups"
-    if type(m_colors) == str:
-        m_colors = [m_colors for i in range(len(list(data_dict.keys())))]
-    elif (type(m_colors) == list) & (len(m_colors) != len(list(data_dict.keys()))):
+    if type(b_colors) == str:
+        b_colors = [b_colors for i in range(len(list(data_dict.keys())))]
+    elif (type(b_colors) == list) & (len(b_colors) != len(list(data_dict.keys()))):
         return "Number of marker colors does not match number of groups"
 
     # Organize the data to be plotted
@@ -412,7 +412,7 @@ def plot_grouped_swarm_bar_plot(
             xs = [x[0] for x in offsets]
             x_coords.append(np.nanmean(xs))
 
-    err_colors = [m_colors for x in g1_keys]
+    err_colors = [b_colors for x in g1_keys]
     err_colors = [x for y in err_colors for x in y]
     # Plot the mean and error
     plt.bar(
