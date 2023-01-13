@@ -6,8 +6,8 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis.dendrite_spine_coactivity_analysis import (
     dendrite_spine_coactivity_analysis,
 )
-from Lab_Analyses.Spine_Analysis.distance_activity_rate_analysis import (
-    distance_activity_rate_analysis,
+from Lab_Analyses.Spine_Analysis.distance_dependent_variable_analysis import (
+    distance_dependent_variable_analysis,
 )
 from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
     local_spine_coactivity_analysis,
@@ -30,6 +30,7 @@ def grouped_coactivity_analysis(
     mice_list,
     day,
     followup=True,
+    fov_type="apical",
     activity_window=(-2, 4),
     zscore=False,
     volume_norm=False,
@@ -48,7 +49,11 @@ def grouped_coactivity_analysis(
             followup - boolean specifying if you want to include followup
                         structural imaging sessions
             
+            fov_type - str specifying whether to analyze apical or basal FOVs
+            
             zscore - boolean of whether or not to zscore activity for analysis
+
+            volume_norm - boolean of whether or not to normalize activity by spine volume
             
             save - boolean of whether to save the output or not
             
@@ -67,9 +72,13 @@ def grouped_coactivity_analysis(
         print("---------------------------------")
         print(f"- Analyzing {mouse}")
         if followup is True:
-            datasets = load_spine_datasets(mouse, [day], followup=True)
+            datasets = load_spine_datasets(
+                mouse, [day], fov_type=fov_type, followup=True
+            )
         else:
-            datasets = load_spine_datasets(mouse, [day], followup=False)
+            datasets = load_spine_datasets(
+                mouse, [day], fov_type=fov_type, followup=False
+            )
 
         # Analyze each FOV seperately
         for FOV, dataset in datasets.items():
@@ -158,7 +167,7 @@ def grouped_coactivity_analysis(
             )
 
             # Get distance dependent activity frequencies
-            distance_activity_rate = distance_activity_rate_analysis(
+            distance_activity_rate = distance_dependent_variable_analysis(
                 spine_activity_rate,
                 spine_positions,
                 spine_flags,
@@ -166,7 +175,7 @@ def grouped_coactivity_analysis(
                 bin_size=5,
                 relative=False,
             )
-            distance_relative_activity_rate = distance_activity_rate_analysis(
+            distance_relative_activity_rate = distance_dependent_variable_analysis(
                 spine_activity_rate,
                 spine_positions,
                 spine_flags,
@@ -249,6 +258,10 @@ def grouped_coactivity_analysis(
                 avg_nearby_coactivity_rate,
                 relative_local_coactivity_rate,
                 frac_local_coactivity_participation,
+                positional_coactivity,
+                positional_coactivity_norm,
+                relative_positional_coactivity,
+                relative_positional_coactivity_norm,
             ) = local_spine_coactivity_analysis(
                 mouse,
                 spine_activity,
@@ -447,6 +460,24 @@ def grouped_coactivity_analysis(
             learned_movement_pattern = [
                 learned_movement for i in range(spine_activity.shape[1])
             ]
+
+            # Examine distance dependent movement encoding
+            distance_movement_corr = distance_dependent_variable_analysis(
+                spine_move_correlation,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                relative=False,
+            )
+            relative_distance_movement_corr = distance_dependent_variable_analysis(
+                spine_move_correlation,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                relative=True,
+            )
 
             # Compare movement encoding between spines and parent dendrite
             rel_spine_vs_dend_move_corr = np.absolute(
@@ -654,6 +685,16 @@ def grouped_coactivity_analysis(
             grouped_data["frac_local_coactivity_participation"].append(
                 frac_local_coactivity_participation
             )
+            grouped_data["positional_coactivity"].append(positional_coactivity)
+            grouped_data["positional_coactivity_norm"].append(
+                positional_coactivity_norm
+            )
+            grouped_data["relative_positional_coactivity"].append(
+                relative_positional_coactivity
+            )
+            grouped_data["relative_positional_coactivity_norm"].append(
+                relative_positional_coactivity_norm
+            )
             ## Adding spine-dendrite coactivity variables
             grouped_data["spine_dend_coactivity_rate"].append(
                 spine_dend_coactivity_rate
@@ -805,6 +846,10 @@ def grouped_coactivity_analysis(
             )
             grouped_data["spine_dend_movement_specificity"].append(
                 spine_dend_move_specificity
+            )
+            grouped_data["distance_movement_corr"].append(distance_movement_corr)
+            grouped_data["relative_distance_movement_corr"].append(
+                relative_distance_movement_corr
             )
             grouped_data["rel_spine_vs_dend_move_corr"].append(
                 rel_spine_vs_dend_move_corr
@@ -971,6 +1016,12 @@ def grouped_coactivity_analysis(
         frac_local_coactivity_participation=regrouped_data[
             "frac_local_coactivity_participation"
         ],
+        positional_coactivity=regrouped_data["positional_coactivity"],
+        positional_coactivity_norm=regrouped_data["positional_coactivity_norm"],
+        relative_positional_coactivity=regrouped_data["relative_positional_coactivity"],
+        relative_positional_coactivity_norm=regrouped_data[
+            "relative_positional_coactivity_norm"
+        ],
         spine_dend_coactivity_rate=regrouped_data["spine_dend_coactivity_rate"],
         spine_dend_coactivity_rate_norm=regrouped_data[
             "spine_dend_coactivity_rate_norm"
@@ -1089,6 +1140,10 @@ def grouped_coactivity_analysis(
         ],
         spine_dend_movement_specificity=regrouped_data[
             "spine_dend_movement_specificity"
+        ],
+        distance_movement_corr=regrouped_data["distance_movement_corr"],
+        relative_distance_movement_corr=regrouped_data[
+            "relative_distance_movement_corr"
         ],
         rel_spine_vs_dend_move_corr=regrouped_data["rel_spine_vs_dend_move_corr"],
         spine_to_dend_correlation=regrouped_data["spine_to_dend_correlation"],
