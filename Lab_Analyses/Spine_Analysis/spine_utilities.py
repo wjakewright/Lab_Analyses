@@ -1,17 +1,15 @@
 """Module containing some regularly used functions for spine analysis"""
 
 import os
-from re import L
 
 import numpy as np
 import scipy.optimize as syop
 import scipy.signal as sysignal
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
-    get_activity_timestamps,
-)
-from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 from scipy import stats
+
+from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
+from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
 
 def pad_spine_data(spine_data_list, pad_value=np.nan):
@@ -123,7 +121,7 @@ def find_spine_classes(spine_flags, spine_class):
     return classed_spines
 
 
-def load_spine_datasets(mouse_id, days, followup):
+def load_spine_datasets(mouse_id, days, fov_type, followup):
     """Function to handle loading all the spine datasets for a mouse
     
         INPUT PARAMETERS
@@ -131,6 +129,8 @@ def load_spine_datasets(mouse_id, days, followup):
             
             days - list of strings specifying which days to load. Used
                     to search filenames
+
+            fov_type - str specifying whether to load apical or basal FOVs
                     
             followup - boolean of whether or not to also load followup data
     """
@@ -139,6 +139,7 @@ def load_spine_datasets(mouse_id, days, followup):
 
     data_path = os.path.join(initial_path, mouse_id, "spine_data")
     FOVs = next(os.walk(data_path))[1]
+    FOVs = [x for x in FOVs if fov_type in x]
 
     mouse_data = {}
     for FOV in FOVs:
