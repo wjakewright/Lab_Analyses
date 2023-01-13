@@ -41,7 +41,9 @@ def relative_coactivity_analysis(
 
         # Calculate relative coactivity rate
         target_coactivity = distance_coactivity_rates[spine]
-        relative_coactivity = target_coactivity / avg_nearby_coactivity
+        relative_coactivity = (target_coactivity - avg_nearby_coactivity) / (
+            target_coactivity + avg_nearby_coactivity
+        )
         relative_coactivity_rate[spine] = relative_coactivity
 
         # Get fraction of coactivity participation
