@@ -12,7 +12,7 @@ import seaborn as sns
 from scipy import optimize, stats
 from sklearn import preprocessing
 
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_trace_coactivity_rates,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
