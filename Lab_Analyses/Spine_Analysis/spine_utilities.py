@@ -257,7 +257,7 @@ def spine_volume_norm_constant(
     return norm_constants
 
 
-def batch_spine_volume_norm_constant(mice_list, day, activity_type):
+def batch_spine_volume_norm_constant(mice_list, day, fov_type, activity_type):
     # Set up final output dict
     constant_dict = {}
 
@@ -270,7 +270,7 @@ def batch_spine_volume_norm_constant(mice_list, day, activity_type):
     sampling_rates = []
     # Pool data across all mice togetehr
     for mouse in mice_list:
-        datasets = load_spine_datasets(mouse, [day], followup=False)
+        datasets = load_spine_datasets(mouse, [day], fov_type=fov_type, followup=False)
         mouse_dict = {}
         for FOV, dataset in datasets.items():
             data = dataset[day]
