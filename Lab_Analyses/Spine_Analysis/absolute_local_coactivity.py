@@ -210,12 +210,12 @@ def absolute_local_coactivity(
             target_freq = calculate_activity_event_rate(
                 curr_s_activity.reshape(-1, 1), sampling_rate
             )
-            rel_nearby_spine_freq[spines[spine]] = target_freq / np.nanmean(
-                nearby_freqs
-            )
-            rel_nearby_coactive_spine_freq[spines[spine]] = target_freq / np.nanmean(
-                nearby_coactive_freqs
-            )
+            rel_nearby_spine_freq[spines[spine]] = (
+                target_freq - np.nanmean(nearby_freqs)
+            ) / (target_freq + np.nanmean(nearby_freqs))
+            rel_nearby_coactive_spine_freq[spines[spine]] = (
+                target_freq - np.nanmean(nearby_coactive_freqs)
+            ) / (target_freq + np.nanmean(nearby_coactive_freqs))
 
             # Get local coactivity trace, where at least one spine is coactive
             combined_nearby_activity = np.sum(nearby_s_activity, axis=1)
@@ -357,11 +357,6 @@ def absolute_local_coactivity(
                 sampling_rate=sampling_rate,
             )
 
-            try:
-                rel_onset = int(avg_n_onset) - int(s_onset)
-            except ValueError:
-                rel_onset = np.nan
-
             avg_coactive_spine_num[spines[spine]] = avg_coactive_s_num
             sum_nearby_amplitude[spines[spine]] = sum_n_amplitude
             avg_nearby_amplitude[spines[spine]] = avg_n_amplitude
@@ -374,7 +369,7 @@ def absolute_local_coactivity(
             avg_nearby_amplitude_before[spines[spine]] = avg_n_amplitude_before
             sum_nearby_calcium_before[spines[spine]] = sum_n_calcium_before
             avg_nearby_calcium_before[spines[spine]] = avg_n_calcium_before
-            avg_relative_nearby_onset[spines[spine]] = rel_onset / sampling_rate
+            avg_relative_nearby_onset[spines[spine]] = avg_n_onset
             sum_coactive_binary_traces[spines[spine]] = sum_coactive_b_traces
             sum_coactive_spine_traces[spines[spine]] = sum_coactive_s_traces
             avg_coactive_spine_traces[spines[spine]] = avg_coactive_s_traces
