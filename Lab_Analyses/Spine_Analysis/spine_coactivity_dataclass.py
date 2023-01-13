@@ -29,6 +29,7 @@ class Spine_Coactivity_Data:
     spine_activity_rate: np.array
     dend_activity_rate: np.array
     distance_activity_rate: np.array
+    distance_relative_activity_rate: np.array
     distance_coactivity_rate: np.array
     distance_coactivity_rate_norm: np.array
     MRS_distance_coactivity_rate: np.array
