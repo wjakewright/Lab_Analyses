@@ -9,7 +9,7 @@ from Lab_Analyses.Spine_Analysis.dendrite_spine_coactivity_analysis import (
 from Lab_Analyses.Spine_Analysis.distance_activity_rate_analysis import (
     distance_activity_rate_analysis,
 )
-from Lab_Analyses.Spine_Analysis.local_spine_coactivity_v2 import (
+from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
     local_spine_coactivity_analysis,
 )
 from Lab_Analyses.Spine_Analysis.spine_coactivity_dataclass import Spine_Coactivity_Data
