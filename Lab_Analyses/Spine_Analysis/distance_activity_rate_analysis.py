@@ -7,7 +7,12 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 
 
 def distance_activity_rate_analysis(
-    spine_rates, spine_positions, spine_flags, spine_groupings, bin_size=5,
+    spine_rates,
+    spine_positions,
+    spine_flags,
+    spine_groupings,
+    bin_size=5,
+    relative=False,
 ):
     """Function to organize and bin spine activity rates by their distance
         to the target spine
@@ -22,7 +27,11 @@ def distance_activity_rate_analysis(
             
             spine_grouping - list with the corresponding groupings of spines
                              on different dendrites
+
             bin_size - int or float specifying the distance to bine over
+
+            relative - boolean term on whether to calculate activity rate relative to the
+                        target spine
             
         OUTPUT PARAMETERS
             activity_matrix - np.array of the activity of spines binned
@@ -71,6 +80,14 @@ def distance_activity_rate_analysis(
             sorted_positions = np.array(
                 [y for y, _ in sorted(zip(relative_pos, curr_activity))]
             )
+            if relative:
+                sorted_activity = np.array(
+                    [
+                        (s_rates[spine] - x) / (s_rates[spine] + x)
+                        for x in sorted_activity
+                    ]
+                )
+                sorted_activity[np.isinf(sorted_activity)] = np.nan
             # Bin the data
             binned_activity = bin_by_position(
                 sorted_activity, sorted_positions, position_bins
