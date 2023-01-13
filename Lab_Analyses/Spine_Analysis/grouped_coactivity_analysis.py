@@ -64,8 +64,12 @@ def grouped_coactivity_analysis(
     grouped_data = defaultdict(list)
 
     if volume_norm:
-        glu_constants = batch_spine_volume_norm_constant(mice_list, day, "GluSnFr")
-        ca_constants = batch_spine_volume_norm_constant(mice_list, day, "Calcium")
+        glu_constants = batch_spine_volume_norm_constant(
+            mice_list, day, fov_type, "GluSnFr"
+        )
+        ca_constants = batch_spine_volume_norm_constant(
+            mice_list, day, fov_type, "Calcium"
+        )
 
     # Analyze each mouse seperately
     for mouse in mice_list:
