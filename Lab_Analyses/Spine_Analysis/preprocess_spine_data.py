@@ -18,6 +18,7 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 def organize_dual_spine_data(
     mouse_id,
     channels={"GluSnFr": "GreenCh", "Calcium": "RedCh"},
+    fov_type="apical",
     redetection=False,
     save=False,
     structural=False,
@@ -32,6 +33,11 @@ def organize_dual_spine_data(
             channels - tuple of strings for the different types of activity
                     to be co-processed. Will use to search for the relevant
                     files
+
+            fov_type - string specifying whether to process apical or basal
+                        FOVs
+            
+            redetection - boolean specifying whether to redo the event detection
             
             save - boolean specifying if the data is to be saved
 
@@ -57,6 +63,8 @@ def organize_dual_spine_data(
     FOVs = next(os.walk(imaging_path))[1]
 
     FOVs = [x for x in FOVs if "FOV" in x]
+
+    FOVs = [x for x in FOVs if fov_type in x]
 
     FOV_data = {}
     # Preprocess each FOV seperately
