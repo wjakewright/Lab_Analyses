@@ -164,6 +164,15 @@ def grouped_coactivity_analysis(
                 spine_flags,
                 spine_groupings,
                 bin_size=5,
+                relative=False,
+            )
+            distance_relative_activity_rate = distance_activity_rate_analysis(
+                spine_activity_rate,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                relative=True,
             )
 
             # Perform local spine coactivity analysis
@@ -440,7 +449,14 @@ def grouped_coactivity_analysis(
             ]
 
             # Compare movement encoding between spines and parent dendrite
-            rel_spine_vs_dend_move_corr = spine_move_correlation - dend_move_correlation
+            rel_spine_vs_dend_move_corr = np.absolute(
+                spine_move_correlation - dend_move_correlation
+            ) / np.nanmax(
+                [
+                    np.absolute(spine_move_correlation),
+                    np.absolute(dend_move_correlation),
+                ]
+            )
             (
                 spine_to_dend_correlation,
                 spine_to_nearby_correlation,
@@ -473,6 +489,9 @@ def grouped_coactivity_analysis(
             grouped_data["spine_activity_rate"].append(spine_activity_rate)
             grouped_data["dend_activity_rate"].append(dend_activity_rate)
             grouped_data["distance_activity_rate"].append(distance_activity_rate)
+            grouped_data["distance_relative_activity_rate"].append(
+                distance_relative_activity_rate
+            )
             ## Adding local coactivity variables
             grouped_data["distance_coactivity_rate"].append(distance_coactivity_rate)
             grouped_data["distance_coactivity_rate_norm"].append(
@@ -840,6 +859,9 @@ def grouped_coactivity_analysis(
         spine_activity_rate=regrouped_data["spine_activity_rate"],
         dend_activity_rate=regrouped_data["dend_activity_rate"],
         distance_activity_rate=regrouped_data["distance_activity_rate"],
+        distance_relative_activity_rate=regrouped_data[
+            "distance_relative_activity_rate"
+        ],
         distance_coactivity_rate=regrouped_data["distance_coactivity_rate"],
         distance_coactivity_rate_norm=regrouped_data["distance_coactivity_rate_norm"],
         MRS_distance_coactivity_rate=regrouped_data["MRS_distance_coactivity_rate"],
