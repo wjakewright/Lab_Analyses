@@ -5,6 +5,9 @@ from Lab_Analyses.Spine_Analysis.calculate_cluster_score import calculate_cluste
 from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import (
     distance_coactivity_rate_analysis,
 )
+from Lab_Analyses.Spine_Analysis.distance_dependent_variable_analysis import (
+    distance_dependent_variable_analysis,
+)
 from Lab_Analyses.Spine_Analysis.relative_coactivity_analysis import (
     relative_coactivity_analysis,
 )
@@ -273,6 +276,40 @@ def local_spine_coactivity_analysis(
         spine_activity, nearby_spine_idxs, avg_local_coactivity_rate
     )
 
+    # Get distance dependent coactivity along the dendrite
+    positional_coactivity = distance_dependent_variable_analysis(
+        avg_local_coactivity_rate,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        bin_size=5,
+        relative=False,
+    )
+    positional_coactivity_norm = distance_dependent_variable_analysis(
+        avg_local_coactivity_rate_norm,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        bin_size=5,
+        relative=False,
+    )
+    relative_positional_coactivity = distance_dependent_variable_analysis(
+        avg_local_coactivity_rate,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        bin_size=5,
+        relative=True,
+    )
+    relative_positional_coactivity_norm = distance_dependent_variable_analysis(
+        avg_local_coactivity_rate_norm,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        bin_size=5,
+        relative=True,
+    )
+
     return (
         distance_bins,
         distance_coactivity_rate,
@@ -345,5 +382,9 @@ def local_spine_coactivity_analysis(
         avg_nearby_coactivity_rate,
         relative_coactivity_rate,
         frac_local_coactivity_participation,
+        positional_coactivity,
+        positional_coactivity_norm,
+        relative_positional_coactivity,
+        relative_positional_coactivity_norm,
     )
 
