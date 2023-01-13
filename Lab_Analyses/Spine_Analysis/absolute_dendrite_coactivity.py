@@ -1,6 +1,6 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     analyze_activity_trace,
     get_trace_coactivity_rates,
 )
