@@ -97,6 +97,10 @@ class Spine_Coactivity_Data:
     avg_nearby_coactivity_rate: np.array
     relative_local_coactivity_rate: np.array
     frac_local_coactivity_participation: np.array
+    positional_coactivity: np.array
+    positional_coactivity_norm: np.array
+    relative_positional_coactivity: np.array
+    relative_positional_coactivity_norm: np.array
     spine_dend_coactivity_rate: np.array
     spine_dend_coactivity_rate_norm: np.array
     spine_dend_spine_fraction_coactive: np.array
@@ -168,6 +172,8 @@ class Spine_Coactivity_Data:
     spine_dend_movement_correlation: np.array
     spine_dend_movement_reliability: np.array
     spine_dend_movement_specificity: np.array
+    distance_movement_corr: np.array
+    relative_distance_movement_corr: np.array
     rel_spine_vs_dend_move_corr: np.array
     spine_to_dend_correlation: np.array
     spine_to_nearby_correlation: np.array
