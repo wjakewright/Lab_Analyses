@@ -7,7 +7,7 @@ from Lab_Analyses.Spine_Analysis.calculate_cluster_score import calculate_cluste
 from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import (
     distance_coactivity_rate_analysis,
 )
-from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities_v2 import (
+from Lab_Analyses.Spine_Analysis.spine_coactivity_utilities import (
     get_nearby_spine_activity,
 )
 
