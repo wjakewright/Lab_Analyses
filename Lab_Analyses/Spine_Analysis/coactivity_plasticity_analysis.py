@@ -421,6 +421,7 @@ class Coactivity_Plasticity:
         figsize=(5, 5),
         colors=["darkorange", "forestgreen", "silver"],
         ylim=None,
+        ytitle=None,
         save=False,
         save_path=None,
     ):
@@ -428,11 +429,6 @@ class Coactivity_Plasticity:
         coactivity_data = getattr(self, variable_name)
         spine_groups = self.group_dict[group_type]
         bins = self.parameters["Distance Bins"][1:]
-
-        if "norm" in variable_name:
-            ytitle = "Normalized coactivity rate"
-        else:
-            ytitle = "Coactivity rate (events/min)"
 
         data_dict = {}
         for group in spine_groups:
