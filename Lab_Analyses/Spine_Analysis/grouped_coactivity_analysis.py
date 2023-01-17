@@ -481,17 +481,11 @@ def grouped_coactivity_analysis(
                 spine_groupings,
                 bin_size=5,
                 relative=True,
+                relative_method="negative",
             )
 
             # Compare movement encoding between spines and parent dendrite
-            rel_spine_vs_dend_move_corr = np.absolute(
-                spine_move_correlation - dend_move_correlation
-            ) / np.nanmax(
-                [
-                    np.absolute(spine_move_correlation),
-                    np.absolute(dend_move_correlation),
-                ]
-            )
+            rel_spine_vs_dend_move_corr = dend_move_correlation - spine_move_correlation
             (
                 spine_to_dend_correlation,
                 spine_to_nearby_correlation,
