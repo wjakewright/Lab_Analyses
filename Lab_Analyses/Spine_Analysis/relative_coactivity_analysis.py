@@ -41,10 +41,14 @@ def relative_coactivity_analysis(
 
         # Calculate relative coactivity rate
         target_coactivity = distance_coactivity_rates[spine]
-        relative_coactivity = (target_coactivity - avg_nearby_coactivity) / (
-            target_coactivity + avg_nearby_coactivity
+        rel_coactivity = np.array(
+            [
+                (target_coactivity - x) / (target_coactivity + x)
+                for x in nearby_coactivity
+            ]
         )
-        relative_coactivity_rate[spine] = relative_coactivity
+
+        relative_coactivity_rate[spine] = np.array(np.nanmean(rel_coactivity))
 
         # Get fraction of coactivity participation
         all_activity = np.hstack((nearby_activity, target_activity.reshape(-1, 1)))
