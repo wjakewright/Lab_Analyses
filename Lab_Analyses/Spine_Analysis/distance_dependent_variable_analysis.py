@@ -1,9 +1,9 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import (
-    bin_by_position,
-)
+from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import \
+    bin_by_position
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
+from Lab_Analyses.Utilities.data_utilities import neg_num_relative_difference
 
 
 def distance_dependent_variable_analysis(
@@ -13,6 +13,7 @@ def distance_dependent_variable_analysis(
     spine_groupings,
     bin_size=5,
     relative=False,
+    relative_method="norm",
 ):
     """Function to organize and bin spine activity rates by their distance
         to the target spine
@@ -32,6 +33,8 @@ def distance_dependent_variable_analysis(
 
             relative - boolean term on whether to calculate activity rate relative to the
                         target spine
+            
+            relative_method = str specifying how to calulate relative vlaues
             
         OUTPUT PARAMETERS
             activity_matrix - np.array of the activity of spines binned
@@ -81,9 +84,15 @@ def distance_dependent_variable_analysis(
                 [y for y, _ in sorted(zip(relative_pos, curr_activity))]
             )
             if relative:
-                sorted_variable = np.array(
-                    [(s_var[spine] - x) / (s_var[spine] + x) for x in sorted_variable]
-                )
+                if relative_method == "norm":
+                    sorted_variable = np.array(
+                        [
+                            (s_var[spine] - x) / (s_var[spine] + x)
+                            for x in sorted_variable
+                        ]
+                    )
+                elif relative_method == "negative":
+                    sorted_variable = np.array([s_var[spine] - x for x in sorted_variable])
                 sorted_variable[np.isinf(sorted_variable)] = np.nan
             # Bin the data
             binned_activity = bin_by_position(
