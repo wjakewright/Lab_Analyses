@@ -1,3 +1,4 @@
+import copy
 import random
 
 import numpy as np
@@ -100,7 +101,8 @@ def calculate_cluster_score(
             # Calculate shuffled nearest neighbor distances
             all_shuff_nn_distances = []
             for i in range(iterations):
-                shuff_pos = np.array(random.sample(list(partner_pos), len(partner_pos)))
+                shuff_pos = copy.copy(partner_pos)
+                np.random.shuffle(shuff_pos)
                 shuff_nn, _ = find_nearest_neighbors(
                     curr_spine, partner_spines, shuff_pos
                 )
