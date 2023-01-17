@@ -343,3 +343,15 @@ def calculate_activity_event_rate(activity_array, sampling_rate=60):
 
     return activity_rate
 
+
+def neg_num_relative_difference(pre_values, post_values):
+    """Method to calculate the relative difference of two sets of values that include
+        negative numbers"""
+
+    rel_diff = []
+    for pre, post in zip(pre_values, post_values):
+        diff = (post - pre) / np.absolute(pre)
+        rel_diff.append(diff)
+
+    return np.array(rel_diff)
+
