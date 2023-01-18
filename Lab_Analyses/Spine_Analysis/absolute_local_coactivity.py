@@ -97,12 +97,6 @@ def absolute_local_coactivity(
     spine_coactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
     spine_coactive_traces = [None for i in range(spine_activity.shape[1])]
     spine_coactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
-    spine_noncoactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
-    spine_noncoactive_calcium = np.zeros(spine_activity.shape[1]) * np.nan
-    spine_noncoactive_auc = np.zeros(spine_activity.shape[1]) * np.nan
-    spine_noncoactive_calcium_auc = np.zeros(spine_activity.shape[1]) * np.nan
-    spine_noncoactive_traces = [None for i in range(spine_activity.shape[1])]
-    spine_noncoactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
     avg_coactive_spine_num = np.zeros(spine_activity.shape[1])
     sum_nearby_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
@@ -115,7 +109,10 @@ def absolute_local_coactivity(
     avg_nearby_amplitude_before = np.zeros(spine_activity.shape[1]) * np.nan
     sum_nearby_calcium_before = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_calcium_before = np.zeros(spine_activity.shape[1]) * np.nan
-    avg_relative_nearby_onset = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_spine_onset = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_spine_jitter = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_event_onset = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_event_jitter = np.zeros(spine_activity.shape[1]) * np.nan
     sum_coactive_binary_traces = [None for i in range(spine_activity.shape[1])]
     sum_coactive_spine_traces = [None for i in range(spine_activity.shape[1])]
     avg_coactive_spine_traces = [None for i in range(spine_activity.shape[1])]
@@ -279,47 +276,6 @@ def absolute_local_coactivity(
             spine_coactive_traces[spines[spine]] = s_traces
             spine_coactive_calcium_traces[spines[spine]] = s_ca_traces
 
-            # Analyze activity traces when not coactive
-            ## Get noncoactive trace
-            noncoactive_trace = curr_s_activity - coactivity_trace
-            noncoactive_trace[noncoactive_trace < 0] = 0
-
-            ## skip if no isolated events
-            if np.sum(noncoactive_trace):
-                ## Get stamps
-                noncoactive_stamps = tstamps.get_activity_timestamps(noncoactive_trace)
-                noncoactive_stamps = [x[0] for x in noncoactive_stamps]
-                nonrefined_stamps = tstamps.refine_activity_timestamps(
-                    noncoactive_stamps,
-                    window=activity_window,
-                    max_len=len(curr_s_dFoF),
-                    sampling_rate=sampling_rate,
-                )
-                ## Glutamate traces
-                (ns_traces, ns_amp, ns_auc, _) = analyze_activity_trace(
-                    curr_s_dFoF,
-                    nonrefined_stamps,
-                    activity_window=activity_window,
-                    center_onset=True,
-                    norm_constant=glu_constant,
-                    sampling_rate=sampling_rate,
-                )
-                ## Calcium traces
-                (ns_ca_traces, ns_ca_amp, ns_ca_auc, _) = analyze_activity_trace(
-                    curr_s_calcium,
-                    nonrefined_stamps,
-                    activity_window=activity_window,
-                    center_onset=True,
-                    norm_constant=ca_constant,
-                    sampling_rate=sampling_rate,
-                )
-                spine_noncoactive_amplitude[spines[spine]] = ns_amp
-                spine_noncoactive_calcium[spines[spine]] = ns_ca_amp
-                spine_noncoactive_auc[spines[spine]] = ns_auc
-                spine_noncoactive_calcium_auc[spines[spine]] = ns_ca_auc
-                spine_noncoactive_traces[spines[spine]] = ns_traces
-                spine_noncoactive_calcium_traces[spines[spine]] = ns_ca_traces
-
             # Analyze activity of nearby spines during coactivity
             ## Center timestamps around activity onset
             corrected_stamps = tstamps.timestamp_onset_correction(
@@ -339,7 +295,10 @@ def absolute_local_coactivity(
                 avg_n_amplitude_before,
                 sum_n_calcium_before,
                 avg_n_calcium_before,
-                avg_n_onset,
+                avg_n_spine_onset,
+                avg_n_spine_jitter,
+                avg_n_event_onset,
+                avg_n_event_jitter,
                 sum_coactive_b_traces,
                 sum_coactive_s_traces,
                 avg_coactive_s_traces,
@@ -369,7 +328,10 @@ def absolute_local_coactivity(
             avg_nearby_amplitude_before[spines[spine]] = avg_n_amplitude_before
             sum_nearby_calcium_before[spines[spine]] = sum_n_calcium_before
             avg_nearby_calcium_before[spines[spine]] = avg_n_calcium_before
-            avg_relative_nearby_onset[spines[spine]] = avg_n_onset
+            avg_nearby_spine_onset[spines[spine]] = avg_n_spine_onset
+            avg_nearby_spine_jitter[spines[spine]] = avg_n_spine_jitter
+            avg_nearby_event_onset[spines[spine]] = avg_n_event_onset
+            avg_nearby_event_jitter[spines[spine]] = avg_n_event_jitter
             sum_coactive_binary_traces[spines[spine]] = sum_coactive_b_traces
             sum_coactive_spine_traces[spines[spine]] = sum_coactive_s_traces
             avg_coactive_spine_traces[spines[spine]] = avg_coactive_s_traces
@@ -419,12 +381,6 @@ def absolute_local_coactivity(
         spine_coactive_calcium_auc,
         spine_coactive_traces,
         spine_coactive_calcium_traces,
-        spine_noncoactive_amplitude,
-        spine_noncoactive_calcium,
-        spine_noncoactive_auc,
-        spine_noncoactive_calcium_auc,
-        spine_noncoactive_traces,
-        spine_noncoactive_calcium_traces,
         avg_coactive_spine_num,
         sum_nearby_amplitude,
         avg_nearby_amplitude,
@@ -437,7 +393,10 @@ def absolute_local_coactivity(
         avg_nearby_amplitude_before,
         sum_nearby_calcium_before,
         avg_nearby_calcium_before,
-        avg_relative_nearby_onset,
+        avg_nearby_spine_onset,
+        avg_nearby_spine_jitter,
+        avg_nearby_event_onset,
+        avg_nearby_event_jitter,
         sum_coactive_binary_traces,
         sum_coactive_spine_traces,
         avg_coactive_spine_traces,
