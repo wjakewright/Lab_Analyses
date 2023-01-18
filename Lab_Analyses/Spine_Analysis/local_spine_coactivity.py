@@ -71,7 +71,6 @@ def local_spine_coactivity_analysis(
     """
 
     # Get distance-dependent coactivity rates
-    print("--- Analyzing Distance-Dependence Coactivity")
     ## Non-specified
     distance_coactivity_rate, distance_bins = distance_coactivity_rate_analysis(
         spine_activity,
@@ -142,6 +141,50 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=True,
     )
+    movement_distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=lever_active,
+        partner_list=None,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=False,
+    )
+    movement_distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=lever_active,
+        partner_list=None,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=True,
+    )
+    nonmovement_distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=lever_unactive,
+        partner_list=None,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=False,
+    )
+    nonmovement_distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+        spine_activity,
+        spine_positions,
+        spine_flags,
+        spine_groupings,
+        constrain_matrix=lever_unactive,
+        partner_list=None,
+        bin_size=5,
+        sampling_rate=sampling_rate,
+        norm=True,
+    )
     ## Local values only (< 5um)
     avg_local_coactivity_rate = distance_coactivity_rate[0, :]
     avg_local_coactivity_rate_norm = distance_coactivity_rate_norm[0, :]
@@ -149,59 +192,16 @@ def local_spine_coactivity_analysis(
     avg_MRS_local_coactivity_rate_norm = MRS_distance_coactivity_rate_norm[0, :]
     avg_nMRS_local_coactivity_rate = nMRS_distance_coactivity_rate[0, :]
     avg_nMRS_local_coactivity_rate_norm = nMRS_distance_coactivity_rate_norm[0, :]
-
-    # Cluster Score
-    print("--- Calculating Cluster Score")
-    ## Nonconstrained
-    cluster_score, coactive_num = calculate_cluster_score(
-        spine_activity,
-        spine_positions,
-        spine_flags,
-        spine_groupings,
-        constrain_matrix=None,
-        partner_list=None,
-        iterations=100,
-    )
-    MRS_cluster_score, MRS_coactive_num = calculate_cluster_score(
-        spine_activity,
-        spine_positions,
-        spine_flags,
-        spine_groupings,
-        constrain_matrix=None,
-        partner_list=movement_spines,
-        iterations=100,
-    )
-    nMRS_cluster_score, nMRS_coactive_num = calculate_cluster_score(
-        spine_activity,
-        spine_positions,
-        spine_flags,
-        spine_groupings,
-        constrain_matrix=None,
-        partner_list=non_movement_spines,
-        iterations=100,
-    )
-    ## Constrained to movement and nonmovement periods
-    movement_cluster_score, movement_coactive_num = calculate_cluster_score(
-        spine_activity,
-        spine_positions,
-        spine_flags,
-        spine_groupings,
-        constrain_matrix=lever_active,
-        partner_list=None,
-        iterations=100,
-    )
-    nonmovement_cluster_score, nonmovement_coactive_num = calculate_cluster_score(
-        spine_activity,
-        spine_positions,
-        spine_flags,
-        spine_groupings,
-        constrain_matrix=lever_unactive,
-        partner_list=None,
-        iterations=100,
-    )
+    avg_movement_local_coactivity_rate = movement_distance_coactivity_rate[0, :]
+    avg_movement_local_coactivity_rate_norm = movement_distance_coactivity_rate_norm[
+        0, :
+    ]
+    avg_nonmovement_local_coactivity_rate = nonmovement_distance_coactivity_rate[0, :]
+    avg_nonmovement_local_coactivity_rate_norm = nonmovement_distance_coactivity_rate_norm[
+        0, :
+    ]
 
     # Analyze absolute local coactivity
-    print("--- Analyzing Absolute Coactivity")
     (
         nearby_spine_idxs,
         nearby_coactive_spine_idxs,
@@ -221,12 +221,6 @@ def local_spine_coactivity_analysis(
         spine_coactive_calcium_auc,
         spine_coactive_traces,
         spine_coactive_calcium_traces,
-        spine_noncoactive_amplitude,
-        spine_noncoactive_calcium,
-        spine_noncoactive_auc,
-        spine_noncoactive_calcium_auc,
-        spine_noncoactive_traces,
-        spine_noncoactive_calcium_traces,
         avg_coactive_spine_num,
         sum_nearby_amplitude,
         avg_nearby_amplitude,
@@ -239,7 +233,10 @@ def local_spine_coactivity_analysis(
         avg_nearby_amplitude_before,
         sum_nearby_calcium_before,
         avg_nearby_calcium_before,
-        avg_relative_nearby_onset,
+        avg_nearby_spine_onset,
+        avg_nearby_spine_jitter,
+        avg_nearby_event_onset,
+        avg_nearby_event_jitter,
         sum_coactive_binary_traces,
         sum_coactive_spine_traces,
         avg_coactive_spine_traces,
@@ -324,16 +321,10 @@ def local_spine_coactivity_analysis(
         avg_MRS_local_coactivity_rate_norm,
         avg_nMRS_local_coactivity_rate,
         avg_nMRS_local_coactivity_rate_norm,
-        cluster_score,
-        coactive_num,
-        MRS_cluster_score,
-        MRS_coactive_num,
-        nMRS_cluster_score,
-        nMRS_coactive_num,
-        movement_cluster_score,
-        movement_coactive_num,
-        nonmovement_cluster_score,
-        nonmovement_coactive_num,
+        avg_movement_local_coactivity_rate,
+        avg_movement_local_coactivity_rate_norm,
+        avg_nonmovement_local_coactivity_rate,
+        avg_nonmovement_local_coactivity_rate_norm,
         nearby_spine_idxs,
         nearby_coactive_spine_idxs,
         avg_nearby_spine_freq,
@@ -352,12 +343,6 @@ def local_spine_coactivity_analysis(
         spine_coactive_calcium_auc,
         spine_coactive_traces,
         spine_coactive_calcium_traces,
-        spine_noncoactive_amplitude,
-        spine_noncoactive_calcium,
-        spine_noncoactive_auc,
-        spine_noncoactive_calcium_auc,
-        spine_noncoactive_traces,
-        spine_noncoactive_calcium_traces,
         avg_coactive_spine_num,
         sum_nearby_amplitude,
         avg_nearby_amplitude,
@@ -370,7 +355,10 @@ def local_spine_coactivity_analysis(
         avg_nearby_amplitude_before,
         sum_nearby_calcium_before,
         avg_nearby_calcium_before,
-        avg_relative_nearby_onset,
+        avg_nearby_spine_onset,
+        avg_nearby_spine_jitter,
+        avg_nearby_event_onset,
+        avg_nearby_event_jitter,
         sum_coactive_binary_traces,
         sum_coactive_spine_traces,
         avg_coactive_spine_traces,
