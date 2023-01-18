@@ -204,16 +204,6 @@ def grouped_coactivity_analysis(
                 avg_MRS_local_coactivity_rate_norm,
                 avg_nMRS_local_coactivity_rate,
                 avg_nMRS_local_coactivity_rate_norm,
-                spine_cluster_score,
-                spine_coactive_num,
-                MRS_cluster_score,
-                MRS_coactive_num,
-                nMRS_cluster_score,
-                nMRS_coactive_num,
-                movement_cluster_score,
-                movement_coactive_num,
-                nonmovement_cluster_score,
-                nonmovement_coactive_num,
                 nearby_spine_idxs,
                 nearby_coactive_spine_idxs,
                 avg_nearby_spine_freq,
@@ -232,12 +222,6 @@ def grouped_coactivity_analysis(
                 local_spine_coactive_calcium_auc,
                 local_spine_coactive_traces,
                 local_spine_coactive_calcium_traces,
-                local_spine_noncoactive_amplitude,
-                local_spine_noncoactive_calcium,
-                local_spine_noncoactive_auc,
-                local_spine_noncoactive_calcium_auc,
-                local_spine_noncoactive_traces,
-                local_spine_noncoactive_calcium_traces,
                 local_avg_coactive_spine_num,
                 local_sum_nearby_amplitude,
                 local_avg_nearby_amplitude,
@@ -250,7 +234,10 @@ def grouped_coactivity_analysis(
                 local_avg_nearby_amplitude_before,
                 local_sum_nearby_calcium_before,
                 local_avg_nearby_calcium_before,
-                local_avg_relative_nearby_onset,
+                local_avg_nearby_spine_onset,
+                local_avg_nearby_spine_jitter,
+                local_avg_nearby_event_onset,
+                local_avg_nearby_event_jitter,
                 local_sum_coactive_binary_traces,
                 local_sum_coactive_spine_traces,
                 local_avg_coactive_spine_traces,
@@ -554,16 +541,6 @@ def grouped_coactivity_analysis(
             grouped_data["avg_nMRS_local_coactivity_rate_norm"].append(
                 avg_nMRS_local_coactivity_rate_norm
             )
-            grouped_data["spine_cluster_score"].append(spine_cluster_score)
-            grouped_data["spine_coactive_num"].append(spine_coactive_num)
-            grouped_data["MRS_cluster_score"].append(MRS_cluster_score)
-            grouped_data["MRS_coactive_num"].append(MRS_coactive_num)
-            grouped_data["nMRS_cluster_score"].append(nMRS_cluster_score)
-            grouped_data["nMRS_coactive_num"].append(nMRS_coactive_num)
-            grouped_data["movement_cluster_score"].append(movement_cluster_score)
-            grouped_data["movement_coactive_num"].append(movement_coactive_num)
-            grouped_data["nonmovement_cluster_score"].append(nonmovement_cluster_score)
-            grouped_data["nonmovement_coactive_num"].append(nonmovement_coactive_num)
             grouped_data["avg_nearby_spine_rate"].append(avg_nearby_spine_freq)
             grouped_data["avg_nearby_coactive_spine_rate"].append(
                 avg_nearby_coactive_spine_freq
@@ -599,24 +576,6 @@ def grouped_coactivity_analysis(
             grouped_data["local_spine_coactive_calcium_traces"].append(
                 local_spine_coactive_calcium_traces
             )
-            grouped_data["local_spine_noncoactive_amplitude"].append(
-                local_spine_noncoactive_amplitude
-            )
-            grouped_data["local_spine_noncoactive_calcium"].append(
-                local_spine_noncoactive_calcium
-            )
-            grouped_data["local_spine_noncoactive_auc"].append(
-                local_spine_noncoactive_auc
-            )
-            grouped_data["local_spine_noncoactive_calcium_auc"].append(
-                local_spine_noncoactive_calcium_auc
-            )
-            grouped_data["local_spine_noncoactive_traces"].append(
-                local_spine_noncoactive_traces
-            )
-            grouped_data["local_spine_noncoactive_calcium_traces"].append(
-                local_spine_noncoactive_calcium_traces
-            )
             grouped_data["local_avg_coactive_spine_num"].append(
                 local_avg_coactive_spine_num
             )
@@ -649,8 +608,17 @@ def grouped_coactivity_analysis(
             grouped_data["local_avg_nearby_calcium_before"].append(
                 local_avg_nearby_calcium_before
             )
-            grouped_data["local_avg_relative_nearby_onset"].append(
-                local_avg_relative_nearby_onset
+            grouped_data["local_avg_nearby_spine_onset"].append(
+                local_avg_nearby_spine_onset
+            )
+            grouped_data["local_avg_nearby_spine_jitter"].append(
+                local_avg_nearby_spine_jitter
+            )
+            grouped_data["local_avg_nearby_event_onset"].append(
+                local_avg_nearby_event_onset
+            )
+            grouped_data["local_avg_nearby_event_jitter"].append(
+                local_avg_nearby_event_jitter
             )
             grouped_data["local_sum_nearby_binary_traces"].append(
                 local_sum_coactive_binary_traces
@@ -925,16 +893,6 @@ def grouped_coactivity_analysis(
         avg_nMRS_local_coactivity_rate_norm=regrouped_data[
             "avg_nMRS_local_coactivity_rate_norm"
         ],
-        spine_cluster_score=regrouped_data["spine_cluster_score"],
-        spine_coactive_num=regrouped_data["spine_coactive_num"],
-        MRS_cluster_score=regrouped_data["MRS_cluster_score"],
-        MRS_coactive_num=regrouped_data["MRS_coactive_num"],
-        nMRS_cluster_score=regrouped_data["nMRS_cluster_score"],
-        nMRS_coactive_num=regrouped_data["nMRS_coactive_num"],
-        movement_cluster_score=regrouped_data["movement_cluster_score"],
-        movement_coactive_num=regrouped_data["movement_coactive_num"],
-        nonmovement_cluster_score=regrouped_data["nonmovement_cluster_score"],
-        nonmovement_coactive_num=regrouped_data["nonmovement_coactive_num"],
         avg_nearby_spine_rate=regrouped_data["avg_nearby_spine_rate"],
         avg_nearby_coactive_spine_rate=regrouped_data["avg_nearby_coactive_spine_rate"],
         rel_nearby_spine_rate=regrouped_data["rel_nearby_spine_rate"],
@@ -953,20 +911,6 @@ def grouped_coactivity_analysis(
         local_spine_coactive_traces=regrouped_data["local_spine_coactive_traces"],
         local_spine_coactive_calcium_traces=regrouped_data[
             "local_spine_coactive_calcium_traces"
-        ],
-        local_spine_noncoactive_amplitude=regrouped_data[
-            "local_spine_noncoactive_amplitude"
-        ],
-        local_spine_noncoactive_calcium=regrouped_data[
-            "local_spine_noncoactive_calcium"
-        ],
-        local_spine_noncoactive_auc=regrouped_data["local_spine_noncoactive_auc"],
-        local_spine_noncoactive_calcium_auc=regrouped_data[
-            "local_spine_noncoactive_calcium_auc"
-        ],
-        local_spine_noncoactive_traces=regrouped_data["local_spine_noncoactive_traces"],
-        local_spine_noncoactive_calcium_traces=regrouped_data[
-            "local_spine_noncoactive_calcium_traces"
         ],
         local_avg_coactive_spine_num=regrouped_data["local_avg_coactive_spine_num"],
         local_sum_nearby_amplitude=regrouped_data["local_sum_nearby_amplitude"],
@@ -988,9 +932,10 @@ def grouped_coactivity_analysis(
         local_avg_nearby_calcium_before=regrouped_data[
             "local_avg_nearby_calcium_before"
         ],
-        local_avg_relative_nearby_onset=regrouped_data[
-            "local_avg_relative_nearby_onset"
-        ],
+        local_avg_nearby_spine_onset=regrouped_data["local_avg_nearby_spine_onset"],
+        local_avg_nearby_spine_jitter=regrouped_data["local_avg_nearby_spine_jitter"],
+        local_avg_nearby_event_onset=regrouped_data["local_avg_nearby_event_onset"],
+        local_avg_nearby_event_jitter=regrouped_data["local_avg_nearby_event_jitter"],
         local_sum_nearby_binary_traces=regrouped_data["local_sum_nearby_binary_traces"],
         local_sum_nearby_spine_traces=regrouped_data["local_sum_nearby_spine_traces"],
         local_avg_nearby_spine_traces=regrouped_data["local_avg_nearby_spine_traces"],
