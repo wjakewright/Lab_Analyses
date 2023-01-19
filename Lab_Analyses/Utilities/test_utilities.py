@@ -1,14 +1,14 @@
 """Module containing commonly used tests"""
 import itertools
 import random
-from cgitb import small
 
 import numpy as np
 import pandas as pd
-from Lab_Analyses.Utilities.data_utilities import get_before_after_means
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 from tabulate import tabulate
+
+from Lab_Analyses.Utilities.data_utilities import get_before_after_means
 
 
 def ANOVA_1way_posthoc(data_dict, method):
@@ -66,6 +66,10 @@ def ANOVA_1way_posthoc(data_dict, method):
     results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
 
     return f_stat, anova_p, results_table, results_df
+
+
+def ANOVA_2way_posthoc():
+    """Function to perform a two way anova with a specified posthoc test"""
 
 
 def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method):
