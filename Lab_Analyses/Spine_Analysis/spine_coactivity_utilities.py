@@ -261,6 +261,9 @@ def analyze_nearby_coactive_spines(
     sum_coactive_ca_traces = []
     avg_coactive_ca_traces = []
 
+    spine_wise_onsets = [[] for i in range(nearby_activity.shape[1])]
+    avg_event_onsets = []
+    avg_event_jitter = []
     for event in timestamps:
         coactive_s_traces = []
         coactive_ca_traces = []
@@ -271,6 +274,8 @@ def analyze_nearby_coactive_spines(
             nearby_spine_dFoF = nearby_dFoF[:, i]
             nearby_spine_ca = nearby_calcium[:, i]
             event_coactivity = coactivity[:, i][event + before_f : event + after_f]
+            # binary onset variable
+            b_onsets = []
 
             # Append traces if there is coactivity during the event
             if np.sum(event_coactivity):
@@ -283,6 +288,15 @@ def analyze_nearby_coactive_spines(
                 coactive_s_traces.append(dFoF)
                 coactive_ca_traces.append(calcium)
                 coactive_b_traces.append(activity)
+                # get binary onset
+                boundaries = np.insert(np.diff(activity), 0, 0, axis=0)
+                try:
+                    onset = np.nonzero(boundaries == 1)[0][0]
+                except IndexError:
+                    onset = 0
+                b_onset = (onset - center_point) / sampling_rate
+                spine_wise_onsets[i].append(b_onset)
+                b_onsets.append(b_onset)
 
         # Process the activity traces
         ## Skip of no spines
@@ -296,6 +310,8 @@ def analyze_nearby_coactive_spines(
             avg_coactive_spine_traces.append(coactive_s_traces[0])
             sum_coactive_ca_traces.append(coactive_ca_traces[0])
             avg_coactive_ca_traces.append(coactive_ca_traces[0])
+            avg_event_onsets.append(b_onsets[0])
+            avg_event_jitter.append(np.nan)
             continue
         ## sum and average multiple coactive spine traces
         spine_b_trace_array = np.vstack(coactive_b_traces).T
@@ -313,6 +329,8 @@ def analyze_nearby_coactive_spines(
         avg_coactive_spine_traces.append(avg_d_trace)
         sum_coactive_ca_traces.append(sum_ca_trace)
         avg_coactive_ca_traces.append(avg_ca_trace)
+        avg_event_onsets.append(np.nanmean(b_onsets))
+        avg_event_jitter.append(np.nanstd(b_onsets))
 
     # Check how many coactive events there are
     ## Return nan values if there are no coactive events
@@ -329,7 +347,10 @@ def analyze_nearby_coactive_spines(
         avg_nearby_amplitude_before = np.nan
         sum_nearby_calcium_before = np.nan
         avg_nearby_calcium_before = np.nan
-        avg_nearby_onset = np.nan
+        avg_nearby_spine_onset = np.nan
+        avg_nearby_spine_jitter = np.nan
+        avg_nearby_event_onset = np.nan
+        avg_nearby_event_jitter = np.nan
         sum_coactive_binary_traces = None
         sum_coactive_spine_traces = None
         avg_coactive_spine_traces = None
@@ -349,7 +370,10 @@ def analyze_nearby_coactive_spines(
             avg_nearby_amplitude_before,
             sum_nearby_calcium_before,
             avg_nearby_calcium_before,
-            avg_nearby_onset,
+            avg_nearby_spine_onset,
+            avg_nearby_spine_jitter,
+            avg_nearby_event_onset,
+            avg_nearby_event_jitter,
             sum_coactive_binary_traces,
             sum_coactive_spine_traces,
             avg_coactive_spine_traces,
@@ -392,7 +416,6 @@ def analyze_nearby_coactive_spines(
         sampling_rate=sampling_rate,
     )
 
-    avg_nearby_onset = (onsets[1] - center_point) / sampling_rate
     sum_nearby_amplitude = amps[0]
     avg_nearby_amplitude = amps[1]
     sum_nearby_calcium = amps[2]
@@ -421,6 +444,15 @@ def analyze_nearby_coactive_spines(
     sum_nearby_calcium_before = np.nanmax(avg_sum_ca_traces[:center_point])
     avg_nearby_calcium_before = np.nanmax(avg_avg_ca_traces[:center_point])
 
+    # Handle the binary onset variables
+    nearby_spine_onsets = [np.nanmean(x) for x in spine_wise_onsets]
+    nearby_spine_jitter = [np.nanstd(x) for x in spine_wise_onsets]
+    avg_nearby_spine_onset = np.nanmean(nearby_spine_onsets)
+    avg_nearby_spine_jitter = np.nanmean(nearby_spine_jitter)
+
+    avg_nearby_event_onset = np.nanmean(avg_event_onsets)
+    avg_nearby_event_jitter = np.nanmean(avg_event_jitter)
+
     return (
         avg_coactive_spine_num,
         sum_nearby_amplitude,
@@ -434,7 +466,10 @@ def analyze_nearby_coactive_spines(
         avg_nearby_amplitude_before,
         sum_nearby_calcium_before,
         avg_nearby_calcium_before,
-        avg_nearby_onset,
+        avg_nearby_spine_onset,
+        avg_nearby_spine_jitter,
+        avg_nearby_event_onset,
+        avg_nearby_event_jitter,
         sum_coactive_binary_traces,
         sum_coactive_spine_traces,
         avg_coactive_spine_traces,
