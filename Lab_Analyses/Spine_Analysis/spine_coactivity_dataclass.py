@@ -42,16 +42,6 @@ class Spine_Coactivity_Data:
     avg_MRS_local_coactivity_rate_norm: np.array
     avg_nMRS_local_coactivity_rate: np.array
     avg_nMRS_local_coactivity_rate_norm: np.array
-    spine_cluster_score: np.array
-    spine_coactive_num: np.array
-    MRS_cluster_score: np.array
-    MRS_coactive_num: np.array
-    nMRS_cluster_score: np.array
-    nMRS_coactive_num: np.array
-    movement_cluster_score: np.array
-    movement_coactive_num: np.array
-    nonmovement_cluster_score: np.array
-    nonmovement_coactive_num: np.array
     avg_nearby_spine_rate: np.array
     avg_nearby_coactive_spine_rate: np.array
     rel_nearby_spine_rate: np.array
@@ -67,12 +57,6 @@ class Spine_Coactivity_Data:
     local_spine_coactive_calcium_auc: np.array
     local_spine_coactive_traces: list
     local_spine_coactive_calcium_traces: list
-    local_spine_noncoactive_amplitude: np.array
-    local_spine_noncoactive_calcium: np.array
-    local_spine_noncoactive_auc: np.array
-    local_spine_noncoactive_calcium_auc: np.array
-    local_spine_noncoactive_traces: list
-    local_spine_noncoactive_calcium_traces: list
     local_avg_coactive_spine_num: np.array
     local_sum_nearby_amplitude: np.array
     local_avg_nearby_amplitude: np.array
@@ -85,7 +69,10 @@ class Spine_Coactivity_Data:
     local_avg_nearby_amplitude_before: np.array
     local_sum_nearby_calcium_before: np.array
     local_avg_nearby_calcium_before: np.array
-    local_avg_relative_nearby_onset: np.array
+    local_avg_nearby_spine_onset: np.array
+    local_avg_nearby_spine_jitter: np.array
+    local_avg_nearby_event_onset: np.array
+    local_avg_nearby_event_jitter: np.array
     local_sum_nearby_binary_traces: list
     local_sum_nearby_spine_traces: list
     local_avg_nearby_spine_traces: list
