@@ -176,6 +176,7 @@ def analyze_activity_trace(
 
     activity_onset = activity_onset[0]
     activity_amplitude = activity_amplitude[0]
+
     # Get area under the curve
     try:
         area_trace = mean_trace[int(activity_onset) :]
@@ -268,14 +269,13 @@ def analyze_nearby_coactive_spines(
         coactive_s_traces = []
         coactive_ca_traces = []
         coactive_b_traces = []
+        b_onsets = []
         # Check the activity of each nearby spine
         for i in range(nearby_activity.shape[1]):
             nearby_spine_a = nearby_activity[:, i]
             nearby_spine_dFoF = nearby_dFoF[:, i]
             nearby_spine_ca = nearby_calcium[:, i]
             event_coactivity = coactivity[:, i][event + before_f : event + after_f]
-            # binary onset variable
-            b_onsets = []
 
             # Append traces if there is coactivity during the event
             if np.sum(event_coactivity):
@@ -294,7 +294,14 @@ def analyze_nearby_coactive_spines(
                     onset = np.nonzero(boundaries == 1)[0][0]
                 except IndexError:
                     onset = 0
-                b_onset = (onset - center_point) / sampling_rate
+                t_a = target_activity[event + before_f : event + after_f]
+                t_a[:center_point] = 0
+                t_boundary = np.insert(np.diff(t_a), 0, 0, axis=0)
+                try:
+                    t_onset = np.nonzero(t_boundary == 1)[0][0]
+                except IndexError:
+                    t_onset = center_point
+                b_onset = (onset - t_onset) / sampling_rate
                 spine_wise_onsets[i].append(b_onset)
                 b_onsets.append(b_onset)
 
