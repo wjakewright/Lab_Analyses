@@ -4,7 +4,10 @@ import random
 
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 from scipy import stats
+from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from statsmodels.stats.multitest import multipletests
 from tabulate import tabulate
 
@@ -36,40 +39,215 @@ def ANOVA_1way_posthoc(data_dict, method):
 
     # Perform the one-way ANOVA
     ### Putting all the data points in a single array
-    data_array = np.array(list(data_dict.values()))
+    data_array = list(data_dict.values())
     f_stat, anova_p = stats.f_oneway(*data_array)
 
-    # Perform t-test across all groups
-    ## get all the possible combinations to be tested
-    combos = list(itertools.combinations(data_dict.keys(), 2))
-    test_performed = []
-    t_vals = []
-    raw_pvals = []
-    for combo in combos:
-        test_performed.append(combo[0] + " vs. " + combo[1])
-        t, p = stats.ttest_ind(data_dict[combo[0]], data_dict[combo[1]])
-        t_vals.append(t)
-        raw_pvals.append(p)
+    # Perform multiple comparisions
+    if method != "Tukey":
+        # Perform t-test across all groups
+        ## get all the possible combinations to be tested
+        combos = list(itertools.combinations(data_dict.keys(), 2))
+        test_performed = []
+        t_vals = []
+        raw_pvals = []
+        for combo in combos:
+            test_performed.append(combo[0] + " vs. " + combo[1])
+            t, p = stats.ttest_ind(data_dict[combo[0]], data_dict[combo[1]])
+            t_vals.append(t)
+            raw_pvals.append(p)
+        # Perform corrections
+        _, adj_pvals, _, alpha_corrected = multipletests(
+            raw_pvals, alpha=0.05, method=method, is_sorted=False, returnsorted=False,
+        )
+        results_dict = {
+            "comparison": test_performed,
+            "t stat": t_vals,
+            "raw p-vals": raw_pvals,
+            "adjusted p-vals": adj_pvals,
+        }
+        results_df = pd.DataFrame.from_dict(results_dict)
 
-    # Perform multiple comparisions corrections
-    _, adj_pvals, _, alpha_corrected = multipletests(
-        raw_pvals, alpha=0.05, method=method, is_sorted=False, returnsorted=False,
-    )
-    results_dict = {
-        "comparison": test_performed,
-        "t stat": t_vals,
-        "raw p-vals": raw_pvals,
-        "adjusted p-vals": adj_pvals,
-    }
+    if method == "Tukey":
+        # Organize data for input
+        df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in data_dict.items()]))
+        df = pd.melt(df, value_vars=df.columns, var_name="group", value_name="variable")
+        df.dropna(inplace=True)
+        print(len(df.index))
 
-    results_df = pd.DataFrame.from_dict(results_dict)
+        # Perform comparisions
+        tukey_result = pairwise_tukeyhsd(
+            endog=df["variable"], groups=df["group"], alpha=0.05
+        )
+
+        results_df = pd.DataFrame(
+            data=tukey_result._results_table.data[1:],
+            columns=tukey_result._results_table.data[0],
+        )
+        results_dict = results_df.to_dict("list")
+
     results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
 
     return f_stat, anova_p, results_table, results_df
 
 
-def ANOVA_2way_posthoc():
-    """Function to perform a two way anova with a specified posthoc test"""
+def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
+    """Function to perform a two way anova with a specified posthoc test
+    
+        INPUT PARAMETERS 
+            data_dict - nested dictionaries of data to be plotted. Outer keys represent
+                        the subgroups, while the inner keys represent the main groups
+            
+            groups_list - list of str specifying the groups. Main group will be first
+                         and sub groups second
+            
+            variable - str specifying what the variable being tested is
+            
+            method - str specifying the str indicating the posthoc test to be performed. See
+                    statsmodels.stats.multitest for available methods
+            
+            exclude - list of str specifying posthoc tests to ignore
+    """
+    # First organize the data in order to perform the testing
+    dfs = []
+    g1_keys = []
+    g2_keys = []
+    for key, value in data_dict.items():
+        g1_keys = list(value.keys())
+        g2_keys.append(key)
+        df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in value.items()]))
+        df = pd.melt(
+            df, value_vars=df.columns, var_name=groups_list[0], value_name=variable
+        )
+        df[groups_list[1]] = key
+        dfs.append(df.dropna())
+    test_df = pd.concat(dfs)
+    formula = f"{variable} ~ C({groups_list[0]}) + C({groups_list[1]}) + C({groups_list[0]}):C({groups_list[1]})"
+    # Perform the two-way anova
+    model = ols(formula=formula, data=test_df).fit()
+    two_way_anova = sm.stats.anova_lm(model, typ=2)
+
+    # Get all the combos
+    all_keys = [g1_keys, g2_keys]
+    groups = [c for c in itertools.product(*all_keys)]
+    test_combos = list(itertools.combinations(groups, 2))
+
+    # Perform multiple comparison
+    if method != "Tukey":
+        test_performed = []
+        t_vals = []
+        raw_pvals = []
+        for combo in test_combos:
+            # Keep track of the comparisons being made
+            group_names = []
+            for c in combo:
+                names = [x.split("_")[0] for x in c]
+                names.append("spines")
+                group_names.append(" ".join(names))
+            test_performed.append(f"{group_names[0]} vs {group_names[1]}")
+            # Get the data for each group
+            data_1 = test_df[
+                (test_df[groups_list[0]] == combo[0][0])
+                & (test_df[groups_list[1]] == combo[0][1])
+            ]
+            data_2 = test_df[
+                (test_df[groups_list[0]] == combo[1][0])
+                & (test_df[groups_list[1]] == combo[1][1])
+            ]
+            # Convert data to arrays
+            data_1 = np.array(data_1[variable])
+            data_2 = np.array(data_2[variable])
+            # Perform t-test
+            t, p = stats.ttest_ind(data_1, data_2)
+            t_vals.append(t)
+            raw_pvals.append(p)
+        _, adj_pvals, _, alpha_corrected = multipletests(
+            raw_pvals, alpha=0.5, method=method, is_sorted=False, returnsorted=False,
+        )
+        posthoc_dict = {
+            "posthoc comparision": test_performed,
+            "t stat": t_vals,
+            "raw p-vals": raw_pvals,
+            "adjusted p-vals": adj_pvals,
+        }
+
+    if method == "Tukey":
+        # Organize data to put into Tukey
+        temp_dfs = []
+        for group in groups:
+            names = [x.split("_")[0] for x in group]
+            names.append("spines")
+            group_name = " ".join(names)
+            data = test_df[
+                (test_df[groups_list[0]] == group[0])
+                & (test_df[groups_list[1]] == group[1])
+            ]
+            data = np.array(data[variable])
+            labels = [group_name for i in range(len(data))]
+            d = {"group": labels, "variable": data}
+            temp_df = pd.DataFrame(data=d)
+            temp_dfs.append(temp_df)
+        tukey_df = pd.concat(temp_dfs)
+        # Perform comparisons
+        tukey_result = pairwise_tukeyhsd(
+            endog=tukey_df["variable"], groups=tukey_df["group"], alpha=0.05
+        )
+        posthoc_df = pd.DataFrame(
+            data=tukey_result._results_table.data[1:],
+            columns=tukey_result._results_table.data[0],
+        )
+        posthoc_dict = posthoc_df.to_dict("list")
+
+    two_way_anova_table = tabulate(two_way_anova, headers="keys", tablefmt="fancy_grid")
+    posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
+
+    return two_way_anova_table, posthoc_table
+
+
+def kruskal_wallis_test(data_dict, method, paired=False):
+    """Function to perform a Kruskal-Wallis test with different posthoc tests
+    
+        INPUT PARAMETERS
+            data_dict - dict of data to be analyzed. Each item is a different group.
+                        Keys are group names, and values represent the data points
+            
+            method - str indicating the posthoc test to be performed. See
+                    statsmodels.stats.multitests for available methods
+            
+            paired - boolean specifying whether the data are paired or not
+    """
+    # Perform the Kruskal-Wallis Test
+    ## Put data into an array format
+    data_array = list(data_dict.values())
+    f_stat, kruskal_p = stats.kruskal(*data_array, nan_policy="omit")
+
+    # Perform multiple comparisons
+    combos = list(itertools.combinations(data_dict.keys(), 2))
+    test_performed = []
+    stat_vals = []
+    raw_pvals = []
+    for combo in combos:
+        test_performed.append(combo[0] + "vs." + combo[1])
+        if paired == False:
+            s, p = stats.ranksums(data_dict[combo[0]], data_dict[combo[1]])
+        else:
+            s, p = stats.wilcoxon(data_dict[combo[0]], data_dict[combo[1]])
+        stat_vals.append(s)
+        raw_pvals.append(p)
+    # Perform corrections
+    _, adj_pvals, _, alpha_corrected = multipletests(
+        raw_pvals, alpha=0.05, method=method, is_sorted=False, returnsorted=False,
+    )
+
+    results_dict = {
+        "comparison": test_performed,
+        "statistic": stat_vals,
+        "raw p-vals": raw_pvals,
+        "adjusted p-vals": adj_pvals,
+    }
+
+    results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
+
+    return f_stat, kruskal_p, results_table
 
 
 def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method):
