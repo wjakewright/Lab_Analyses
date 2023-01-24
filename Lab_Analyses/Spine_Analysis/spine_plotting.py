@@ -438,6 +438,8 @@ def plot_grouped_swarm_bar_plot(
         for line in ahlines:
             ax.axhline(y=line, linestyle="--", linewidth=1)
 
+    ax.legend(bbox_to_anchor=(1.04, 1))
+
     fig.tight_layout()
 
     # Save section
