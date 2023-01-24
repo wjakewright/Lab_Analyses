@@ -101,7 +101,7 @@ def label_video(
                 _, tif = cv2.threshold(tif, low_thresh, 255, cv2.THRESH_TOZERO)
 
             # Convert to heatmap
-            heat_tif = cv2.applyColorMap(tif, cv2.COLORMAP_INFERNO)
+            heat_tif = cv2.applyColorMap(tif, cv2.COLORMAP_BONE)
             heat_tif = cv2.cvtColor(heat_tif, cv2.COLOR_RGB2BGR)
 
             # Adjust image size
