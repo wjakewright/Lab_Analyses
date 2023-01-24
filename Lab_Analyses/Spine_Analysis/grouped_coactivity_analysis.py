@@ -198,12 +198,20 @@ def grouped_coactivity_analysis(
                 MRS_distance_coactivity_rate_norm,
                 nMRS_distance_coactivity_rate,
                 nMRS_distance_coactivity_rate_norm,
+                movement_distance_coactivity_rate,
+                movement_distance_coactivity_rate_norm,
+                nonmovement_distance_coactivity_rate,
+                nonmovement_distance_coactivity_rate_norm,
                 avg_local_coactivity_rate,
                 avg_local_coactivity_rate_norm,
                 avg_MRS_local_coactivity_rate,
                 avg_MRS_local_coactivity_rate_norm,
                 avg_nMRS_local_coactivity_rate,
                 avg_nMRS_local_coactivity_rate_norm,
+                avg_movement_local_coactivity_rate,
+                avg_movement_local_coactivity_rate_norm,
+                avg_nonmovement_local_coactivity_rate,
+                avg_nonmovement_local_coactivity_rate_norm,
                 nearby_spine_idxs,
                 nearby_coactive_spine_idxs,
                 avg_nearby_spine_freq,
@@ -525,6 +533,18 @@ def grouped_coactivity_analysis(
             grouped_data["nMRS_distance_coactivity_rate_norm"].append(
                 nMRS_distance_coactivity_rate_norm
             )
+            grouped_data["movement_distance_coactivity_rate"].append(
+                movement_distance_coactivity_rate
+            )
+            grouped_data["movement_distance_coactivity_rate_norm"].append(
+                movement_distance_coactivity_rate_norm
+            )
+            grouped_data["nonmovement_distance_coactivity_rate"].append(
+                nonmovement_distance_coactivity_rate
+            )
+            grouped_data["nonmovement_distance_coactivity_rate_norm"].append(
+                nonmovement_distance_coactivity_rate_norm
+            )
             grouped_data["avg_local_coactivity_rate"].append(avg_local_coactivity_rate)
             grouped_data["avg_local_coactivity_rate_norm"].append(
                 avg_local_coactivity_rate_norm
@@ -540,6 +560,18 @@ def grouped_coactivity_analysis(
             )
             grouped_data["avg_nMRS_local_coactivity_rate_norm"].append(
                 avg_nMRS_local_coactivity_rate_norm
+            )
+            grouped_data["avg_movement_local_coactivity_rate"].append(
+                avg_movement_local_coactivity_rate
+            )
+            grouped_data["avg_movement_local_coactivity_rate_norm"].append(
+                avg_movement_local_coactivity_rate_norm
+            )
+            grouped_data["avg_nonmovement_local_coactivity_rate"].append(
+                avg_nonmovement_local_coactivity_rate
+            )
+            grouped_data["avg_nonmovement_local_coactivity_rate_norm"].append(
+                avg_nonmovement_local_coactivity_rate_norm
             )
             grouped_data["avg_nearby_spine_rate"].append(avg_nearby_spine_freq)
             grouped_data["avg_nearby_coactive_spine_rate"].append(
@@ -883,6 +915,18 @@ def grouped_coactivity_analysis(
         nMRS_distance_coactivity_rate_norm=regrouped_data[
             "nMRS_distance_coactivity_rate_norm"
         ],
+        movement_distance_coactivity_rate=regrouped_data[
+            "movement_distance_coactivity_rate"
+        ],
+        movement_distance_coactivity_rate_norm=regrouped_data[
+            "movement_distance_coactivity_rate_norm"
+        ],
+        nonmovement_distance_coactivity_rate=regrouped_data[
+            "nonmovement_distance_coactivity_rate"
+        ],
+        nonmovement_distance_coactivity_rate_norm=regrouped_data[
+            "nonmovement_distance_coactivity_rate_norm"
+        ],
         avg_local_coactivity_rate=regrouped_data["avg_local_coactivity_rate"],
         avg_local_coactivity_rate_norm=regrouped_data["avg_local_coactivity_rate_norm"],
         avg_MRS_local_coactivity_rate=regrouped_data["avg_MRS_local_coactivity_rate"],
@@ -892,6 +936,18 @@ def grouped_coactivity_analysis(
         avg_nMRS_local_coactivity_rate=regrouped_data["avg_nMRS_local_coactivity_rate"],
         avg_nMRS_local_coactivity_rate_norm=regrouped_data[
             "avg_nMRS_local_coactivity_rate_norm"
+        ],
+        avg_movement_local_coactivity_rate=regrouped_data[
+            "avg_movement_local_coactivity_rate"
+        ],
+        avg_movement_local_coactivity_rate_norm=regrouped_data[
+            "avg_movement_local_coactivity_rate_norm"
+        ],
+        avg_nonmovement_local_coactivity_rate=regrouped_data[
+            "avg_nonmovement_local_coactivity_rate"
+        ],
+        avg_nonmovement_local_coactivity_rate_norm=regrouped_data[
+            "avg_nonmovement_local_coactivity_rate_norm"
         ],
         avg_nearby_spine_rate=regrouped_data["avg_nearby_spine_rate"],
         avg_nearby_coactive_spine_rate=regrouped_data["avg_nearby_coactive_spine_rate"],
