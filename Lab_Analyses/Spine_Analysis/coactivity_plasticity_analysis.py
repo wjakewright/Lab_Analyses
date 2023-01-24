@@ -9,6 +9,7 @@ from Lab_Analyses.Spine_Analysis.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
 )
+from Lab_Analyses.Utilities import test_utilities as t_utils
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
@@ -201,6 +202,8 @@ class Coactivity_Plasticity:
         s_colors=["darkorange", "forestgreen", "silver"],
         s_size=5,
         s_alpha=0.8,
+        test_type="parametric",
+        test_method="Tukey",
         save=False,
         save_path=None,
     ):
@@ -243,6 +246,20 @@ class Coactivity_Plasticity:
             save_path=save_path,
         )
 
+        if test_type == "parametric":
+            f_stat, anova_p, results_table, _ = t_utils.ANOVA_1way_posthoc(
+                data_dict, test_method
+            )
+            print(f"F statistic: {f_stat}     p_value: {anova_p}")
+            print(results_table)
+
+        elif test_type == "nonparametric":
+            f_stat, kruskal_p, results_table = t_utils.kruskal_wallis_test(
+                data_dict, test_method, paired=False
+            )
+            print(f"F statistic: {f_stat}     p_value: {kruskal_p}")
+            print(results_table)
+
     def plot_multi_group_scatter_plots(
         self,
         variable_name,
@@ -262,6 +279,7 @@ class Coactivity_Plasticity:
         s_colors=["darkorange", "forestgreen", "silver"],
         s_size=5,
         s_alpha=0.8,
+        test_method="Tukey",
         save=False,
         save_path=None,
     ):
@@ -275,7 +293,7 @@ class Coactivity_Plasticity:
         variable = getattr(self, variable_name)
 
         # Setup groups
-        group_list = [subgroup_type, group_type]
+        group_list = [group_type, subgroup_type]
         groups = self.group_dict[group_type]
         subgroups = self.group_dict[subgroup_type]
 
@@ -316,6 +334,16 @@ class Coactivity_Plasticity:
             save=save,
             save_path=save_path,
         )
+
+        anova_results, posthoc_results = t_utils.ANOVA_2way_posthoc(
+            data_dict=data_dict,
+            groups_list=group_list,
+            variable=variable_name,
+            method=test_method,
+        )
+
+        print(anova_results)
+        print(posthoc_results)
 
     def plot_group_spine_mean_traces(
         self,
