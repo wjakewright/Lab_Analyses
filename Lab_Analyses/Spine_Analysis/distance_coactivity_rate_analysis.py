@@ -69,6 +69,7 @@ def distance_coactivity_rate_analysis(
 
     # Set up output variables
     coactivity_matrix = np.zeros((bin_num, spine_activity.shape[1]))
+    unbinned_coactivity = []
 
     # Find indexes of eliminated spines
     el_spines = find_spine_classes(flags, "Eliminated Spine")
@@ -126,6 +127,7 @@ def distance_coactivity_rate_analysis(
             sorted_positions = np.array(
                 [y for y, _ in sorted(zip(relative_pos, curr_coactivity))]
             )
+            # Store positions and rates
             # Bin the data
             binned_coactivity = bin_by_position(
                 sorted_coactivity, sorted_positions, position_bins
