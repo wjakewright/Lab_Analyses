@@ -36,12 +36,20 @@ class Spine_Coactivity_Data:
     MRS_distance_coactivity_rate_norm: np.array
     nMRS_distance_coactivity_rate: np.array
     nMRS_distance_coactivity_rate_norm: np.array
+    movement_distance_coactivity_rate: np.array
+    movement_distance_coactivity_rate_norm: np.array
+    nonmovement_distance_coactivity_rate: np.array
+    nonmovement_distance_coactivity_rate_norm: np.array
     avg_local_coactivity_rate: np.array
     avg_local_coactivity_rate_norm: np.array
     avg_MRS_local_coactivity_rate: np.array
     avg_MRS_local_coactivity_rate_norm: np.array
     avg_nMRS_local_coactivity_rate: np.array
     avg_nMRS_local_coactivity_rate_norm: np.array
+    avg_movement_local_coactivity_rate: np.array
+    avg_movement_local_coactivity_rate_norm: np.array
+    avg_nonmovement_local_coactivity_rate: np.array
+    avg_nonmovement_local_coactivity_rate_norm: np.array
     avg_nearby_spine_rate: np.array
     avg_nearby_coactive_spine_rate: np.array
     rel_nearby_spine_rate: np.array
