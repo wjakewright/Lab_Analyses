@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 import pandas as pd
+import pingouin as pg
 import scikit_posthocs as sp
 import statsmodels.api as sm
 from scipy import stats
@@ -25,7 +26,8 @@ def ANOVA_1way_posthoc(data_dict, method):
                         the datapoints of each sample within the group
             
             method - str indicating the posthoc test to be performed. See
-                    statsmodels.stats.multitest for available methods
+                    statsmodels.stats.multitest for available methods,
+                    in additoin to TukeyHSD
         
         OUTPUT PARAMETERS
             f_stat - the f statistic from the one way ANOVA
@@ -104,7 +106,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             variable - str specifying what the variable being tested is
             
             method - str specifying the str indicating the posthoc test to be performed. See
-                    statsmodels.stats.multitest for available methods
+                    statsmodels.stats.multitest for available methods in addition to TukeyHSD
             
             exclude - list of str specifying posthoc tests to ignore
     """
@@ -238,6 +240,102 @@ def kruskal_wallis_test(data_dict, post_method, adj_method):
     results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
 
     return f_stat, kruskal_p, results_table
+
+
+def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="between"):
+    """Function to perform a repeated measures two-way anova with specified posthoc
+        tests
+        
+        INPUT PARAMETERS
+            data_dict - dictionary with each key representing a group that contains a
+                        2d array with the data. Each column represents the roi, while 
+                        rows represent the repeated measures
+
+            method - str specifying the posthoc test to be performed
+            
+            rm_vals - list or array containing the values for the repeated measure
+                      values. (e.g, 5,10, 15 um). If none, index will be used as the labels
+            
+            compare_type - what type of comparisons you wish to perform posthoc. Options
+                            are 'between' to compare between groups at each rm, 'within'
+                            to compare within groups across rm values, and 'both' which
+                            makes all possible comparisons
+
+    """
+    groups = list(data_dict.keys())
+    # Set up rm_vals
+    data_len = list(data_dict.values())[0].shape[0]
+    if rm_vals is None:
+        rm_vals = list(range(data_len))
+    elif len(rm_vals) != data_len:
+        print("Inputed RM Values does not match data!!")
+        rm_vals = list(range(data_len))
+
+    # Organize the data in the appropriate format
+    dfs = []
+    sub_count = 1
+    for key, value in data_dict.items():
+        for v in range(value.shape[1]):
+            data = value[:, v]
+            g = [key for x in range(len(data))]
+            sub = [sub_count for x in range(len(data))]
+            temp_dict = {"subject": sub, "data": data, "group": g, "rm_val": rm_vals}
+            temp_df = pd.DataFrame(temp_dict)
+            dfs.append(temp_df)
+            sub_count = sub_count + 1
+    test_df = pd.concat(dfs)
+
+    # Perform the mixed ANOVA
+    two_way_mixed_anova = pg.mixed_anova(
+        data=test_df, dv="data", between="group", within="rm_val", subject="subject"
+    )
+    two_way_mixed_anova = two_way_mixed_anova.to_dict("list")
+    two_way_mixed_anova = tabulate(
+        two_way_mixed_anova, headers="keys", tablefmt="fancy_grid"
+    )
+
+    # Perform the posthoc tests
+    ## Between group comparisions
+    if compare_type == "between":
+        ## Get combinations of test
+        combos = list(itertools.combinations(groups, 2))
+        test_performed = []
+        rm_point = []
+        t_vals = []
+        raw_pvals = []
+        for combo in combos:
+            for rm in rm_vals:
+                ## Kep track of comparisons being made
+                test_performed.append(combo[0] + " vs. " + combo[1])
+                rm_point.append(rm)
+                ## Get the data for the groups
+                data1 = test_df[
+                    (test_df["group"] == combo[0]) & (test_df["rm_val"] == rm)
+                ]
+                data2 = test_df[
+                    (test_df["group"] == combo[1]) & (test_df["rm_val"] == rm)
+                ]
+                data1 = np.array(data1["data"])
+                data2 = np.array(data2["data"])
+                ## Perform the t-tests
+                t, p = stats.ttest_ind(data1, data2)
+                t_vals.append(t)
+                raw_pvals.append(p)
+
+        ## Correct multiple comparisons
+        _, adj_pvals, _, alpha_corrected = multipletests(
+            raw_pvals, alpha=0.5, method=method, is_sorted=False, returnsorted=False,
+        )
+        posthoc_dict = {
+            "posthoc comparison": test_performed,
+            "within point": rm_point,
+            "t stat": t_vals,
+            "raw p-vals": raw_pvals,
+            "adjusted p-vals": adj_pvals,
+        }
+        posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
+
+    return two_way_mixed_anova, posthoc_dict, posthoc_table
 
 
 def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method):
