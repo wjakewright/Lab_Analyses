@@ -255,7 +255,7 @@ class Coactivity_Plasticity:
 
         elif test_type == "nonparametric":
             f_stat, kruskal_p, results_table = t_utils.kruskal_wallis_test(
-                data_dict, test_method, paired=False
+                data_dict, "Conover", test_method,
             )
             print(f"F statistic: {f_stat}     p_value: {kruskal_p}")
             print(results_table)
