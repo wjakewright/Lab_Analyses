@@ -17,6 +17,7 @@ dependencies:
   - statsmodels == 0.12.2
   - tabulate == 0.8.9
   - scikit-posthocs == 0.7.0
+  - pingouin == 0.5.3
   - git
   - pip:
     - opencv-python == 4.5.4.58
