@@ -363,6 +363,7 @@ class Coactivity_Plasticity:
 
         spine_groups = self.group_dict[group_type]
 
+        ind_mean_traces = {}
         mean_traces = []
         sem_traces = []
         used_groups = []
@@ -375,6 +376,7 @@ class Coactivity_Plasticity:
                 np.nanmean(x, axis=1) for x in group_traces if type(x) == np.ndarray
             ]
             means = np.vstack(means)
+            ind_mean_traces[group] = means.T
             means = np.unique(means, axis=0)
             group_mean = np.nanmean(means, axis=0)
             group_sem = stats.sem(means, axis=0, nan_policy="omit")
@@ -386,6 +388,11 @@ class Coactivity_Plasticity:
             ytitle = "zscore"
         else:
             ytitle = "\u0394" + "F/F\u2080"
+
+        a = t_utils.ANOVA_2way_mixed_posthoc(
+            ind_mean_traces, method="sidak", rm_vals=None
+        )
+        print(a)
 
         sp.plot_mean_activity_traces(
             mean_traces,
