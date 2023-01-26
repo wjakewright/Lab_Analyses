@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 import pandas as pd
+import scikit_posthocs as sp
 import statsmodels.api as sm
 from scipy import stats
 from statsmodels.formula.api import ols
@@ -203,7 +204,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
     return two_way_anova_table, posthoc_table
 
 
-def kruskal_wallis_test(data_dict, method, paired=False):
+def kruskal_wallis_test(data_dict, post_method, adj_method):
     """Function to perform a Kruskal-Wallis test with different posthoc tests
     
         INPUT PARAMETERS
@@ -212,8 +213,7 @@ def kruskal_wallis_test(data_dict, method, paired=False):
             
             method - str indicating the posthoc test to be performed. See
                     statsmodels.stats.multitests for available methods
-            
-            paired - boolean specifying whether the data are paired or not
+
     """
     # Perform the Kruskal-Wallis Test
     ## Put data into an array format
@@ -222,26 +222,16 @@ def kruskal_wallis_test(data_dict, method, paired=False):
 
     # Perform multiple comparisons
     combos = list(itertools.combinations(data_dict.keys(), 2))
-    test_performed = []
-    stat_vals = []
-    raw_pvals = []
-    for combo in combos:
-        test_performed.append(combo[0] + "vs." + combo[1])
-        if paired == False:
-            s, p = stats.ranksums(data_dict[combo[0]], data_dict[combo[1]])
-        else:
-            s, p = stats.wilcoxon(data_dict[combo[0]], data_dict[combo[1]])
-        stat_vals.append(s)
-        raw_pvals.append(p)
-    # Perform corrections
-    _, adj_pvals, _, alpha_corrected = multipletests(
-        raw_pvals, alpha=0.05, method=method, is_sorted=False, returnsorted=False,
-    )
+    if post_method == "Dunn":
+        pval_df = sp.posthoc_dunn(data_array, p_adjust=adj_method).to_numpy()
+    elif post_method == "Conover":
+        pval_df = sp.posthoc_conover(data_array, p_adjust=adj_method).to_numpy()
+    test_performed = [f"{c[0]} vs {c[1]}" for c in combos]
+    p_combos = list(itertools.combinations(list(range(pval_df.shape[0])), 2))
+    adj_pvals = [pval_df[c[0], c[1]] for c in p_combos]
 
     results_dict = {
         "comparison": test_performed,
-        "statistic": stat_vals,
-        "raw p-vals": raw_pvals,
         "adjusted p-vals": adj_pvals,
     }
 
