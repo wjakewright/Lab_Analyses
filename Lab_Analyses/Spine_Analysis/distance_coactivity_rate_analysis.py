@@ -127,6 +127,8 @@ def distance_coactivity_rate_analysis(
             sorted_positions = np.array(
                 [y for y, _ in sorted(zip(relative_pos, curr_coactivity))]
             )
+            unbinned_data = list(zip(sorted_positions, sorted_coactivity))
+            unbinned_coactivity.append(unbinned_data)
             # Store positions and rates
             # Bin the data
             binned_coactivity = bin_by_position(
@@ -134,7 +136,10 @@ def distance_coactivity_rate_analysis(
             )
             coactivity_matrix[:, spines[spine]] = binned_coactivity
 
-    return coactivity_matrix, position_bins
+        # Convert unbinned data into single list
+        unbinned_coactivity = [y for x in unbinned_coactivity for y in x]
+
+    return coactivity_matrix, position_bins, unbinned_coactivity
 
 
 def calculate_coactivity(spine_1, spine_2, sampling_rate, norm):

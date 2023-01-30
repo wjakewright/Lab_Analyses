@@ -1,7 +1,8 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import \
-    bin_by_position
+from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import (
+    bin_by_position,
+)
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 from Lab_Analyses.Utilities.data_utilities import neg_num_relative_difference
 
@@ -52,6 +53,7 @@ def distance_dependent_variable_analysis(
     el_spines = np.array(el_spines)
 
     activity_matrix = np.zeros((bin_num, len(spine_variable)))
+    unbinned_list = []
     for spines in spine_groupings:
         s_var = spine_variable[spines]
         positions = np.array(spine_positions)[spines]
@@ -92,13 +94,20 @@ def distance_dependent_variable_analysis(
                         ]
                     )
                 elif relative_method == "negative":
-                    sorted_variable = np.array([s_var[spine] - x for x in sorted_variable])
+                    sorted_variable = np.array(
+                        [s_var[spine] - x for x in sorted_variable]
+                    )
                 sorted_variable[np.isinf(sorted_variable)] = np.nan
+            unbinned_data = list(zip(sorted_positions, sorted_variable))
+            unbinned_list.append(unbinned_data)
             # Bin the data
             binned_activity = bin_by_position(
                 sorted_variable, sorted_positions, position_bins
             )
             activity_matrix[:, spines[spine]] = binned_activity
 
-    return activity_matrix
+        # Convert unbinned data into a single list
+        unbinned_list = [y for x in unbinned_list for y in x]
+
+    return activity_matrix, unbinned_list
 
