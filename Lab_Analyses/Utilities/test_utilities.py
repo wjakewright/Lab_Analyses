@@ -169,7 +169,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
         posthoc_dict = {
             "posthoc comparision": test_performed,
             "t stat": t_vals,
-            "raw p-vals": raw_pvals,
+            "raw p-vals": np.array(raw_pvals),
             "adjusted p-vals": adj_pvals,
         }
 
@@ -281,7 +281,7 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
             sub = [sub_count for x in range(len(data))]
             temp_dict = {"subject": sub, "data": data, "group": g, "rm_val": rm_vals}
             temp_df = pd.DataFrame(temp_dict)
-            dfs.append(temp_df)
+            dfs.append(temp_df.dropna())
             sub_count = sub_count + 1
     test_df = pd.concat(dfs)
 
@@ -330,7 +330,7 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
             "posthoc comparison": test_performed,
             "within point": rm_point,
             "t stat": t_vals,
-            "raw p-vals": raw_pvals,
+            "raw p-vals": np.array(raw_pvals),
             "adjusted p-vals": adj_pvals,
         }
         posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
