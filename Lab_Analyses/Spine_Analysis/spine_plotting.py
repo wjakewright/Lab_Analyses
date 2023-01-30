@@ -549,6 +549,7 @@ def plot_mean_activity_traces(
     sampling_rate=60,
     activity_window=(-2, 3),
     avlines=None,
+    ahlines=None,
     figsize=(5, 5),
     colors="mediumblue",
     title=None,
@@ -581,6 +582,7 @@ def plot_mean_activity_traces(
             save_path - str of where to save the figure
             
     """
+    line_colors = sns.color_palette()
     fig = plt.figure(figsize=figsize)
     if type(mean) == np.ndarray:
         x = np.linspace(activity_window[0], activity_window[1], len(mean))
@@ -594,6 +596,23 @@ def plot_mean_activity_traces(
     if avlines:
         for line in avlines:
             plt.axvline(x=line / sampling_rate, linestyle="--", color="black")
+
+    if ahlines is not None:
+        for i, (key, value) in enumerate(ahlines.items()):
+            if value is None:
+                continue
+            h = [a[0] for a in value]
+            start = [x[a[1]] for a in value]
+            stop = [x[a[2]] for a in value]
+            plt.hlines(
+                y=h,
+                xmin=start,
+                xmax=stop,
+                linestyles="solid",
+                colors=line_colors[i],
+                label=key,
+            )
+
     if ylim:
         plt.ylim(bottom=ylim[0], top=ylim[1])
     plt.title(title)
@@ -604,7 +623,7 @@ def plot_mean_activity_traces(
         labels=[activity_window[0], 0, activity_window[1]],
     )
     plt.tick_params(axis="both", which="both", direction="in", length=4)
-    plt.legend(loc="upper left")
+    plt.legend(bbox_to_anchor=(1.04, 1))
     fig.tight_layout()
     if save:
         if save_path is None:
