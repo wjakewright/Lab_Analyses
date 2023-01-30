@@ -103,7 +103,7 @@ def local_spine_coactivity_analysis(
         norm=True,
     )
     ## Movement-related spines
-    MRS_distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+    MRS_distance_coactivity_rate, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -114,7 +114,7 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=False,
     )
-    MRS_distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+    MRS_distance_coactivity_rate_norm, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -126,7 +126,7 @@ def local_spine_coactivity_analysis(
         norm=True,
     )
     ## Non-Movement-related spines
-    nMRS_distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+    nMRS_distance_coactivity_rate, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -137,7 +137,7 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=False,
     )
-    nMRS_distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+    nMRS_distance_coactivity_rate_norm, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -148,7 +148,7 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=True,
     )
-    movement_distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+    movement_distance_coactivity_rate, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -159,7 +159,7 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=False,
     )
-    movement_distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+    movement_distance_coactivity_rate_norm, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -170,7 +170,7 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=True,
     )
-    nonmovement_distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+    nonmovement_distance_coactivity_rate, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -181,7 +181,7 @@ def local_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=False,
     )
-    nonmovement_distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+    nonmovement_distance_coactivity_rate_norm, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
