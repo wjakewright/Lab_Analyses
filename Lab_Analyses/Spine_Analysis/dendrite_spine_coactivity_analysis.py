@@ -159,7 +159,7 @@ def dendrite_spine_coactivity_analysis(
 
     # Get distance-dependent coactivity rates
     print("--- Analyzing Distance-Dependence Coactivity")
-    distance_coactivity_rate, _ = distance_coactivity_rate_analysis(
+    distance_coactivity_rate, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
@@ -170,7 +170,7 @@ def dendrite_spine_coactivity_analysis(
         sampling_rate=sampling_rate,
         norm=False,
     )
-    distance_coactivity_rate_norm, _ = distance_coactivity_rate_analysis(
+    distance_coactivity_rate_norm, _, _ = distance_coactivity_rate_analysis(
         spine_activity,
         spine_positions,
         spine_flags,
