@@ -29,9 +29,13 @@ class Spine_Coactivity_Data:
     spine_activity_rate: np.array
     dend_activity_rate: np.array
     distance_activity_rate: np.array
+    ind_distance_activity_rate: list
     distance_relative_activity_rate: np.array
+    ind_distance_relative_activity_rate: list
     distance_coactivity_rate: np.array
+    ind_distance_coactivity_rate: list
     distance_coactivity_rate_norm: np.array
+    ind_distance_coactivity_rate_norm: list
     MRS_distance_coactivity_rate: np.array
     MRS_distance_coactivity_rate_norm: np.array
     nMRS_distance_coactivity_rate: np.array
@@ -93,9 +97,13 @@ class Spine_Coactivity_Data:
     relative_local_coactivity_rate: np.array
     frac_local_coactivity_participation: np.array
     positional_coactivity: np.array
+    ind_positional_coactivity: list
     positional_coactivity_norm: np.array
+    ind_positional_coactivity_norm: list
     relative_positional_coactivity: np.array
+    ind_relative_positional_coactivity: list
     relative_positional_coactivity_norm: np.array
+    ind_relative_positional_coactivity_norm: list
     spine_dend_coactivity_rate: np.array
     spine_dend_coactivity_rate_norm: np.array
     spine_dend_spine_fraction_coactive: np.array
