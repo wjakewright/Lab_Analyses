@@ -541,6 +541,38 @@ class Coactivity_Plasticity:
         print(two_way_mixed_anova)
         print(posthoc_table)
 
+        # Get individual datasets if applicable
+        ind_variable_name = f"ind_{variable_name}"
+        if hasattr(self, ind_variable_name):
+            individual_data = getattr(self, ind_variable_name)
+            for group in spine_groups:
+                spines = getattr(self, group)
+                ind_data = compress(individual_data, spines)
+                pos, value = zip(*ind_data)
+                non_nan = np.nonzero(~np.isnan(value))[0]
+                value = value[non_nan]
+                pos = pos[non_nan]
+                sp.plot_sns_scatter_correlation(
+                    var1=pos,
+                    value=value,
+                    CI=None,
+                    title=variable_name,
+                    xtitle="Distance (um)",
+                    ytitle=ytitle,
+                    figsize=figsize,
+                    xlim=None,
+                    ylim=None,
+                    marker_size=5,
+                    face_color="mediumblue",
+                    edge_color="mediumblue",
+                    edge_width=0.3,
+                    s_alpha=0.5,
+                    line_color="mediumblue",
+                    line_width=1,
+                    save=False,
+                    save_path=None,
+                )
+
     def plot_histogram(
         self,
         variable,
