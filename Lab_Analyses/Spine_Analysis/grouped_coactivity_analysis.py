@@ -171,7 +171,10 @@ def grouped_coactivity_analysis(
             )
 
             # Get distance dependent activity frequencies
-            distance_activity_rate = distance_dependent_variable_analysis(
+            (
+                distance_activity_rate,
+                ind_distance_activity_rate,
+            ) = distance_dependent_variable_analysis(
                 spine_activity_rate,
                 spine_positions,
                 spine_flags,
@@ -179,7 +182,10 @@ def grouped_coactivity_analysis(
                 bin_size=5,
                 relative=False,
             )
-            distance_relative_activity_rate = distance_dependent_variable_analysis(
+            (
+                distance_relative_activity_rate,
+                ind_distance_relative_activity_rate,
+            ) = distance_dependent_variable_analysis(
                 spine_activity_rate,
                 spine_positions,
                 spine_flags,
@@ -193,7 +199,9 @@ def grouped_coactivity_analysis(
             (
                 distance_bins,
                 distance_coactivity_rate,
+                ind_distance_coactivity_rate,
                 distance_coactivity_rate_norm,
+                ind_distance_coactivity_rate_norm,
                 MRS_distance_coactivity_rate,
                 MRS_distance_coactivity_rate_norm,
                 nMRS_distance_coactivity_rate,
@@ -258,9 +266,13 @@ def grouped_coactivity_analysis(
                 relative_local_coactivity_rate,
                 frac_local_coactivity_participation,
                 positional_coactivity,
+                ind_positional_coactivity,
                 positional_coactivity_norm,
+                ind_positional_coactivity_norm,
                 relative_positional_coactivity,
+                ind_relative_positional_coactivity,
                 relative_positional_coactivity_norm,
+                ind_relative_positional_coactivity_norm,
             ) = local_spine_coactivity_analysis(
                 mouse,
                 spine_activity,
@@ -513,13 +525,25 @@ def grouped_coactivity_analysis(
             grouped_data["spine_activity_rate"].append(spine_activity_rate)
             grouped_data["dend_activity_rate"].append(dend_activity_rate)
             grouped_data["distance_activity_rate"].append(distance_activity_rate)
+            grouped_data["ind_distance_activity_rate"].append(
+                ind_distance_activity_rate
+            )
             grouped_data["distance_relative_activity_rate"].append(
                 distance_relative_activity_rate
             )
+            grouped_data["ind_distance_relative_activity_rate"].append(
+                ind_distance_relative_activity_rate
+            )
             ## Adding local coactivity variables
             grouped_data["distance_coactivity_rate"].append(distance_coactivity_rate)
+            grouped_data["ind_distance_coactivity_rate"].append(
+                ind_distance_coactivity_rate
+            )
             grouped_data["distance_coactivity_rate_norm"].append(
                 distance_coactivity_rate_norm
+            )
+            grouped_data["ind_distance_coactivity_rate_norm"].append(
+                ind_distance_coactivity_rate_norm
             )
             grouped_data["MRS_distance_coactivity_rate"].append(
                 MRS_distance_coactivity_rate
@@ -684,14 +708,24 @@ def grouped_coactivity_analysis(
                 frac_local_coactivity_participation
             )
             grouped_data["positional_coactivity"].append(positional_coactivity)
+            grouped_data["ind_positional_coactivity"].append(ind_positional_coactivity)
             grouped_data["positional_coactivity_norm"].append(
                 positional_coactivity_norm
+            )
+            grouped_data["ind_positional_coactivity_norm"].append(
+                ind_positional_coactivity_norm
             )
             grouped_data["relative_positional_coactivity"].append(
                 relative_positional_coactivity
             )
+            grouped_data["ind_relative_positional_coactivity"].append(
+                ind_relative_positional_coactivity
+            )
             grouped_data["relative_positional_coactivity_norm"].append(
                 relative_positional_coactivity_norm
+            )
+            grouped_data["ind_relative_positional_coactivity_norm"].append(
+                ind_relative_positional_coactivity_norm
             )
             ## Adding spine-dendrite coactivity variables
             grouped_data["spine_dend_coactivity_rate"].append(
@@ -902,11 +936,19 @@ def grouped_coactivity_analysis(
         spine_activity_rate=regrouped_data["spine_activity_rate"],
         dend_activity_rate=regrouped_data["dend_activity_rate"],
         distance_activity_rate=regrouped_data["distance_activity_rate"],
+        ind_distance_activivty_rate=regrouped_data["ind_distance_activity_rate"],
         distance_relative_activity_rate=regrouped_data[
             "distance_relative_activity_rate"
         ],
+        ind_distance_relative_activity_rate=regrouped_data[
+            "ind_distance_relative_activity_rate"
+        ],
         distance_coactivity_rate=regrouped_data["distance_coactivity_rate"],
+        ind_distance_coactivity_rate=regrouped_data["ind_distance_coactivity_rate"],
         distance_coactivity_rate_norm=regrouped_data["distance_coactivity_rate_norm"],
+        ind_distance_coactivity_rate_norm=regrouped_data[
+            "ind_distance_coactivity_rate_norm"
+        ],
         MRS_distance_coactivity_rate=regrouped_data["MRS_distance_coactivity_rate"],
         MRS_distance_coactivity_rate_norm=regrouped_data[
             "MRS_distance_coactivity_rate_norm"
@@ -1016,10 +1058,18 @@ def grouped_coactivity_analysis(
             "frac_local_coactivity_participation"
         ],
         positional_coactivity=regrouped_data["positional_coactivity"],
+        ind_positional_coactivity=regrouped_data["ind_positional_coactivity"],
         positional_coactivity_norm=regrouped_data["positional_coactivity_norm"],
+        ind_positional_coactivity_norm=regrouped_data["ind_positional_coactivity_norm"],
         relative_positional_coactivity=regrouped_data["relative_positional_coactivity"],
+        ind_relative_positional_coactivity=regrouped_data[
+            "ind_relative_positional_coactivity"
+        ],
         relative_positional_coactivity_norm=regrouped_data[
             "relative_positional_coactivity_norm"
+        ],
+        ind_relative_positional_coactivity_norm=regrouped_data[
+            "ind_relative_positional_coactivity_norm"
         ],
         spine_dend_coactivity_rate=regrouped_data["spine_dend_coactivity_rate"],
         spine_dend_coactivity_rate_norm=regrouped_data[
