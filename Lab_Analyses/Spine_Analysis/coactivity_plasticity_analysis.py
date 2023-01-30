@@ -1,5 +1,6 @@
 import os
-from itertools import compress
+from collections import defaultdict
+from itertools import combinations, compress
 
 import numpy as np
 from scipy import stats
@@ -351,9 +352,11 @@ class Coactivity_Plasticity:
         trace_type,
         exclude=None,
         avlines=None,
+        ahlines=None,
         figsize=(5, 5),
         colors=["darkorange", "forestgreen", "silver"],
         ylim=None,
+        test_method="holm-sidak",
         save=False,
         save_path=None,
     ):
@@ -389,11 +392,57 @@ class Coactivity_Plasticity:
         else:
             ytitle = "\u0394" + "F/F\u2080"
 
-        a = t_utils.ANOVA_2way_mixed_posthoc(
-            ind_mean_traces, method="sidak", rm_vals=None
+        # Perform statistics
+        anova_table, posthoc_dict, posthoc_table = t_utils.ANOVA_2way_mixed_posthoc(
+            data_dict=ind_mean_traces,
+            method=test_method,
+            rm_vals=None,
+            compare_type="between",
         )
-        print(a)
+        print(anova_table)
+        # print(posthoc_table)
 
+        # Find the significant differences in the traces
+        combos = list(combinations(spine_groups, 2))
+        significant_lines = defaultdict(list)
+        for i, combo in enumerate(combos):
+            if ahlines is None:
+                break
+            test = combo[0] + " vs. " + combo[1]
+            group_idxs = [
+                i for i, x in enumerate(posthoc_dict["posthoc comparison"]) if x == test
+            ]
+            sig_idxs = np.nonzero(posthoc_dict["raw p-vals"][group_idxs] <= 0.05)[0]
+            # Append none if no significant differences
+            if len(sig_idxs) == 0:
+                significant_lines[test] = None
+                continue
+            break_idxs = np.nonzero(np.insert(np.diff(sig_idxs), 0, 0, axis=0) > 1)[0]
+            # Append single line if there are no breaks
+            if len(break_idxs) == 0:
+                significant_lines[test].append((ahlines[i], sig_idxs[0], sig_idxs[-1]))
+                continue
+            for j, idx in enumerate(break_idxs):
+                if j == 0:
+                    significant_lines[test].append(
+                        (ahlines[i], sig_idxs[0], sig_idxs[idx - 1])
+                    )
+                    try:
+                        significant_lines[test].append(
+                            (ahlines[i], sig_idxs[idx], sig_idxs[break_idxs[j + 1] - 1])
+                        )
+                    except IndexError:
+                        significant_lines[test].append(
+                            (ahlines[i], sig_idxs[idx], sig_idxs[-1])
+                        )
+                elif j == len(break_idxs) - 1:
+                    significant_lines[test].append(
+                        (ahlines[i], sig_idxs[idx], sig_idxs[-1])
+                    )
+                else:
+                    significant_lines[test].append(
+                        (ahlines[i], sig_idxs[idx], sig_idxs[break_idxs[j + 1] - 1])
+                    )
         sp.plot_mean_activity_traces(
             mean_traces,
             sem_traces,
@@ -401,6 +450,7 @@ class Coactivity_Plasticity:
             sampling_rate=self.parameters["Sampling Rate"],
             activity_window=self.parameters["Activity Window"],
             avlines=avlines,
+            ahlines=significant_lines,
             figsize=figsize,
             colors=colors,
             title=trace_type,
@@ -457,6 +507,7 @@ class Coactivity_Plasticity:
         colors=["darkorange", "forestgreen", "silver"],
         ylim=None,
         ytitle=None,
+        test_method="holm-sidak",
         save=False,
         save_path=None,
     ):
@@ -482,6 +533,13 @@ class Coactivity_Plasticity:
             save=save,
             save_path=save_path,
         )
+
+        two_way_mixed_anova, _, posthoc_table = t_utils.ANOVA_2way_mixed_posthoc(
+            data_dict, method=test_method, rm_vals=bins, compare_type="between"
+        )
+
+        print(two_way_mixed_anova)
+        print(posthoc_table)
 
     def plot_histogram(
         self,
