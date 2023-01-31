@@ -200,6 +200,8 @@ def grouped_coactivity_analysis(
                 distance_bins,
                 distance_coactivity_rate,
                 ind_distance_coactivity_rate,
+                distance_correlation,
+                ind_distance_correlation,
                 distance_coactivity_rate_norm,
                 ind_distance_coactivity_rate_norm,
                 MRS_distance_coactivity_rate,
@@ -260,6 +262,7 @@ def grouped_coactivity_analysis(
                 local_sum_coactive_calcium_traces,
                 local_avg_coactive_calcium_traces,
                 avg_nearby_move_corr,
+                avg_nearby_move_stereotypy,
                 avg_nearby_move_reliability,
                 avg_nearby_move_specificity,
                 avg_nearby_coactivity_rate,
@@ -397,6 +400,7 @@ def grouped_coactivity_analysis(
                 spine_movements,
                 _,
                 spine_move_correlation,
+                spine_move_stereotypy,
                 spine_move_reliability,
                 _,
                 _,
@@ -416,6 +420,7 @@ def grouped_coactivity_analysis(
                 dend_movements,
                 _,
                 dend_move_correlation,
+                dend_move_steretypy,
                 dend_move_reliability,
                 _,
                 _,
@@ -435,6 +440,7 @@ def grouped_coactivity_analysis(
                 local_movements,
                 _,
                 local_move_correlation,
+                local_move_stereotypy,
                 local_move_reliability,
                 _,
                 _,
@@ -454,6 +460,7 @@ def grouped_coactivity_analysis(
                 spine_dend_movements,
                 _,
                 spine_dend_move_correlation,
+                spine_dend_move_stereotypy,
                 spine_dend_move_reliability,
                 _,
                 _,
@@ -539,6 +546,8 @@ def grouped_coactivity_analysis(
             grouped_data["ind_distance_coactivity_rate"].append(
                 ind_distance_coactivity_rate
             )
+            grouped_data["distance_correlation"].append(distance_correlation)
+            grouped_data["ind_distance_correlation"].append(ind_distance_correlation)
             grouped_data["distance_coactivity_rate_norm"].append(
                 distance_coactivity_rate_norm
             )
@@ -692,6 +701,9 @@ def grouped_coactivity_analysis(
                 local_avg_coactive_calcium_traces
             )
             grouped_data["avg_nearby_movement_correlation"].append(avg_nearby_move_corr)
+            grouped_data["avg_nearby_movement_stereotypy"].append(
+                avg_nearby_move_stereotypy
+            )
             grouped_data["avg_nearby_movement_reliability"].append(
                 avg_nearby_move_reliability
             )
@@ -859,19 +871,25 @@ def grouped_coactivity_analysis(
             grouped_data["learned_movement_pattern"].append(learned_movement_pattern)
             grouped_data["spine_movements"].append(spine_movements)
             grouped_data["spine_movement_correlation"].append(spine_move_correlation)
+            grouped_data["spine_movement_stereotypy"].append(spine_move_stereotypy)
             grouped_data["spine_movement_reliability"].append(spine_move_reliability)
             grouped_data["spine_movement_specificity"].append(spine_move_specificity)
             grouped_data["dend_movements"].append(dend_movements)
             grouped_data["dend_movement_correlation"].append(dend_move_correlation)
+            grouped_data["dend_movement_stereotypy"].append(dend_move_steretypy)
             grouped_data["dend_movement_reliability"].append(dend_move_reliability)
             grouped_data["dend_movement_specificity"].append(dend_move_specificity)
             grouped_data["local_movements"].append(local_movements)
             grouped_data["local_movement_correlation"].append(local_move_correlation)
+            grouped_data["local_movement_stereotypy"].append(local_move_stereotypy)
             grouped_data["local_movement_reliability"].append(local_move_reliability)
             grouped_data["local_movement_specificity"].append(local_move_specificity)
             grouped_data["spine_dend_movements"].append(spine_dend_movements)
             grouped_data["spine_dend_movement_correlation"].append(
                 spine_dend_move_correlation
+            )
+            grouped_data["spine_dend_movement_stereotypy"].append(
+                spine_dend_move_stereotypy
             )
             grouped_data["spine_dend_movement_reliability"].append(
                 spine_dend_move_reliability
@@ -945,6 +963,8 @@ def grouped_coactivity_analysis(
         ],
         distance_coactivity_rate=regrouped_data["distance_coactivity_rate"],
         ind_distance_coactivity_rate=regrouped_data["ind_distance_coactivity_rate"],
+        distance_correlation=regrouped_data["distance_correlation"],
+        ind_distance_correlation=regrouped_data["ind_distance_correlation"],
         distance_coactivity_rate_norm=regrouped_data["distance_coactivity_rate_norm"],
         ind_distance_coactivity_rate_norm=regrouped_data[
             "ind_distance_coactivity_rate_norm"
@@ -1046,6 +1066,7 @@ def grouped_coactivity_analysis(
         avg_nearby_movement_correlation=regrouped_data[
             "avg_nearby_movement_correlation"
         ],
+        avg_nearby_movement_stereotypy=regrouped_data["avg_nearby_movement_stereotypy"],
         avg_nearby_movement_reliability=regrouped_data[
             "avg_nearby_movement_reliability"
         ],
@@ -1170,20 +1191,24 @@ def grouped_coactivity_analysis(
         learned_movement_pattern=regrouped_data["learned_movement_pattern"],
         spine_movements=regrouped_data["spine_movements"],
         spine_movement_correlation=regrouped_data["spine_movement_correlation"],
+        spine_movement_stereotypy=regrouped_data["spine_movement_stereotypy"],
         spine_movement_reliability=regrouped_data["spine_movement_reliability"],
         spine_movement_specificity=regrouped_data["spine_movement_specificity"],
         dend_movements=regrouped_data["dend_movements"],
         dend_movement_correlation=regrouped_data["dend_movement_correlation"],
+        dend_movement_stereotypy=regrouped_data["dend_movement_stereotypy"],
         dend_movement_reliability=regrouped_data["dend_movement_reliability"],
         dend_movement_specificity=regrouped_data["dend_movement_specificity"],
         local_movements=regrouped_data["local_movements"],
         local_movement_correlation=regrouped_data["local_movement_correlation"],
+        local_movement_stereotypy=regrouped_data["local_movement_stereotypy"],
         local_movement_reliability=regrouped_data["local_movement_reliability"],
         local_movement_specificity=regrouped_data["local_movement_specificity"],
         spine_dend_movements=regrouped_data["spine_dend_movements"],
         spine_dend_movement_correlation=regrouped_data[
             "spine_dend_movement_correlation"
         ],
+        spine_dend_movement_stereotypy=regrouped_data["spine_dend_movement_stereotypy"],
         spine_dend_movement_reliability=regrouped_data[
             "spine_dend_movement_reliability"
         ],
