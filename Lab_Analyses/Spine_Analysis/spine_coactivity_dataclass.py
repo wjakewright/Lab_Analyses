@@ -34,6 +34,8 @@ class Spine_Coactivity_Data:
     ind_distance_relative_activity_rate: list
     distance_coactivity_rate: np.array
     ind_distance_coactivity_rate: list
+    distance_correlation: np.array
+    ind_distance_correlation: list
     distance_coactivity_rate_norm: np.array
     ind_distance_coactivity_rate_norm: list
     MRS_distance_coactivity_rate: np.array
@@ -91,6 +93,7 @@ class Spine_Coactivity_Data:
     local_sum_nearby_calcium_traces: list
     local_avg_nearby_calcium_traces: list
     avg_nearby_movement_correlation: np.array
+    avg_nearby_movement_stereotypy: np.array
     avg_nearby_movement_reliability: np.array
     avg_nearby_movement_specificity: np.array
     avg_nearby_coactivity_rate: np.array
@@ -161,18 +164,22 @@ class Spine_Coactivity_Data:
     learned_movement_pattern: list
     spine_movements: list
     spine_movement_correlation: np.array
+    spine_movement_stereotypy: np.array
     spine_movement_reliability: np.array
     spine_movement_specificity: np.array
     dend_movements: list
     dend_movement_correlation: np.array
+    dend_movement_stereotypy: np.array
     dend_movement_reliability: np.array
     dend_movement_specificity: np.array
     local_movements: list
     local_movement_correlation: np.array
+    local_movement_stereotypy: np.array
     local_movement_reliability: np.array
     local_movement_specificity: np.array
     spine_dend_movements: list
     spine_dend_movement_correlation: np.array
+    spine_dend_movement_stereotypy: np.array
     spine_dend_movement_reliability: np.array
     spine_dend_movement_specificity: np.array
     distance_movement_corr: np.array
