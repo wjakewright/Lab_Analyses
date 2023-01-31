@@ -69,7 +69,9 @@ def distance_coactivity_rate_analysis(
 
     # Set up output variables
     coactivity_matrix = np.zeros((bin_num, spine_activity.shape[1]))
+    correlation_matrix = np.zeros((bin_num, spine_activity.shape[1]))
     unbinned_coactivity = []
+    unbinned_correlation = []
 
     # Find indexes of eliminated spines
     el_spines = find_spine_classes(flags, "Eliminated Spine")
@@ -84,6 +86,7 @@ def distance_coactivity_rate_analysis(
         # Iterate through each spine on this dendrite
         for spine in range(s_activity.shape[1]):
             curr_coactivity = []
+            curr_correlation = []
             curr_spine = s_activity[:, spine]
 
             # Calculate coactivity with each other spine
@@ -111,7 +114,9 @@ def distance_coactivity_rate_analysis(
                 coactivity_rate = calculate_coactivity(
                     curr_spine, partner_spine, sampling_rate, norm=norm
                 )
+                correlation = stats.pearsonr(curr_spine, partner_spine)
                 curr_coactivity.append(coactivity_rate)
+                curr_correlation.append(correlation)
 
             # Order by positions
             curr_pos = positions[spine]
@@ -124,22 +129,37 @@ def distance_coactivity_rate_analysis(
             sorted_coactivity = np.array(
                 [x for _, x in sorted(zip(relative_pos, curr_coactivity))]
             )
+            sorted_correlation = np.array(
+                [x for x, _ in sorted(zip(relative_pos, curr_correlation))]
+            )
             sorted_positions = np.array(
                 [y for y, _ in sorted(zip(relative_pos, curr_coactivity))]
             )
-            unbinned_data = list(zip(sorted_positions, sorted_coactivity))
-            unbinned_coactivity.append(unbinned_data)
+            unbinned_coactivity_data = list(zip(sorted_positions, sorted_coactivity))
+            unbinned_coactivity.append(unbinned_coactivity_data)
+            unbinned_correlation_data = list(zip(sorted_positions, sorted_correlation))
+            unbinned_correlation.append(unbinned_correlation_data)
             # Store positions and rates
             # Bin the data
             binned_coactivity = bin_by_position(
                 sorted_coactivity, sorted_positions, position_bins
             )
+            binned_correlation = bin_by_position(
+                sorted_correlation, sorted_positions, position_bins,
+            )
             coactivity_matrix[:, spines[spine]] = binned_coactivity
+            correlation_matrix[:, spines[spine]] = binned_correlation
 
         # Convert unbinned data into single list
         unbinned_coactivity = [y for x in unbinned_coactivity for y in x]
 
-    return coactivity_matrix, position_bins, unbinned_coactivity
+    return (
+        coactivity_matrix,
+        unbinned_coactivity,
+        correlation_matrix,
+        unbinned_correlation,
+        position_bins,
+    )
 
 
 def calculate_coactivity(spine_1, spine_2, sampling_rate, norm):
