@@ -1,3 +1,4 @@
+import copy
 import os
 from collections import defaultdict
 from itertools import combinations, compress
@@ -632,7 +633,7 @@ class Coactivity_Plasticity:
         """Method to plot the trial averaged activity across different groups"""
 
         traces = getattr(self, trace_type)
-        spine_groups = self.group_dict[group_type]
+        spine_groups = copy.copy(self.group_dict[group_type])
         spine_groups.insert(0, "all")
 
         trace_dict = {}
