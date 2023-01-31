@@ -119,6 +119,7 @@ def absolute_local_coactivity(
     sum_coactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
     avg_coactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
     avg_nearby_move_corr = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_move_stereotypy = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_move_relability = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_move_specificity = np.zeros(spine_activity.shape[1]) * np.nan
 
@@ -344,6 +345,7 @@ def absolute_local_coactivity(
                 _,
                 _,
                 move_corrs,
+                within_move_corrs,
                 move_frac_active,
                 _,
                 _,
@@ -358,6 +360,7 @@ def absolute_local_coactivity(
                 sampling_rate=sampling_rate,
             )
             avg_nearby_move_corr[spines[spine]] = np.nanmean(move_corrs)
+            avg_nearby_move_stereotypy[spines[spine]] = np.nanmean(within_move_corrs)
             avg_nearby_move_relability[spines[spine]] = np.nanmean(move_frac_active)
             avg_nearby_move_specificity[spines[spine]] = np.nanmean(active_frac_move)
 
@@ -403,6 +406,7 @@ def absolute_local_coactivity(
         sum_coactive_calcium_traces,
         avg_coactive_calcium_traces,
         avg_nearby_move_corr,
+        avg_nearby_move_stereotypy,
         avg_nearby_move_relability,
         avg_nearby_move_specificity,
     )
