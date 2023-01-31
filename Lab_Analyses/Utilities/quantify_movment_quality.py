@@ -72,7 +72,7 @@ def quantify_movement_quality(
     n = frac.numerator
     d = frac.denominator
     learned_move_resample = sysignal.resample_poly(learned_movement, n, d)
-    corr_duration = int(CORR_INT * sampling_rate)  ## 1.5 seconds
+    corr_duration = int(CORR_INT * sampling_rate)  ## 0.5 seconds
     learned_move_resample = learned_move_resample[:corr_duration]
 
     # Expand movement intervals
@@ -131,6 +131,7 @@ def quantify_movement_quality(
 
     # Assess the movements for each roi
     median_movement_correlations = []
+    within_movement_correlations = []
     move_frac_active = []
     learned_move_frac_active = []
     learned_move_frac_active = []
@@ -160,6 +161,11 @@ def quantify_movement_quality(
                 corrs.append(corr)
             move_corr = np.nanmedian(corrs)
             median_movement_correlations.append(move_corr)
+            # correlated each movement with all others
+            within_corr = correlate_btw_sessions(
+                a_movements, a_movements, corr_duration
+            )
+            within_movement_correlations.append(within_corr)
             # Get some fractions of movements
             move_frac_active.append(len(active_movements) / len(move_idxs))
             learned_move_frac_active.append(
@@ -200,6 +206,7 @@ def quantify_movement_quality(
 
     # convert outputs to arrays
     median_movement_correlations = np.array(median_movement_correlations)
+    within_movement_correlations = np.array(within_movement_correlations)
     move_frac_active = np.array(move_frac_active)
     learned_move_frac_active = np.array(learned_move_frac_active)
     active_move_frac_learned = np.array(active_move_frac_learned)
@@ -210,6 +217,7 @@ def quantify_movement_quality(
         all_active_movements,
         avg_active_movements,
         median_movement_correlations,
+        within_movement_correlations,
         move_frac_active,
         learned_move_frac_active,
         active_move_frac_learned,
