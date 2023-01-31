@@ -37,8 +37,12 @@ def find_activity_onset(mean_traces, sampling_rate=60):
             activity_onsets[i] = np.nan
             trace_amplitudes[i] = np.nan
             continue
+
+        # Get the mean around the peak (0.5s window)
+        window = int((0.5 * sampling_rate) / 2)
+        trace_amp = np.nanmean(trace[trace_peak - window : trace_peak + window])
+
         # Get the offset of the rise phase
-        trace_amp = np.max(trace_amps)
         trace_peak_trace = trace[:trace_peak]
         try:
             trace_offset = np.nonzero(trace_peak_trace < 0.75 * trace_amp)[0][-1]
