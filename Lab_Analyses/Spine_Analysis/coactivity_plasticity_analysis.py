@@ -534,30 +534,48 @@ class Coactivity_Plasticity:
             save=save,
             save_path=save_path,
         )
+        # Perform correlation of binne data
+        for k, v in data_dict.items():
+            binned_v = []
+            binned_p = []
+            for i in range(v.shape[0]):
+                binned_v.append(v[i, :])
+                binned_p.append(bins[i] for x in range(v.shape[1]))
+            binned_values = np.concatenate(binned_v)
+            binned_pos = [y for x in value for y in x]
+            binned_non_nan = np.nonzero(~np.isnan(binned_values))[0]
+            binned_values = binned_values[binned_non_nan]
+            binned_pos = binned_pos[binned_non_nan]
+            r, p = stats.pearsonr(binned_pos, binned_values)
+            print(f"{k}: r = {r}    p-val = {p}")
 
+        # Perform statistics
         two_way_mixed_anova, _, posthoc_table = t_utils.ANOVA_2way_mixed_posthoc(
             data_dict, method=test_method, rm_vals=bins, compare_type="between"
         )
-
         print(two_way_mixed_anova)
         print(posthoc_table)
 
-        # Get individual datasets if applicable
+        # Get individual datasets to correlate unbinned data if applicable
         ind_variable_name = f"ind_{variable_name}"
         if hasattr(self, ind_variable_name):
             individual_data = getattr(self, ind_variable_name)
             for group in spine_groups:
                 spines = getattr(self, group)
                 ind_data = compress(individual_data, spines)
+                # Combine the multiple lists
+                ind_data = [y for x in ind_data for y in x]
                 pos, value = zip(*ind_data)
+                pos = np.array(pos)
+                value = np.array(value)
                 non_nan = np.nonzero(~np.isnan(value))[0]
                 value = value[non_nan]
                 pos = pos[non_nan]
                 sp.plot_sns_scatter_correlation(
                     var1=pos,
-                    value=value,
+                    var2=value,
                     CI=None,
-                    title=variable_name,
+                    title=group,
                     xtitle="Distance (um)",
                     ytitle=ytitle,
                     figsize=figsize,
