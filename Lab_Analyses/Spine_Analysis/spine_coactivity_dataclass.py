@@ -11,6 +11,7 @@ class Spine_Coactivity_Data:
     day: str
     mouse_id: list
     FOV: list
+    dendrite_length: np.array
     parameters: dict
     spine_flags: list
     followup_flags: list
@@ -187,3 +188,7 @@ class Spine_Coactivity_Data:
     rel_spine_vs_dend_move_corr: np.array
     spine_to_dend_correlation: np.array
     spine_to_nearby_correlation: np.array
+    distance_relative_volume: np.array
+    ind_distance_relative_volume: list
+    distance_enlarged_probability: np.array
+    distance_shrunken_probability: np.array
