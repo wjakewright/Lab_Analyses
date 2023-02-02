@@ -9,6 +9,9 @@ from Lab_Analyses.Spine_Analysis.dendrite_spine_coactivity_analysis import (
 from Lab_Analyses.Spine_Analysis.distance_dependent_variable_analysis import (
     distance_dependent_variable_analysis,
 )
+from Lab_Analyses.Spine_Analysis.distance_to_plasticity_analysis import (
+    distance_to_plasticity_analysis,
+)
 from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
     local_spine_coactivity_analysis,
 )
@@ -131,6 +134,7 @@ def grouped_coactivity_analysis(
             dendrite_dFoF = np.zeros(spine_dFoF.shape)
             movement_dendrites = np.zeros(len(movement_spines)).astype(bool)
             rwd_movement_dendrites = np.zeros(len(rwd_movement_spines)).astype(bool)
+            dendrite_length = np.zeros(spine_activity.shape[1])
             for d in range(data.dendrite_calcium_activity.shape[1]):
                 if type(spine_groupings[d]) == list:
                     spines = spine_groupings[d]
@@ -141,6 +145,7 @@ def grouped_coactivity_analysis(
                     dendrite_dFoF[:, s] = data.dendrite_calcium_processed_dFoF[:, d]
                     movement_dendrites[s] = data.movement_dendrites[d]
                     rwd_movement_dendrites[s] = data.reward_movement_dendrites[d]
+                    dendrite_length[s] = data.dendrite_length[d]
             non_movement_dendrites = np.array([not x for x in movement_dendrites])
             rwd_nonmovement_dendrites = np.array(
                 [not x for x in rwd_movement_dendrites]
@@ -480,7 +485,7 @@ def grouped_coactivity_analysis(
             ]
 
             # Examine distance dependent movement encoding
-            distance_movement_corr = distance_dependent_variable_analysis(
+            distance_movement_corr, _ = distance_dependent_variable_analysis(
                 spine_move_correlation,
                 spine_positions,
                 spine_flags,
@@ -488,7 +493,7 @@ def grouped_coactivity_analysis(
                 bin_size=5,
                 relative=False,
             )
-            relative_distance_movement_corr = distance_dependent_variable_analysis(
+            relative_distance_movement_corr, _ = distance_dependent_variable_analysis(
                 spine_move_correlation,
                 spine_positions,
                 spine_flags,
@@ -507,6 +512,22 @@ def grouped_coactivity_analysis(
                 spine_movements, dend_movements, nearby_spine_idxs,
             )
 
+            # Examine distance to plastic spines
+            (
+                distance_relative_volume,
+                ind_distance_relative_volume,
+                distance_enlarged_probability,
+                distance_shrunken_probability,
+            ) = distance_to_plasticity_analysis(
+                spine_volume,
+                followup_volume,
+                spine_flags,
+                followup_flags,
+                spine_positions,
+                spine_groupings,
+                bin_size=5,
+            )
+
             # Generate FOV and Mouse ID lists
             fovs = [FOV for i in range(spine_activity.shape[1])]
             ids = [mouse for i in range(spine_activity.shape[1])]
@@ -515,6 +536,7 @@ def grouped_coactivity_analysis(
             ## Adding general variables
             grouped_data["mouse_id"].append(ids)
             grouped_data["FOVs"].append(fovs)
+            grouped_data["dendrite_length"].append(dendrite_length)
             grouped_data["spine_flags"].append(spine_flags)
             grouped_data["followup_flags"].append(followup_flags)
             grouped_data["spine_volumes"].append(spine_volume)
@@ -908,6 +930,16 @@ def grouped_coactivity_analysis(
             grouped_data["spine_to_nearby_correlation"].append(
                 spine_to_nearby_correlation
             )
+            grouped_data["distance_relative_volume"].append(distance_relative_volume)
+            grouped_data["ind_distance_relative_volume"].append(
+                ind_distance_relative_volume
+            )
+            grouped_data["distance_enlarged_probability"].append(
+                distance_enlarged_probability
+            )
+            grouped_data["distance_shrunken_probability"].append(
+                distance_shrunken_probability
+            )
 
     # Merge all the data across FOVs and mice
     regrouped_data = {}
@@ -937,6 +969,7 @@ def grouped_coactivity_analysis(
         mouse_id=regrouped_data["mouse_id"],
         FOV=regrouped_data["FOVs"],
         parameters=parameters,
+        dendrite_length=regrouped_data["dendrite_length"],
         spine_flags=regrouped_data["spine_flags"],
         followup_flags=regrouped_data["followup_flags"],
         spine_volumes=regrouped_data["spine_volumes"],
@@ -954,7 +987,7 @@ def grouped_coactivity_analysis(
         spine_activity_rate=regrouped_data["spine_activity_rate"],
         dend_activity_rate=regrouped_data["dend_activity_rate"],
         distance_activity_rate=regrouped_data["distance_activity_rate"],
-        ind_distance_activivty_rate=regrouped_data["ind_distance_activity_rate"],
+        ind_distance_activity_rate=regrouped_data["ind_distance_activity_rate"],
         distance_relative_activity_rate=regrouped_data[
             "distance_relative_activity_rate"
         ],
@@ -1222,6 +1255,10 @@ def grouped_coactivity_analysis(
         rel_spine_vs_dend_move_corr=regrouped_data["rel_spine_vs_dend_move_corr"],
         spine_to_dend_correlation=regrouped_data["spine_to_dend_correlation"],
         spine_to_nearby_correlation=regrouped_data["spine_to_nearby_correlation"],
+        distance_relative_volume=regrouped_data["distance_relative_volume"],
+        ind_distance_relative_volume=regrouped_data["ind_distance_relative_volume"],
+        distance_enlarged_probability=regrouped_data["distance_enlarged_probability"],
+        distance_shrunken_probability=regrouped_data["distance_shrunken_probability"],
     )
 
     # Save section
