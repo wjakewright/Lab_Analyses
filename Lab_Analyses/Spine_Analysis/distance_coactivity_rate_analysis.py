@@ -97,9 +97,11 @@ def distance_coactivity_rate_analysis(
                 # Don't compare eliminated spines
                 if curr_el_spines[spine] == True:
                     curr_coactivity.append(np.nan)
+                    curr_correlation.append(np.nan)
                     continue
                 if curr_el_spines[partner] == True:
                     curr_coactivity.append(np.nan)
+                    curr_correlation.append(np.nan)
                     continue
                 # Subselect partners if specified
                 if partner_list is not None:
@@ -107,6 +109,7 @@ def distance_coactivity_rate_analysis(
                         partner_spine = s_activity[:, partner]
                     else:
                         curr_coactivity.append(np.nan)
+                        curr_correlation.append(np.nan)
                         continue
                 else:
                     partner_spine = s_activity[:, partner]
@@ -114,7 +117,7 @@ def distance_coactivity_rate_analysis(
                 coactivity_rate = calculate_coactivity(
                     curr_spine, partner_spine, sampling_rate, norm=norm
                 )
-                correlation = stats.pearsonr(curr_spine, partner_spine)
+                correlation, _ = stats.pearsonr(curr_spine, partner_spine)
                 curr_coactivity.append(coactivity_rate)
                 curr_correlation.append(correlation)
 
@@ -130,7 +133,7 @@ def distance_coactivity_rate_analysis(
                 [x for _, x in sorted(zip(relative_pos, curr_coactivity))]
             )
             sorted_correlation = np.array(
-                [x for x, _ in sorted(zip(relative_pos, curr_correlation))]
+                [x for _, x in sorted(zip(relative_pos, curr_correlation))]
             )
             sorted_positions = np.array(
                 [y for y, _ in sorted(zip(relative_pos, curr_coactivity))]
@@ -150,8 +153,9 @@ def distance_coactivity_rate_analysis(
             coactivity_matrix[:, spines[spine]] = binned_coactivity
             correlation_matrix[:, spines[spine]] = binned_correlation
 
-        # Convert unbinned data into single list
-        unbinned_coactivity = [y for x in unbinned_coactivity for y in x]
+    # Convert unbinned data into single list
+    # unbinned_coactivity = [y for x in unbinned_coactivity for y in x]
+    # unbinned_correlation = [y for x in unbinned_correlation for y in x]
 
     return (
         coactivity_matrix,
