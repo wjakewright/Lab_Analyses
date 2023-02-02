@@ -136,6 +136,7 @@ class Coactivity_Plasticity:
         face_color="mediumblue",
         edge_color="white",
         edge_width=0.3,
+        s_size=5,
         s_alpha=0.5,
         line_color="mediumblue",
         line_width=1,
@@ -176,6 +177,7 @@ class Coactivity_Plasticity:
             figsize=figsize,
             xlim=xlim,
             ylim=ylim,
+            marker_size=s_size,
             face_color=face_color,
             edge_color=edge_color,
             edge_width=edge_width,
@@ -540,9 +542,9 @@ class Coactivity_Plasticity:
             binned_p = []
             for i in range(v.shape[0]):
                 binned_v.append(v[i, :])
-                binned_p.append(bins[i] for x in range(v.shape[1]))
+                binned_p.append([bins[i] for x in range(v.shape[1])])
             binned_values = np.concatenate(binned_v)
-            binned_pos = [y for x in value for y in x]
+            binned_pos = np.array([y for x in binned_p for y in x])
             binned_non_nan = np.nonzero(~np.isnan(binned_values))[0]
             binned_values = binned_values[binned_non_nan]
             binned_pos = binned_pos[binned_non_nan]
@@ -582,11 +584,11 @@ class Coactivity_Plasticity:
                     xlim=None,
                     ylim=None,
                     marker_size=5,
-                    face_color="mediumblue",
+                    face_color="cmap",
                     edge_color="mediumblue",
                     edge_width=0.3,
                     s_alpha=0.5,
-                    line_color="mediumblue",
+                    line_color="black",
                     line_width=1,
                     save=False,
                     save_path=None,
