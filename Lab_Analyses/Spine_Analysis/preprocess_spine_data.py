@@ -134,6 +134,8 @@ def organize_dual_spine_data(
                 save_suffix={"behavior": None, "imaging": "Calcium"},
             )
 
+            # Get dendrite length
+            dend_length = [x[-1] for x in GluSnFr_data.ROI_positions["Dendrite"]]
             # Group the data together
             ## Initialize output
             dual_spine_data = Dual_Channel_Spine_Data(
@@ -172,6 +174,7 @@ def organize_dual_spine_data(
                 spine_calcium_processed_dFoF=np.array([]),
                 spine_calcium_activity=np.array([]),
                 spine_calcium_floored=np.array([]),
+                dendrite_length=dend_length,
                 dendrite_calcium_dFoF=np.array([]),
                 dendrite_calcium_processed_dFoF=np.array([]),
                 dendrite_calcium_activity=np.array([]),
@@ -314,6 +317,9 @@ def organize_dual_spine_data(
                 s_day = re.search(
                     "[0-9]{6}", os.path.basename(structural_fname)
                 ).group()
+                struc_dend_length = [
+                    x[-1] for x in structural_data.ROI_positions["Dendrite"]
+                ]
                 structural_output = Structural_Spine_Data(
                     mouse_id=aligned_behavior.mouse_id,
                     session=period,
@@ -321,6 +327,7 @@ def organize_dual_spine_data(
                     spine_ids=structural_data.ROI_ids["Spine"],
                     spine_flags=structural_data.ROI_flags["Spine"],
                     spine_positions=structural_data.ROI_positions["Spine"],
+                    dendrite_length=struc_dend_length,
                     spine_pixel_intensity=structural_data.spine_pixel_intensity,
                     dend_segment_intensity=structural_data.dend_segment_intensity,
                     spine_volume=structural_data.spine_volume,
@@ -389,6 +396,7 @@ class Dual_Channel_Spine_Data:
     spine_calcium_processed_dFoF: np.ndarray
     spine_calcium_activity: np.ndarray
     spine_calcium_floored: np.ndarray
+    dendrite_length: list
     dendrite_calcium_dFoF: np.ndarray
     dendrite_calcium_processed_dFoF: np.ndarray
     dendrite_calcium_activity: np.ndarray
@@ -420,6 +428,7 @@ class Structural_Spine_Data:
     spine_ids: list
     spine_flags: list
     spine_positions: list
+    dendrite_length: list
     spine_pixel_intensity: list
     dend_segment_intensity: list
     spine_volume: list
