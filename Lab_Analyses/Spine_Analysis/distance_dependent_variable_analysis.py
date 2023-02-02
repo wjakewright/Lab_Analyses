@@ -106,8 +106,7 @@ def distance_dependent_variable_analysis(
             )
             activity_matrix[:, spines[spine]] = binned_activity
 
-        # Convert unbinned data into a single list
-        unbinned_list = [y for x in unbinned_list for y in x]
+    # Convert unbinned data into a single list
 
     return activity_matrix, unbinned_list
 
