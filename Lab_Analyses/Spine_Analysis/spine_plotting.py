@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
+from sklearn.preprocessing import MinMaxScaler
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
 
@@ -83,18 +84,28 @@ def plot_sns_scatter_correlation(
     subtitle = f"r = {corr}    p = {p}"
     plt.title(subtitle, style="italic")
 
-    # Set up some styles for the scatter points
-    scatter_kws = {
-        "facecolor": face_color,
-        "edgecolor": edge_color,
-        "alpha": s_alpha,
-        "linewidth": edge_width,
-        "s": marker_size,
-    }
     line_kws = {"linewidth": line_width, "color": line_color}
-
-    # Make the plot
-    sns.regplot(x=var1, y=var2, ci=CI, scatter_kws=scatter_kws, line_kws=line_kws)
+    # Set up some styles for the scatter points
+    if face_color != "cmap":
+        scatter_kws = {
+            "facecolor": face_color,
+            "edgecolor": edge_color,
+            "alpha": s_alpha,
+            "linewidth": edge_width,
+            "s": marker_size,
+        }
+        # Make Scatter plot
+        sns.regplot(x=var1, y=var2, ci=CI, scatter_kws=scatter_kws, line_kws=line_kws)
+    else:
+        var1, var2, face_colors = generate_scatter_cmap(var1, var2)
+        scatter_kws = {
+            "facecolor": face_colors,
+            "edgecolor": None,
+            "cmap": "plasma",
+            "s": marker_size,
+        }
+        plt.scatter(x=var1, y=var2, c=face_colors, s=marker_size, cmap="plasma")
+        sns.regplot(x=var1, y=var2, ci=CI, scatter=False, line_kws=line_kws)
 
     plt.xlabel(xtitle, labelpad=15)
     if xlim:
@@ -1021,4 +1032,22 @@ def plot_spine_heatmap(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, title)
         plt.savefig(fname + ".pdf")
+
+
+def generate_scatter_cmap(x, y):
+    """Helper function to generate a color map based on the density of points
+        in the scatter plot
+    """
+
+    # Calculate Point density
+    xy = np.vstack([x, y])
+    z = stats.gaussian_kde(xy)(xy)
+
+    # Sort the points by density, so densest points are plotted last
+    idx = z.argsort()
+    x = x[idx]
+    y = y[idx]
+    z = z[idx]
+
+    return x, y, z
 
