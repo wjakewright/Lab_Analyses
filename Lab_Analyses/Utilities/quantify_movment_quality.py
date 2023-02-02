@@ -179,6 +179,7 @@ def quantify_movement_quality(
             all_active_movements.append(np.zeros(corr_duration).reshape(1, -1))
             avg_active_movements.append(np.zeros(corr_duration))
             median_movement_correlations.append(np.nan)
+            within_movement_correlations.append(np.nan)
             move_frac_active.append(0)
             learned_move_frac_active.append(0)
             active_move_frac_learned.append(0)
