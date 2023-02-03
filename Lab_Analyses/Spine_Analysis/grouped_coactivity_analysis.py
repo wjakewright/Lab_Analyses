@@ -73,7 +73,7 @@ def grouped_coactivity_analysis(
         ca_constants = batch_spine_volume_norm_constant(
             mice_list, day, fov_type, "Calcium"
         )
-
+    dendrite_tracker = 0
     # Analyze each mouse seperately
     for mouse in mice_list:
         print("---------------------------------")
@@ -130,6 +130,7 @@ def grouped_coactivity_analysis(
             rwd_nonmovement_spines = np.array([not x for x in rwd_movement_spines])
 
             ## Dendrite activity and movement encoding
+            dendrite_number = np.zeros(spine_activity.shape[1])
             dendrite_activity = np.zeros(spine_activity.shape)
             dendrite_dFoF = np.zeros(spine_dFoF.shape)
             movement_dendrites = np.zeros(len(movement_spines)).astype(bool)
@@ -140,7 +141,10 @@ def grouped_coactivity_analysis(
                     spines = spine_groupings[d]
                 else:
                     spines = spine_groupings
+                d_num = dendrite_tracker
+                dendrite_tracker = dendrite_tracker + 1
                 for s in spines:
+                    dendrite_number[:, s] = d_num
                     dendrite_activity[:, s] = data.dendrite_calcium_activity[:, d]
                     dendrite_dFoF[:, s] = data.dendrite_calcium_processed_dFoF[:, d]
                     movement_dendrites[s] = data.movement_dendrites[d]
@@ -536,6 +540,7 @@ def grouped_coactivity_analysis(
             ## Adding general variables
             grouped_data["mouse_id"].append(ids)
             grouped_data["FOVs"].append(fovs)
+            grouped_data["dendrite_number"].append(dendrite_number)
             grouped_data["dendrite_length"].append(dendrite_length)
             grouped_data["spine_flags"].append(spine_flags)
             grouped_data["followup_flags"].append(followup_flags)
@@ -969,6 +974,7 @@ def grouped_coactivity_analysis(
         mouse_id=regrouped_data["mouse_id"],
         FOV=regrouped_data["FOVs"],
         parameters=parameters,
+        dendrite_number=regrouped_data["dendrite_number"],
         dendrite_length=regrouped_data["dendrite_length"],
         spine_flags=regrouped_data["spine_flags"],
         followup_flags=regrouped_data["followup_flags"],
