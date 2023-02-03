@@ -11,8 +11,9 @@ class Spine_Coactivity_Data:
     day: str
     mouse_id: list
     FOV: list
-    dendrite_length: np.array
     parameters: dict
+    dendrite_number: np.array
+    dendrite_length: np.array
     spine_flags: list
     followup_flags: list
     spine_volumes: np.array
