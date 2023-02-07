@@ -120,6 +120,7 @@ class Spine_Coactivity_Data:
     spine_dend_dend_coactive_amplitude: np.array
     spine_dend_dend_coactive_auc: np.array
     spine_dend_relative_onset: np.array
+    spine_dend_onset_jitter: np.array
     spine_dend_spine_coactive_traces: list
     spine_dend_spine_coactive_calcium_traces: list
     spine_dend_dend_coactive_traces: list
@@ -134,6 +135,7 @@ class Spine_Coactivity_Data:
     conj_dend_coactive_amplitude: np.array
     conj_dend_coactive_auc: np.array
     conj_relative_onset: np.array
+    conj_onset_jitter: np.array
     conj_spine_coactive_traces: list
     conj_spine_coactive_calcium_traces: list
     conj_dend_coactive_traces: list
@@ -148,6 +150,7 @@ class Spine_Coactivity_Data:
     nonconj_dend_coactive_amplitude: np.array
     nonconj_dend_coactive_auc: np.array
     nonconj_relative_onset: np.array
+    nonconj_onset_jitter: np.array
     nonconj_spine_coactive_traces: list
     nonconj_spine_coactive_calcium_traces: list
     nonconj_dend_coactive_traces: list
