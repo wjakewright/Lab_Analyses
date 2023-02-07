@@ -320,6 +320,7 @@ def grouped_coactivity_analysis(
                 spine_dend_dend_coactive_amplitude,
                 spine_dend_dend_coactive_auc,
                 spine_dend_relative_onset,
+                spine_dend_onset_jitter,
                 spine_dend_spine_coactive_traces,
                 spine_dend_spine_coactive_calcium_traces,
                 spine_dend_dend_coactive_traces,
@@ -335,6 +336,7 @@ def grouped_coactivity_analysis(
                 conj_dend_coactive_amplitude,
                 conj_dend_coactive_auc,
                 conj_relative_onset,
+                conj_onset_jitter,
                 conj_spine_coactive_traces,
                 conj_spine_coactive_calcium_traces,
                 conj_dend_coactive_traces,
@@ -350,6 +352,7 @@ def grouped_coactivity_analysis(
                 nonconj_dend_coactive_amplitude,
                 nonconj_dend_coactive_auc,
                 nonconj_relative_onset,
+                nonconj_onset_jitter,
                 nonconj_spine_coactive_traces,
                 nonconj_spine_coactive_calcium_traces,
                 nonconj_dend_coactive_traces,
@@ -798,6 +801,7 @@ def grouped_coactivity_analysis(
                 spine_dend_dend_coactive_auc
             )
             grouped_data["spine_dend_relative_onset"].append(spine_dend_relative_onset)
+            grouped_data["spine_dend_onset_jitter"].append(spine_dend_onset_jitter)
             grouped_data["spine_dend_spine_coactive_traces"].append(
                 spine_dend_spine_coactive_traces
             )
@@ -830,6 +834,7 @@ def grouped_coactivity_analysis(
             )
             grouped_data["conj_dend_coactive_auc"].append(conj_dend_coactive_auc)
             grouped_data["conj_relative_onset"].append(conj_relative_onset)
+            grouped_data["conj_onset_jitter"].append(conj_onset_jitter)
             grouped_data["conj_spine_coactive_traces"].append(
                 conj_spine_coactive_traces
             )
@@ -864,6 +869,7 @@ def grouped_coactivity_analysis(
             )
             grouped_data["nonconj_dend_coactive_auc"].append(nonconj_dend_coactive_auc)
             grouped_data["nonconj_relative_onset"].append(nonconj_relative_onset)
+            grouped_data["nonconj_onset_jitter"].append(nonconj_onset_jitter)
             grouped_data["nonconj_spine_coactive_traces"].append(
                 nonconj_spine_coactive_traces
             )
@@ -1156,6 +1162,7 @@ def grouped_coactivity_analysis(
         ],
         spine_dend_dend_coactive_auc=regrouped_data["spine_dend_dend_coactive_auc"],
         spine_dend_relative_onset=regrouped_data["spine_dend_relative_onset"],
+        spine_dend_onset_jitter=regrouped_data["spine_dend_onset_jitter"],
         spine_dend_spine_coactive_traces=regrouped_data[
             "spine_dend_spine_coactive_traces"
         ],
@@ -1178,6 +1185,7 @@ def grouped_coactivity_analysis(
         conj_dend_coactive_amplitude=regrouped_data["conj_dend_coactive_amplitude"],
         conj_dend_coactive_auc=regrouped_data["conj_dend_coactive_auc"],
         conj_relative_onset=regrouped_data["conj_relative_onset"],
+        conj_onset_jitter=regrouped_data["conj_onset_jitter"],
         conj_spine_coactive_traces=regrouped_data["conj_spine_coactive_traces"],
         conj_spine_coactive_calcium_traces=regrouped_data[
             "conj_spine_coactive_calcium_traces"
@@ -1202,6 +1210,7 @@ def grouped_coactivity_analysis(
         ],
         nonconj_dend_coactive_auc=regrouped_data["nonconj_dend_coactive_auc"],
         nonconj_relative_onset=regrouped_data["nonconj_relative_onset"],
+        nonconj_onset_jitter=regrouped_data["nonconj_onset_jitter"],
         nonconj_spine_coactive_traces=regrouped_data["nonconj_spine_coactive_traces"],
         nonconj_spine_coactive_calcium_traces=regrouped_data[
             "nonconj_spine_coactive_calcium_traces"
