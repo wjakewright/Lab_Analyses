@@ -70,7 +70,7 @@ def absolute_dendrite_coactivity(
     if constrain_matrix is not None:
         if len(constrain_matrix.shape) == 1:
             constrain_matrix = constrain_matrix.reshape(-1, 1)
-        spine_activity = spine_activity * constrain_matrix
+        activity_matrix = spine_activity * constrain_matrix
 
     center_point = int(np.absolute(activity_window[0] * sampling_rate))
 
@@ -87,6 +87,7 @@ def absolute_dendrite_coactivity(
     dend_coactive_amplitude = np.zeros(spine_activity.shape[1]) * np.nan
     dend_coactive_auc = np.zeros(spine_activity.shape[1]) * np.nan
     relative_onset = np.zeros(spine_activity.shape[1]) * np.nan
+    onset_jitter = np.zeros(spine_activity.shape[1]) * np.nan
     spine_coactive_traces = [None for i in range(spine_activity.shape[1])]
     spine_coactive_calcium_traces = [None for i in range(spine_activity.shape[1])]
     dend_coactive_traces = [None for i in range(spine_activity.shape[1])]
@@ -94,7 +95,7 @@ def absolute_dendrite_coactivity(
     # Iterate through each dendrite grouping
     for spines in spine_groupings:
         # Pull current spine grouping data
-        s_activity = spine_activity[:, spines]
+        s_activity = activity_matrix[:, spines]
         s_dFoF = spine_dFoF[:, spines]
         s_calcium = spine_calcium[:, spines]
         d_activity = dend_activity[:, spines]
@@ -179,6 +180,14 @@ def absolute_dendrite_coactivity(
             except ValueError:
                 rel_onset = np.nan
 
+            jitter = spine_dend_onset_jitter(
+                spine_activity[:, spines[spine]],
+                d_activity,
+                corrected_stamps,
+                activity_window,
+                sampling_rate,
+            )
+
             spine_coactive_traces[spines[spine]] = s_traces
             spine_coactive_amplitude[spines[spine]] = s_amp
             spine_coactive_auc[spines[spine]] = s_auc
@@ -186,6 +195,7 @@ def absolute_dendrite_coactivity(
             spine_coactive_calcium[spines[spine]] = s_ca_amp
             spine_coactive_calcium_auc[spines[spine]] = s_ca_auc
             relative_onset[spines[spine]] = rel_onset
+            onset_jitter[spines[spine]] = jitter
 
     return (
         coactivity_matrix,
@@ -200,7 +210,41 @@ def absolute_dendrite_coactivity(
         dend_coactive_amplitude,
         dend_coactive_auc,
         relative_onset,
+        onset_jitter,
         spine_coactive_traces,
         spine_coactive_calcium_traces,
         dend_coactive_traces,
     )
+
+
+def spine_dend_onset_jitter(
+    spine_activity, dendrite_activity, timestamps, activity_window, sampling_rate
+):
+    """Helper function to estimate the relative jitter in the onset of spines relative
+        to the onset of the dendrite"""
+    before_f = int(activity_window[0] * sampling_rate)
+    after_f = int(activity_window[1] * sampling_rate)
+    center_point = np.abs(activity_window[0] * sampling_rate)
+
+    relative_onsets = []
+    for event in timestamps:
+        s_activity = spine_activity[event + before_f : event + after_f]
+        d_activity = dendrite_activity[event + before_f : event + after_f]
+        s_boundaries = np.insert(np.diff(s_activity), 0, 0, axis=0)
+        d_boundaries = np.insert(np.diff(d_activity), 0, 0, axis=0)
+        try:
+            s_onset = np.nonzero(s_boundaries == 1)[0][0]
+        except IndexError:
+            s_onset = 0
+        try:
+            d_onset = np.nonzeor(d_boundaries == 1)[0][0]
+        except IndexError:
+            d_onset = center_point
+
+        rel_onset = (s_onset - d_onset) / sampling_rate
+        relative_onsets.append(rel_onset)
+
+    jitter = np.nanstd(relative_onsets)
+
+    return jitter
+
