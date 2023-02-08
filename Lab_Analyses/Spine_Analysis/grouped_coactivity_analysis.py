@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from itertools import compress
 
 import numpy as np
 
@@ -18,6 +19,7 @@ from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
 from Lab_Analyses.Spine_Analysis.spine_coactivity_dataclass import Spine_Coactivity_Data
 from Lab_Analyses.Spine_Analysis.spine_utilities import (
     batch_spine_volume_norm_constant,
+    find_spine_classes,
     load_spine_datasets,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
@@ -96,6 +98,11 @@ def grouped_coactivity_analysis(
                     dataset[f"Post {day}"].corrected_spine_volume
                 )
                 followup_flags = dataset[f"Post {day}"].spine_flags
+                # remove new spines from the followup to get the same length of data
+                new_followup_spines = find_spine_classes(followup_flags, "New Spine")
+                new_followup_spines = [not x for x in new_followup_spines]
+                followup_volume = followup_volume[new_followup_spines]
+                followup_flags = compress(followup_flags, new_followup_spines)
             else:
                 data = dataset[day]
                 followup_volume = None
@@ -119,6 +126,8 @@ def grouped_coactivity_analysis(
             spine_flags = data.spine_flags
             spine_volume = np.array(data.corrected_spine_volume)
             spine_positions = np.array(data.spine_positions)
+            print(len(spine_volume))
+            print(len(followup_volume))
 
             ## Spine activity and movement encoding
             spine_activity = data.spine_GluSnFr_activity
