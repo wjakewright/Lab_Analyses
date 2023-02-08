@@ -107,7 +107,7 @@ def calculate_cluster_score(
                     curr_spine, partner_spines, shuff_pos
                 )
                 all_shuff_nn_distances.append(shuff_nn)
-            shuff_nn_distance = np.nanmean(all_shuff_nn_distances)
+            shuff_nn_distance = np.nanmedian(all_shuff_nn_distances)
 
             # Calcuate cluster score
             c_score = (1 / nn_distance) / (1 / shuff_nn_distance)
@@ -152,7 +152,7 @@ def find_nearest_neighbors(target_spine, partner_spines, partner_positions):
         nearest_neighbor.append(np.min(active_positions))
         number_coactive.append(len(active_partners))
 
-    avg_nearest_neighbor = np.nanmean(nearest_neighbor)
-    avg_num_coactive = np.nanmean(number_coactive)
+    avg_nearest_neighbor = np.nanmedian(nearest_neighbor)
+    avg_num_coactive = np.nanmedian(number_coactive)
 
     return avg_nearest_neighbor, avg_num_coactive
