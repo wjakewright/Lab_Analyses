@@ -49,7 +49,7 @@ def quantify_movement_quality(
             learned_move_resample - np.array of the learned movement pattern resampled to a frames
             
     """
-    CORR_INT = 0.5
+    CORR_INT = 1.5
     EXPANSION = int(0.5 * sampling_rate)
 
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
