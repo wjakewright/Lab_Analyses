@@ -213,8 +213,11 @@ def plot_mean_sem_line_plot(
     for col in ind.columns:
         val_1.append(sessions)
         val_2.append(ind[col])
-    val_1 = [y for x in val_1 for y in x]
-    val_2 = [y for x in val_2 for y in x]
+    val_1 = np.array([y for x in val_1 for y in x])
+    val_2 = np.array([y for x in val_2 for y in x])
+    non_nan = np.nonzero(~np.isnan(val_2))[0]
+    val_1 = val_1[non_nan]
+    val_2 = val_2[non_nan]
     corr, p = stats.pearsonr(val_1, val_2)
     subtitle = f"r = {corr}    p = {p}"
     plt.title(subtitle, style="italic")
