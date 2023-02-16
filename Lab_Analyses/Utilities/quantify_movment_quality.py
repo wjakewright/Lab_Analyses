@@ -49,8 +49,8 @@ def quantify_movement_quality(
             learned_move_resample - np.array of the learned movement pattern resampled to a frames
             
     """
-    CORR_INT = 1.5
     EXPANSION = int(0.5 * sampling_rate)
+    CORR_INT = 0.5
 
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
@@ -59,20 +59,17 @@ def quantify_movement_quality(
     fnames = next(os.walk(load_path))[2]
     fname = [x for x in fnames if "summarized_lever_data" in x]
     learned_file = load_pickle(fname, load_path)[0]
-    learned_movement = learned_file.movement_avg
+    learned_movement = np.nanmean(learned_file.corr_matrix, axis=0)
     learned_movement = learned_movement - learned_movement[0]
-
-    # Remove the baseline period
-    corr_len = learned_file.corr_matrix.shape[1]
-    baseline_len = len(learned_movement) - corr_len
-    learned_movement = learned_movement[baseline_len:]
 
     # Need to downsample the learned movement now to match the imaging rate
     frac = Fraction(sampling_rate / 1000).limit_denominator()
     n = frac.numerator
     d = frac.denominator
     learned_move_resample = sysignal.resample_poly(learned_movement, n, d)
-    corr_duration = int(CORR_INT * sampling_rate)  ## 0.5 seconds
+    # corr_duration = int(corr_int * sampling_rate)  ## 1.5 seconds
+    # learned_move_resample = learned_move_resample[:corr_duration]
+    corr_duration = int(CORR_INT * sampling_rate)
     learned_move_resample = learned_move_resample[:corr_duration]
 
     # Expand movement intervals
@@ -121,6 +118,7 @@ def quantify_movement_quality(
     lever_learned_binary = np.zeros(len(lever_active))
     for movement in move_idxs:
         force = lever_force[movement[0] : movement[0] + corr_duration]
+        force = force - force[0]
         r = stats.pearsonr(learned_move_resample, force)[0]
 
         if r >= threshold:
@@ -146,6 +144,7 @@ def quantify_movement_quality(
             active_epoch = active_trace[e_movement[0] : e_movement[1]]
             if sum(active_epoch):
                 active_move = lever_force[movement[0] : movement[0] + corr_duration]
+                active_move = active_move - active_move[0]
                 active_movements.append(active_move)
             else:
                 pass
@@ -168,9 +167,12 @@ def quantify_movement_quality(
             within_movement_correlations.append(within_corr)
             # Get some fractions of movements
             move_frac_active.append(len(active_movements) / len(move_idxs))
-            learned_move_frac_active.append(
-                len(np.nonzero(np.array(corrs) >= 0.5)[0]) / learned_move_num
-            )
+            try:
+                learned_move_frac_active.append(
+                    len(np.nonzero(np.array(corrs) >= 0.5)[0]) / learned_move_num
+                )
+            except ZeroDivisionError:
+                learned_move_frac_active.append(np.nan)
             active_move_frac_learned.append(
                 len(np.nonzero(np.array(corrs) >= 0.5)[0]) / len(corrs)
             )

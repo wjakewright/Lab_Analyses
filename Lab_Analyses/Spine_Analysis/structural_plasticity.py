@@ -48,7 +48,10 @@ def calculate_volume_change(
         # Reverse values to exclude these spines
         exclude_spines = np.array([not x for x in exclude_spines])
         # Combine with the stable spines
-        stable_spines = stable_spines * exclude_spines
+        try:
+            stable_spines = stable_spines * exclude_spines
+        except ValueError:
+            pass
 
     stable_spines = stable_spines.astype(bool)
     # Get stable spine indexes
@@ -95,20 +98,28 @@ def classify_plasticity(relative_volumes, threshold=0.25, norm=False):
     potentiated_spines = [False for x in relative_volumes]
     depressed_spines = [False for x in relative_volumes]
 
+    # Split threshold
+    if type(threshold) == tuple:
+        lower = threshold[0]
+        upper = threshold[1]
+    else:
+        lower = threshold
+        upper = threshold
+
     # classify each spine
     if not norm:
         for i, spine in enumerate(relative_volumes):
-            if spine >= (1 + threshold):
+            if spine >= (1 + upper):
                 potentiated_spines[i] = True
-            elif spine <= (1 - threshold):
+            elif spine <= (1 - lower):
                 depressed_spines[i] = True
             else:
                 stable_spines[i] = True
     else:
         for i, spine in enumerate(relative_volumes):
-            if spine >= threshold:
+            if spine >= upper:
                 potentiated_spines[i] = True
-            elif spine <= -threshold:
+            elif spine <= -lower:
                 depressed_spines[i] = True
             else:
                 stable_spines[i] = True

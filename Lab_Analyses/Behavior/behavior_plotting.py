@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy import stats
+
 from Lab_Analyses.Utilities import data_utilities as utils
 
 sns.set()
@@ -204,6 +206,18 @@ def plot_mean_sem_line_plot(
 
     # Put individual data in dataframe for easier plotting
     ind = pd.DataFrame(individual)
+
+    # Perform correlation
+    val_1 = []
+    val_2 = []
+    for col in ind.columns:
+        val_1.append(sessions)
+        val_2.append(ind[col])
+    val_1 = [y for x in val_1 for y in x]
+    val_2 = [y for x in val_2 for y in x]
+    corr, p = stats.pearsonr(val_1, val_2)
+    subtitle = f"r = {corr}    p = {p}"
+    plt.title(subtitle, style="italic")
 
     # Plot individual data
     if plot_ind is True:

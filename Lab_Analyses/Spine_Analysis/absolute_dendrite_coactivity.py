@@ -71,6 +71,8 @@ def absolute_dendrite_coactivity(
         if len(constrain_matrix.shape) == 1:
             constrain_matrix = constrain_matrix.reshape(-1, 1)
         activity_matrix = spine_activity * constrain_matrix
+    else:
+        activity_matrix = spine_activity
 
     center_point = int(np.absolute(activity_window[0] * sampling_rate))
 
@@ -180,7 +182,7 @@ def absolute_dendrite_coactivity(
             except ValueError:
                 rel_onset = np.nan
 
-            jitter = spine_dend_onset_jitter(
+            rel_onset, jitter = spine_dend_onset_jitter(
                 spine_activity[:, spines[spine]],
                 d_activity,
                 corrected_stamps,
@@ -237,7 +239,7 @@ def spine_dend_onset_jitter(
         except IndexError:
             s_onset = 0
         try:
-            d_onset = np.nonzeor(d_boundaries == 1)[0][0]
+            d_onset = np.nonzero(d_boundaries == 1)[0][0]
         except IndexError:
             d_onset = center_point
 
@@ -246,5 +248,5 @@ def spine_dend_onset_jitter(
 
     jitter = np.nanstd(relative_onsets)
 
-    return jitter
+    return rel_onset, jitter
 

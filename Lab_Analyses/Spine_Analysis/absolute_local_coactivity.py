@@ -22,6 +22,7 @@ def absolute_local_coactivity(
     spine_positions,
     move_spines,
     lever_active,
+    lever_active_rwd,
     lever_force,
     partner_list=None,
     activity_window=(-2, 4),
@@ -122,6 +123,11 @@ def absolute_local_coactivity(
     avg_nearby_move_stereotypy = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_move_relability = np.zeros(spine_activity.shape[1]) * np.nan
     avg_nearby_move_specificity = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_rwd_move_corr = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_rwd_move_stereotypy = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_rwd_move_reliability = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_rwd_move_specificity = np.zeros(spine_activity.shape[1]) * np.nan
+    avg_nearby_frac_rwd_movements = np.zeros(spine_activity.shape[1]) * np.nan
 
     # Iterate through each dendrite grouping
     for spines in spine_groupings:
@@ -342,7 +348,7 @@ def absolute_local_coactivity(
             # Analyze movement encoding of nearby coactive spines
             (
                 _,
-                _,
+                movements,
                 _,
                 move_corrs,
                 within_move_corrs,
@@ -359,10 +365,45 @@ def absolute_local_coactivity(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
+            (
+                _,
+                rwd_movements,
+                _,
+                rwd_move_corrs,
+                rwd_within_move_corrs,
+                rwd_move_frac_active,
+                _,
+                _,
+                rwd_active_frac_move,
+                _,
+            ) = quantify_movement_quality(
+                mouse_id,
+                nearby_s_activity,
+                lever_active_rwd,
+                lever_force,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            frac_rwd_movements = [
+                len(rwd) / len(move) for rwd, move in zip(rwd_movements, movements)
+            ]
             avg_nearby_move_corr[spines[spine]] = np.nanmean(move_corrs)
             avg_nearby_move_stereotypy[spines[spine]] = np.nanmean(within_move_corrs)
             avg_nearby_move_relability[spines[spine]] = np.nanmean(move_frac_active)
             avg_nearby_move_specificity[spines[spine]] = np.nanmean(active_frac_move)
+            avg_nearby_rwd_move_corr[spines[spine]] = np.nanmean(rwd_move_corrs)
+            avg_nearby_rwd_move_stereotypy[spines[spine]] = np.nanmean(
+                rwd_within_move_corrs
+            )
+            avg_nearby_rwd_move_reliability[spines[spine]] = np.nanmean(
+                rwd_move_frac_active
+            )
+            avg_nearby_rwd_move_specificity[spines[spine]] = np.nanmean(
+                rwd_active_frac_move
+            )
+            avg_nearby_frac_rwd_movements[spines[spine]] = np.nanmean(
+                frac_rwd_movements
+            )
 
     # Return final outputs
     return (
@@ -409,5 +450,10 @@ def absolute_local_coactivity(
         avg_nearby_move_stereotypy,
         avg_nearby_move_relability,
         avg_nearby_move_specificity,
+        avg_nearby_rwd_move_corr,
+        avg_nearby_rwd_move_stereotypy,
+        avg_nearby_rwd_move_reliability,
+        avg_nearby_rwd_move_specificity,
+        avg_nearby_frac_rwd_movements,
     )
 

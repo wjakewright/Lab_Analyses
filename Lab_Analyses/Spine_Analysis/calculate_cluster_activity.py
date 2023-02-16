@@ -6,7 +6,7 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis.spine_utilities import find_spine_classes
 
 
-def calculate_cluster_score(
+def calculate_cluster_activity(
     spine_activity,
     spine_positions,
     spine_flags,
@@ -63,7 +63,7 @@ def calculate_cluster_score(
     coactive_num = np.zeros(spine_activity.shape[1]) * np.nan
 
     # Find indexes of eliminated spines
-    el_spines = find_spine_classes(spine_flags, "Eliminated Spines")
+    el_spines = find_spine_classes(spine_flags, "Eliminated Spine")
     el_spines = np.array(el_spines)
 
     # Iterate through each dendrite grouping
@@ -92,7 +92,7 @@ def calculate_cluster_score(
             partner_pos = relative_pos[partner_idxs]
             partner_pos = np.absolute(partner_pos)
             # Get number of coactive spines and nearst neighbor distance
-            nn_distance, coactive_n = find_nearest_neighbors(
+            nn_distance, coactive_n = find_nearest_neighbors_activity(
                 curr_spine, partner_spines, partner_pos
             )
             if np.isnan(nn_distance):
@@ -103,7 +103,7 @@ def calculate_cluster_score(
             for i in range(iterations):
                 shuff_pos = copy.copy(partner_pos)
                 np.random.shuffle(shuff_pos)
-                shuff_nn, _ = find_nearest_neighbors(
+                shuff_nn, _ = find_nearest_neighbors_activity(
                     curr_spine, partner_spines, shuff_pos
                 )
                 all_shuff_nn_distances.append(shuff_nn)
@@ -119,7 +119,7 @@ def calculate_cluster_score(
     return cluster_score, coactive_num
 
 
-def find_nearest_neighbors(target_spine, partner_spines, partner_positions):
+def find_nearest_neighbors_activity(target_spine, partner_spines, partner_positions):
     """Helper function to find the average nearst neighbor distance during 
         coactivity events"""
 

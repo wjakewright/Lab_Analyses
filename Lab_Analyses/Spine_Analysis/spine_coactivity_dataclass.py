@@ -98,6 +98,11 @@ class Spine_Coactivity_Data:
     avg_nearby_movement_stereotypy: np.array
     avg_nearby_movement_reliability: np.array
     avg_nearby_movement_specificity: np.array
+    avg_nearby_rwd_movement_correlation: np.array
+    avg_nearby_rwd_movement_stereotypy: np.array
+    avg_nearby_rwd_movement_reliability: np.array
+    avg_nearby_rwd_movement_specificity: np.array
+    avg_nearby_frac_rwd_movements: np.array
     avg_nearby_coactivity_rate: np.array
     relative_local_coactivity_rate: np.array
     frac_local_coactivity_participation: np.array
@@ -172,6 +177,16 @@ class Spine_Coactivity_Data:
     spine_movement_stereotypy: np.array
     spine_movement_reliability: np.array
     spine_movement_specificity: np.array
+    spine_LMP_reliability: np.array
+    spine_LMP_specificity: np.array
+    spine_rwd_movements: list
+    spine_rwd_movement_correlation: np.array
+    spine_rwd_movement_stereotypy: np.array
+    spine_rwd_movement_reliability: np.array
+    spine_rwd_movement_specificity: np.array
+    spine_rwd_LMP_reliability: np.array
+    spine_rwd_LMP_specificity: np.array
+    spine_frac_rwd_movements: np.array
     dend_movements: list
     dend_movement_correlation: np.array
     dend_movement_stereotypy: np.array
@@ -182,17 +197,53 @@ class Spine_Coactivity_Data:
     local_movement_stereotypy: np.array
     local_movement_reliability: np.array
     local_movement_specificity: np.array
+    local_LMP_reliability: np.array
+    local_LMP_specificity: np.array
+    local_rwd_movements: list
+    local_rwd_movement_correlation: np.array
+    local_rwd_movement_stereotypy: np.array
+    local_rwd_movement_reliability: np.array
+    local_rwd_movement_specificity: np.array
+    local_rwd_LMP_reliability: np.array
+    local_rwd_LMP_specificity: np.array
+    local_frac_rwd_movements: np.array
     spine_dend_movements: list
     spine_dend_movement_correlation: np.array
     spine_dend_movement_stereotypy: np.array
     spine_dend_movement_reliability: np.array
     spine_dend_movement_specificity: np.array
+    spine_dend_LMP_reliability: np.array
+    spine_dend_LMP_specificity: np.array
+    spine_dend_rwd_movements: list
+    spine_dend_rwd_movement_correlation: np.array
+    spine_dend_rwd_movement_stereotypy: np.array
+    spine_dend_rwd_movement_reliability: np.array
+    spine_dend_rwd_movement_specificity: np.array
+    spine_dend_rwd_LMP_reliability: np.array
+    spine_dend_rwd_LMP_specificity: np.array
+    spine_dend_frac_rwd_movements: np.array
     distance_movement_corr: np.array
+    distance_rwd_movement_corr: np.array
     relative_distance_movement_corr: np.array
+    relative_distance_rwd_movement_corr: np.array
     rel_spine_vs_dend_move_corr: np.array
     spine_to_dend_correlation: np.array
     spine_to_nearby_correlation: np.array
-    distance_relative_volume: np.array
-    ind_distance_relative_volume: list
-    distance_enlarged_probability: np.array
-    distance_shrunken_probability: np.array
+    local_relative_volume: np.array
+    shuff_relative_volume: np.array
+    relative_vol_score: np.array
+    local_nn_enlarged: np.array
+    shuff_nn_enlarged: np.array
+    nn_enlarged_score: np.array
+    local_nn_shrunken: np.array
+    shuff_nn_shrunken: np.array
+    nn_shrunken_score: np.array
+    nearby_LMP_corr: np.array
+    shuff_LMP_corr: np.array
+    LMP_corr_score: np.array
+    nearby_rwd_LMP_corr: np.array
+    shuff_rwd_LMP_corr: np.array
+    rwd_LMP_corr_score: np.array
+    nearby_frac_rwd_move: np.array
+    shuff_frac_rwd_move: np.array
+    frac_rwd_move_score: np.array

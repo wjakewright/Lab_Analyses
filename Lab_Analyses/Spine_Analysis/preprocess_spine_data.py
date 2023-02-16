@@ -256,8 +256,8 @@ def organize_dual_spine_data(
                 c_a, c_f, _ = event_detection(
                     dual_spine_data.dendrite_calcium_processed_dFoF,
                     threshold=2,
-                    lower_threshold=1,
-                    lower_limit=0.2,
+                    lower_threshold=0,
+                    lower_limit=0,
                     sampling_rate=dual_spine_data.imaging_parameters["Sampling Rate"],
                 )
                 dual_spine_data.spine_GluSnFr_activity = g_a

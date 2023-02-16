@@ -63,9 +63,16 @@ def distance_coactivity_rate_analysis(
     if constrain_matrix is not None:
         if len(constrain_matrix.shape) == 1:
             constrain_matrix = constrain_matrix.reshape(-1, 1)
+            duration = np.sum(constrain_matrix)
+        else:
+            duration = [
+                np.sum(constrain_matrix[:, i]) for i in range(constrain_matrix.shape[1])
+            ]
         activity_matrix = spine_activity * constrain_matrix
+
     else:
         activity_matrix = spine_activity
+        duration = spine_activity.shape[0]
 
     # Set up output variables
     coactivity_matrix = np.zeros((bin_num, spine_activity.shape[1]))
@@ -88,6 +95,10 @@ def distance_coactivity_rate_analysis(
             curr_coactivity = []
             curr_correlation = []
             curr_spine = s_activity[:, spine]
+            if type(duration) == list:
+                dur = duration[spine] / sampling_rate
+            else:
+                dur = duration / sampling_rate
 
             # Calculate coactivity with each other spine
             for partner in range(s_activity.shape[1]):
@@ -115,7 +126,7 @@ def distance_coactivity_rate_analysis(
                     partner_spine = s_activity[:, partner]
 
                 coactivity_rate = calculate_coactivity(
-                    curr_spine, partner_spine, sampling_rate, norm=norm
+                    curr_spine, partner_spine, dur, norm=norm
                 )
                 correlation, _ = stats.pearsonr(curr_spine, partner_spine)
                 curr_coactivity.append(coactivity_rate)
@@ -166,9 +177,8 @@ def distance_coactivity_rate_analysis(
     )
 
 
-def calculate_coactivity(spine_1, spine_2, sampling_rate, norm):
+def calculate_coactivity(spine_1, spine_2, duration, norm):
     """Helper function to calculate spine coactivity rate between two spines"""
-    duration = len(spine_1) / sampling_rate
     coactivity = spine_1 * spine_2
     events = np.nonzero(np.diff(coactivity) == 1)[0]
     event_num = len(events)

@@ -2,6 +2,7 @@
 
 import os
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -142,6 +143,7 @@ def plot_swarm_bar_plot(
     s_colors="mediumblue",
     s_size=5,
     s_alpha=0.8,
+    plot_ind=True,
     ahlines=None,
     save=False,
     save_path=None,
@@ -209,35 +211,25 @@ def plot_swarm_bar_plot(
     elif err_type == "std":
         data_sems = [np.nanstd(i) for i in data_points]
     elif err_type == "CI":
-        num_p = len(data_points[0])
         data_sems = []
-        if num_p <= 30:
-            for data in data_points:
-                ci = stats.t.interval(
-                    alpha=0.95,
-                    df=len(data) - 1,
-                    loc=np.nanmean(data),
-                    scale=stats.sem(data, nan_policy="omit"),
-                )
-
-                # ci = sm.DescrStatsW(data).tconfint_mean()
-                s = np.array([ci[0], ci[1]]).reshape(-1, 1)
-                data_sems.append(s)
-        else:
-            for data in data_points:
-                ci = stats.norm.interval(
-                    alpha=0.95,
-                    loc=np.nanmean(data),
-                    scale=stats.sem(data, nan_policy="omit"),
-                )
-                s = np.array([ci[0], ci[1]]).reshape(-1, 1)
-                data_sems.append(s)
-
-    data_df = pd.DataFrame.from_dict(data_dict, orient="index")
-    data_df = data_df.T
+        for i, data in enumerate(data_points):
+            d = (data,)
+            bootstrap = stats.bootstrap(
+                d, np.nanmedian, confidence_level=0.95, method="percentile"
+            )
+            low = data_mean[i] - bootstrap.confidence_interval.low
+            high = bootstrap.confidence_interval.high - data_mean[i]
+            sem = np.array([low, high]).reshape(-1, 1)
+            data_sems.append(sem)
+        data_sems = np.hstack(data_sems)
 
     # Plot the points
-    sns.stripplot(data=data_df, palette=s_colors, alpha=s_alpha, zorder=0, size=s_size)
+    if plot_ind == True:
+        data_df = pd.DataFrame.from_dict(data_dict, orient="index")
+        data_df = data_df.T
+        sns.stripplot(
+            data=data_df, palette=s_colors, alpha=s_alpha, zorder=0, size=s_size
+        )
 
     # Plot means
     plt.bar(
@@ -378,24 +370,16 @@ def plot_grouped_swarm_bar_plot(
             elif err_type == "std":
                 data_err.append(np.nanstd(data))
             elif err_type == "CI":
-                num_p = len(data)
-                if num_p <= 30:
-                    ci = stats.t.interval(
-                        alpha=0.95,
-                        df=len(data) - 1,
-                        loc=np.nanmean(data),
-                        scale=stats.sem(data, nan_policy="omit"),
-                    )
-                    s = np.array([ci[0], ci[1]]).reshape(-1, 1)
-                    data_err.append(s)
-                else:
-                    ci = stats.norm.interval(
-                        alpha=0.95,
-                        loc=np.nanmean(data),
-                        scale=stats.sem(data, nan_policy="omit"),
-                    )
-                    s = np.array([ci[0], ci[1]]).reshape(-1, 1)
-                    data_err.append(s)
+                d = (data,)
+                bootstrap = stats.bootstrap(
+                    d, np.nanmedian, confidence_level=0.95, method="percentile"
+                )
+                low = np.nanmedian(data) - bootstrap.confidence_interval.low
+                high = bootstrap.confidence_interval.high - np.nanmedian(data)
+                sem = np.array([low, high]).reshape(-1, 1)
+                data_err.append(sem)
+    if err_type == "CI":
+        data_err = np.hstack(data_err)
 
     # Make the plot
     fig = plt.figure(figsize=figsize)
@@ -463,15 +447,13 @@ def plot_grouped_swarm_bar_plot(
 
 def mean_and_lines_plot(
     data_dict,
-    plot_ind=True,
+    plot_ind=None,
     figsize=(5, 5),
     title=None,
     xtitle=None,
     ytitle=None,
     m_color="mediumblue",
-    l_colors="mediumblue",
     ylim=None,
-    l_alpha=0.5,
     save=False,
     save_path=None,
 ):
@@ -505,9 +487,6 @@ def mean_and_lines_plot(
             
             save_path - str specifying where to save the figure
     """
-    # Make list of colors if only one is provided
-    if type(l_colors) == str:
-        l_colors = [l_colors for i in range(len(list(data_dict.values())[0]))]
 
     # Make the figure
     fig = plt.figure(figsize=figsize)
@@ -519,7 +498,6 @@ def mean_and_lines_plot(
     data_points = list(data_dict.values())
     data_mean = [np.nanmean(i) for i in data_points]
     data_sems = [stats.sem(i, nan_policy="omit") for i in data_points]
-
     # Plot means
     ax.errorbar(
         x,
@@ -531,9 +509,17 @@ def mean_and_lines_plot(
         ecolor=m_color,
     )
     # Plot the individual values
-    if plot_ind:
+    if plot_ind == "line":
+        colors = sns.color_palette("Blues", as_cmap=True)
+        colors = [mcolors.rgb2hex(colors(i)) for i in range(colors.N)]
+        counts = np.linspace(
+            start=50, stop=len(colors) - 1, num=len(data_points[0])
+        ).astype(int)
         for i, data in enumerate(list(zip(*data_points))):
-            plt.plot(x, data, color=l_colors[i], alpha=l_alpha)
+            plt.plot(x, data, color=colors[counts[i]])
+    elif plot_ind == "scatter":
+        data_df = pd.DataFrame.from_dict(data_dict, orient="index")
+        sns.stripplot(data=data_df, color=m_color, alpha=0.3, zorder=0, size=10)
 
     # Format axes
     sns.despine()
@@ -541,7 +527,8 @@ def mean_and_lines_plot(
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
     ax.set_ylabel(ytitle)
     ax.set_xlabel(xtitle)
-    ax.set_xticks(ticks=x, labels=groups)
+    ax.set_xticks(ticks=x)
+    ax.set_xticklabels(labels=groups)
 
     fig.tight_layout()
 
@@ -634,7 +621,7 @@ def plot_mean_activity_traces(
         labels=[activity_window[0], 0, activity_window[1]],
     )
     plt.tick_params(axis="both", which="both", direction="in", length=4)
-    plt.legend(bbox_to_anchor=(1.04, 1))
+    # plt.legend(bbox_to_anchor=(1.04, 1))
     fig.tight_layout()
     if save:
         if save_path is None:
@@ -801,12 +788,14 @@ def plot_multi_mean_activity_traces(
 def plot_histogram(
     data,
     bins,
+    stat="frequency",
     avlines=None,
     title=None,
     xtitle=None,
     figsize=(5, 5),
     color="mediumblue",
     alpha=0.4,
+    max_x=None,
     save=False,
     save_path=None,
 ):
@@ -835,15 +824,19 @@ def plot_histogram(
 
     plt.figure(figsize=figsize)
     if type(data) == list:
+        b = np.histogram(np.hstack(data), bins=bins)[1]
         for d, c in zip(data, color):
-            plt.hist(d, bins, color=c, alpha=alpha)
+            sns.histplot(data=d, bins=b, color=c, alpha=alpha, stat=stat)
     else:
-        plt.hist(data, bins, color=color, alpha=alpha)
+        # if max_x is not None:
+        #    data = data[data < max_x]
+        sns.histplot(data=data, bins=bins, color=color, alpha=alpha, stat=stat)
     if avlines:
         for line in avlines:
             plt.axvline(line, linestyle="--", color="black")
     plt.title(title)
     plt.xlabel(xtitle)
+    sns.despine()
 
     plt.tight_layout()
 
@@ -858,7 +851,8 @@ def plot_spine_coactivity_distance(
     data_dict,
     bins,
     colors,
-    title_suff=None,
+    m_size,
+    title=None,
     figsize=(5, 5),
     ylim=None,
     ytitle=None,
@@ -888,19 +882,29 @@ def plot_spine_coactivity_distance(
 
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot()
-    title = "Distance-depdendent spine coactivity"
-    if title_suff:
-        title = title + " " + title_suff
     ax.set_title(title)
     x = list(range(len(bins)))
 
     for i, (key, value) in enumerate(data_dict.items()):
         mean = np.nanmean(value, axis=1)
         sem = stats.sem(value, axis=1, nan_policy="omit")
-
-        ax.errorbar(
-            x, mean, yerr=sem, color=colors[i], linestyle="-", label=key,
-        )
+        if m_size is None:
+            ax.errorbar(
+                x, mean, yerr=sem, color=colors[i], linestyle="-", label=key,
+            )
+        else:
+            ax.errorbar(
+                x,
+                mean,
+                yerr=sem,
+                color=colors[i],
+                marker="o",
+                markerfacecolor="white",
+                markeredgecolor=colors[i],
+                markersize=m_size,
+                linestyle="-",
+                label=key,
+            )
 
     plt.xticks(ticks=x, labels=bins)
     plt.xlabel("Distance (um)")
@@ -1019,8 +1023,10 @@ def plot_spine_heatmap(
             ax=ax,
         )
         x = np.linspace(activity_window[0], activity_window[1], data_t.shape[1])
+        t = np.linspace(0, activity_window[1] - activity_window[0], data_t.shape[1])
         xticks = np.unique(x.astype(int))
-        plt.xticks(ticks=xticks, labels=xticks)
+        t = np.unique(t.astype(int))
+        plt.xticks(ticks=t * 60, labels=xticks)
         plt.xlabel("Time (s)")
         hax.patch.set_edgecolor("black")
         hax.patch.set_linewidth("2.5")

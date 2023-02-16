@@ -35,12 +35,12 @@ class Pre_Coactivity_Plasticity:
         if type(data) == list:
             dataset = data[0]
             subsequent_flags = data[1].spine_flags
-            subsequent_volumes = data[1].spine_volumes
+            subsequent_volumes = data[1].spine_volume_um
         elif isinstance(data, object):
             if data.followup_volumes is not None:
                 dataset = data
                 subsequent_flags = data.followup_flags
-                subsequent_volumes = data.followup_volumes
+                subsequent_volumes = data.followup_volumes_um
             else:
                 raise Exception("Data must have followup data containing spine volumes")
 
@@ -72,7 +72,7 @@ class Pre_Coactivity_Plasticity:
     def analyze_plasticity(self, dataset, subsequent_flags, subsequent_volumes):
         """Method to calculate spine volume change and classify plasticity"""
 
-        volume_data = [dataset.spine_volumes, subsequent_volumes]
+        volume_data = [dataset.spine_volumes_um, subsequent_volumes]
         flag_list = [dataset.spine_flags, subsequent_flags]
         relative_volumes, spine_idxs = calculate_volume_change(
             volume_data, flag_list, norm=self.vol_norm, days=None, exclude=self.exclude,
@@ -130,7 +130,7 @@ class Pre_Coactivity_Plasticity:
         volume_type,
         CI=None,
         figsize=(5, 5),
-        ytitle=None,
+        xtitle=None,
         xlim=None,
         ylim=None,
         face_color="mediumblue",
@@ -157,19 +157,19 @@ class Pre_Coactivity_Plasticity:
                 volume = np.log10(self.relative_volumes)
             else:
                 volume = self.relative_volumes
-            xtitle = "\u0394" + " spine volume"
+            ytitle = "\u0394" + " spine volume"
         elif volume_type == "volume_um":
             volume = self.spine_volumes_um
-            xtitle = "spine area (um)"
+            ytitle = "spine area (um)"
         elif volume_type == "volume":
             volume = self.spine_volumes
-            xtitle = "spine area (au)"
+            ytitle = "spine area (au)"
 
         volume = volume[non_nan]
 
         sp.plot_sns_scatter_correlation(
-            volume,
             variable,
+            volume,
             CI,
             title=variable_name,
             xtitle=xtitle,
@@ -508,6 +508,7 @@ class Pre_Coactivity_Plasticity:
         group_type,
         figsize=(5, 5),
         colors=["darkorange", "forestgreen", "silver"],
+        m_size=None,
         ylim=None,
         ytitle=None,
         test_method="holm-sidak",
@@ -529,7 +530,8 @@ class Pre_Coactivity_Plasticity:
             data_dict=data_dict,
             bins=bins,
             colors=colors,
-            title_suff=group_type,
+            m_size=m_size,
+            title=variable_name,
             figsize=figsize,
             ylim=ylim,
             ytitle=ytitle,
@@ -601,6 +603,7 @@ class Pre_Coactivity_Plasticity:
         max_lim=None,
         group_type=None,
         exclude=None,
+        stat="frequency",
         avlines=None,
         figsize=(5, 5),
         color="mediumblue",
@@ -610,7 +613,12 @@ class Pre_Coactivity_Plasticity:
     ):
         """method to plot data variables as a histogram"""
         if group_type is None:
-            data = getattr(self, variable)
+            data = np.array(getattr(self, variable))
+            data = data[~np.isnan(data)]
+            if avlines == "mean":
+                avlines = [np.nanmean(data)]
+            elif avlines == "median":
+                avlines = [np.nanmean(data)]
         else:
             groups = self.group_dict[group_type]
             data = []
@@ -620,13 +628,20 @@ class Pre_Coactivity_Plasticity:
                 else:
                     d = getattr(self, variable)
                     g = getattr(self, group)
-                    group_data = compress(d, g)
+                    group_data = np.array(list(compress(d, g)))
+                    group_data = group_data[~np.isnan(group_data)]
                     data.append(group_data)
+            if avlines == "mean":
+                avlines = [np.nanmean(x) for x in data]
+            elif avlines == "median":
+                avlines = [np.nanmedian(x) for x in data]
         if max_lim is not None:
             data = data[data < max_lim]
+        print(type(data))
         sp.plot_histogram(
             data,
             bins,
+            stat,
             avlines,
             variable,
             variable,
@@ -735,6 +750,91 @@ class Pre_Coactivity_Plasticity:
             save_path=save_path,
         )
 
+    def plot_cluster_data(
+        self,
+        real_variable,
+        shuff_variable,
+        group_type,
+        mean_type,
+        err_type,
+        hist_bins,
+        hist_size=(5, 5),
+        bar_size=(5, 5),
+        ytitle=None,
+        colors=["darkorange", "forestgreen", "silver"],
+        err_colors="black",
+        b_width=0.5,
+        hist_alpha=0.3,
+        b_alpha=0.5,
+        save=False,
+        save_path=None,
+    ):
+        """Method for plotting histogram and barplots for cluster-relevant data for each group"""
+        # Get relevant data
+        real_data = getattr(self, real_variable)
+        shuff_data = getattr(self, shuff_variable)
+        spine_groups = self.group_dict[group_type]
+
+        print("-------------------- Comparisions to Chance ----------------------")
+        # make comparisons to shuffles
+        for i, group in enumerate(spine_groups):
+            group_spines = getattr(self, group)
+            group_real = real_data[group_spines]
+            group_shuff_m = shuff_data[:, group_spines]
+            group_shuff = group_shuff_m.flatten().astype(np.float32)
+            # Remove nan values
+            group_real = group_real[~np.isnan(group_real)]
+            group_shuff = group_shuff[~np.isnan(group_shuff)]
+
+            # Do statistics
+            ## Get shuffle medians
+            real_median = np.nanmedian(group_real)
+            shuff_medians = np.nanmedian(group_shuff_m, axis=1)
+            frac_above = np.sum(shuff_medians <= real_median) / len(shuff_medians)
+            frac_below = np.sum(shuff_medians >= real_median) / len(shuff_medians)
+            print(
+                f"{group} vs. shuffle: p above = {frac_above}  p below = {frac_below}"
+            )
+
+            # Plot histogram
+            sp.plot_histogram(
+                data=[group_real, group_shuff],
+                bins=hist_bins,
+                stat="probability",
+                avlines=None,
+                title=group,
+                xtitle=ytitle,
+                figsize=hist_size,
+                color=[colors[i], "silver"],
+                alpha=hist_alpha,
+                save=save,
+                save_path=save_path,
+            )
+            # Plot swarm bar plot
+            sp.plot_swarm_bar_plot(
+                data_dict={"real": group_real, "shuff": shuff_medians},
+                mean_type=mean_type,
+                err_type=err_type,
+                figsize=bar_size,
+                title=group,
+                xtitle=None,
+                ytitle=ytitle,
+                ylim=None,
+                b_colors=[colors[i], "silver"],
+                b_edgecolors="black",
+                b_err_colors=err_colors,
+                b_width=b_width,
+                b_linewidth=0,
+                b_alpha=b_alpha,
+                s_colors="black",
+                s_size=5,
+                s_alpha=0.1,
+                plot_ind=False,
+                ahlines=None,
+                save=save,
+                save_path=save_path,
+            )
+
     def save_output(self):
         """Method to save the output"""
         if self.save_path is None:
@@ -750,7 +850,7 @@ class Pre_Coactivity_Plasticity:
         else:
             a_type = "dFoF"
         if self.parameters["Volume Norm"]:
-            norm = "norm"
+            norm = "_norm"
         else:
             norm = ""
         thresh = self.threshold

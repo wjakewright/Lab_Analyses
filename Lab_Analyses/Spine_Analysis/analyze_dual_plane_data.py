@@ -94,8 +94,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
         dend_activity, _, _ = event_detection(
             dend_dFoF,
             threshold=2,
-            lower_threshold=1,
-            lower_limit=0.2,
+            lower_threshold=0,
+            lower_limit=None,
             sampling_rate=sampling_rate,
         )
         soma_activity, _, _ = event_detection(

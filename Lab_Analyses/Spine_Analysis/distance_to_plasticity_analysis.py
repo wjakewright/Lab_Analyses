@@ -62,7 +62,7 @@ def distance_to_plasticity_analysis(
     )
     temp_rel_vols = np.array(list(temp_rel_vols.values())[-1])
     enlarged, shrunken, _ = classify_plasticity(
-        temp_rel_vols, threshold=0.5, norm=False
+        temp_rel_vols, threshold=0.3, norm=False
     )
 
     # Put them into array matching positions

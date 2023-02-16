@@ -3,7 +3,9 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis.absolute_dendrite_coactivity import (
     absolute_dendrite_coactivity,
 )
-from Lab_Analyses.Spine_Analysis.calculate_cluster_score import calculate_cluster_score
+from Lab_Analyses.Spine_Analysis.calculate_cluster_activity import (
+    calculate_cluster_activity,
+)
 from Lab_Analyses.Spine_Analysis.distance_coactivity_rate_analysis import (
     distance_coactivity_rate_analysis,
 )
@@ -190,7 +192,7 @@ def dendrite_spine_coactivity_analysis(
 
     # Calculate cluster score
     print("--- Calculating Cluster Score")
-    cluster_score, coactive_num = calculate_cluster_score(
+    cluster_score, coactive_num = calculate_cluster_activity(
         spine_activity,
         spine_positions,
         spine_flags,

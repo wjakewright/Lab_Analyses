@@ -241,10 +241,6 @@ def analyze_nearby_coactive_spines(
             sampling_rate - int specifying the sampling rate
             
     """
-    if glu_constants is not None:
-        NORM = True
-    else:
-        NORM = False
 
     # Get window in frames
     before_f = int(activity_window[0] * sampling_rate)
@@ -282,7 +278,7 @@ def analyze_nearby_coactive_spines(
                 activity = nearby_spine_a[event + before_f : event + after_f]
                 dFoF = nearby_spine_dFoF[event + before_f : event + after_f]
                 calcium = nearby_spine_ca[event + before_f : event + after_f]
-                if NORM:
+                if glu_constants[i] is not None:
                     dFoF = dFoF / glu_constants[i]
                     calcium = calcium / ca_constants[i]
                 coactive_s_traces.append(dFoF)

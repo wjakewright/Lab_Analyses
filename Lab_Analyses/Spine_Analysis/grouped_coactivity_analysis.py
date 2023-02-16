@@ -4,14 +4,14 @@ from itertools import compress
 
 import numpy as np
 
+from Lab_Analyses.Spine_Analysis.calculate_cluster_variable import (
+    calculate_cluster_variable,
+)
 from Lab_Analyses.Spine_Analysis.dendrite_spine_coactivity_analysis import (
     dendrite_spine_coactivity_analysis,
 )
 from Lab_Analyses.Spine_Analysis.distance_dependent_variable_analysis import (
     distance_dependent_variable_analysis,
-)
-from Lab_Analyses.Spine_Analysis.distance_to_plasticity_analysis import (
-    distance_to_plasticity_analysis,
 )
 from Lab_Analyses.Spine_Analysis.local_spine_coactivity import (
     local_spine_coactivity_analysis,
@@ -21,6 +21,10 @@ from Lab_Analyses.Spine_Analysis.spine_utilities import (
     batch_spine_volume_norm_constant,
     find_spine_classes,
     load_spine_datasets,
+)
+from Lab_Analyses.Spine_Analysis.structural_plasticity import (
+    calculate_volume_change,
+    classify_plasticity,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.movement_related_activity import movement_related_activity
@@ -98,11 +102,6 @@ def grouped_coactivity_analysis(
                     dataset[f"Post {day}"].corrected_spine_volume
                 )
                 followup_flags = dataset[f"Post {day}"].spine_flags
-                # remove new spines from the followup to get the same length of data
-                new_followup_spines = find_spine_classes(followup_flags, "New Spine")
-                new_followup_spines = [not x for x in new_followup_spines]
-                followup_volume = followup_volume[new_followup_spines]
-                followup_flags = compress(followup_flags, new_followup_spines)
             else:
                 data = dataset[day]
                 followup_volume = None
@@ -126,8 +125,10 @@ def grouped_coactivity_analysis(
             spine_flags = data.spine_flags
             spine_volume = np.array(data.corrected_spine_volume)
             spine_positions = np.array(data.spine_positions)
-            print(len(spine_volume))
-            print(len(followup_volume))
+            if followup:
+                # remove new spines from followup
+                followup_volume = followup_volume[: len(spine_volume)]
+                followup_flags = followup_flags[: len(spine_flags)]
 
             ## Spine activity and movement encoding
             spine_activity = data.spine_GluSnFr_activity
@@ -153,7 +154,7 @@ def grouped_coactivity_analysis(
                 d_num = dendrite_tracker
                 dendrite_tracker = dendrite_tracker + 1
                 for s in spines:
-                    dendrite_number[:, s] = d_num
+                    dendrite_number[s] = d_num
                     dendrite_activity[:, s] = data.dendrite_calcium_activity[:, d]
                     dendrite_dFoF[:, s] = data.dendrite_calcium_processed_dFoF[:, d]
                     movement_dendrites[s] = data.movement_dendrites[d]
@@ -283,6 +284,11 @@ def grouped_coactivity_analysis(
                 avg_nearby_move_stereotypy,
                 avg_nearby_move_reliability,
                 avg_nearby_move_specificity,
+                avg_nearby_rwd_move_corr,
+                avg_nearby_rwd_move_stereotypy,
+                avg_nearby_rwd_move_reliability,
+                avg_nearby_rwd_move_specificity,
+                avg_nearby_frac_rwd_movements,
                 avg_nearby_coactivity_rate,
                 relative_local_coactivity_rate,
                 frac_local_coactivity_participation,
@@ -306,6 +312,7 @@ def grouped_coactivity_analysis(
                 movement_spines,
                 non_movement_spines,
                 lever_active,
+                lever_active_rwd,
                 lever_unactive,
                 lever_force_smooth,
                 activity_window,
@@ -423,8 +430,8 @@ def grouped_coactivity_analysis(
                 spine_move_correlation,
                 spine_move_stereotypy,
                 spine_move_reliability,
-                _,
-                _,
+                spine_LMP_reliability,
+                spine_LMP_specificity,
                 spine_move_specificity,
                 learned_movement,
             ) = quantify_movement_quality(
@@ -435,6 +442,30 @@ def grouped_coactivity_analysis(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
+            (
+                _,
+                spine_rwd_movements,
+                _,
+                spine_rwd_move_correlation,
+                spine_rwd_move_stereotypy,
+                spine_rwd_move_reliability,
+                spine_rwd_LMP_reliability,
+                spine_rwd_LMP_specificity,
+                spine_rwd_move_specificity,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                spine_activity,
+                lever_active_rwd,
+                lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            spine_frac_rwd_movements = [
+                len(rwd) / len(move)
+                for rwd, move in zip(spine_rwd_movements, spine_movements)
+            ]
+            spine_frac_rwd_movements = np.array(spine_frac_rwd_movements)
             ## Dendrites
             (
                 _,
@@ -463,8 +494,8 @@ def grouped_coactivity_analysis(
                 local_move_correlation,
                 local_move_stereotypy,
                 local_move_reliability,
-                _,
-                _,
+                local_LMP_reliability,
+                local_LMP_specificity,
                 local_move_specificity,
                 _,
             ) = quantify_movement_quality(
@@ -475,6 +506,30 @@ def grouped_coactivity_analysis(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
+            (
+                _,
+                local_rwd_movements,
+                _,
+                local_rwd_move_correlation,
+                local_rwd_move_stereotypy,
+                local_rwd_move_reliability,
+                local_rwd_LMP_reliability,
+                local_rwd_LMP_specificity,
+                local_rwd_move_specificity,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                local_coactivity_matrix,
+                lever_active_rwd,
+                lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            local_frac_rwd_movements = [
+                len(rwd) / len(move)
+                for rwd, move in zip(local_rwd_movements, local_movements)
+            ]
+            local_frac_rwd_movements = np.array(local_frac_rwd_movements)
             ## Spine-Dendrite Coactivity
             (
                 _,
@@ -483,8 +538,8 @@ def grouped_coactivity_analysis(
                 spine_dend_move_correlation,
                 spine_dend_move_stereotypy,
                 spine_dend_move_reliability,
-                _,
-                _,
+                spine_dend_LMP_reliability,
+                spine_dend_LMP_specificity,
                 spine_dend_move_specificity,
                 _,
             ) = quantify_movement_quality(
@@ -495,6 +550,30 @@ def grouped_coactivity_analysis(
                 threshold=0.5,
                 sampling_rate=sampling_rate,
             )
+            (
+                _,
+                spine_dend_rwd_movements,
+                _,
+                spine_dend_rwd_move_correlation,
+                spine_dend_rwd_move_stereotypy,
+                spine_dend_rwd_move_reliability,
+                spine_dend_rwd_LMP_reliability,
+                spine_dend_rwd_LMP_specificity,
+                spine_dend_rwd_move_specificity,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                spine_dend_coactivity_matrix,
+                lever_active,
+                lever_force_smooth,
+                threshold=0.5,
+                sampling_rate=sampling_rate,
+            )
+            spine_dend_frac_rwd_movements = [
+                len(rwd) / len(move)
+                for rwd, move in zip(spine_dend_rwd_movements, spine_dend_movements)
+            ]
+            spine_dend_frac_rwd_movements = np.array(spine_dend_frac_rwd_movements)
 
             learned_movement_pattern = [
                 learned_movement for i in range(spine_activity.shape[1])
@@ -509,8 +588,28 @@ def grouped_coactivity_analysis(
                 bin_size=5,
                 relative=False,
             )
+            distance_rwd_movement_corr, _ = distance_dependent_variable_analysis(
+                spine_rwd_move_correlation,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                relative=False,
+            )
             relative_distance_movement_corr, _ = distance_dependent_variable_analysis(
                 spine_move_correlation,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                relative=True,
+                relative_method="negative",
+            )
+            (
+                relative_distance_rwd_movement_corr,
+                _,
+            ) = distance_dependent_variable_analysis(
+                spine_rwd_move_correlation,
                 spine_positions,
                 spine_flags,
                 spine_groupings,
@@ -529,19 +628,92 @@ def grouped_coactivity_analysis(
             )
 
             # Examine distance to plastic spines
+            ## Get relative volumes
+            relative_volumes = np.zeros(spine_activity.shape[1]) * np.nan
+            rel_vols, stable_idxs = calculate_volume_change(
+                [spine_volume_um, followup_volume_um],
+                [spine_flags, followup_flags],
+                norm=False,
+                days=None,
+                exclude="Shaft Spine",
+            )
+            relative_volumes[stable_idxs] = np.array(list(rel_vols.values())[1])
+            enlarged, shrunken, _ = classify_plasticity(
+                relative_volumes, 0.3, norm=False
+            )
+            ## Perform the clustering analysis
             (
-                distance_relative_volume,
-                ind_distance_relative_volume,
-                distance_enlarged_probability,
-                distance_shrunken_probability,
-            ) = distance_to_plasticity_analysis(
-                spine_volume,
-                followup_volume,
-                spine_flags,
-                followup_flags,
+                local_relative_volume,
+                shuff_relative_volume,
+                relative_vol_score,
+            ) = calculate_cluster_variable(
+                relative_volumes,
                 spine_positions,
+                spine_flags,
                 spine_groupings,
-                bin_size=5,
+                method="local",
+                iterations=10000,
+            )
+            (
+                local_nn_enlarged,
+                shuff_nn_enlarged,
+                nn_enlarged_score,
+            ) = calculate_cluster_variable(
+                np.array(enlarged),
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                method="nearest",
+                iterations=10000,
+            )
+            (
+                local_nn_shrunken,
+                shuff_nn_shrunken,
+                nn_shrunken_score,
+            ) = calculate_cluster_variable(
+                np.array(shrunken),
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                method="nearest",
+                iterations=10000,
+            )
+            # Cluster movement parameters
+            (
+                nearby_LMP_corr,
+                shuff_LMP_corr,
+                LMP_corr_score,
+            ) = calculate_cluster_variable(
+                spine_move_correlation,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                method="local",
+                iterations=10000,
+            )
+            (
+                nearby_rwd_LMP_corr,
+                shuff_rwd_LMP_corr,
+                rwd_LMP_corr_score,
+            ) = calculate_cluster_variable(
+                spine_rwd_move_correlation,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                method="local",
+                iterations=10000,
+            )
+            (
+                nearby_frac_rwd_move,
+                shuff_frac_rwd_move,
+                frac_rwd_move_score,
+            ) = calculate_cluster_variable(
+                spine_frac_rwd_movements,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                method="local",
+                iterations=10000,
             )
 
             # Generate FOV and Mouse ID lists
@@ -749,6 +921,21 @@ def grouped_coactivity_analysis(
             grouped_data["avg_nearby_movement_specificity"].append(
                 avg_nearby_move_specificity
             )
+            grouped_data["avg_nearby_rwd_movement_correlation"].append(
+                avg_nearby_rwd_move_corr
+            )
+            grouped_data["avg_nearby_rwd_movement_stereotypy"].append(
+                avg_nearby_rwd_move_stereotypy
+            )
+            grouped_data["avg_nearby_rwd_movement_reliability"].append(
+                avg_nearby_rwd_move_reliability
+            )
+            grouped_data["avg_nearby_rwd_movement_specificity"].append(
+                avg_nearby_rwd_move_specificity
+            )
+            grouped_data["avg_nearby_frac_rwd_movements"].append(
+                avg_nearby_frac_rwd_movements
+            )
             grouped_data["avg_nearby_coactivity_rate"].append(
                 avg_nearby_coactivity_rate
             )
@@ -916,6 +1103,24 @@ def grouped_coactivity_analysis(
             grouped_data["spine_movement_stereotypy"].append(spine_move_stereotypy)
             grouped_data["spine_movement_reliability"].append(spine_move_reliability)
             grouped_data["spine_movement_specificity"].append(spine_move_specificity)
+            grouped_data["spine_LMP_reliability"].append(spine_LMP_reliability)
+            grouped_data["spine_LMP_specificity"].append(spine_LMP_specificity)
+            grouped_data["spine_rwd_movements"].append(spine_rwd_movements)
+            grouped_data["spine_rwd_movement_correlation"].append(
+                spine_rwd_move_correlation
+            )
+            grouped_data["spine_rwd_movement_stereotypy"].append(
+                spine_rwd_move_stereotypy
+            )
+            grouped_data["spine_rwd_movement_reliability"].append(
+                spine_rwd_move_reliability
+            )
+            grouped_data["spine_rwd_movement_specificity"].append(
+                spine_rwd_move_specificity
+            )
+            grouped_data["spine_rwd_LMP_reliability"].append(spine_rwd_LMP_reliability)
+            grouped_data["spine_rwd_LMP_specificity"].append(spine_rwd_LMP_specificity)
+            grouped_data["spine_frac_rwd_movements"].append(spine_frac_rwd_movements)
             grouped_data["dend_movements"].append(dend_movements)
             grouped_data["dend_movement_correlation"].append(dend_move_correlation)
             grouped_data["dend_movement_stereotypy"].append(dend_move_steretypy)
@@ -926,6 +1131,24 @@ def grouped_coactivity_analysis(
             grouped_data["local_movement_stereotypy"].append(local_move_stereotypy)
             grouped_data["local_movement_reliability"].append(local_move_reliability)
             grouped_data["local_movement_specificity"].append(local_move_specificity)
+            grouped_data["local_LMP_reliability"].append(local_LMP_reliability)
+            grouped_data["local_LMP_specificity"].append(local_LMP_specificity)
+            grouped_data["local_rwd_movements"].append(local_rwd_movements)
+            grouped_data["local_rwd_movement_correlation"].append(
+                local_rwd_move_correlation
+            )
+            grouped_data["local_rwd_movement_stereotypy"].append(
+                local_rwd_move_stereotypy
+            )
+            grouped_data["local_rwd_movement_reliability"].append(
+                local_rwd_move_reliability
+            )
+            grouped_data["local_rwd_movement_specificity"].append(
+                local_rwd_move_specificity
+            )
+            grouped_data["local_rwd_LMP_reliability"].append(local_rwd_LMP_reliability)
+            grouped_data["local_rwd_LMP_specificity"].append(local_rwd_LMP_specificity)
+            grouped_data["local_frac_rwd_movements"].append(local_frac_rwd_movements)
             grouped_data["spine_dend_movements"].append(spine_dend_movements)
             grouped_data["spine_dend_movement_correlation"].append(
                 spine_dend_move_correlation
@@ -939,9 +1162,43 @@ def grouped_coactivity_analysis(
             grouped_data["spine_dend_movement_specificity"].append(
                 spine_dend_move_specificity
             )
+            grouped_data["spine_dend_LMP_reliability"].append(
+                spine_dend_LMP_reliability
+            )
+            grouped_data["spine_dend_LMP_specificity"].append(
+                spine_dend_LMP_specificity
+            )
+            grouped_data["spine_dend_rwd_movements"].append(spine_dend_rwd_movements)
+            grouped_data["spine_dend_rwd_movement_correlation"].append(
+                spine_dend_rwd_move_correlation
+            )
+            grouped_data["spine_dend_rwd_movement_stereotypy"].append(
+                spine_dend_rwd_move_stereotypy
+            )
+            grouped_data["spine_dend_rwd_movement_reliability"].append(
+                spine_dend_rwd_move_reliability
+            )
+            grouped_data["spine_dend_rwd_movement_specificity"].append(
+                spine_dend_rwd_move_specificity
+            )
+            grouped_data["spine_dend_rwd_LMP_reliability"].append(
+                spine_dend_rwd_LMP_reliability
+            )
+            grouped_data["spine_dend_rwd_LMP_specificity"].append(
+                spine_dend_rwd_LMP_specificity
+            )
+            grouped_data["spine_dend_frac_rwd_movements"].append(
+                spine_dend_frac_rwd_movements
+            )
             grouped_data["distance_movement_corr"].append(distance_movement_corr)
+            grouped_data["distance_rwd_movement_corr"].append(
+                distance_rwd_movement_corr
+            )
             grouped_data["relative_distance_movement_corr"].append(
                 relative_distance_movement_corr
+            )
+            grouped_data["relative_distance_rwd_movement_corr"].append(
+                relative_distance_rwd_movement_corr
             )
             grouped_data["rel_spine_vs_dend_move_corr"].append(
                 rel_spine_vs_dend_move_corr
@@ -950,16 +1207,24 @@ def grouped_coactivity_analysis(
             grouped_data["spine_to_nearby_correlation"].append(
                 spine_to_nearby_correlation
             )
-            grouped_data["distance_relative_volume"].append(distance_relative_volume)
-            grouped_data["ind_distance_relative_volume"].append(
-                ind_distance_relative_volume
-            )
-            grouped_data["distance_enlarged_probability"].append(
-                distance_enlarged_probability
-            )
-            grouped_data["distance_shrunken_probability"].append(
-                distance_shrunken_probability
-            )
+            grouped_data["local_relative_volume"].append(local_relative_volume)
+            grouped_data["shuff_relative_volume"].append(shuff_relative_volume)
+            grouped_data["relative_vol_score"].append(relative_vol_score)
+            grouped_data["local_nn_enlarged"].append(local_nn_enlarged)
+            grouped_data["shuff_nn_enlarged"].append(shuff_nn_enlarged)
+            grouped_data["nn_enlarged_score"].append(nn_enlarged_score)
+            grouped_data["local_nn_shrunken"].append(local_nn_shrunken)
+            grouped_data["shuff_nn_shrunken"].append(shuff_nn_shrunken)
+            grouped_data["nn_shrunken_score"].append(nn_shrunken_score)
+            grouped_data["nearby_LMP_corr"].append(nearby_LMP_corr)
+            grouped_data["shuff_LMP_corr"].append(shuff_LMP_corr)
+            grouped_data["LMP_corr_score"].append(LMP_corr_score)
+            grouped_data["nearby_rwd_LMP_corr"].append(nearby_rwd_LMP_corr)
+            grouped_data["shuff_rwd_LMP_corr"].append(shuff_rwd_LMP_corr)
+            grouped_data["rwd_LMP_corr_score"].append(rwd_LMP_corr_score)
+            grouped_data["nearby_frac_rwd_move"].append(nearby_frac_rwd_move)
+            grouped_data["shuff_frac_rwd_move"].append(shuff_frac_rwd_move)
+            grouped_data["frac_rwd_move_score"].append(frac_rwd_move_score)
 
     # Merge all the data across FOVs and mice
     regrouped_data = {}
@@ -1127,6 +1392,19 @@ def grouped_coactivity_analysis(
         avg_nearby_movement_specificity=regrouped_data[
             "avg_nearby_movement_specificity"
         ],
+        avg_nearby_rwd_movement_correlation=regrouped_data[
+            "avg_nearby_rwd_movement_correlation"
+        ],
+        avg_nearby_rwd_movement_stereotypy=regrouped_data[
+            "avg_nearby_rwd_movement_stereotypy"
+        ],
+        avg_nearby_rwd_movement_reliability=regrouped_data[
+            "avg_nearby_rwd_movement_reliability"
+        ],
+        avg_nearby_rwd_movement_specificity=regrouped_data[
+            "avg_nearby_rwd_movement_specificity"
+        ],
+        avg_nearby_frac_rwd_movements=regrouped_data["avg_nearby_frac_rwd_movements"],
         avg_nearby_coactivity_rate=regrouped_data["avg_nearby_coactivity_rate"],
         relative_local_coactivity_rate=regrouped_data["relative_local_coactivity_rate"],
         frac_local_coactivity_participation=regrouped_data[
@@ -1251,6 +1529,16 @@ def grouped_coactivity_analysis(
         spine_movement_stereotypy=regrouped_data["spine_movement_stereotypy"],
         spine_movement_reliability=regrouped_data["spine_movement_reliability"],
         spine_movement_specificity=regrouped_data["spine_movement_specificity"],
+        spine_LMP_reliability=regrouped_data["spine_LMP_reliability"],
+        spine_LMP_specificity=regrouped_data["spine_LMP_specificity"],
+        spine_rwd_movements=regrouped_data["spine_rwd_movements"],
+        spine_rwd_movement_correlation=regrouped_data["spine_rwd_movement_correlation"],
+        spine_rwd_movement_stereotypy=regrouped_data["spine_rwd_movement_stereotypy"],
+        spine_rwd_movement_reliability=regrouped_data["spine_rwd_movement_reliability"],
+        spine_rwd_movement_specificity=regrouped_data["spine_rwd_movement_specificity"],
+        spine_rwd_LMP_reliability=regrouped_data["spine_rwd_LMP_reliability"],
+        spine_rwd_LMP_specificity=regrouped_data["spine_rwd_LMP_specificity"],
+        spine_frac_rwd_movements=regrouped_data["spine_frac_rwd_movements"],
         dend_movements=regrouped_data["dend_movements"],
         dend_movement_correlation=regrouped_data["dend_movement_correlation"],
         dend_movement_stereotypy=regrouped_data["dend_movement_stereotypy"],
@@ -1261,6 +1549,16 @@ def grouped_coactivity_analysis(
         local_movement_stereotypy=regrouped_data["local_movement_stereotypy"],
         local_movement_reliability=regrouped_data["local_movement_reliability"],
         local_movement_specificity=regrouped_data["local_movement_specificity"],
+        local_LMP_reliability=regrouped_data["local_LMP_reliability"],
+        local_LMP_specificity=regrouped_data["local_LMP_specificity"],
+        local_rwd_movements=regrouped_data["local_rwd_movements"],
+        local_rwd_movement_correlation=regrouped_data["local_rwd_movement_correlation"],
+        local_rwd_movement_stereotypy=regrouped_data["local_rwd_movement_stereotypy"],
+        local_rwd_movement_reliability=regrouped_data["local_rwd_movement_reliability"],
+        local_rwd_movement_specificity=regrouped_data["local_rwd_movement_specificity"],
+        local_rwd_LMP_reliability=regrouped_data["local_rwd_LMP_reliability"],
+        local_rwd_LMP_specificity=regrouped_data["local_rwd_LMP_specificity"],
+        local_frac_rwd_movements=regrouped_data["local_frac_rwd_movements"],
         spine_dend_movements=regrouped_data["spine_dend_movements"],
         spine_dend_movement_correlation=regrouped_data[
             "spine_dend_movement_correlation"
@@ -1272,17 +1570,53 @@ def grouped_coactivity_analysis(
         spine_dend_movement_specificity=regrouped_data[
             "spine_dend_movement_specificity"
         ],
+        spine_dend_LMP_reliability=regrouped_data["spine_dend_LMP_reliability"],
+        spine_dend_LMP_specificity=regrouped_data["spine_dend_LMP_specificity"],
+        spine_dend_rwd_movements=regrouped_data["spine_dend_rwd_movements"],
+        spine_dend_rwd_movement_correlation=regrouped_data[
+            "spine_dend_rwd_movement_correlation"
+        ],
+        spine_dend_rwd_movement_stereotypy=regrouped_data[
+            "spine_dend_rwd_movement_stereotypy"
+        ],
+        spine_dend_rwd_movement_reliability=regrouped_data[
+            "spine_dend_rwd_movement_reliability"
+        ],
+        spine_dend_rwd_movement_specificity=regrouped_data[
+            "spine_dend_rwd_movement_specificity"
+        ],
+        spine_dend_rwd_LMP_reliability=regrouped_data["spine_dend_rwd_LMP_reliability"],
+        spine_dend_rwd_LMP_specificity=regrouped_data["spine_dend_rwd_LMP_specificity"],
+        spine_dend_frac_rwd_movements=regrouped_data["spine_dend_frac_rwd_movements"],
         distance_movement_corr=regrouped_data["distance_movement_corr"],
+        distance_rwd_movement_corr=regrouped_data["distance_rwd_movement_corr"],
         relative_distance_movement_corr=regrouped_data[
             "relative_distance_movement_corr"
+        ],
+        relative_distance_rwd_movement_corr=regrouped_data[
+            "relative_distance_rwd_movement_corr"
         ],
         rel_spine_vs_dend_move_corr=regrouped_data["rel_spine_vs_dend_move_corr"],
         spine_to_dend_correlation=regrouped_data["spine_to_dend_correlation"],
         spine_to_nearby_correlation=regrouped_data["spine_to_nearby_correlation"],
-        distance_relative_volume=regrouped_data["distance_relative_volume"],
-        ind_distance_relative_volume=regrouped_data["ind_distance_relative_volume"],
-        distance_enlarged_probability=regrouped_data["distance_enlarged_probability"],
-        distance_shrunken_probability=regrouped_data["distance_shrunken_probability"],
+        local_relative_volume=regrouped_data["local_relative_volume"],
+        shuff_relative_volume=regrouped_data["shuff_relative_volume"],
+        relative_vol_score=regrouped_data["relative_vol_score"],
+        local_nn_enlarged=regrouped_data["local_nn_enlarged"],
+        shuff_nn_enlarged=regrouped_data["shuff_nn_enlarged"],
+        nn_enlarged_score=regrouped_data["nn_enlarged_score"],
+        local_nn_shrunken=regrouped_data["local_nn_shrunken"],
+        shuff_nn_shrunken=regrouped_data["shuff_nn_shrunken"],
+        nn_shrunken_score=regrouped_data["nn_shrunken_score"],
+        nearby_LMP_corr=regrouped_data["nearby_LMP_corr"],
+        shuff_LMP_corr=regrouped_data["shuff_LMP_corr"],
+        LMP_corr_score=regrouped_data["LMP_corr_score"],
+        nearby_rwd_LMP_corr=regrouped_data["nearby_rwd_LMP_corr"],
+        shuff_rwd_LMP_corr=regrouped_data["shuff_rwd_LMP_corr"],
+        rwd_LMP_corr_score=regrouped_data["rwd_LMP_corr_score"],
+        nearby_frac_rwd_move=regrouped_data["nearby_frac_rwd_move"],
+        shuff_frac_rwd_move=regrouped_data["shuff_frac_rwd_move"],
+        frac_rwd_move_score=regrouped_data["frac_rwd_move_score"],
     )
 
     # Save section
