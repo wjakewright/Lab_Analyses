@@ -355,3 +355,24 @@ def neg_num_relative_difference(pre_values, post_values):
 
     return np.array(rel_diff)
 
+
+def pad_2d_arrays_rows(array_list):
+    """Helper function to pad 2d arrays along axis 0"""
+    # get max length of arrays
+    lengths = [x.shape[0] for x in array_list]
+    max_len = np.max(lengths)
+    max_idx = np.argmax(lengths)
+    # Pad arrays
+    new_arrays = []
+    for i, arr in enumerate(array_list):
+        if i == max_idx:
+            new_arrays.append(arr)
+            continue
+        diff = max_len - arr.shape[0]
+        pad_arr = np.pad(
+            arr, ((0, diff), (0, 0)), mode="constant", constant_values=np.nan
+        )
+        new_arrays.append(pad_arr)
+
+    return new_arrays
+
