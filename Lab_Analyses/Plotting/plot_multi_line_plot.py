@@ -8,7 +8,7 @@ from scipy import stats
 from Lab_Analyses.Plotting.adjust_axes import adjust_axes
 
 sns.set()
-sns.set_style()
+sns.set_style("ticks")
 
 
 def plot_multi_line_plot(
@@ -127,6 +127,9 @@ def plot_multi_line_plot(
     # Adjust the axes
     ax.set_xticks(ticks=x, labels=x_vals)
     adjust_axes(ax, minor_ticks, xtitle, ytitle, None, ylim, tick_len, axis_width)
+
+    # Make the legend
+    ax.legend(loc="upper right", borderaxespad=0, fontsize="xx-small", frameon=False)
 
     # Save section
     if save:
