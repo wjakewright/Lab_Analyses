@@ -7,7 +7,7 @@ import seaborn as sns
 from Lab_Analyses.Plotting.adjust_axes import adjust_axes
 
 sns.set()
-sns.set_style()
+sns.set_style("ticks")
 
 
 def plot_histogram(
@@ -76,9 +76,13 @@ def plot_histogram(
         data = [d[~np.isnan(d)] for d in data]
         b = np.histogram(np.hstack(data), bins=bins)[1]
         for d, c in zip(data, color):
-            sns.histplot(data=d, bins=b, color=c, alpha=alpha, stat=stat, ax=ax)
+            sns.histplot(
+                data=d, bins=b, color=c, alpha=alpha, stat=stat, ax=ax,
+            )
     else:
-        sns.histplot(data=data, bins=bins, color=color, alpha=alpha, stat=stat, ax=ax)
+        sns.histplot(
+            data=data, bins=bins, color=color, alpha=alpha, stat=stat, ax=ax,
+        )
 
     # Add vertical lines if given
     if avlines:
