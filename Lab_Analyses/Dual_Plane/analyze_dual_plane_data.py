@@ -4,9 +4,8 @@ import numpy as np
 import scipy.signal as sysignal
 
 from Lab_Analyses.Dual_Plane.dual_plane_dataclass import Dual_Plane_Data
-from Lab_Analyses.Dual_Plane.preprocess_dual_plane_data import (
-    preprocess_dual_plane_data,
-)
+from Lab_Analyses.Dual_Plane.preprocess_dual_plane_data import \
+    preprocess_dual_plane_data
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
 from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
@@ -48,10 +47,12 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     fraction_somatic_active = []
     dendrite_amplitudes = []
     somatic_amplitudes = []
+    other_dendrite_amplitudes = []
     dendrite_decay = []
     somatic_decay = []
     dendrite_amplitudes_norm = []
     somatic_amplitudes_norm = []
+    other_dendrite_amplitudes_norm = []
     coactive_dendrite_traces = []
     noncoactive_dendrite_traces = []
     coactive_somatic_traces = []
@@ -65,18 +66,18 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     for dataset in datasets:
         # Preprocess the data
         processed_data = preprocess_dual_plane_data(dataset)
-        dendrite_activity.append(processed_data["dendritic_activity"])
+        dendrite_activity.append(processed_data["dendrite_activity"])
         somatic_activity.append(processed_data["somatic_activity"])
-        dendrite_dFoF.append(processed_data["dendritic_dFoF"])
+        dendrite_dFoF.append(processed_data["dendrite_dFoF"])
         somatic_dFoF.append(processed_data["somatic_dFoF"])
-        dendrite_dFoF_norm.append(processed_data["dendritic_dFoF_norm"])
+        dendrite_dFoF_norm.append(processed_data["dendrite_dFoF_norm"])
         somatic_dFoF_norm.append(processed_data["somatic_dFoF_norm"])
         # Analyze each dendrite seperately
-        for dend in range(processed_data["dendritic_dFoF"].shape[1]):
+        for dend in range(processed_data["dendrite_dFoF"].shape[1]):
             # Pull the relevant data
-            d_dFoF = processed_data["dendritic_dFoF"][:, dend]
-            d_dFoF_norm = processed_data["dendritic_dFoF_norm"][:, dend]
-            d_activity = processed_data["dendritic_activity"][:, dend]
+            d_dFoF = processed_data["dendrite_dFoF"][:, dend]
+            d_dFoF_norm = processed_data["dendrite_dFoF_norm"][:, dend]
+            d_activity = processed_data["dendrite_activity"][:, dend]
             s_dFoF = processed_data["somatic_dFoF"][:, dend]
             s_dFoF_norm = processed_data["somatic_dFoF_norm"][:, dend]
             s_activity = processed_data["somatic_activity"][:, dend]
@@ -93,7 +94,7 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
             dend_events = get_activity_timestamps(d_activity)
             dend_events = [x[0] for x in dend_events]
 
-            # Get amps and taus of paired events
+            # Get amps and taus of paired events b/w dendrite and soma
             ## Using raw traces
             (dend_amps, soma_amps, dend_tau, soma_tau) = analyze_paired_events(
                 dend_events,
@@ -110,6 +111,29 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
                 activity_window=(-1, 4),
                 sampling_rate=processed_data["sampling_rate"],
             )
+
+            ## Get amps and taus of paired events between dendrite and other dendrites
+            other_dend_amps = []
+            other_dend_amps_norm = []
+            for partner in range(processed_data["dendrite_dFoF"].shape[1]):
+                if dend == partner:
+                    continue
+                (_, other_amps, _, _) = analyze_paired_events(
+                    dend_events,
+                    d_dFoF,
+                    processed_data["dendrite_dFoF"][:, partner],
+                    activity_window=(-1, 4),
+                    sampling_rate=processed_data["sampling_rate"],
+                )
+                (_, other_amps_norm, _, _) = analyze_paired_events(
+                    dend_events,
+                    d_dFoF_norm,
+                    processed_data["dendrite_dFoF_norm"][:, partner],
+                    activity_window=(-1, 4),
+                    sampling_rate=processed_data["sampling_rate"],
+                )
+                other_dend_amps.append(other_amps)
+                other_dend_amps_norm.append(other_amps_norm)
 
             # Get coactive and noncoactive traces
             (
@@ -142,10 +166,12 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
             fraction_somatic_active.append(frac_soma_active)
             dendrite_amplitudes.append(dend_amps)
             somatic_amplitudes.append(soma_amps)
+            other_dendrite_amplitudes.append(other_dend_amps)
             dendrite_decay.append(dend_tau)
             somatic_decay.append(soma_tau)
             dendrite_amplitudes_norm.append(dend_amps_norm)
             somatic_amplitudes_norm.append(soma_amps_norm)
+            other_dendrite_amplitudes_norm.append(other_dend_amps_norm)
             coactive_dendrite_traces.append(coactive_dend_traces)
             noncoactive_dendrite_traces.append(noncoactive_dend_traces)
             coactive_somatic_traces.append(coactive_soma_traces)
@@ -175,18 +201,21 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
         fraction_somatic_active=fraction_somatic_active,
         dendrite_amplitudes=dendrite_amplitudes,
         somatic_amplitudes=somatic_amplitudes,
+        other_dendrite_amplitudes=other_dendrite_amplitudes,
         dendrite_decay=dendrite_decay,
         somatic_decay=somatic_decay,
         dendrite_amplitudes_norm=dendrite_amplitudes_norm,
         somatic_amplitudes_norm=somatic_amplitudes_norm,
+        other_dendrite_amplitudes_norm=other_dendrite_amplitudes_norm,
         coactive_dendrite_traces=coactive_dendrite_traces,
-        noncoactive_dendrite_traces=noncoactive_dend_traces,
+        noncoactive_dendrite_traces=noncoactive_dendrite_traces,
         coactive_somatic_traces=coactive_somatic_traces,
         noncoactive_somatic_traces=noncoactive_somatic_traces,
         coactive_dendrite_traces_norm=coactive_dendrite_traces_norm,
         noncoactive_dendrite_traces_norm=noncoactive_dendrite_traces_norm,
         coactive_somatic_traces_norm=coactive_somatic_traces_norm,
         noncoactive_somatic_traces_norm=noncoactive_somatic_traces_norm,
+        sampling_rate=processed_data["sampling_rate"],
     )
 
     # save sectino
@@ -265,12 +294,16 @@ def analyze_paired_events(
         d_amps = d_props["peak_heights"]
         s_amps = s_props["peak_heights"]
         ## Dendrite
-        d_max_amp = np.max(d_amps)
-        d_max_peak = d_peaks[np.argmax(d_amps)]
+        try:
+            d_max_amp = np.max(d_amps)
+            d_max_peak = d_peaks[np.argmax(d_amps)]
+        except ValueError:
+            d_max_amp = np.max(d_smooth)
+            d_max_peak = np.argmax(d_smooth)
         ## Soma
         try:
             s_max_amp = np.max(s_amps)
-            s_max_peak = s_peaks(np.argmax(s_amps))
+            s_max_peak = s_peaks[np.argmax(s_amps)]
         except ValueError:
             s_max_amp = s_smooth[d_max_peak]
             s_max_peak = d_max_peak
@@ -293,7 +326,7 @@ def analyze_paired_events(
         dend_amps[event] = d_max_amp
         dend_tau[event] = d_half_max
         soma_amps[event] = s_max_amp
-        dend_amps[event] = d_max_amp
+        soma_tau[event] = s_half_max
 
     return dend_amps, soma_amps, dend_tau, soma_tau
 
