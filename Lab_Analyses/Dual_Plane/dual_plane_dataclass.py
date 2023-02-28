@@ -17,10 +17,12 @@ class Dual_Plane_Data:
     fraction_somatic_active: np.ndarray
     dendrite_amplitudes: list
     somatic_amplitudes: list
+    other_dendrite_amplitudes: list
     dendrite_decay: list
     somatic_decay: list
     dendrite_amplitudes_norm: list
     somatic_amplitudes_norm: list
+    other_dendrite_amplitudes_norm: list
     coactive_dendrite_traces: list
     noncoactive_dendrite_traces: list
     coactive_somatic_traces: list
@@ -28,5 +30,5 @@ class Dual_Plane_Data:
     coactive_dendrite_traces_norm: list
     noncoactive_dendrite_traces_norm: list
     coactive_somatic_traces_norm: list
-    noncoactive_dendrite_traces: list
+    noncoactive_somatic_traces_norm: list
     sampling_rate: int
