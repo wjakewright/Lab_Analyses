@@ -7,6 +7,7 @@ from itertools import compress
 
 import numpy as np
 import scipy.signal as sysignal
+
 from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
@@ -247,24 +248,18 @@ def align_lever_behavior(
             rewarded_movement_binary.append(rwd_movement_binary)
             rewarded_movement_force.append(rwd_movement_force)
 
-        ## Append all the behavioral results
-        trial_time.append(times)
-        results.append(result)
-        lever_force_resample_frames.append(force_resample_frames)
-        lever_force_smooth_frames.append(force_smooth_frames)
-        lever_active_frames.append(active_frames)
-        lever_velocity_envelope_frames.append(velocity_envelope_frames)
-        binary_cue_list.append(binary_cue)
-        result_delivery_list.append(result_delivery)
 
         ########### ACTIVITY SECTION ##############
         # Check what type of activity data is included in imaging data file
 
         if imaging_data.processed_fluorescence:
-            fluo = align_activity(
-                imaging_data.processed_fluorescence, behavior_data.behavior_frames[i]
-            )
-            fluorescence.append(fluo)
+            try:
+                fluo = align_activity(
+                    imaging_data.processed_fluorescence, behavior_data.behavior_frames[i]
+                )
+                fluorescence.append(fluo)
+            except IndexError:
+                continue
 
         if imaging_data.dFoF:
             dfof = align_activity(imaging_data.dFoF, behavior_data.behavior_frames[i])
@@ -293,6 +288,16 @@ def align_lever_behavior(
                 imaging_data.deconvolved_spikes, behavior_data.behavior_frames[i]
             )
             spikes.append(deconv)
+        
+        ## Append all the behavioral results
+        trial_time.append(times)
+        results.append(result)
+        lever_force_resample_frames.append(force_resample_frames)
+        lever_force_smooth_frames.append(force_smooth_frames)
+        lever_active_frames.append(active_frames)
+        lever_velocity_envelope_frames.append(velocity_envelope_frames)
+        binary_cue_list.append(binary_cue)
+        result_delivery_list.append(result_delivery)
 
     ############ OUTPUT SECTION ###############
     # Generate the output dataclasses
