@@ -18,10 +18,10 @@ def adjust_axes(ax, minor_ticks, xtitle, ytitle, xlim, ylim, tick_len, axis_widt
     elif minor_ticks == "y":
         ax.yaxis.set_minor_locator(mticks.AutoMinorLocator(n=2))
     ## Add axes labels and set limits
-    ax.set_xlabel(xtitle, labelpad=15)
+    ax.set_xlabel(xtitle, labelpad=5)
     if xlim:
         ax.set_xlim(left=xlim[0], right=xlim[1])
-    ax.set_ylabel(ytitle, labelpad=15)
+    ax.set_ylabel(ytitle, labelpad=5)
     if ylim:
         ax.set_ylim(bottom=ylim[0], top=ylim[1])
     ## Adjust tick marks
