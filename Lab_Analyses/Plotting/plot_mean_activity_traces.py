@@ -88,7 +88,7 @@ def plot_mean_activity_traces(
         for m, s, c, n in zip(means, sems, colors, group_names):
             x = np.linspace(activity_window[0], activity_window[1], len(m))
             ax.plot(x, m, color=c, label=n)
-            ax.fill_between(x, m - s, m + s, color=s, alpha=0.2)
+            ax.fill_between(x, m - s, m + s, color=c, alpha=0.2)
     # Add vertical lines if provided
     if avlines:
         for line in avlines:
@@ -115,10 +115,8 @@ def plot_mean_activity_traces(
     ax.set_title(title)
 
     # Adjust the axes
-    ax.set_xticks(
-        ticks=[activity_window[0], 0, activity_window[1]],
-        labels=[activity_window[0], 0, activity_window[1]],
-    )
+    ax.set_xticks(ticks=[activity_window[0], 0, activity_window[1]],)
+    ax.set_xticklabels(labels=[activity_window[0], 0, activity_window[1]])
     adjust_axes(ax, minor_ticks, "Time (s)", ytitle, None, ylim, tick_len, axis_width)
 
     # Save section
