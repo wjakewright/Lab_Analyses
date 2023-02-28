@@ -148,7 +148,13 @@ def plot_swarm_bar_plot(
         data_df = pd.DataFrame.from_dict(data_dict, orient="index")
         data_df = data_df.T
         sns.stripplot(
-            data=data_df, palette=s_colors, alpha=s_alpha, zorder=0, size=s_size, ax=ax
+            data=data_df,
+            palette=s_colors,
+            alpha=s_alpha,
+            zorder=0,
+            size=s_size,
+            ax=ax,
+            clip_on=False,
         )
 
     # Plot means and error
