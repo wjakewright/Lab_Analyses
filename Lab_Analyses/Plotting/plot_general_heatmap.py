@@ -5,6 +5,8 @@ import matplotlib.ticker as mticks
 import numpy as np
 import seaborn as sns
 
+sns.set()
+sns.set_style("ticks")
 
 def plot_general_heatmap(
     data,
