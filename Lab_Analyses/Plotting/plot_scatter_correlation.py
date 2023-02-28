@@ -105,9 +105,12 @@ def plot_scatter_correlation(
     # Perform correlatino of the data
     corr, p = stats.pearsonr(x_var, y_var)
     # Add correlation to the title
-    fig_title = f"{title}\nr = {corr}  p = {p}"
+    fig_title = f"{title}\nr = {corr:.3}  p = {p:.3E}"
     ax.set_title(fig_title)
-
+    if xlim:
+        ax.set_xlim(xlim[0], xlim[1])
+    if ylim:
+        ax.set_ylim(ylim[0], ylim[1])
     # Set up some styles
     line_kws = {"linewidth": line_width, "color": line_color}
     ## uniform scatter points
@@ -118,10 +121,17 @@ def plot_scatter_correlation(
             "alpha": s_alpha,
             "linewidth": edge_width,
             "s": marker_size,
+            "clip_on": False,
         }
         ## Make the scatter plot
         sns.regplot(
-            x=x_var, y=y_var, ci=CI, scatter_kws=scatter_kws, line_kws=line_kws, ax=ax
+            x=x_var,
+            y=y_var,
+            ci=CI,
+            scatter_kws=scatter_kws,
+            line_kws=line_kws,
+            ax=ax,
+            truncate=False,
         )
 
     ## density-based scatter
@@ -132,9 +142,18 @@ def plot_scatter_correlation(
             "edgecolor": None,
             "cmap": "plasma",
             "s": marker_size,
+            "clip_on": False,
         }
         ax.scatter(x=x_var, y=y_var, c=face_colors, s=marker_size, cmap="plasma")
-        sns.regplot(x=x_var, y=y_var, ci=CI, scatter=False, line_kws=line_kws, ax=ax)
+        sns.regplot(
+            x=x_var,
+            y=y_var,
+            ci=CI,
+            scatter=False,
+            line_kws=line_kws,
+            ax=ax,
+            truncate=False,
+        )
 
     # Adjust the axes
     adjust_axes(ax, minor_ticks, xtitle, ytitle, xlim, ylim, tick_len, axis_width)
