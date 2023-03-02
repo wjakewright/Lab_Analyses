@@ -519,8 +519,8 @@ def plot_amplitude_correlations(
     )
     ## Soma-Dend all
     plot_scatter_correlation(
-        x_var=all_dend_amps,
-        y_var=all_soma_amps,
+        x_var=all_soma_amps,
+        y_var=all_dend_amps,
         CI=None,
         title="All Soma-Dendrite Pairs",
         xtitle=f"Soma {title_suffix}",
