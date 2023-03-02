@@ -147,7 +147,7 @@ def load_spine_datasets(mouse_id, days, fov_type, followup):
         datasets = []
         fnames = next(os.walk(FOV_path))[2]
         for day in days:
-            load_name = [x for x in fnames if day in x and "followup not in x"][0]
+            load_name = [x for x in fnames if day in x and "followup" not in x][0]
             data = load_pickle([load_name], path=FOV_path)[0]
             datasets.append(data)
         used_days = list(days)
