@@ -376,3 +376,25 @@ def pad_2d_arrays_rows(array_list):
 
     return new_arrays
 
+
+def pad_array_to_length(array, length, axis=0, value=np.nan):
+    """Helper function to pad arrays to a given length"""
+    if type(array) == list:
+        if np.isnan(value):
+            value = None
+        padded_array = [value for i in range(length)]
+        for i, v in enumerate(array):
+            padded_array[i] = v
+        return padded_array
+
+    if len(array.shape) == 1:
+        padded_array = np.zeros(length) * value
+        padded_array[: len(array)] = array
+    elif len(array.shape) == 2:
+        if axis == 0:
+            padded_array = np.zeros((length, array.shape[1])) * value
+        elif axis == 1:
+            padded_array = np.zeros((array.shape[0], length)) * value
+        padded_array[: array.shape[0], : array.shape[1]] = array
+
+    return padded_array
