@@ -18,6 +18,7 @@ def organize_dual_spine_data(
     channels={"GluSnFr": "GreenCh", "Calcium": "RedCh"},
     fov_type="apical",
     redetection=False,
+    reprocess=True,
     save=False,
     followup=True,
 ):
@@ -34,6 +35,9 @@ def organize_dual_spine_data(
             fov_type - str specifying whether to process apical or basal FOVs
             
             redetection - boolean specifying whether to redo the event detection
+
+            reprocess - boolean specifying whether to reprocess or try to load the
+                        data
             
             save - boolean specifying if the data is to be saved or not
             
@@ -84,6 +88,46 @@ def organize_dual_spine_data(
             session_path = os.path.join(FOV_path, session)
             fnames = next(os.walk(session_path))[2]
             fnames = [x for x in fnames if "imaging_data" in x]
+            align_save_path = os.path.join(mouse_path, "aligned_data", FOV, session)
+            # Check reprocessing
+            if reprocess is False:
+                print(f"--Checking if {FOV} {session} aligned data exists...")
+                behavior_exists = get_existing_files(
+                    path=align_save_path, name="aligned_behavior", includes=True,
+                )
+                GluSnFr_exists = get_existing_files(
+                    path=align_save_path, name="GluSnFr_aligned", includes=True,
+                )
+                Calcium_exists = get_existing_files(
+                    path=align_save_path, name="Calcium_aligned", includes=True,
+                )
+                if (
+                    behavior_exists is not None
+                    and GluSnFr_exists is not None
+                    and Calcium_exists is not None
+                ):
+                    print(f"--Loading aligned datasets")
+                    aligned_behaivor = load_pickle(
+                        [behavior_exists], path=align_save_path
+                    )[0]
+                    aligned_GluSnFr = load_pickle(
+                        [GluSnFr_exists], path=align_save_path
+                    )[0]
+                    aligned_Calcium = load_pickle(
+                        [Calcium_exists], path=align_save_path
+                    )[0]
+                    GluSnFr_datasets.append(aligned_GluSnFr)
+                    Calcium_datasets.append(aligned_Calcium)
+                    behavior_datasets.append(aligned_behaivor)
+                    if followup:
+                        followup_fname = os.path.join(
+                            session_path, [x for x in fnames if "structural" in x][0]
+                        )
+                        followup_datasets.append(load_pickle([followup_fname])[0])
+                    else:
+                        followup_datasets.append(None)
+                    continue
+
             # Get the specific files
             ## Get activity data files
             GluSnFr_fname = os.path.join(
@@ -118,9 +162,8 @@ def organize_dual_spine_data(
             behavior_data.sess_name = session
 
             # Align the imaging and behavior data
-            align_save_path = os.path.join(mouse_path, "aligned_data", FOV, session)
             print(f"--- aligning {session} datasets")
-            align_behaivor, aligned_GluSnFr = align_lever_behavior(
+            aligned_behaivor, aligned_GluSnFr = align_lever_behavior(
                 behavior_data,
                 GluSnFr_data,
                 save=align_save[0],
@@ -137,11 +180,10 @@ def organize_dual_spine_data(
             ## Store the data
             GluSnFr_datasets.append(aligned_GluSnFr)
             Calcium_datasets.append(aligned_Calcium)
-            behavior_datasets.append(align_behaivor)
+            behavior_datasets.append(aligned_behaivor)
 
         # Find how much to pad the data by in order to match across days
         max_spine_num = np.max([len(x.ROI_ids["Spine"]) for x in GluSnFr_datasets])
-
         # Process and save each session
         for session, GluSnFr, Calcium, behavior, followup_data in zip(
             sessions,
@@ -150,6 +192,19 @@ def organize_dual_spine_data(
             behavior_datasets,
             followup_datasets,
         ):
+            save_path = os.path.join(mouse_path, "spine_data_test", FOV)
+            # Check reprocessing
+            if reprocess is False:
+                print(f"--Checking if {FOV} {session} spine data exists...")
+                exists = get_existing_files(
+                    path=save_path,
+                    name=f"{FOV}_{session}_dual_spine_data",
+                    includes=True,
+                )
+                if exists is not None:
+                    print(f"--{FOV} {session} data already organized")
+                    continue
+            # Organize the data if it doesn't exists
             print(f"--- organizing {session} datasets")
             # Pull relevant behavioral data
             ## Lever and cue information
@@ -428,7 +483,6 @@ def organize_dual_spine_data(
             # Save section
             if save:
                 # Setup the save path
-                save_path = os.path.join(mouse_path, "spine_data_test", FOV)
                 if not os.path.isdir(save_path):
                     os.makedirs(save_path)
                 # make the file name and save
