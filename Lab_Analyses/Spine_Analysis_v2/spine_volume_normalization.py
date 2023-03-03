@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import optimize, stats
@@ -11,10 +13,11 @@ from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
 from Lab_Analyses.Utilities.data_utilities import pad_array_to_length
 from Lab_Analyses.Utilities.mean_trace_functions import find_peak_amplitude
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def batch_spine_volume_normalization(
-    mice_list, day, fov_type, activity_type, plot=False
+    mice_list, day, fov_type, activity_type, zscore, plot=False
 ):
     """Function to handle calculating constants to normalize activity traces
         based on spine volume
@@ -28,6 +31,8 @@ def batch_spine_volume_normalization(
             
             activity_type - str specifying what type of data (GluSnFr or Calcium)
                             to analyze
+            
+            zscore - boolean specifying if the input data is zscored
             
             plot - boolean specifying whether to plot the before and after relationship
                     between activity and volume
@@ -120,6 +125,13 @@ def batch_spine_volume_normalization(
             fov_idxs = [f == fov for f in FOV_list]
             idxs = np.nonzero(np.array(mouse_idxs) * np.array(fov_idxs))[0]
             constant_dict[mouse][fov] = norm_constants[idxs]
+
+    # Save section
+    save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
+    if not os.path.isdir(save_path):
+        os.makedirs(save_path)
+    fname = f"{fov_type}_{zscore}_{activity_type}_normalization_constants"
+    save_pickle(fname, constant_dict, save_path)
 
     return constant_dict
 
