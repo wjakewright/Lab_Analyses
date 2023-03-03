@@ -23,6 +23,8 @@ def movement_related_activity(
             
             activity_window - tuple specifying the period around movement to analyze in sec
     """
+
+    ### Should I alter this to look only at movements the roi is active during?
     center_point = int(np.absolute(activity_window[0]) * sampling_rate)
 
     # Get timestamps for movement onsets
