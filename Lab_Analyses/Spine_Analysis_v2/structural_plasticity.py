@@ -1,6 +1,7 @@
 import numpy as np
 
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
+    find_present_spines,
     find_spine_classes,
     find_stable_spines_across_days,
 )
@@ -107,3 +108,83 @@ def classify_plasticity(relative_volumes, threshold=0.3, norm=False):
                 stable_spines[i] = True
 
     return enlarged_spines, shrunken_spines, stable_spines
+
+
+def calculate_spine_dynamics(
+    spine_flag_list, spine_positions_list, spine_groupings_list
+):
+    """Function to calculate the spine density and the fraction of new and 
+        eliminated spines along a given dendrite
+        
+        INPUT PARAMETERS
+            spine_flag_list - list lists containing the spine flags for each session
+            
+            spine_position_list - list of  np.array of the spine positions for each session
+            
+            spine_groupinglist - list of list of the spine groupings along the different
+                             dendrites for each session
+        
+        OUTPUT PARAMETERS
+            spine_density - list of np.array of the density of spines along the dendrite
+            
+            fraction_new_spines - list np.array of the fraction of new spines
+            
+            fraction_eliminated_spines - list np.array of the fraction of eliminated spines
+    """
+    # Set up the outputs
+    spine_density = []
+    fraction_new_spines = []
+    fraction_eliminated_spines = []
+
+    # Iterate through each session
+    for i, (flags, positions, groupings) in enumerate(
+        zip(spine_flag_list, spine_positions_list, spine_groupings_list)
+    ):
+        # First correct the carry over of the eliminated spines
+        if i != 0:
+            prev_flags = spine_flag_list[i - 1]
+            temp_flags = []
+            for prev, curr in zip(prev_flags, flags):
+                if "Eliminated Spine" in prev and "Eliminated Spine" in curr:
+                    temp_flags.append(["Absent"])
+                elif "Absent" in prev and "Absent" not in curr:
+                    if "Eliminated Spine" in curr:
+                        temp_flags.append(["Absent"])
+                    else:
+                        temp_flags.append(["New Spine"])
+                else:
+                    temp_flags.append(curr)
+        else:
+            temp_flags = flags
+
+        # Sort out the spine groupings
+        if type(groupings[0]) != list:
+            groupings = [groupings]
+
+        curr_density = np.zeros(len(groupings))
+        curr_frac_new = np.zeros(len(groupings))
+        curr_frac_elim = np.zeros(len(groupings))
+        # Iterate through each dendrite grouping
+        for j, spines in enumerate(groupings):
+            # Get the current flags
+            curr_flags = [x for i, x in enumerate(temp_flags) if i in spines]
+            # Calculate the spine density
+            present_spines = find_present_spines(curr_flags)
+            length = np.max(positions[spines]) - np.min(positions[spines])
+            curr_density[j] = np.sum(present_spines) / length
+
+            # Determine the fraction of new spines
+            new_spines = find_spine_classes(curr_flags, "New Spine")
+            curr_frac_new[j] = np.sum(new_spines) / np.sum(present_spines)
+
+            # Determine the fraction of eliminated spines
+            elim_spines = find_spine_classes(curr_flags, "Eliminated Spine")
+            curr_frac_elim[j] = np.sum(elim_spines) / np.sum(present_spines)
+
+        # Store the values
+        spine_density.append(curr_density)
+        fraction_new_spines.append(curr_frac_new)
+        fraction_eliminated_spines.append(curr_frac_elim)
+
+    return spine_density, fraction_new_spines, fraction_eliminated_spines
+
