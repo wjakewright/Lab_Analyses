@@ -338,6 +338,65 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
     return two_way_mixed_anova, posthoc_dict, posthoc_table
 
 
+def significant_vs_shuffle(real_values, shuffle_values, alpha, nan_policy="omit"):
+    """Function to test if real data is significantly different vs shuffled data
+    
+        INPUT PARAMETERS
+            real_values - np.array of the the real data
+            
+            shuffle_values - 2d np.array of the shuffle data. Each row represents a shuffle
+            
+            alpha - float speicfying the significance level
+
+            nan_policy - str specifying how to deal with nan values in shuffled data
+                        Accepts "omit" to omit values before determining rank and "zero"
+                        to zero the values before determining rank
+
+        OUTPUT PARAMETERS
+            ranks - np.array of the ranks of the real values vs the shuffles
+
+            significance - np.array of whether each value is sig greater or smaller
+                            vs the shuffles (-1 = smaller, 1 = greater, 0 = no diff)
+
+    """
+    UPPER = 100 - (alpha * 10)
+    LOWER = alpha * 10
+
+    # setup the outputs
+    ranks = []
+    significance = []
+
+    # Iterate through each real and shuffle values
+    for i, value in enumerate(real_values):
+        # Pull shuff data
+        shuff = shuffle_values[:, i]
+        # Check for nans
+        if np.isnan(value):
+            ranks.append(np.nan)
+            significance.append(np.nan)
+        ## Remove nan values from shuff
+        if np.sum(np.isnan(shuff)):
+            if nan_policy == "omit":
+                shuff = shuff[~np.isnan(shuff)]
+            elif nan_policy == "zero":
+                shuff[np.isnan(shuff)] = 0
+        # calculate the rank
+        rank = stats.percentileofscore(shuff, value)
+        # determine significance
+        if rank >= UPPER:
+            significance.append(1)
+        elif rank <= LOWER:
+            significance.append(-1)
+        else:
+            significance.append(0)
+
+    # Convert outputs to arrays
+    ranks = np.array(ranks)
+    significance = np.array(significance)
+
+    return ranks, significance
+
+
 def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method):
     """Function to determine if each ROI displays significant responses during
         a specifid event
