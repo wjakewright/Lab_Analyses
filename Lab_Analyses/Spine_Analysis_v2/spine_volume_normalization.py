@@ -13,7 +13,7 @@ from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
 from Lab_Analyses.Utilities.data_utilities import pad_array_to_length
 from Lab_Analyses.Utilities.mean_trace_functions import find_peak_amplitude
-from Lab_Analyses.Utilities.save_load_pickle import save_pickle
+from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
 def batch_spine_volume_normalization(
@@ -114,6 +114,7 @@ def batch_spine_volume_normalization(
         good_volumes,
         sampling_rate,
         activity_type,
+        zscore,
         iterations=1000,
         plot=plot,
     )
@@ -130,7 +131,11 @@ def batch_spine_volume_normalization(
     save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
-    fname = f"{fov_type}_{zscore}_{activity_type}_normalization_constants"
+    if zscore:
+        zname = "zscore"
+    else:
+        zname = "dFoF"
+    fname = f"{fov_type}_{zname}_{activity_type}_normalization_constants"
     save_pickle(fname, constant_dict, save_path)
 
     return constant_dict
@@ -142,6 +147,7 @@ def spine_volume_norm_constant(
     um_volumes,
     sampling_rate,
     activity_type,
+    zscore,
     iterations=1000,
     plot=False,
 ):
@@ -158,6 +164,8 @@ def spine_volume_norm_constant(
             sampling_rate - int specifying the imaging rate
 
             activity_type - str specifying the type of activity
+
+            zscore - boolean specifying whether to zscore the traces or not
             
             iterations - int specifying how many iterations to perform
 
@@ -169,6 +177,8 @@ def spine_volume_norm_constant(
     """
     # Find the max amplitudes for each trace when it is active
     max_amplitudes = np.zeros(activity_traces.shape[1])
+    if zscore:
+        dFoF_traces = d_utils.z_score(dFoF_traces)
     ## Go through each trace
     for i in range(activity_traces.shape[1]):
         ### If not activity skip
@@ -293,3 +303,30 @@ def plot_norm_constants(max_amplitudes, volumes, norm_constants, activity_type):
         save=False,
         save_path=None,
     )
+
+
+def load_norm_constants(fov_type, activity_type, signal_type):
+    """Helper function to search and load for the normalization constants
+        
+        INPUT PARAMETERS
+            fov_type - str specifying the type of FOV
+            
+            activity_type - boolean specifying whether the activity type is zscore
+                            or dFoF
+            
+            signal_type - str specifying if the signal is GluSnFr or Calcium
+    
+        OUTPUT PARAMETERS
+            normalization_constants - nested dict of the normalization constants
+    """
+    load_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
+    if activity_type:
+        aname = "zscore"
+    else:
+        aname = "dFoF"
+    fname = f"{fov_type}_{aname}_{signal_type}_normalization_constants"
+    load_name = os.path.join(load_path, fname)
+
+    normalization_constants = load_pickle([load_name])[0]
+
+    return normalization_constants
