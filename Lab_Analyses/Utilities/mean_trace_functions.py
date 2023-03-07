@@ -24,8 +24,8 @@ def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60
     DISTANCE = 0.5 * sampling_rate  ## minimum distance of 0.5 seconds
 
     # setup the output
-    trace_amplitudes = np.zeros(len(mean_traces))
-    trace_amplitudes_idx = np.zeros(len(mean_traces))
+    trace_amplitudes = np.zeros(len(mean_traces)) * np.nan
+    trace_amplitudes_idx = np.zeros(len(mean_traces)) * np.nan
 
     # Iterate through each trace
     for i, trace in enumerate(mean_traces):
@@ -42,8 +42,6 @@ def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60
         try:
             trace_peak = trace_peaks[np.argmax(trace_amps)]
         except ValueError:
-            trace_amplitudes[i] = np.nan
-            trace_amplitudes_idx[i] = np.nan
             continue
         # Get the max amplitude value
         if window:
