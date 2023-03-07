@@ -46,10 +46,16 @@ def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
         OUTPUT PARAMETERS
             refined_stamps - list of the refined timestamps
     """
+    # Determine if the input are tuples or not
+    if type(timestamps[0]) == tuple:
+        t_stamps = [x[0] for x in timestamps]
+    else:
+        t_stamps = timestamps
+
     refined_idxs = []
     before = np.absolute(window[0] * sampling_rate)
     after = np.absolute(window[1] * sampling_rate)
-    for stamp in timestamps:
+    for stamp in t_stamps:
         # Remove idx if before goes before start of trace
         if stamp - before < 0:
             refined_idxs.append(False)
