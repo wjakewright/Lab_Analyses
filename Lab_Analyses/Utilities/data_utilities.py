@@ -1,4 +1,5 @@
 """Module containing various functions that help with data handeling"""
+import random
 
 import numpy as np
 import pandas as pd
@@ -356,6 +357,13 @@ def neg_num_relative_difference(pre_values, post_values):
     return np.array(rel_diff)
 
 
+def normalized_relative_difference(pre_values, post_values):
+    """Method to calculate the normalized relative difference between two sets of values"""
+    rel_diff = (post_values - pre_values) / (post_values + pre_values)
+
+    return np.array(rel_diff)
+
+
 def pad_2d_arrays_rows(array_list):
     """Helper function to pad 2d arrays along axis 0"""
     # get max length of arrays
@@ -398,3 +406,35 @@ def pad_array_to_length(array, length, axis=0, value=np.nan):
         padded_array[: array.shape[0], : array.shape[1]] = array
 
     return padded_array
+
+
+def roll_2d_array(array, shift_range, axis=1):
+    """Function to roll each row or col of a 2d array independently
+
+        INPUT PARAMETERS
+            array - 2d np.array of the data to be rolled
+            
+            shfit_rate - tuple specifying the minimum and maximum range of the roll
+            
+            axis - int specifying which axis to roll
+
+        OUTPUT PARAMETERS
+            rolled_array - 2d np.array with each axis rolled
+        
+    """
+    # Set up the output
+    rolled_array = np.zeros(array.shape) * np.nan
+    # Iterate through each axis
+    for i in range(array.shape[axis]):
+        shift = random.randint(shift_range[0], shift_range[1])
+        if axis == 0:
+            d = np.copy(array[i, :])
+            rolled = np.roll(d, shift)
+            rolled_array[i, :] = rolled
+        elif axis == 1:
+            d = np.copy(array[:, i])
+            rolled = np.roll(d, shift)
+            rolled_array[:, i] = rolled
+
+    return rolled
+
