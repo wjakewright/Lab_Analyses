@@ -134,3 +134,92 @@ def load_spine_datasets(mouse_id, days, fov_type):
 
     return mouse_data
 
+
+def bin_by_position(data, positions, bins):
+    """Helper function to bin pairwise spine data by relative positions"""
+    binned_data = []
+
+    for i in range(len(bins)):
+        if i != len(bins) - 1:
+            idxs = np.nonzero((positions > bins[i]) & (positions <= bins[i + 1]))[0]
+            if idxs.size == 0:
+                binned_data.append(np.nan)
+                continue
+            binned_data.append(np.nanmean(data[idxs]))
+
+    return np.array(binned_data)
+
+
+def find_nearby_spines(spine_positions, spine_flags, spine_groupings, cluster_dist=5):
+    """Function to find the idxs of each spines neighbors
+    
+        INPUT PARAMETERS
+            spine_positions - np.array of the the position of each spine along the 
+                             dendrite
+            
+            spine_flags - list of the spine flags
+            
+            spine_groupings - list containing the spine groupings for each dendrite
+            
+            cluster_dist - int or float specifying the distance that is to be
+                            considered nearby
+        
+        OUTPUT PARAMETERS
+            nearby_spine_idxs - list containing an array of the nearby spine idxs
+                                for each spine
+    """
+    # Sort out the spine groupings to ensure it is iterable
+    if type(spine_groupings[0]) != list:
+        spine_groupings = [spine_groupings]
+
+    # Find all the present spines
+    present_spines = find_present_spines(spine_flags)
+
+    # Setup the output
+    nearby_spine_idxs = [None for i in spine_positions]
+
+    # Iterate through each spine grouping
+    for spines in spine_groupings:
+        curr_positions = spine_positions[spines]
+        curr_present = present_spines[spines]
+        # Iterate through each spine
+        for spine, position in enumerate(curr_positions):
+            # Get the relative positions
+            relative_positions = curr_positions - position
+            relative_positions = np.absolute(relative_positions)
+            nearby_spines = np.nonzero(relative_positions <= cluster_dist)[0]
+            # remove target spine and any absent spines
+            nearby_spines = [
+                x for x in nearby_spines if curr_present[x] == True and x != spine
+            ]
+            nearby_spine_idxs[spines[spine]] = nearby_spines
+
+    return nearby_spine_idxs
+
+
+def parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines):
+    """Function to generate additonal arrays for nonmovement spines and 
+        movement non rewarded spines
+        
+        INPUT PARAMETERS
+            movement_spines - boolean list/array of whether each spine in movement or not
+            
+            rwd_movement_spines - boolean list/array  of whether each spine is
+                                  rewarded movement encoding or not
+        
+        OUTPUT PARAMETERS
+            nonmovement_spines - boolean list/array of whether each spine is nonmovement
+                                 or not
+            
+            movement_non_rwd_spines - boolean list/array of whether each spine is
+                                     non movement or not
+    """
+    # Find nonmovement spines
+    nonmovement_spines = np.array([not x for x in movement_spines])
+    # Find movement but not reward movement spines
+    movement_non_rwd_spines = np.array(movement_spines, dtype=int) - np.array(
+        rwd_movement_spines, dtype=int
+    ).astype(bool)
+
+    return nonmovement_spines, movement_non_rwd_spines
+
