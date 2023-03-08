@@ -1,10 +1,14 @@
 """"Module to analyze lever press behavior across mice within the same experimental group
 
     CREATOR - William (Jake) Wright 3/7/2022"""
+import os
 
-
+import matplotlib.pyplot as plt
 import numpy as np
-from Lab_Analyses.Behavior import behavior_plotting as bplot
+from scipy import stats
+
+from Lab_Analyses.Plotting.plot_general_heatmap import plot_general_heatmap
+from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
 
 
 class Group_Lever_Press:
@@ -159,9 +163,9 @@ class Group_Lever_Press:
         self.ind_success_rate = np.vstack(all_success_rates)
         self.success_rate = avg_success_rates
 
-    def plot_average_data(
+    def plot_data(
         self,
-        to_plot=None,
+        figsize=(9, 8),
         colors=None,
         ylims=None,
         plot_ind=False,
@@ -171,10 +175,6 @@ class Group_Lever_Press:
         """Function to plot data
             
             INPUT PARAMETERS
-                to_plot - list of strings specifying which plots you wish to plot. 
-                        Accepts: 'success rate', 'cue to reward', 'reaction time', 'within correlation', 'across correlation', 'correlation heatmap'
-                        Optional with default set to plot all
-                        
                 colors - dictionary to specify what color to plot each plot, with each key corresponding to the plot type
                         Keys it accepts: "success", "cue_to_reward", "reaction_time", "within", "across", "cmap"
                         Optional with default set to None. Can specify on the ones you wish to change. 
@@ -187,179 +187,199 @@ class Group_Lever_Press:
 
                 save_path - str with the path of where to save the data
         """
-        if save is True and save_path is None:
-            raise Exception("Must specify the save path in order to save the figures")
+        # Pull the data
+        success_rate = self.ind_success_rate
+        success_sessions = self.success_rate["session"]
+        reaction_time = self.ind_reaction_time
+        reaction_sessions = self.avg_reaction_time["session"]
+        cue_to_reward = self.ind_cue_to_reward
+        cue_sessions = self.avg_cue_to_reward["session"]
+        within_corr = self.ind_within_sess_corr
+        within_sessions = self.within_sess_corr["session"]
+        across_corr = self.ind_across_sess_corr
+        across_sessions = self.across_sess_corr["session"]
+        correlation_matrix = self.avg_corr_matrix
 
-        # Set up colors and ylims keyword arguments to ensure proper behavior if different partial inputs
-        plot_keys = [
-            "success",
-            "cue_to_reward",
-            "reaction_time",
-            "within",
-            "across",
-            "cmap",
-        ]
-        if colors is None:
-            colors = {
-                "success": None,
-                "cue_to_reward": None,
-                "reaction_time": None,
-                "within": None,
-                "across": None,
-                "cmap": None,
-            }
-        if ylims is None:
-            ylims = {
-                "success": None,
-                "cue_to_reward": None,
-                "reaction_time": None,
-                "within": None,
-                "across": None,
-                "cmap": None,
-            }
-        for key in plot_keys:
-            if key not in colors.keys():
-                colors[key] = None
-            if key not in ylims.keys():
-                ylims[key] = None
+        # Perform some correlations
+        corr_results = []
+        for data in [
+            success_rate,
+            reaction_time,
+            cue_to_reward,
+            within_corr,
+            across_corr,
+        ]:
+            x = list(range(data.shape[0]))
+            val_1 = []
+            val_2 = []
+            for i in range(data.shape[1]):
+                val_1.append(data[:, i])
+                val_2.append(x)
+            val_1 = np.array([y for x in val_1 for y in x])
+            val_2 = np.array([y for x in val_2 for y in x])
+            non_nan = np.nonzero(~np.isnan(val_1))[0]
+            val_1 = val_1[non_nan]
+            val_2 = val_2[non_nan]
+            r, p = stats.pearsonr(val_2, val_1)
+            corr_results.append(f"r = {r:.3}  p = {p:.3E}")
 
-        if to_plot is None:
-            bplot.plot_success_rate(
-                self.success_rate["session"],
-                self.success_rate["mean"],
-                self.success_rate["sem"],
-                self.ind_success_rate,
-                plot_ind=plot_ind,
-                ylim=ylims["success"],
-                color=colors["success"],
-                save=save,
-                save_path=save_path,
-            )
-            bplot.plot_movement_reaction_time(
-                self.avg_reaction_time["session"],
-                self.avg_reaction_time["mean"],
-                self.avg_reaction_time["sem"],
-                self.ind_reaction_time,
-                plot_ind=plot_ind,
-                ylim=ylims["reaction_time"],
-                color=colors["reaction_time"],
-                save=save,
-                save_path=save_path,
-            )
-            bplot.plot_cue_to_reward(
-                self.avg_cue_to_reward["session"],
-                self.avg_cue_to_reward["mean"],
-                self.avg_cue_to_reward["sem"],
-                self.ind_cue_to_reward,
-                plot_ind=plot_ind,
-                ylim=ylims["cue_to_reward"],
-                color=colors["cue_to_reward"],
-                save=save,
-                save_path=save_path,
-            )
-            bplot.plot_movement_corr_matrix(
-                self.avg_corr_matrix,
-                title="Average Movement Correlation",
-                cmap=colors["cmap"],
-                save=save,
-                limits=ylims["cmap"],
-                save_path=save_path,
-            )
-            bplot.plot_within_session_corr(
-                self.within_sess_corr["session"],
-                self.within_sess_corr["mean"],
-                self.within_sess_corr["sem"],
-                self.ind_within_sess_corr,
-                plot_ind=plot_ind,
-                ylim=ylims["within"],
-                color=colors["within"],
-                save=save,
-                save_path=save_path,
-            )
-            bplot.plot_across_session_corr(
-                self.across_sess_corr["session"],
-                self.across_sess_corr["mean"],
-                self.across_sess_corr["sem"],
-                self.ind_across_sess_corr,
-                plot_ind=plot_ind,
-                ylim=ylims["across"],
-                color=colors["across"],
-                save=save,
-                save_path=save_path,
-            )
-        else:
-            for x in to_plot:
-                if x == "success rate":
-                    bplot.plot_success_rate(
-                        self.success_rate["session"],
-                        self.success_rate["mean"],
-                        self.success_rate["sem"],
-                        self.ind_success_rate,
-                        plot_ind=plot_ind,
-                        ylim=ylims["success"],
-                        color=colors["success"],
-                        save=save,
-                        save_path=save_path,
-                    )
-                elif x == "reaction time":
-                    bplot.plot_movement_reaction_time(
-                        self.avg_reaction_time["session"],
-                        self.avg_reaction_time["mean"],
-                        self.avg_reaction_time["sem"],
-                        self.ind_reaction_time,
-                        plot_ind=plot_ind,
-                        ylim=ylims["reaction_time"],
-                        color=colors["reaction_time"],
-                        save=save,
-                        save_path=save_path,
-                    )
-                elif x == "cue to reward":
-                    bplot.plot_cue_to_reward(
-                        self.avg_cue_to_reward["session"],
-                        self.avg_cue_to_reward["mean"],
-                        self.avg_cue_to_reward["sem"],
-                        self.ind_cue_to_reward,
-                        plot_ind=plot_ind,
-                        ylim=ylims["cue_to_reward"],
-                        color=colors["cue_to_reward"],
-                        save=save,
-                        save_path=save_path,
-                    )
-                elif x == "correlation_heatmap":
-                    bplot.plot_movement_corr_matrix(
-                        self.avg_corr_matrix,
-                        title="Average Movement Correlation",
-                        cmap=colors["cmap"],
-                        save=save,
-                        limits=ylims["cmap"],
-                        save_path=save_path,
-                    )
-                elif x == "within correlation":
-                    bplot.plot_within_session_corr(
-                        self.within_sess_corr["session"],
-                        self.within_sess_corr["mean"],
-                        self.within_sess_corr["sem"],
-                        self.ind_within_sess_corr,
-                        plot_ind=plot_ind,
-                        ylim=ylims["within"],
-                        color=colors["within"],
-                        save=save,
-                        save_path=save_path,
-                    )
-                elif x == "across correlation":
-                    bplot.plot_across_session_corr(
-                        self.across_sess_corr["session"],
-                        self.across_sess_corr["mean"],
-                        self.across_sess_corr["sem"],
-                        self.ind_across_sess_corr,
-                        plot_ind=plot_ind,
-                        ylim=ylims["across"],
-                        color=colors["across"],
-                        save=save,
-                        save_path=save_path,
-                    )
-                else:
-                    print(f"{x} is not a valid plot type")
+        # Construct the figure
+        fig, axes = plt.subplot_mosaic(
+            [
+                ["l_upper", "r_upper"],
+                ["l_middle", "r_middle"],
+                ["l_bottom", "r_bottom"],
+            ],
+            figsize=figsize,
+        )
+        fig.suptitle("Summarized Lever Press Behavior")
+        fig.subplots_adjust(hspace=1, wspace=0.5)
+
+        ############# Add data to the plots ##############
+        # Succss rate
+        plot_multi_line_plot(
+            data_dict={"avg": success_rate},
+            x_vals=success_sessions,
+            plot_ind=plot_ind,
+            figsize=(5, 5),
+            title=f"Success Rate\n{corr_results[0]}",
+            ytitle="Successful trials (%)",
+            xtitle="Session",
+            ylim=ylims["success"],
+            line_color=colors["success"],
+            face_color="white",
+            m_size=7,
+            linewidth=1.5,
+            linestyle="-",
+            axis_width=1.5,
+            minor_ticks="y",
+            tick_len=3,
+            ax=axes["l_upper"],
+            legend=False,
+            save=False,
+            save_path=None,
+        )
+        # Reaction time
+        plot_multi_line_plot(
+            data_dict={"avg": reaction_time},
+            x_vals=reaction_sessions,
+            plot_ind=plot_ind,
+            figsize=(5, 5),
+            title=f"Movement Reaction Time\n{corr_results[1]}",
+            ytitle="Reaction time (s)",
+            xtitle="Session",
+            ylim=ylims["reaction_time"],
+            line_color=colors["reaction_time"],
+            face_color="white",
+            m_size=7,
+            linewidth=1.5,
+            linestyle="-",
+            axis_width=1.5,
+            minor_ticks="y",
+            tick_len=3,
+            ax=axes["r_upper"],
+            legend=False,
+            save=False,
+            save_path=None,
+        )
+        # Cue to reward
+        plot_multi_line_plot(
+            data_dict={"avg": cue_to_reward},
+            x_vals=cue_sessions,
+            plot_ind=plot_ind,
+            figsize=(5, 5),
+            title=f"Cue to Reward Time\n{corr_results[2]}",
+            ytitle="Cue to reward time (s)",
+            xtitle="Session",
+            ylim=ylims["cue_to_reward"],
+            line_color=colors["cue_to_reward"],
+            face_color="white",
+            m_size=7,
+            linewidth=1.5,
+            linestyle="-",
+            axis_width=1.5,
+            minor_ticks="y",
+            tick_len=3,
+            ax=axes["l_middle"],
+            legend=False,
+            save=False,
+            save_path=None,
+        )
+        # Within session correlation
+        plot_multi_line_plot(
+            data_dict={"avg": within_corr},
+            x_vals=within_sessions,
+            plot_ind=plot_ind,
+            figsize=(5, 5),
+            title=f"Within Session Correlation\n{corr_results[3]}",
+            ytitle="Move. Correlation (r)",
+            xtitle="Session",
+            ylim=ylims["within"],
+            line_color=colors["within"],
+            face_color="white",
+            m_size=7,
+            linewidth=1.5,
+            linestyle="-",
+            axis_width=1.5,
+            minor_ticks="y",
+            tick_len=3,
+            ax=axes["r_middle"],
+            legend=False,
+            save=False,
+            save_path=None,
+        )
+        # Across session correlation
+        plot_multi_line_plot(
+            data_dict={"avg": across_corr},
+            x_vals=across_sessions,
+            plot_ind=plot_ind,
+            figsize=(5, 5),
+            title=f"Across Session Correlation\n{corr_results[4]}",
+            ytitle="Move. Correlation (r)",
+            xtitle="Session",
+            ylim=ylims["across"],
+            line_color=colors["across"],
+            face_color="white",
+            m_size=7,
+            linewidth=1.5,
+            linestyle="-",
+            axis_width=1.5,
+            minor_ticks="y",
+            tick_len=3,
+            ax=axes["l_bottom"],
+            legend=False,
+            save=False,
+            save_path=None,
+        )
+        # Movement correlation heatmap
+        axes["r_bottom"].set_aspect(aspect="equal", adjustable="box")
+        plot_general_heatmap(
+            data=correlation_matrix,
+            figsize=(5, 5),
+            title="Movement Correlation",
+            xtitle="Session",
+            ytitle="Session",
+            cbar_label="Correlation (r)",
+            hmap_range=ylims["cmap"],
+            center=None,
+            cmap=colors["cmap"],
+            axis_width=2.5,
+            tick_len=3,
+            ax=axes["r_bottom"],
+            save=False,
+            save_path=None,
+        )
+
+        fig.tight_layout()
+
+        # Save section
+        if save:
+            if save_path is None:
+                save_path = r"C:\Users\Jake\Desktop\Figures"
+            if not os.path.isdir(save_path):
+                os.makedirs(save_path)
+            fname = os.path.join(save_path, "Summarized_Lever_Press_Data")
+            fig.savefig(fname + ".pdf")
 
     def check_same_sessions(self):
         """Function to check to make sure that all mice have same number of sessions"""
