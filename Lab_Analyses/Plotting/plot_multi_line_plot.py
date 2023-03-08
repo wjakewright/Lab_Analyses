@@ -29,6 +29,7 @@ def plot_multi_line_plot(
     minor_ticks=None,
     tick_len=3,
     ax=None,
+    legend=True,
     save=False,
     save_path=None,
 ):
@@ -125,11 +126,15 @@ def plot_multi_line_plot(
             )
 
     # Adjust the axes
-    ax.set_xticks(ticks=x, labels=x_vals)
+    ax.set_xticks(ticks=x)
+    ax.set_xticklabels(labels=x_vals)
     adjust_axes(ax, minor_ticks, xtitle, ytitle, None, ylim, tick_len, axis_width)
 
     # Make the legend
-    ax.legend(loc="upper right", borderaxespad=0, fontsize="xx-small", frameon=False)
+    if legend:
+        ax.legend(
+            loc="upper right", borderaxespad=0, fontsize="xx-small", frameon=False
+        )
 
     # Save section
     if save:
