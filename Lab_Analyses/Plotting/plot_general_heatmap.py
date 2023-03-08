@@ -8,6 +8,7 @@ import seaborn as sns
 sns.set()
 sns.set_style("ticks")
 
+
 def plot_general_heatmap(
     data,
     figsize=(7, 6),
@@ -82,8 +83,7 @@ def plot_general_heatmap(
         center=center,
         vmax=hmap_range[1],
         vmin=hmap_range[0],
-        cbar_kws={"label": cbar_label, "orientation": "vertical", "ticks": cbar_ticks},
-        yticklabels=False,
+        cbar_kws={"label": cbar_label, "location": "right", "ticks": cbar_ticks},
         ax=ax,
     )
     # setup the axes
@@ -104,6 +104,8 @@ def plot_general_heatmap(
         length=tick_len / 1.5,
         width=axis_width,
     )
+    cbar = hax.collections[0].colorbar
+    cbar.ax.set_ylabel(ylabel=cbar_label, rotation=270, labelpad=-5)
 
     # Save section
     if save:
