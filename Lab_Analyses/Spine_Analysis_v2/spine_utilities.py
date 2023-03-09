@@ -135,7 +135,7 @@ def load_spine_datasets(mouse_id, days, fov_type):
     return mouse_data
 
 
-def bin_by_position(data, positions, bins):
+def bin_by_position(data, positions, bins, const=None):
     """Helper function to bin pairwise spine data by relative positions"""
     binned_data = []
 
@@ -145,7 +145,10 @@ def bin_by_position(data, positions, bins):
             if idxs.size == 0:
                 binned_data.append(np.nan)
                 continue
-            binned_data.append(np.nanmean(data[idxs]))
+            if const is None:
+                binned_data.append(np.nanmean(data[idxs]))
+            else:
+                binned_data.append(np.nansum(data[idxs]) / const)
 
     return np.array(binned_data)
 
