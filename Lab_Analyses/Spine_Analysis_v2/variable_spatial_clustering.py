@@ -2,8 +2,7 @@ import copy
 
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    find_nearby_spines, find_present_spines)
+from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_present_spines
 
 
 def variable_spatial_clustering(
