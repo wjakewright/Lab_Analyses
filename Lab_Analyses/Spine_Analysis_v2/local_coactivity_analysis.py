@@ -1,5 +1,8 @@
 import numpy as np
 
+from Lab_Analyses.Spine_Analysis_v2.coactive_vs_noncoactive_event_analysis import (
+    coactive_vs_noncoactive_event_analysis,
+)
 from Lab_Analyses.Spine_Analysis_v2.distance_coactivity_rate_analysis import (
     distance_coactivity_rate_analysis,
 )
@@ -84,9 +87,11 @@ def local_coactivity_analysis(
             if volume_norm:
                 curr_glu_constants = glu_constants[mouse][FOV]
                 curr_ca_constants = ca_constants[mouse][FOV]
+                all_constants = (curr_glu_constants, curr_ca_constants)
             else:
                 curr_glu_constants = None
                 curr_ca_constants = None
+                all_constants = None
 
             # Pull relevant data
             ## Some parameters
@@ -123,6 +128,9 @@ def local_coactivity_analysis(
             ) = parse_movement_nonmovement_spines(
                 movement_dendrites, rwd_movement_dendrites
             )
+            ## Dendrite poly roi positions and activity
+            poly_dendrite_positions = data.poly_dendrite_positions
+            poly_dendrite_dFoF = data.poly_dendrite_calcium_processed_dFoF
             ## Behavioral data
             lever_active = data.lever_active
             lever_force = data.lever_force_smooth
@@ -134,6 +142,7 @@ def local_coactivity_analysis(
                 spine_dFoF = d_utils.z_score(spine_dFoF)
                 spine_calcium_dFoF = d_utils.z_score(spine_calcium_dFoF)
                 dendrite_dFoF = d_utils.z_score(dendrite_dFoF)
+                poly_dendrite_dFoF = [d_utils.z_score(x) for x in poly_dendrite_dFoF]
 
             # Get volumes in um
             pix_to_um = zoom_factor / 2
@@ -238,7 +247,7 @@ def local_coactivity_analysis(
             )
 
             # Assess activity and coactivity of nearby spines
-            print(f"---- Assessing activity and coactivity of nearby spines")
+            print(f"---- Assessing properties of nearby spines")
             ## Spine activity
             (
                 avg_nearby_spine_rate,
@@ -390,3 +399,102 @@ def local_coactivity_analysis(
                 method="local",
                 iterations=1000,
             )
+
+            # Analyze coactive and noncoactive spine events
+            ## All events
+            (
+                nearby_spine_idxs,
+                coactive_binary,
+                noncoactive_binary,
+                spine_coactive_event_num,
+                spine_coactive_traces,
+                spine_noncoactive_traces,
+                spine_coactive_calcium_traces,
+                spine_noncoactive_calcium_traces,
+                spine_coactive_amplitude,
+                spine_noncoactive_amplitude,
+                spine_coactive_calcium_amplitude,
+                spine_noncoactive_calcium_amplitude,
+                spine_coactive_onset,
+                spine_noncoactive_onset,
+                fraction_spine_coactive,
+                fraction_coactivity_participation,
+            ) = coactive_vs_noncoactive_event_analysis(
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_flags,
+                spine_positions,
+                spine_groupings,
+                activity_window=activity_window,
+                cluster_dist=cluster_dist,
+                constrain_matrix=None,
+                partner_list=partner_list,
+                sampling_rate=sampling_rate,
+                volume_norm=all_constants,
+            )
+            ## Movement events
+            (
+                _,
+                mvmt_coactive_binary,
+                mvmt_noncoactive_binary,
+                mvmt_spine_coactive_event_num,
+                mvmt_spine_coactive_traces,
+                mvmt_spine_noncoactive_traces,
+                mvmt_spine_coactive_calcium_traces,
+                mvmt_spine_noncoactive_calcium_traces,
+                mvmt_spine_coactive_amplitude,
+                mvmt_spine_noncoactive_amplitude,
+                mvmt_spine_coactive_calcium_amplitude,
+                mvmt_spine_noncoactive_calcium_amplitude,
+                mvmt_spine_coactive_onset,
+                mvmt_spine_noncoactive_onset,
+                mvmt_fraction_spine_coactive,
+                mvmt_fraction_coactivity_participation,
+            ) = coactive_vs_noncoactive_event_analysis(
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_flags,
+                spine_positions,
+                spine_groupings,
+                activity_window=activity_window,
+                cluster_dist=cluster_dist,
+                constrain_matrix=lever_active,
+                partner_list=partner_list,
+                sampling_rate=sampling_rate,
+                volume_norm=all_constants,
+            )
+            ## Nonmovement events
+            (
+                _,
+                nonmvmt_coactive_binary,
+                nonmvmt_noncoactive_binary,
+                nonmvmt_spine_coactive_event_num,
+                nonmvmt_spine_coactive_traces,
+                nonmvmt_spine_noncoactive_traces,
+                nonmvmt_spine_coactive_calcium_traces,
+                nonmvmt_spine_noncoactive_calcium_traces,
+                nonmvmt_spine_coactive_amplitude,
+                nonmvmt_spine_noncoactive_amplitude,
+                nonmvmt_spine_coactive_calcium_amplitude,
+                nonmvmt_spine_noncoactive_calcium_amplitude,
+                nonmvmt_spine_coactive_onset,
+                nonmvmt_spine_noncoactive_onset,
+                nonmvmt_fraction_spine_coactive,
+                nonmvmt_fraction_coactivity_participation,
+            ) = coactive_vs_noncoactive_event_analysis(
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_flags,
+                spine_positions,
+                spine_groupings,
+                activity_window=activity_window,
+                cluster_dist=cluster_dist,
+                constrain_matrix=lever_inactive,
+                partner_list=partner_list,
+                sampling_rate=sampling_rate,
+                volume_norm=all_constants,
+            )
+
