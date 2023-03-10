@@ -153,7 +153,9 @@ def bin_by_position(data, positions, bins, const=None):
     return np.array(binned_data)
 
 
-def find_nearby_spines(spine_positions, spine_flags, spine_groupings, cluster_dist=5):
+def find_nearby_spines(
+    spine_positions, spine_flags, spine_groupings, partner_list=None, cluster_dist=5
+):
     """Function to find the idxs of each spines neighbors
     
         INPUT PARAMETERS
@@ -163,6 +165,9 @@ def find_nearby_spines(spine_positions, spine_flags, spine_groupings, cluster_di
             spine_flags - list of the spine flags
             
             spine_groupings - list containing the spine groupings for each dendrite
+
+            partner_list - boolean list of spine identities you wish to constrain your 
+                            analysis to
             
             cluster_dist - int or float specifying the distance that is to be
                             considered nearby
@@ -195,6 +200,10 @@ def find_nearby_spines(spine_positions, spine_flags, spine_groupings, cluster_di
             nearby_spines = [
                 x for x in nearby_spines if curr_present[x] == True and x != spine
             ]
+            if partner_list is not None:
+                nearby_spines = [
+                    x for x in nearby_spines if partner_list[spines[x]] == True
+                ]
             nearby_spine_idxs[spines[spine]] = nearby_spines
 
     return nearby_spine_idxs
