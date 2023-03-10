@@ -87,7 +87,9 @@ def calculate_coactivity(
         coactivity_trace[epoch[0] : epoch[1]] = 1
     ## Calculate fractions
     fraction_active_1 = len(coactive_idxs) / trace_1_event_num
-    fraction_active_2 = len(coactive_idxs) / trace_2_event_num
+    fraction_active_2 = (
+        len(coactive_idxs) / trace_2_event_num
+    )  ## There is a problem with this
 
     return (
         coactivity_rate,
