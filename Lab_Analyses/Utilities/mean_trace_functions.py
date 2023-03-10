@@ -1,6 +1,103 @@
 import numpy as np
 import scipy.signal as sysignal
 
+from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
+
+
+def analyze_event_activity(
+    dFoF,
+    timestamps,
+    activity_window=(-2, 4),
+    center_onset=False,
+    smooth=False,
+    avg_window=None,
+    norm_constant=None,
+    sampling_rate=60,
+):
+    """Function to analyze the mean activity trace around specified events
+    
+        INPUT PARAMETERS
+            dFoF - 2d np.array of the dFoF traces for each roi (columns)
+            
+            timestamps - list of the event timestamps for each roi
+            
+            activity_window - tuple specifying the window around each event to analyze
+            
+            center_onset - boolean of whether or not you wish to center traces on the
+                            mean onset of the trace
+
+            smooth - boolean specifying whether to smooth trace or not
+
+            avg_window - float specifying the window you wish to average the peak over.
+                         If None, it will use only the max peak amplitude
+            
+            norm_constants - np.array of the constants to normalize the activity by volume
+            
+            sampling_rates - int specifying the sampling rate
+        
+        OUTPUT PARAMETERS
+            activity_traces - list of 2d np.array of the activity around each event.
+                            columns = events, rolws=time, list items=each roi
+            
+            activity_amplitude - np.array of the peak amplitude for each spine
+            
+            activity_onset - int specifying the activity onset within the activity
+                            window
+    """
+    # Get the traces for each spine
+    activity_traces = []
+    mean_traces = []
+    for spine in range(dFoF.shape[1]):
+        traces, mean = d_utils.get_trace_mean_sem(
+            dFoF[:, spine].reshape(-1, 1),
+            ["Activity"],
+            timestamps[spine],
+            window=activity_window,
+            sampling_rate=sampling_rate,
+        )
+        mean = mean["Activity"][0]
+        traces = traces["Activity"]
+        if norm_constant is not None:
+            mean = mean / norm_constant[spine]
+            traces = traces / norm_constant[spine]
+        activity_traces.append(traces)
+        mean_traces.append(mean)
+
+    # Get the peak amplitudes
+    activity_amplitude, _ = find_peak_amplitude(
+        mean_traces, smooth=smooth, window=avg_window, sampling_rate=sampling_rate
+    )
+
+    # Get the activity onsets
+    activity_onset = find_activity_onset(mean_traces, sampling_rate)
+
+    # Center traces if specified
+    if center_onset:
+        centered_traces = []
+        for i, onset in enumerate(activity_onset):
+            if np.isnan(onset):
+                centered_traces.append(activity_traces[i])
+                continue
+            c_timestamps = timestamp_onset_correction(
+                timestamps[i], activity_window, onset, sampling_rate
+            )
+            traces, _ = d_utils.get_trace_mean_sem(
+                dFoF[:, i].reshape(-1, 1),
+                ["Activity"],
+                c_timestamps,
+                window=activity_window,
+                sampling_rate=sampling_rate,
+            )
+            traces = traces["Activity"]
+            if norm_constant is not None:
+                traces = traces / norm_constant[i]
+            centered_traces.append(traces)
+        ## Reset activity traces to be the centered traces
+        activity_traces = centered_traces
+
+    return activity_traces, activity_amplitude, activity_onset
+
 
 def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60):
     """Function to find the peak amplitude of mean traces
