@@ -4,6 +4,7 @@ import copy
 from dataclasses import dataclass
 
 import numpy as np
+
 from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.load_mat_files import load_mat
 
