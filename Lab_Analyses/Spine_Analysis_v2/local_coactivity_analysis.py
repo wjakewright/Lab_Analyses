@@ -6,8 +6,14 @@ from Lab_Analyses.Spine_Analysis_v2.coactive_vs_noncoactive_event_analysis impor
 from Lab_Analyses.Spine_Analysis_v2.distance_coactivity_rate_analysis import (
     distance_coactivity_rate_analysis,
 )
+from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
+    nearby_coactive_spine_activity,
+)
 from Lab_Analyses.Spine_Analysis_v2.nearby_spine_density_analysis import (
     nearby_spine_density_analysis,
+)
+from Lab_Analyses.Spine_Analysis_v2.nearby_spine_movement_quality import (
+    neraby_spine_movement_quality,
 )
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
     load_spine_datasets,
@@ -496,5 +502,146 @@ def local_coactivity_analysis(
                 partner_list=partner_list,
                 sampling_rate=sampling_rate,
                 volume_norm=all_constants,
+            )
+            ## Get fraction of coactivity occuring during movements
+            frac_mvmt_coactivity = (
+                mvmt_spine_coactive_event_num / spine_coactive_event_num
+            )
+
+            # Analyze nearby coactive spine activity
+            ## All events
+            (
+                coactive_spine_num,
+                nearby_coactive_amplitude,
+                nearby_coactive_calcium_amplitude,
+                nearby_spine_onset,
+                nearby_spine_onset_jitter,
+                nearby_coactive_traces,
+                nearby_coactive_calcium_traces,
+            ) = nearby_coactive_spine_activity(
+                nearby_spine_idxs,
+                coactive_binary,
+                spine_flags,
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_coactive_onset,
+                all_constants,
+                activity_window,
+                sampling_rate,
+            )
+            ## Movement events
+            (
+                mvmt_coactive_spine_num,
+                mvmt_nearby_coactive_amplitude,
+                mvmt_nearby_coactive_calcium_amplitude,
+                mvmt_nearby_spine_onset,
+                mvmt_nearby_spine_onset_jitter,
+                mvmt_nearby_coactive_traces,
+                mvmt_nearby_coactive_calcium_traces,
+            ) = nearby_coactive_spine_activity(
+                nearby_spine_idxs,
+                mvmt_coactive_binary,
+                spine_flags,
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_coactive_onset,
+                all_constants,
+                activity_window,
+                sampling_rate,
+            )
+            ## Movement events
+            (
+                nonmvmt_coactive_spine_num,
+                nonmvmt_nearby_coactive_amplitude,
+                nonmvmt_nearby_coactive_calcium_amplitude,
+                nonmvmt_nearby_spine_onset,
+                nonmvmt_nearby_spine_onset_jitter,
+                nonmvmt_nearby_coactive_traces,
+                nonmvmt_nearby_coactive_calcium_traces,
+            ) = nearby_coactive_spine_activity(
+                nearby_spine_idxs,
+                nonmvmt_coactive_binary,
+                spine_flags,
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_coactive_onset,
+                all_constants,
+                activity_window,
+                sampling_rate,
+            )
+
+            # Assess nearby spine and coactivity movement encoding
+            ## Nearby spines
+            (
+                nearby_movement_correlation,
+                nearby_movement_stereotypy,
+                nearby_movement_reliability,
+                nearby_movement_specificity,
+                nearby_LMP_reliability,
+                nearby_LMP_speicficity,
+            ) = neraby_spine_movement_quality(
+                mouse,
+                nearby_spine_idxs,
+                spine_activity,
+                lever_active,
+                lever_force,
+                threshold=0.5,
+                corr_duraiont=0.5,
+                sampling_rate=sampling_rate,
+            )
+            (
+                nearby_rwd_movement_correlation,
+                nearby_rwd_movement_stereotypy,
+                nearby_rwd_movement_reliability,
+                nearby_rwd_movement_specificity,
+                _,
+                _,
+            ) = neraby_spine_movement_quality(
+                mouse,
+                nearby_spine_idxs,
+                spine_activity,
+                lever_active_rwd,
+                lever_force,
+                threshold=0.5,
+                corr_duraiont=0.5,
+                sampling_rate=sampling_rate,
+            )
+            ## Local coactivity
+            (
+                coactive_movement_correlation,
+                coactive_movement_stereotypy,
+                coactive_movement_reliability,
+                coactive_movement_specificity,
+                coactive_LMP_reliability,
+                coactive_LMP_speicficity,
+            ) = neraby_spine_movement_quality(
+                mouse,
+                nearby_spine_idxs,
+                coactive_binary,
+                lever_active,
+                lever_force,
+                threshold=0.5,
+                corr_duraiont=0.5,
+                sampling_rate=sampling_rate,
+            )
+            (
+                coactive_rwd_movement_correlation,
+                coactive_rwd_movement_stereotypy,
+                coactive_rwd_movement_reliability,
+                coactive_rwd_movement_specificity,
+                _,
+                _,
+            ) = neraby_spine_movement_quality(
+                mouse,
+                nearby_spine_idxs,
+                coactive_binary,
+                lever_active_rwd,
+                lever_force,
+                threshold=0.5,
+                corr_duraiont=0.5,
+                sampling_rate=sampling_rate,
             )
 
