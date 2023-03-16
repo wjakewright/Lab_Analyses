@@ -131,7 +131,7 @@ class Grouped_Spine_Activity_Data:
                     continue
                 if attribute == "mouse_id" or attribute == "FOV":
                     var = getattr(data, attribute)
-                    variable = [var for x in range(len(data.spine_volume))]
+                    variable = [var for x in range(len(data.spine_volumes))]
                 else:
                     variable = getattr(data, attribute)
 
