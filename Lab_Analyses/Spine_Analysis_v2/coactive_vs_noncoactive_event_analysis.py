@@ -1,6 +1,9 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_nearby_spines
+from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
+    find_nearby_spines,
+    find_present_spines,
+)
 from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
 from Lab_Analyses.Utilities.mean_trace_functions import analyze_event_activity
@@ -100,6 +103,7 @@ def coactive_vs_noncoactive_event_analysis(
     nearby_spine_idxs = find_nearby_spines(
         spine_positions, spine_flags, spine_groupings, partner_list, cluster_dist
     )
+    present_spines = find_present_spines(spine_flags)
 
     # Constrain activity if necessary
     if constrain_matrix is not None:
@@ -130,6 +134,9 @@ def coactive_vs_noncoactive_event_analysis(
     ### Don't need to go through groupings since that has been delt with in
     ### the nearby spine idx function
     for spine in range(spine_activity.shape[1]):
+        ## Skip not present spines
+        if present_spines[spine] == False:
+            continue
         ## Generate combined nearby activity trace
         nearby_spine_activity = activity_matrix[:, nearby_spine_idxs[spine]]
         combined_nearby_activity = np.sum(nearby_spine_activity, axis=1)
