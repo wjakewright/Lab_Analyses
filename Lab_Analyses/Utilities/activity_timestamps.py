@@ -46,6 +46,9 @@ def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
         OUTPUT PARAMETERS
             refined_stamps - list of the refined timestamps
     """
+    # Check if timestamps are empty
+    if len(timestamps) == 0:
+        return []
     # Determine if the input are tuples or not
     if type(timestamps[0]) == tuple:
         t_stamps = [x[0] for x in timestamps]
