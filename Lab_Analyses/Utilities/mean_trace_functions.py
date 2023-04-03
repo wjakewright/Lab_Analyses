@@ -2,7 +2,8 @@ import numpy as np
 import scipy.signal as sysignal
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
+from Lab_Analyses.Utilities.activity_timestamps import \
+    timestamp_onset_correction
 
 
 def analyze_event_activity(
@@ -49,6 +50,9 @@ def analyze_event_activity(
     activity_traces = []
     mean_traces = []
     for spine in range(dFoF.shape[1]):
+        if len(timestamps[spine]) == 0 or timestamps[spine] is None:
+            activity_traces.appned(None)
+            mean_traces.append(None)
         traces, mean = d_utils.get_trace_mean_sem(
             dFoF[:, spine].reshape(-1, 1),
             ["Activity"],
@@ -126,6 +130,8 @@ def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60
 
     # Iterate through each trace
     for i, trace in enumerate(mean_traces):
+        if trace is None:
+            continue
         if smooth:
             trace = sysignal.savgol_filter(trace, 31, 3)
         trace_med = np.nanmedian(trace)
