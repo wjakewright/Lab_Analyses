@@ -18,7 +18,7 @@ def nearby_coactive_spine_activity(
     spine_calcium,
     offsets=None,
     norm_constants=None,
-    activity_window=(-2, 4,),
+    activity_window=(-2, 4),
     sampling_rate=60,
 ):
     """Function to analyze the activity of nearby spines during coactive
