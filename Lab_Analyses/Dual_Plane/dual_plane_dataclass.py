@@ -13,6 +13,8 @@ class Dual_Plane_Data:
     somatic_dFoF: np.ndarray
     dendrite_dFoF_norm: np.ndarray
     somatic_dFoF_norm: np.ndarray
+    dendrite_noise: np.ndarray
+    somatic_noise: np.ndarray
     fraction_dendrite_active: np.ndarray
     fraction_somatic_active: np.ndarray
     dendrite_amplitudes: list
