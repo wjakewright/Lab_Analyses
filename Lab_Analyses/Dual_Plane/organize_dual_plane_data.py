@@ -96,4 +96,4 @@ def organize_dual_plane_data(
         # Store FOV data
         FOV_data[FOV] = dual_soma_dendrite_data
 
-        return FOV_data
+    return FOV_data
