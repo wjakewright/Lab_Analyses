@@ -141,7 +141,10 @@ def plot_soma_dend_coactivity(
 
     # Construct the subplot
     fig, axes = plt.subplot_mosaic(
-        [["left", "top right"], ["left", "bottom right"]],
+        [
+            ["left", "top left middle", "top right middle", "top right right"],
+            ["left", "bottom left middle", "bottom right middle", "bottom right right"],
+        ],
         constrained_layout=True,
         figsize=figsize,
     )
@@ -239,12 +242,12 @@ def plot_soma_dend_coactivity(
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["top right"],
+        ax=axes["top left middle"],
         save=False,
         save_path=None,
     )
     ### Plot noncoactive traces
-    ylim = axes["top right"].get_ylim()  # Ensure same scale
+    ylim = axes["top left middle"].get_ylim()  # Ensure same scale
     plot_mean_activity_traces(
         means=[soma_non_mean, dend_non_mean],
         sems=[soma_non_sem, dend_non_sem],
@@ -261,7 +264,111 @@ def plot_soma_dend_coactivity(
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["bottom right"],
+        ax=axes["bottom left middle"],
+        save=False,
+        save_path=None,
+    )
+
+    # Plot correlations with noise
+    soma_noise = dataset.somatic_noise
+    dend_noise = dataset.dendrite_noise
+    ## Plot dendrite coactivity vs dendrite noise
+    plot_scatter_correlation(
+        x_var=dend_noise,
+        y_var=dend_points,
+        CI=None,
+        title="Dendrite Noise",
+        xtitle="Noise",
+        ytitle="Fraction dendrite coactive",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=10,
+        face_color="forestgreen",
+        edge_color="white",
+        edge_width=0.3,
+        line_color="forestgreen",
+        s_alpha=0.5,
+        line_width=1.5,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["top right middle"],
+        save=False,
+        save_path=None,
+    )
+    ## Plot dendrite coactivity vs somatic noise
+    plot_scatter_correlation(
+        x_var=soma_noise,
+        y_var=dend_points,
+        CI=None,
+        title="Somatic Noise",
+        xtitle="Noise",
+        ytitle="Fraction dendrite coactive",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=10,
+        face_color="forestgreen",
+        edge_color="white",
+        edge_width=0.3,
+        line_color="forestgreen",
+        s_alpha=0.5,
+        line_width=1.5,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["top right right"],
+        save=False,
+        save_path=None,
+    )
+    ## Plot somatic coactivity vs dendrite noise
+    plot_scatter_correlation(
+        x_var=dend_noise,
+        y_var=soma_points,
+        CI=None,
+        title="Dendrite Noise",
+        xtitle="Noise",
+        ytitle="Fraction somatic coactive",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=10,
+        face_color="black",
+        edge_color="white",
+        edge_width=0.3,
+        line_color="black",
+        s_alpha=0.5,
+        line_width=1.5,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["bottom right middle"],
+        save=False,
+        save_path=None,
+    )
+    ## Plot somatic coactivity vs somatic noise
+    plot_scatter_correlation(
+        x_var=soma_noise,
+        y_var=soma_points,
+        CI=None,
+        title="Somatic Noise",
+        xtitle="Noise",
+        ytitle="Fraction somatic coactive",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=10,
+        face_color="black",
+        edge_color="white",
+        edge_width=0.3,
+        line_color="black",
+        s_alpha=0.5,
+        line_width=1.5,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["bottom right right"],
         save=False,
         save_path=None,
     )
@@ -401,7 +508,7 @@ def plot_amplitude_correlations(
         line_width=1.5,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["tll"],
         save=False,
         save_path=None,
@@ -424,7 +531,7 @@ def plot_amplitude_correlations(
         s_alpha=s_alpha,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["tlm"],
         save=False,
         save_path=None,
@@ -447,7 +554,7 @@ def plot_amplitude_correlations(
         line_width=1.5,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["trm"],
         save=False,
         save_path=None,
@@ -464,7 +571,7 @@ def plot_amplitude_correlations(
         alpha=0.8,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["trr"],
         save=False,
         save_path=None,
@@ -489,7 +596,7 @@ def plot_amplitude_correlations(
         line_width=1.5,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["bll"],
         save=False,
         save_path=None,
@@ -512,7 +619,7 @@ def plot_amplitude_correlations(
         line_width=1.5,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["blm"],
         save=False,
         save_path=None,
@@ -535,7 +642,7 @@ def plot_amplitude_correlations(
         line_width=1.5,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["brm"],
         save=False,
         save_path=None,
@@ -552,7 +659,7 @@ def plot_amplitude_correlations(
         alpha=0.8,
         axis_width=1.5,
         minor_ticks="both",
-        tick_len=2,
+        tick_len=3,
         ax=axes["brr"],
         save=False,
         save_path=None,
@@ -567,3 +674,115 @@ def plot_amplitude_correlations(
         fname = os.path.join(save_path, "Soma_Dendrite_Amplitudes_Plot")
         fig.savefig(fname + ".pdf")
 
+
+def plot_ind_events(
+    dataset,
+    colors=["forestgreen", "black"],
+    norm=False,
+    event_type="coactive",
+    figsize=(4, 4),
+    save=False,
+    save_path=None,
+):
+    """Function to plot the traces of individual events that are either considered
+        coactive or non-coactive by event detection
+            
+        INPUT PARAMETERS
+            dataset - Dual_Plane_Data dataclass containing all the relevant data
+            
+            colors - list of str specifying the colors to plot the different traces
+                    (dendritic and somatic)
+            
+            norm - boolean specifying whether to plot normalized or raw traces
+            
+            event_type - str specifying whether to plot 'coactve' or 
+                        'noncoactive' events
+            
+            figsize - tuple specifying how large you roughly want each plot 
+                        to be
+            
+            save - boolean specifying whether to save the figure or not
+            
+            save_path - str specifying where to save the data
+    """
+    # Grab the relevant traces
+    if norm:
+        normalize = " normalized "
+        trace_title = "Normalized dF/F"
+        if event_type == "coactive":
+            dend_traces = dataset.coactive_dendrite_traces_norm
+            soma_traces = dataset.coactive_somatic_traces_norm
+        elif event_type == "noncoactive":
+            dend_traces = dataset.noncoactive_dendrite_traces_norm
+            soma_traces = dataset.noncoactive_somatic_traces_norm
+    else:
+        normalize = " "
+        trace_title = "dF/F"
+        if event_type == "coactive":
+            dend_traces = dataset.coactive_dendrite_traces
+            soma_traces = dataset.coactive_somatic_traces
+        elif event_type == "noncoactive":
+            dend_traces = dataset.noncoactive_dendrite_traces
+            soma_traces = dataset.noncoactive_somatic_traces
+
+    # Organize traces
+    plot_dend_traces = []
+    plot_soma_traces = []
+    event_names = []
+    for i, (dend, soma) in enumerate(zip(dend_traces, soma_traces)):
+        for j in range(dend.shape[1]):
+            event_names.append(f"Dendrite {i} event {j}")
+            plot_dend_traces.append(dend[:, j])
+            plot_soma_traces.append(soma[:, j])
+
+    # Set up the overall title
+    title = f"{event_type} event{normalize}traces"
+
+    # Setup the figure
+    col_num = 3
+    total = len(plot_dend_traces)
+    print(total)
+    row_num = total // col_num
+    row_num += total % col_num
+    fig_size = (figsize[0] * col_num, figsize[1] * row_num)
+    fig = plt.figure(figsize=fig_size)
+    fig.subplots_adjust(hspace=0.5)
+    fig.suptitle(title)
+
+    # Begin plotting
+    for i, (dend, soma, name) in enumerate(
+        zip(plot_dend_traces, plot_soma_traces, event_names)
+    ):
+        ## Add subplot
+        ax = fig.add_subplot(row_num, col_num, i + 1)
+        sems = np.zeros(len(dend))
+        ## Make individual plot
+        plot_mean_activity_traces(
+            means=[soma, dend],
+            sems=[sems, sems],
+            group_names=["Soma", "Dendrite"],
+            sampling_rate=dataset.sampling_rate,
+            activity_window=(-1, 2),
+            avlines=None,
+            ahlines=None,
+            figsize=(5, 5),
+            colors=colors,
+            title=name,
+            ytitle=trace_title,
+            ylim=None,
+            axis_width=1.5,
+            minor_ticks="both",
+            tick_len=3,
+            ax=ax,
+            save=False,
+            save_path=None,
+        )
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Soma_Dendrite_Individual_Traces")
+        fig.savefig(fname + ".pdf")
