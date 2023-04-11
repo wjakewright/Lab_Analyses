@@ -43,6 +43,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     somatic_dFoF = []
     dendrite_dFoF_norm = []
     somatic_dFoF_norm = []
+    dendrite_noise = []
+    somatic_noise = []
     fraction_dendrite_active = []
     fraction_somatic_active = []
     dendrite_amplitudes = []
@@ -81,6 +83,12 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
             s_dFoF = processed_data["somatic_dFoF"][:, dend]
             s_dFoF_norm = processed_data["somatic_dFoF_norm"][:, dend]
             s_activity = processed_data["somatic_activity"][:, dend]
+
+            # Estimate the noise of the traces
+            d_below_zero = d_dFoF[d_dFoF < 0]
+            d_noise = np.nanstd(np.concatenate((d_below_zero, -d_below_zero)))
+            s_below_zero = s_dFoF[s_dFoF < 0]
+            s_noise = np.nanstd(np.concatenate((s_below_zero, -s_below_zero)))
 
             # Calculate the fraction of events coactive
             (_, _, frac_dend_active, _, _) = calculate_coactivity(
@@ -162,6 +170,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
                 activity_window=(-1, 2),
                 sampling_rate=processed_data["sampling_rate"],
             )
+            dendrite_noise.append(d_noise)
+            somatic_noise.append(s_noise)
             fraction_dendrite_active.append(frac_dend_active)
             fraction_somatic_active.append(frac_soma_active)
             dendrite_amplitudes.append(dend_amps)
@@ -189,6 +199,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     somatic_dFoF_norm = np.hstack(d_utils.pad_2d_arrays_rows(somatic_dFoF_norm))
     fraction_dendrite_active = np.array(fraction_dendrite_active)
     fraction_somatic_active = np.array(fraction_somatic_active)
+    dendrite_noise = np.array(dendrite_noise)
+    somatic_noise = np.array(somatic_noise)
 
     dual_plane_data = Dual_Plane_Data(
         dendrite_activity=dendrite_activity,
@@ -197,6 +209,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
         somatic_dFoF=somatic_dFoF,
         dendrite_dFoF_norm=dendrite_dFoF_norm,
         somatic_dFoF_norm=somatic_dFoF_norm,
+        dendrite_noise=dendrite_noise,
+        somatic_noise=somatic_noise,
         fraction_dendrite_active=fraction_dendrite_active,
         fraction_somatic_active=fraction_somatic_active,
         dendrite_amplitudes=dendrite_amplitudes,
