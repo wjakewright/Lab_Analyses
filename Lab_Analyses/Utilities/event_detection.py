@@ -49,7 +49,7 @@ def event_detection(dFoF, threshold, lower_threshold, lower_limit, sampling_rate
         roi = dFoF[:, i]
         # Set lower limit if None
         if LOWER_LIMIT is None:
-            l_limit = np.nanmax(roi) * 0.125
+            l_limit = np.nanmax(roi) * 0.15
         else:
             l_limit = LOWER_LIMIT
         # Estimate the noise of the traces using the mirrored below-zero trace
@@ -71,7 +71,7 @@ def event_detection(dFoF, threshold, lower_threshold, lower_limit, sampling_rate
         thresh_values["Artifact Limit"].append(artifact_limit)
 
         # Generate a smoothed trace
-        temp_smooth = sysignal.savgol_filter(roi, smooth_window, 2)
+        temp_smooth = sysignal.savgol_filter(roi, smooth_window, 1)
         # Find periods above the thrsholds
         above_low = temp_smooth > low_thresh
         above_high = temp_smooth > high_thresh
