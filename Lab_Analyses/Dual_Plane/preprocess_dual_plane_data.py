@@ -40,7 +40,7 @@ def preprocess_dual_plane_data(data):
     # Perform event detection
     dendrite_activity, _, _ = event_detection(
         dendrite_dFoF,
-        threshold=2,
+        threshold=3,
         lower_threshold=0,
         lower_limit=None,
         sampling_rate=sampling_rate,
