@@ -112,6 +112,11 @@ def align_lever_behavior(
             <= 1
         ):
             continue
+        if (
+            behavior_data.behavior_frames[i].states.state_0[1, 0]
+            > list(imaging_data.processed_dFoF.values())[0].shape[0]
+        ):
+            continue
 
         ######### TRIAL INFORMATION #########
         i_bitcode = i - np.absolute(bitcode_offset[i])
@@ -248,14 +253,14 @@ def align_lever_behavior(
             rewarded_movement_binary.append(rwd_movement_binary)
             rewarded_movement_force.append(rwd_movement_force)
 
-
         ########### ACTIVITY SECTION ##############
         # Check what type of activity data is included in imaging data file
 
         if imaging_data.processed_fluorescence:
             try:
                 fluo = align_activity(
-                    imaging_data.processed_fluorescence, behavior_data.behavior_frames[i]
+                    imaging_data.processed_fluorescence,
+                    behavior_data.behavior_frames[i],
                 )
                 fluorescence.append(fluo)
             except IndexError:
@@ -288,7 +293,7 @@ def align_lever_behavior(
                 imaging_data.deconvolved_spikes, behavior_data.behavior_frames[i]
             )
             spikes.append(deconv)
-        
+
         ## Append all the behavioral results
         trial_time.append(times)
         results.append(result)
