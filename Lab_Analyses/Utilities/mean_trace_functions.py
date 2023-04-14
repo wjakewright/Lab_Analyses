@@ -2,8 +2,7 @@ import numpy as np
 import scipy.signal as sysignal
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.activity_timestamps import \
-    timestamp_onset_correction
+from Lab_Analyses.Utilities.activity_timestamps import timestamp_onset_correction
 
 
 def analyze_event_activity(
@@ -103,7 +102,9 @@ def analyze_event_activity(
     return activity_traces, activity_amplitude, activity_onset
 
 
-def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60):
+def find_peak_amplitude(
+    mean_traces, smooth=False, window=None, sampling_rate=60, peak_required=True
+):
     """Function to find the peak amplitude of mean traces
     
         INPUT PARAMETERS
@@ -115,6 +116,9 @@ def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60
                     If None, it will use only the max peak amplitude
             
             sampling_rate - int specifying the imaging sampling rate
+
+            peak_required - boolean specifying whether a defined peak is required
+                            for finding the amplitude
         
         OUTPUT PARAMETERS
             trace_amplitudes - np.array of the peak amplitudes of the traces
@@ -145,7 +149,10 @@ def find_peak_amplitude(mean_traces, smooth=False, window=None, sampling_rate=60
         try:
             trace_peak = trace_peaks[np.argmax(trace_amps)]
         except ValueError:
-            continue
+            if peak_required is False:
+                trace_peak = np.argmax(trace)
+            else:
+                continue
         # Get the max amplitude value
         if window:
             avg_win = int((window * sampling_rate) / 2)
