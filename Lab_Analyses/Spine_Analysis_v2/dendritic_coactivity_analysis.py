@@ -1,5 +1,8 @@
 import numpy as np
 
+from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
+    nearby_coactive_spine_activity,
+)
 from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import (
     spine_dendrite_event_analysis,
 )
@@ -9,6 +12,9 @@ from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
 )
 from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import (
     load_norm_constants,
+)
+from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import (
+    variable_distance_dependence,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
 
@@ -285,3 +291,261 @@ def dendritic_coactivity_analysis(
                 conj_dendrite_coactive_event_num / all_dendrite_coactive_event_num
             )
 
+            # Assess nearby spine activity during conj coactivity events
+            print(f"Assessing properties of nearby spines")
+            (
+                conj_coactive_spine_num,
+                conj_nearby_coactive_spine_amplitude,
+                conj_nearby_coactive_spine_calcium,
+                conj_nearby_spine_onset,
+                conj_nearby_spine_onset_jitter,
+                conj_nearby_coactive_spine_traces,
+                conj_nearby_coactive_spine_calcium_traces,
+            ) = nearby_coactive_spine_activity(
+                nearby_spine_idxs,
+                conj_coactive_binary,
+                spine_flags,
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                None,
+                all_constants,
+                activity_window,
+                sampling_rate,
+            )
+
+            # Assess distribution of coactivity rates
+            ## Coactivity rate
+            (
+                avg_nearby_spine_coactivity_rate,
+                shuff_nearby_spine_coactivity_rate,
+                coactivity_rate_distribution,
+            ) = variable_distance_dependence(
+                all_dendrite_coactivity_rate,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_nearby_spine_coactivity_rate = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        all_dendrite_coactivity_rate, avg_nearby_spine_coactivity_rate
+                    )
+                ]
+            )
+            ## Coactivity rate norm
+            (
+                avg_nearby_spine_coactivity_rate_norm,
+                shuff_nearby_spine_coactivity_rate_norm,
+                coactivity_rate_norm_distribution,
+            ) = variable_distance_dependence(
+                all_dendrite_coactivity_rate_norm,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_nearby_spine_coactivity_rate_norm = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        all_dendrite_coactivity_rate_norm,
+                        avg_nearby_spine_coactivity_rate_norm,
+                    )
+                ]
+            )
+            ## Conj coactivity rate
+            (
+                avg_nearby_spine_conj_rate,
+                shuff_nearby_spine_conj_rate,
+                conj_coactivity_rate_distribution,
+            ) = variable_distance_dependence(
+                conj_dendrite_coactivity_rate,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_nearby_spine_conj_rate = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        conj_dendrite_coactivity_rate, avg_nearby_spine_conj_rate,
+                    )
+                ]
+            )
+            ## Conj coactivity rate norm
+            (
+                avg_nearby_spine_conj_rate_norm,
+                shuff_nearby_spine_conj_rate_norm,
+                conj_coactivity_rate_norm_distribution,
+            ) = variable_distance_dependence(
+                conj_dendrite_coactivity_rate_norm,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_nearby_spine_conj_rate_norm = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        conj_dendrite_coactivity_rate_norm,
+                        avg_nearby_spine_conj_rate_norm,
+                    )
+                ]
+            )
+            ## Spine Fraction coactive
+            (
+                avg_nearby_spine_fraction,
+                shuff_nearby_spine_fraction,
+                spine_fraction_coactive_distribution,
+            ) = variable_distance_dependence(
+                all_fraction_spine_coactive,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_spine_fraction = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        all_fraction_spine_coactive, avg_nearby_spine_fraction
+                    )
+                ]
+            )
+            ## Dendrite fraction coactive
+            (
+                avg_nearby_dend_fraction,
+                shuff_nearby_dend_fraction,
+                dend_fraction_coactive_distribution,
+            ) = variable_distance_dependence(
+                all_fraction_dend_coactive,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_dend_fraction = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        all_fraction_dend_coactive, avg_nearby_dend_fraction
+                    )
+                ]
+            )
+            ## Conj spine fraction coactive
+            (
+                conj_avg_nearby_spine_fraction,
+                conj_shuff_nearby_spine_fraction,
+                conj_spine_fraction_coactive_distribution,
+            ) = variable_distance_dependence(
+                conj_fraction_spine_coactive,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_conj_nearby_spine_fraction = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        conj_fraction_spine_coactive, conj_avg_nearby_spine_fraction
+                    )
+                ]
+            )
+            ## Conj dend fraction coactive
+            (
+                conj_avg_nearby_dend_fraction,
+                conj_shuff_nearby_dend_fraction,
+                conj_dend_fraction_coactive_distribution,
+            ) = variable_distance_dependence(
+                conj_fraction_dend_coactive,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_conj_nearby_dend_fraction = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        conj_fraction_dend_coactive, conj_avg_nearby_dend_fraction
+                    )
+                ]
+            )
+            ## Spine relative onsets
+            (
+                avg_nearby_relative_onset,
+                shuff_nearby_relative_onset,
+                relative_onset_distribution,
+            ) = variable_distance_dependence(
+                all_relative_onsets,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_nearby_relative_onset = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(all_relative_onsets, avg_nearby_relative_onset)
+                ]
+            )
+            ## Conj spine relative onsets
+            (
+                conj_avg_nearby_relative_onset,
+                conj_shuff_nearby_relative_onset,
+                conj_relative_onset_distribution,
+            ) = variable_distance_dependence(
+                conj_relative_onsets,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+            rel_conj_nearby_relative_onset = np.array(
+                [
+                    (x - y) / (x + y)
+                    for x, y in zip(
+                        conj_relative_onsets, conj_avg_nearby_relative_onset
+                    )
+                ]
+            )
+
+            # Assess spine and dendrite calcium when spine not coactive
+
+            # Assess spine calcium when nearby spines are coactive with dendrite
