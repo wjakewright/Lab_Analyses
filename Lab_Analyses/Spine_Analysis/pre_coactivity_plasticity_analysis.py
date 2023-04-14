@@ -790,8 +790,9 @@ class Pre_Coactivity_Plasticity:
             ## Get shuffle medians
             real_median = np.nanmedian(group_real)
             shuff_medians = np.nanmedian(group_shuff_m, axis=1)
-            frac_above = np.sum(shuff_medians <= real_median) / len(shuff_medians)
-            frac_below = np.sum(shuff_medians >= real_median) / len(shuff_medians)
+            ## Get fraction of following null hypothesis
+            frac_below = np.sum(shuff_medians <= real_median) / len(shuff_medians)
+            frac_above = np.sum(shuff_medians >= real_median) / len(shuff_medians)
             print(
                 f"{group} vs. shuffle: p above = {frac_above}  p below = {frac_below}"
             )
