@@ -1,7 +1,10 @@
 import numpy as np
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
+from Lab_Analyses.Utilities.coactivity_functions import (
+    calculate_coactivity,
+    calculate_relative_onset,
+)
 
 
 def calculate_dendrite_coactivity_rate(
@@ -9,6 +12,7 @@ def calculate_dendrite_coactivity_rate(
     dendrite_activity,
     duration,
     sampling_rate=60,
+    activity_window=(-2, 4),
     norm_method="mean",
     iterations=10000,
 ):
@@ -24,6 +28,8 @@ def calculate_dendrite_coactivity_rate(
                         For instances when it has been constrained
 
             sampling_rate - int specifying the imaging sampling rate
+
+            activity_window - tuple specifying the window to analyze for onset analysis
             
             norm_method - str specifying how to normalize the coactivity rates
             
@@ -49,6 +55,10 @@ def calculate_dendrite_coactivity_rate(
             fraction_dend_coactive - float of the fraction of dendritic activity that is coactive
 
             fraction_spine_coactive - float of the fraction of spine activity that is coactive
+
+            relative_spine_onset - float of the avg spine onset relative to dendrite
+
+            spine_onset_jitter - float of the relative onset deviation
             
     """
     # Set up some constants
@@ -70,13 +80,7 @@ def calculate_dendrite_coactivity_rate(
         duration=duration,
         sampling_rate=sampling_rate,
     )
-    (
-        _,
-        _,
-        fraction_dend_coactive,
-        _,
-        _,
-    ) = calculate_coactivity(
+    (_, _, fraction_dend_coactive, _, _,) = calculate_coactivity(
         dendrite_activity,
         spine_activity,
         norm_method=norm_method,
@@ -87,6 +91,15 @@ def calculate_dendrite_coactivity_rate(
     # Get event num
     coactive_event_num = len(np.nonzero(np.diff(coactive_trace) == 1)[0])
 
+    # Calculate the relative onset
+    relative_spine_onset, spine_onset_jitter = calculate_relative_onset(
+        spine_activity,
+        dendrite_activity,
+        coactive_trace,
+        sampling_rate,
+        activity_window,
+    )
+
     # Calculate the shuffled coactivity
     shuff_coactivity_rate = np.zeros(iterations)
     shuff_coactivity_rate_norm = np.zeros(iterations)
@@ -96,13 +109,7 @@ def calculate_dendrite_coactivity_rate(
         ## Shuffle the activity
         shuff_activity = d_utils.roll_2d_array(spine_activity, SHIFT_RANGE, axis=1)
         ## Get the shuffled coactivity rates
-        (
-            shuff_rate,
-            shuff_rate_norm,
-            _,
-            _,
-            _,
-        ) = calculate_coactivity(
+        (shuff_rate, shuff_rate_norm, _, _, _,) = calculate_coactivity(
             shuff_activity,
             dendrite_activity,
             norm_method=norm_method,
@@ -131,4 +138,6 @@ def calculate_dendrite_coactivity_rate(
         relative_diff_norm,
         fraction_spine_coactive,
         fraction_dend_coactive,
+        relative_spine_onset,
+        spine_onset_jitter,
     )
