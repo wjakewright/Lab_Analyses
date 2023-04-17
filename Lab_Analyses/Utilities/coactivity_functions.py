@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import stats
 
-from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
+from Lab_Analyses.Utilities.activity_timestamps import (
+    get_activity_timestamps, refine_activity_timestamps)
 
 
 def calculate_coactivity(
@@ -98,4 +99,73 @@ def calculate_coactivity(
         fraction_active_2,
         coactivity_trace,
     )
+
+
+def calculate_relative_onset(
+    trace_1, trace_2, coactivity=None, sampling_rate=60, activity_window=(-2, 4)
+):
+    """Function to calculate the relative onset of activity during coactive events
+        
+        INPUT PARAMETERS
+            trace_1 - np.array of first rois binary activity
+            
+            trace_2 - np.array of the second rois binary activity
+            
+            coactivity - np.array of the binary coactivity trace. If none a trace will 
+                        be generated
+            
+            sampling_rate - int specifying the imaging rate
+
+            activity_window - tuple specifying the window to analyze
+            
+        OUTPUT PARAMETERS
+            avg_relative_onset - float of the avg relative onset of roi 1 to roi 2
+            
+            onset_jitter - float of the deviation of the relative onset
+    """
+    # Set up window in frames
+    before_f = int(activity_window[0] * sampling_rate)
+    after_f = int(activity_window[1] * sampling_rate)
+    if coactivity is None:
+        coactivity = trace_1 * trace_2
+
+    # Get timestamps
+    timestamps = get_activity_timestamps(coactivity)
+    timestamps = refine_activity_timestamps(
+        timestamps,
+        window=activity_window,
+        max_len=len(coactivity),
+        sampling_rate=sampling_rate,
+    )
+
+    relative_onsets = np.zeros(len(timestamps)) * np.nan
+    # Iterate through each event
+    for event in timestamps:
+        event_activity = coactivity[event + before_f : event + after_f]
+        ## Ensure there is coactivity
+        if not np.sum(event_activity):
+            continue
+        ## Find onsets of trace_1
+        activity_1 = trace_1[event + before_f : event + after_f]
+        boundaries_1 = np.insert(np.diff(activity_1), 0, 0, axis=0)
+        try:
+            onset_1 = np.nonzero(boundaries_1 == 1)[0][0]
+        except IndexError:
+            onset_1 = 0
+        ## Find onset of trace_2
+        activity_2 = trace_2[event + before_f : event + after_f]
+        boundaries_2 = np.insert(np.diff(activity_2), 0, 0, axis=0)
+        try:
+            onset_2 = np.nonzero(boundaries_2 == 1)[0][0]
+        except IndexError:
+            onset_2 = 0
+        ## Calculate relative onset
+        rel_onset = (onset_1 - onset_2) / sampling_rate
+        relative_onsets[event] = rel_onset
+    
+    # Get mean onset and jitter
+    avg_relative_onset = np.nanmean(relative_onsets)
+    onset_jitter = np.nanstd(relative_onsets)
+
+    return avg_relative_onset, onset_jitter
 
