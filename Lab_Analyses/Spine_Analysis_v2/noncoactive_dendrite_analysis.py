@@ -3,6 +3,7 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_present_spines
 from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
+from Lab_Analyses.Utilities.mean_trace_functions import analyze_event_activity
 
 
 def noncoactive_dendrite_analysis(
@@ -120,4 +121,31 @@ def noncoactive_dendrite_analysis(
         )
 
         # Get nonparticipating event stamps
+        non_part_stamps = []
+        ## Iterate through each nearby spine
+        for nearby in nearby_spine_idxs[spine]:
+            nearby_activity = spine_activity[:, nearby]
+            spine_inactivity = 1 - spine_activity[:, spine]
+            nearby_isolated = nearby_activity * spine_inactivity
+            _, _, _, _, non_part_coactivity = calculate_coactivity(
+                dend_activity[:, spine], nearby_isolated, sampling_rate=sampling_rate,
+            )
+            ## Get the stamps
+            np_stamps = t_stamps.get_activity_timestamps(non_part_coactivity)
+            np_stamps = [x[0] for x in np_stamps]
+            np_stamps = t_stamps.refine_activity_timestamps(
+                np_stamps,
+                window=activity_window,
+                max_len=len(dend_activity[:, spine]),
+                sampling_rate=sampling_rate,
+            )
+            non_part_stamps.append(np_stamps)
+        ## Unnest the list
+        non_part_stamps = [y for x in non_part_stamps for y in x]
 
+        # Store stamps
+        noncoactive_dend_stamps[spine] = noncoactive_stamps
+        nonparticipating_stamps[spine] = non_part_stamps
+        conj_fraction_participating[spine] = frac_participating
+
+    # Analyze the traces
