@@ -386,7 +386,7 @@ def local_coactivity_analysis(
                 lever_active,
                 lever_force,
                 threshold=0.5,
-                corr_duraiont=0.5,
+                corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
             (
@@ -404,7 +404,7 @@ def local_coactivity_analysis(
                 lever_active_rwd,
                 lever_force,
                 threshold=0.5,
-                corr_duraiont=0.5,
+                corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
             ## Local coactivity
@@ -422,7 +422,7 @@ def local_coactivity_analysis(
                 lever_active,
                 lever_force,
                 threshold=0.5,
-                corr_duraiont=0.5,
+                corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
             (
@@ -439,7 +439,7 @@ def local_coactivity_analysis(
                 lever_active_rwd,
                 lever_force,
                 threshold=0.5,
-                corr_duraiont=0.5,
+                corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
 
@@ -479,7 +479,7 @@ def local_coactivity_analysis(
                 "position bins": position_bins,
                 "cluster dist": cluster_dist,
                 "partners": partners,
-                "movement_period": movement_period,
+                "movement period": movement_period,
             }
 
             # Store the data
