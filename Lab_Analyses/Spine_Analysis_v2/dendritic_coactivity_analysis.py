@@ -1,5 +1,9 @@
 import numpy as np
 
+from Lab_Analyses.Spine_Analysis_v2.dendritic_coactivity_dataclass import (
+    Dendritic_Coactivity_Data,
+    Grouped_Dendritic_Coactivity_Data,
+)
 from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
     nearby_coactive_spine_activity,
 )
@@ -20,6 +24,7 @@ from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import (
     variable_distance_dependence,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.quantify_movement_quality import quantify_movement_quality
 
 
 def dendritic_coactivity_analysis(
@@ -194,7 +199,7 @@ def dendritic_coactivity_analysis(
                 all_onset_jitter,
                 all_spine_coactive_traces,
                 all_spine_coactive_calcium_traces,
-                all_dendrite_coactive_trace,
+                all_dendrite_coactive_traces,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -233,7 +238,7 @@ def dendritic_coactivity_analysis(
                 conj_onset_jitter,
                 conj_spine_coactive_traces,
                 conj_spine_coactive_calcium_traces,
-                conj_dendrite_coactive_trace,
+                conj_dendrite_coactive_traces,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -272,7 +277,7 @@ def dendritic_coactivity_analysis(
                 nonconj_onset_jitter,
                 nonconj_spine_coactive_traces,
                 nonconj_spine_coactive_calcium_traces,
-                nonconj_dendrite_coactive_trace,
+                nonconj_dendrite_coactive_traces,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -293,7 +298,7 @@ def dendritic_coactivity_analysis(
             )
 
             # Calulate fraction of coactivity with local coactivity
-            fraction_with_local = (
+            fraction_conj_events = (
                 conj_dendrite_coactive_event_num / all_dendrite_coactive_event_num
             )
 
@@ -476,7 +481,7 @@ def dendritic_coactivity_analysis(
                 method="local",
                 iterations=1000,
             )
-            rel_conj_nearby_spine_fraction = np.array(
+            rel_conj_spine_fraction = np.array(
                 [
                     (x - y) / (x + y)
                     for x, y in zip(
@@ -499,7 +504,7 @@ def dendritic_coactivity_analysis(
                 method="local",
                 iterations=1000,
             )
-            rel_conj_nearby_dend_fraction = np.array(
+            rel_conj_dend_fraction = np.array(
                 [
                     (x - y) / (x + y)
                     for x, y in zip(
@@ -571,3 +576,227 @@ def dendritic_coactivity_analysis(
                 sampling_rate=sampling_rate,
                 volume_norm=all_constants,
             )
+
+            # Assess movement encoding
+            ## All coactive events
+            (
+                all_coactive_movement_correlation,
+                all_coactive_movement_stereotypy,
+                all_coactive_movement_reliability,
+                all_coactive_movement_specificity,
+                all_coactive_LMP_reliability,
+                all_coactive_LMP_specificity,
+                learned_movement_pattern,
+            ) = quantify_movement_quality(
+                mouse,
+                all_coactive_binary,
+                lever_active,
+                lever_force,
+                threshold=0.5,
+                corr_duration=0.5,
+                sampling_rate=sampling_rate,
+            )
+            ## Conj coactive events
+            (
+                conj_movement_correlation,
+                conj_movement_stereotypy,
+                conj_movement_reliability,
+                conj_movement_specificity,
+                conj_LMP_reliability,
+                conj_LMP_specificity,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                conj_coactive_binary,
+                lever_active,
+                lever_force,
+                threshold=0.5,
+                corr_duration=0.5,
+                sampling_rate=sampling_rate,
+            )
+            (
+                nonconj_movement_correlation,
+                nonconj_movement_stereotypy,
+                nonconj_movement_reliability,
+                nonconj_movement_specificity,
+                nonconj_LMP_reliability,
+                nonconj_LMP_specificity,
+                _,
+            ) = quantify_movement_quality(
+                mouse,
+                nonconj_coactive_binary,
+                lever_active,
+                lever_force,
+                threshold=0.5,
+                corr_duration=0.5,
+                sampling_rate=sampling_rate,
+            )
+
+            LMP = [learned_movement_pattern for i in range(spine_activity.shape[1])]
+            learned_movement_pattern = np.stack(LMP).reshape(-1, 1)
+
+            parameters = {
+                "Sampling Rate": sampling_rate,
+                "zscore": zscore,
+                "Activity Window": activity_window,
+                "Volume Norm": volume_norm,
+                "FOV type": fov_type,
+                "cluster dist": cluster_dist,
+                "partners": partners,
+                "movement period": movement_period,
+                "extended": extend,
+            }
+
+            # Store data in dataclass
+            dendritic_coactivity_data = Dendritic_Coactivity_Data(
+                mouse_id=mouse,
+                FOV=FOV,
+                session=session,
+                parameters=parameters,
+                spine_flags=spine_flags,
+                followup_flags=followup_flags,
+                spine_volumes=spine_volumes,
+                followup_volumes=followup_volumes,
+                movement_spines=movement_spines,
+                nonmovement_spines=nonmovement_spines,
+                rwd_movement_spines=rwd_movement_spines,
+                nonrwd_movement_spines=nonrwd_movement_spines,
+                movement_dendrites=movement_dendrites,
+                nonmovement_dendrites=nonmovement_dendrites,
+                rwd_movement_dendrites=rwd_movement_dendrites,
+                nonrwd_movement_dendrites=nonrwd_movement_dendrites,
+                all_dendrite_coactivity_rate=all_dendrite_coactivity_rate,
+                all_dendrite_coactivity_rate_norm=all_dendrite_coactivity_rate_norm,
+                all_shuff_dendrite_coactivity_rate=all_shuff_dendrite_coactivity_rate,
+                all_shuff_dendrite_coactivity_rate_norm=all_shuff_dendrite_coactivity_rate_norm,
+                all_above_chance_coactivity=all_above_chance_coactivity,
+                all_above_chance_coactivity_norm=all_above_chance_coactivity_norm,
+                all_fraction_dendrite_coactive=all_fraction_dend_coactive,
+                all_fraction_spine_coactive=all_fraction_spine_coactive,
+                all_spine_coactive_amplitude=all_spine_coactive_amplitude,
+                all_spine_coactive_calcium_amplitude=all_spine_coactive_calcium_amplitude,
+                all_dendrite_coactive_amplitude=all_dendrite_coactive_amplitude,
+                all_relative_onsets=all_relative_onsets,
+                all_onset_jitter=all_onset_jitter,
+                all_spine_coactive_traces=all_spine_coactive_traces,
+                all_spine_coactive_calcium_traces=all_spine_coactive_calcium_traces,
+                all_dendrite_coactive_traces=all_dendrite_coactive_traces,
+                conj_dendrite_coactivity_rate=conj_dendrite_coactivity_rate,
+                conj_dendrite_coactivity_rate_norm=conj_dendrite_coactivity_rate_norm,
+                conj_shuff_dendrite_coactivity_rate=conj_shuff_dendrite_coactivity_rate,
+                conj_shuff_dendrite_coactivity_rate_norm=conj_shuff_dendrite_coactivity_rate_norm,
+                conj_above_chance_coactivity=conj_above_chance_coactivity,
+                conj_above_chance_coactivity_norm=conj_above_chance_coactivity_norm,
+                conj_fraction_dendrite_coactive=conj_fraction_dend_coactive,
+                conj_fraction_spine_coactive=conj_fraction_spine_coactive,
+                conj_spine_coactive_amplitude=conj_spine_coactive_amplitude,
+                conj_spine_coactive_calcium_amplitude=conj_spine_coactive_calcium_amplitude,
+                conj_dendrite_coactive_amplitude=conj_dendrite_coactive_amplitude,
+                conj_relative_onsets=conj_relative_onsets,
+                conj_onset_jitter=conj_onset_jitter,
+                conj_spine_coactive_traces=conj_spine_coactive_traces,
+                conj_spine_coactive_calcium_traces=conj_spine_coactive_calcium_traces,
+                conj_dendrite_coactive_traces=conj_dendrite_coactive_traces,
+                nonconj_dendrite_coactivity_rate=nonconj_dendrite_coactivity_rate,
+                nonconj_dendrite_coactivity_rate_norm=nonconj_dendrite_coactivity_rate_norm,
+                nonconj_shuff_dendrite_coactivity_rate=nonconj_shuff_dendrite_coactivity_rate,
+                nonconj_shuff_dendrite_coactivity_rate_norm=nonconj_shuff_dendrite_coactivity_rate_norm,
+                nonconj_above_chance_coactivity=nonconj_above_chance_coactivity,
+                nonconj_above_chance_coactivity_norm=nonconj_above_chance_coactivity_norm,
+                nonconj_fraction_dendrite_coactive=nonconj_fraction_dend_coactive,
+                nonconj_fraction_spine_coactive=nonconj_fraction_spine_coactive,
+                nonconj_spine_coactive_amplitude=nonconj_spine_coactive_amplitude,
+                nonconj_spine_coactive_calcium_amplitude=nonconj_spine_coactive_calcium_amplitude,
+                nonconj_dendrite_coactive_amplitude=nonconj_dendrite_coactive_amplitude,
+                nonconj_relative_onsets=nonconj_relative_onsets,
+                nonconj_onset_jitter=nonconj_onset_jitter,
+                nonconj_spine_coactive_traces=nonconj_spine_coactive_traces,
+                nonconj_spine_coactive_calcium_traces=nonconj_spine_coactive_calcium_traces,
+                nonconj_dendrite_coactive_traces=nonconj_dendrite_coactive_traces,
+                fraction_conj_events=fraction_conj_events,
+                conj_coactive_spine_num=conj_coactive_spine_num,
+                conj_nearby_coactive_spine_amplitude=conj_nearby_coactive_spine_amplitude,
+                conj_nearby_coactive_spine_calcium=conj_nearby_coactive_spine_calcium,
+                conj_nearby_spine_onset=conj_nearby_spine_onset,
+                conj_nearby_spine_onset_jitter=conj_nearby_spine_onset_jitter,
+                conj_nearby_coactive_spine_traces=conj_nearby_coactive_spine_traces,
+                conj_nearby_coactive_spine_calcium_traces=conj_nearby_coactive_spine_calcium_traces,
+                avg_nearby_spine_coactivity_rate=avg_nearby_spine_coactivity_rate,
+                shuff_nearby_spine_coactivity_rate=shuff_nearby_spine_coactivity_rate,
+                cocativity_rate_distribution=coactivity_rate_distribution,
+                rel_nearby_spine_coactivity_rate=rel_nearby_spine_coactivity_rate,
+                avg_nearby_spine_coactivity_rate_norm=avg_nearby_spine_coactivity_rate_norm,
+                shuff_nearby_spine_coactivity_rate_norm=shuff_nearby_spine_coactivity_rate_norm,
+                coactivity_rate_norm_distribution=coactivity_rate_norm_distribution,
+                rel_nearby_spine_coactivity_rate=rel_nearby_spine_coactivity_rate,
+                avg_nearby_spine_conj_rate=avg_nearby_spine_conj_rate,
+                shuff_nearby_spine_conj_rate=shuff_nearby_spine_conj_rate,
+                conj_coactivity_rate_distribution=conj_coactivity_rate_distribution,
+                rel_nearby_spine_conj_rate=rel_nearby_spine_conj_rate,
+                avg_nearby_spine_conj_rate_norm=avg_nearby_spine_conj_rate_norm,
+                shuff_nearby_spine_conj_rate_norm=shuff_nearby_spine_conj_rate_norm,
+                conj_coactivity_rate_norm_distrubtion=conj_coactivity_rate_norm_distribution,
+                rel_nearby_spine_conj_rate_norm=rel_nearby_spine_conj_rate_norm,
+                avg_nearby_spine_fraction=avg_nearby_spine_fraction,
+                shuff_nearby_spine_fraction=shuff_nearby_spine_fraction,
+                spine_fraction_coactive_distribution=spine_fraction_coactive_distribution,
+                rel_spine_fraction=rel_spine_fraction,
+                avg_nearby_dendrite_fraction=avg_nearby_dend_fraction,
+                shuff_nearby_dendrite_fraction=shuff_nearby_dend_fraction,
+                dendrite_fraction_coactive_distribution=dend_fraction_coactive_distribution,
+                rel_dendrite_fraction=rel_dend_fraction,
+                conj_avg_nearby_spine_fraction=conj_avg_nearby_spine_fraction,
+                conj_shuff_nearby_spine_fraction=conj_shuff_nearby_spine_fraction,
+                conj_spine_fraction_coactive_distribution=conj_spine_fraction_coactive_distribution,
+                rel_conj_spine_fraction=rel_conj_spine_fraction,
+                conj_avg_nearby_dendrite_fraction=conj_avg_nearby_dend_fraction,
+                conj_shuff_nearby_dendrite_fraction=conj_shuff_nearby_dend_fraction,
+                conj_dend_fraction_coactive_distribution=conj_dend_fraction_coactive_distribution,
+                rel_conj_dendrite_fraction=rel_conj_dend_fraction,
+                avg_nearby_relative_onset=avg_nearby_relative_onset,
+                shuff_nearby_relative_onset=shuff_nearby_relative_onset,
+                relative_onset_distribution=relative_onset_distribution,
+                rel_nearby_relative_onset=rel_nearby_relative_onset,
+                conj_avg_nearby_relative_onset=conj_avg_nearby_relative_onset,
+                conj_shuff_nearby_relative_onset=conj_shuff_nearby_relative_onset,
+                conj_relative_onset_distribution=conj_relative_onset_distribution,
+                rel_conj_nearby_relative_onset=rel_conj_nearby_relative_onset,
+                noncoactive_spine_calcium_amplitude=noncoactive_spine_calcium_amplitude,
+                noncoactive_spine_calcium_traces=noncoactive_spine_calcium_traces,
+                conj_fraction_participating=conj_fraction_participating,
+                nonparticipating_spine_calcium_amplitude=nonparticipating_spine_calcium_amplitude,
+                nonparticipating_spine_calcium_traces=nonparticipating_spine_calcium_traces,
+                learned_movement_pattern=learned_movement_pattern,
+                all_coactive_movement_correlation=all_coactive_movement_correlation,
+                all_coactive_movement_stereotypy=all_coactive_movement_stereotypy,
+                all_coactive_movement_reliability=all_coactive_movement_reliability,
+                all_coactive_movement_specificity=all_coactive_movement_specificity,
+                all_coactive_LMP_reliability=all_coactive_LMP_reliability,
+                all_coactive_LMP_specificity=all_coactive_LMP_specificity,
+                conj_movement_correlation=conj_movement_correlation,
+                conj_movement_stereotypy=conj_movement_stereotypy,
+                conj_movement_reliability=conj_movement_reliability,
+                conj_movement_specificity=conj_movement_specificity,
+                conj_LMP_reliability=conj_LMP_reliability,
+                conj_LMP_specificity=conj_LMP_specificity,
+                nonconj_movement_correlation=nonconj_movement_correlation,
+                nonconj_movement_stereotypy=nonconj_movement_stereotypy,
+                nonconj_movement_reliability=nonconj_movement_reliability,
+                nonconj_movement_specificity=nonconj_movement_specificity,
+                nonconj_LMP_reliability=nonconj_LMP_reliability,
+                nonconj_LMP_specificity=nonconj_LMP_specificity,
+            )
+            # Save individual data if specified
+            if save_ind:
+                dendritic_coactivity_data.save()
+            
+            # Append data to the list
+            analyzed_data.append(dendritic_coactivity_data)
+    
+    # Make the grouped data
+    grouped_dendritic_coactivity_data = Grouped_Dendritic_Coactivity_Data(analyzed_data)
+    if save_grouped:
+        grouped_dendritic_coactivity_data.save()
+    
+    return grouped_dendritic_coactivity_data
+
