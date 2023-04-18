@@ -3,6 +3,9 @@ import numpy as np
 from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
     nearby_coactive_spine_activity,
 )
+from Lab_Analyses.Spine_Analysis_v2.noncoactive_dendrite_analysis import (
+    noncoactive_dendrite_analysis,
+)
 from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import (
     spine_dendrite_event_analysis,
 )
@@ -549,6 +552,22 @@ def dendritic_coactivity_analysis(
                 ]
             )
 
-            # Assess spine and dendrite calcium when spine not coactive
-
-            # Assess spine calcium when nearby spines are coactive with dendrite
+            # Assess spine calcium when not coactive
+            (
+                noncoactive_spine_calcium_amplitude,
+                noncoactive_spine_calcium_traces,
+                conj_fraction_participating,
+                nonparticipating_spine_calcium_amplitude,
+                nonparticipating_spine_calcium_traces,
+            ) = noncoactive_dendrite_analysis(
+                all_coactive_binary,
+                spine_activity,
+                spine_calcium_dFoF,
+                dendrite_activity,
+                nearby_spine_idxs,
+                spine_flags,
+                activity_window,
+                constrain_matrix=constrain_matrix,
+                sampling_rate=sampling_rate,
+                volume_norm=all_constants,
+            )
