@@ -93,11 +93,7 @@ def calculate_dendrite_coactivity_rate(
 
     # Calculate the relative onset
     relative_spine_onset, spine_onset_jitter = calculate_relative_onset(
-        spine_activity,
-        dendrite_activity,
-        coactive_trace,
-        sampling_rate,
-        activity_window,
+        spine_activity, dendrite_activity, coactive_trace, sampling_rate, (-2, 2),
     )
 
     # Calculate the shuffled coactivity
