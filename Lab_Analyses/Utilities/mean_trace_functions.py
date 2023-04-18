@@ -14,6 +14,7 @@ def analyze_event_activity(
     avg_window=None,
     norm_constant=None,
     sampling_rate=60,
+    peak_required=True,
 ):
     """Function to analyze the mean activity trace around specified events
     
@@ -35,6 +36,9 @@ def analyze_event_activity(
             norm_constants - np.array of the constants to normalize the activity by volume
             
             sampling_rates - int specifying the sampling rate
+
+            peak_required - boolean specifying if there a defined peak must exist to get
+                            amplitude
         
         OUTPUT PARAMETERS
             activity_traces - list of 2d np.array of the activity around each event.
@@ -69,7 +73,11 @@ def analyze_event_activity(
 
     # Get the peak amplitudes
     activity_amplitude, _ = find_peak_amplitude(
-        mean_traces, smooth=smooth, window=avg_window, sampling_rate=sampling_rate
+        mean_traces,
+        smooth=smooth,
+        window=avg_window,
+        sampling_rate=sampling_rate,
+        peak_required=peak_required,
     )
 
     # Get the activity onsets
