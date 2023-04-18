@@ -140,13 +140,13 @@ class Local_Coactivity_Data:
 
 
 class Grouped_Local_Coactivity_Data:
-    """Class to group individual Spine_Coactivity_Data sets together"""
+    """Class to group individual Local_Coactivity_Data sets together"""
 
     def __init__(self, data_list):
         """Initialize the class
             
             INPUT PARAMETERS
-                data_list - list of Spine_Coactivity_Data dataclasses
+                data_list - list of Local_Coactivity_Data dataclasses
         """
         # Initialize some of the initial attributes
         self.session = data_list[0].session
