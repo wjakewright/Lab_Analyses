@@ -76,11 +76,7 @@ def noncoactive_dendrite_analysis(
     present_spines = find_present_spines(spine_flags)
 
     # Set up some outputs
-    noncoactive_spine_calcium_amplitude = np.zeros(coactive_matrix.shape[1]) * np.nan
-    noncoactive_spine_calcium_traces = [None for i in range(coactive_matrix.shape[1])]
     conj_fraction_participating = np.zeros(coactive_matrix.shape[1])
-    nonparticipating_calcium_amplitude = np.zeros(coactive_matrix.shape[1]) * np.nan
-    nonparticipating_calcium_traces = [None for i in range(coactive_matrix.shape[1])]
 
     # Temporary variables
     noncoactive_dend_stamps = [None for i in range(coactive_matrix.shape[1])]
@@ -149,3 +145,43 @@ def noncoactive_dendrite_analysis(
         conj_fraction_participating[spine] = frac_participating
 
     # Analyze the traces
+    ## Noncoactive dendrite events
+    (
+        noncoactive_spine_calcium_traces,
+        noncoactive_spine_calcium_amplitude,
+        _,
+    ) = analyze_event_activity(
+        spine_calcium,
+        noncoactive_dend_stamps,
+        activity_window=activity_window,
+        center_onset=False,
+        smooth=True,
+        avg_window=None,
+        norm_constant=ca_norm_constants,
+        sampling_rate=sampling_rate,
+        peak_required=False,
+    )
+    ## Nonparticipating coactive events
+    (
+        nonparticipating_calcium_traces,
+        nonparticipating_calcium_amplitude,
+        _,
+    ) = analyze_event_activity(
+        spine_calcium,
+        nonparticipating_stamps,
+        activity_window=activity_window,
+        center_onset=False,
+        smooth=True,
+        avg_window=None,
+        norm_constant=ca_norm_constants,
+        sampling_rate=sampling_rate,
+        peak_required=False,
+    )
+
+    return (
+        noncoactive_spine_calcium_amplitude,
+        noncoactive_spine_calcium_traces,
+        conj_fraction_participating,
+        nonparticipating_calcium_amplitude,
+        nonparticipating_calcium_traces,
+    )
