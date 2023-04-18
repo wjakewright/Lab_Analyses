@@ -34,7 +34,7 @@ class Dendritic_Coactivity_Data:
     all_dendrite_coactivity_rate: np.ndarray
     all_dendrite_coactivity_rate_norm: np.ndarray
     all_shuff_dendrite_coactivity_rate: np.ndarray
-    all_shuff_dendrite_coactivity_rate_shuff: np.ndarray
+    all_shuff_dendrite_coactivity_rate_norm: np.ndarray
     all_above_chance_coactivity: np.ndarray
     all_above_chance_coactivity_norm: np.ndarray
     all_fraction_dendrite_coactive: np.ndarray
@@ -51,7 +51,7 @@ class Dendritic_Coactivity_Data:
     conj_dendrite_coactivity_rate: np.ndarray
     conj_dendrite_coactivity_rate_norm: np.ndarray
     conj_shuff_dendrite_coactivity_rate: np.ndarray
-    conj_shuff_dendrite_coactivity_rate_shuff: np.ndarray
+    conj_shuff_dendrite_coactivity_rate_norm: np.ndarray
     conj_above_chance_coactivity: np.ndarray
     conj_above_chance_coactivity_norm: np.ndarray
     conj_fraction_dendrite_coactive: np.ndarray
@@ -68,7 +68,7 @@ class Dendritic_Coactivity_Data:
     nonconj_dendrite_coactivity_rate: np.ndarray
     nonconj_dendrite_coactivity_rate_norm: np.ndarray
     nonconj_shuff_dendrite_coactivity_rate: np.ndarray
-    nonconj_shuff_dendrite_coactivity_rate_shuff: np.ndarray
+    nonconj_shuff_dendrite_coactivity_rate_norm: np.ndarray
     nonconj_above_chance_coactivity: np.ndarray
     nonconj_above_chance_coactivity_norm: np.ndarray
     nonconj_fraction_dendrite_coactive: np.ndarray
