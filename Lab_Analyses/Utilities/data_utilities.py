@@ -1,5 +1,6 @@
 """Module containing various functions that help with data handeling"""
 import random
+from itertools import compress
 
 import numpy as np
 import pandas as pd
@@ -438,3 +439,29 @@ def roll_2d_array(array, shift_range, axis=1):
 
     return rolled
 
+
+def subselect_data_by_idxs(data, idxs):
+    """Helper function to subsect data by its index
+    
+        INPUT PARAMETERS
+            data - the data to be subselected. Can be list or arrays
+            
+            idxs - list or np.array of the indexes to use for selection
+                    Can be an array of the actual indexes or a boolean
+                    list
+    """
+    if type(data) == np.ndarray:
+        if len(data.shape) == 1:
+            selected_data = data[idxs]
+        elif len(data.shape) == 2:
+            selected_data = data[:, idxs]
+        else:
+            raise IndexError("Only supports up to 2D arrays")
+    elif type(data) == list:
+        # Check if idxs are boolean
+        if type(idxs[0]) == bool:
+            selected_data = list(compress(data, idxs))
+        else:
+            selected_data = [data[i] for i in idxs]
+
+    return selected_data
