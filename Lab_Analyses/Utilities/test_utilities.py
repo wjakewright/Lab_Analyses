@@ -172,6 +172,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             "raw p-vals": np.array(raw_pvals),
             "adjusted p-vals": adj_pvals,
         }
+        posthoc_df = pd.DataFrame.from_dict(posthoc_dict)
 
     if method == "Tukey":
         # Organize data to put into Tukey
@@ -200,8 +201,10 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
         )
         posthoc_dict = posthoc_df.to_dict("list")
 
-    two_way_anova_table = tabulate(two_way_anova, headers="keys", tablefmt="fancy_grid")
-    posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
+    # two_way_anova_table = tabulate(two_way_anova, headers="keys", tablefmt="fancy_grid")
+    # posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
+    two_way_anova_table = two_way_anova
+    posthoc_table = posthoc_df
 
     return two_way_anova_table, posthoc_table
 
@@ -237,7 +240,10 @@ def kruskal_wallis_test(data_dict, post_method, adj_method):
         "adjusted p-vals": adj_pvals,
     }
 
-    results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
+    results_df = pd.DataFrame.from_dict(results_dict)
+
+    # results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
+    results_table = results_df
 
     return f_stat, kruskal_p, results_table
 
@@ -289,10 +295,10 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
     two_way_mixed_anova = pg.mixed_anova(
         data=test_df, dv="data", between="group", within="rm_val", subject="subject"
     )
-    two_way_mixed_anova = two_way_mixed_anova.to_dict("list")
-    two_way_mixed_anova = tabulate(
-        two_way_mixed_anova, headers="keys", tablefmt="fancy_grid"
-    )
+    # two_way_mixed_anova = two_way_mixed_anova.to_dict("list")
+    # two_way_mixed_anova = tabulate(
+    #    two_way_mixed_anova, headers="keys", tablefmt="fancy_grid"
+    # )
 
     # Perform the posthoc tests
     ## Between group comparisions
@@ -333,7 +339,8 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
             "raw p-vals": np.array(raw_pvals),
             "adjusted p-vals": adj_pvals,
         }
-        posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
+        # posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
+        posthoc_table = pd.DataFrame.from_dict(posthoc_dict)
 
     return two_way_mixed_anova, posthoc_dict, posthoc_table
 
