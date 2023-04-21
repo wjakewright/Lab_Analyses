@@ -13,6 +13,7 @@ from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
     classify_plasticity,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities import test_utilities as t_utils
 
 sns.set()
 sns.set_style("ticks")
@@ -27,6 +28,9 @@ def plot_basic_features(
     hist_bins=25,
     mean_type="median",
     err_type="CI",
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
     save=False,
     save_path=None,
 ):
@@ -261,3 +265,65 @@ def plot_basic_features(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_1")
         fig.savefig(fname + ".pdf")
+
+    ########################### Statistics Section ###########################
+    if display_stats == False:
+        return
+
+    ## Perform the statistics
+    if test_type == "parametric":
+        vol_f, vol_p, _, vol_test_df = t_utils.ANOVA_1way_posthoc(
+            initial_vol_dict, test_method
+        )
+        activity_f, activity_p, _, activity_test_df = t_utils.ANOVA_1way_posthoc(
+            activity_dict, test_method
+        )
+        test_title = f"One-Way ANOVA {test_method}"
+    elif test_type == "nonparametric":
+        vol_f, vol_p, vol_test_df = t_utils.kruskal_wallis_test(
+            initial_vol_dict, "Conover", test_method,
+        )
+        activity_f, activity_p, activity_test_df = t_utils.kruskal_wallis_test(
+            activity_dict, "Conover", test_method,
+        )
+        test_title = f"Kruskal-Wallis {test_method}"
+    # Display the statistics
+    fig2, axes2 = plt.subplot_mosaic([["left", "right"]], figsize=(8, 4))
+    ## Format the first table
+    axes2["left"].axis("off")
+    axes2["left"].axes("tight")
+    axes2["left"].set_title(
+        f"Initial Volume {test_title}\nF = {vol_f:.4}   p = {vol_p:.3E}"
+    )
+    left_table = axes2["left"].table(
+        cellText=vol_test_df.values,
+        colLabels=vol_test_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    left_table.auto_set_font_size(False)
+    left_table.set_fontsize(8)
+    ## Format the second table
+    axes2["right"].axis("off")
+    axes2["right"].axis("tight")
+    axes2["right"].set_title(
+        f"Event Rate {test_title}\nF = {activity_f:.4}    p = {activity_p:.3E}"
+    )
+    right_table = axes2["right"].table(
+        cellText=activity_test_df.values,
+        cellLabels=vol_test_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    right_table.auto_set_font_size(False)
+    right_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_1_Stats")
+        fig.savefig(fname + ".pdf")
+
