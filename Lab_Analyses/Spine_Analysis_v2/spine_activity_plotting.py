@@ -1,10 +1,14 @@
 import os
+from itertools import compress
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from scipy import stats
 
+from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
+from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_pie_chart import plot_pie_chart
 from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
@@ -48,7 +52,19 @@ def plot_basic_features(
             threshold - float or tuple of floats specifying the threshold cuttoffs 
                         for classifying plasticity
 
+            figsize - tuple specifying the figure size
+
             hist_bins - int specifying how many bins to plot for the histogram
+
+            mean_type - str specifying the mean type for bar plots
+
+            err_type - str specifying the error type for bar plots
+
+            test_type - str specifying whetehr to perform parametric or nonparameteric stats
+
+            test_methods - str specifying the type of posthoc test to perform
+
+            display_stats - boolean specifying whether to display stat results
             
             save - boolean specifying whether to save the figure or not
             
@@ -326,4 +342,605 @@ def plot_basic_features(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_1_Stats")
         fig.savefig(fname + ".pdf")
+
+
+def plot_movement_related_activity(
+    dataset,
+    followup_dataset=None,
+    exclude="Shaft Spine",
+    threshold=0.3,
+    figsize=(10, 6),
+    hist_bins=25,
+    mean_type="median",
+    err_type="CI",
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    save=False,
+    save_path=None,
+):
+    """Function to plot movement-related activity of different spine classes
+    
+        INPUT PARAMETERS
+            dataset - Spine_Activity_Data object
+            
+            followup_dataset - optional Spine_Activity_Data object of the subsequent 
+                                session to use for volume comparision. Default is None,
+                                to sue the followup volumes in the dataset
+            
+            exclude - str specifying type of spine to exclude from analysis
+            
+            threshold - float or tuple of floats specifying the threshold cutoffs for
+                        classifying plasticity
+                        
+            figsize - tuple specifying the figure size
+            
+            hist_bins - int specifying how many  bins to plot for the histograms
+            
+            mean_type - str specifying the mean type for bar plots
+            
+            err_type - str specifying the error type for bar plots
+            
+            test_type - str specifying whether to perform parametric or nonparametric stats
+            
+            test_method - str specifying the type of posthoc test to perform
+            
+            display_stats - boolean specifying whether to display stat results
+            
+            save - boolean specifying whether to save the figure or not
+            
+            save_path - str specifying where to save the figures
+    """
+    COLORS = ["darkorange", "darkviolet", "silver"]
+    spine_groups = {
+        "Enlarged": "enlarged_spines",
+        "Shrunken": "shrunken_spines",
+        "Stable": "stable_spines",
+    }
+
+    # Pull relevant data
+    sampling_rate = dataset.parameters["Sampling Rate"]
+    activity_window = dataset.parameters["Activity Window"]
+    if dataset.parameters["zscore"]:
+        activity_type = "zscore"
+    else:
+        activity_type = "\u0394F/F"
+    ## Volume related information
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_dataset == None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_dataset.followup_volumes
+        followup_flags = followup_dataset.followup_flags
+
+    ## Movement identifiers
+    movement_spines = dataset.movement_spines
+    nonmovement_spines = dataset.nonmovement_spines
+    rwd_movement_spines = dataset.rwd_movement_spines
+    nonrwd_movement_spines = dataset.nonrwd_movement_spines
+
+    ## Movement-related activity
+    spine_movement_traces = dataset.spine_movement_traces
+    spine_movement_calcium_traces = dataset.spine_movement_calcium_traces
+    spine_movement_amplitude = dataset.spine_movement_amplitude
+    spine_movement_calcium_amplitude = dataset.spine_movement_calcium_amplitude
+    spine_movement_onset = dataset.spine_movement_onset
+    spine_movement_calcium_onset = dataset.spine_movement_calcium_onset
+
+    # Calculate relative volumes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes, flags, norm=False, exclude=exclude,
+    )
+    enlarged, shrunken, stable = classify_plasticity(
+        delta_volume, threshold=threshold, norm=False,
+    )
+
+    # Organize data
+    ## Subselect present spines
+    movement_spines = d_utils.subselect_data_by_idxs(movement_spines, spine_idxs)
+    nonmovement_spines = d_utils.subselect_data_by_idxs(nonmovement_spines, spine_idxs)
+    rwd_movement_spines = d_utils.subselect_data_by_idxs(
+        rwd_movement_spines, spine_idxs
+    )
+    nonrwd_movement_spines = d_utils.subselect_data_by_idxs(
+        nonrwd_movement_spines, spine_idxs
+    )
+    spine_movement_traces = d_utils.subselect_data_by_idxs(
+        spine_movement_traces, spine_idxs
+    )
+    spine_movement_calcium_traces = d_utils.subselect_data_by_idxs(
+        spine_movement_calcium_traces, spine_idxs
+    )
+    spine_movement_amplitude = d_utils.subselect_data_by_idxs(
+        spine_movement_amplitude, spine_idxs
+    )
+    spine_movement_calcium_amplitude = d_utils.subselect_data_by_idxs(
+        spine_movement_calcium_amplitude, spine_idxs
+    )
+    spine_movement_onset = d_utils.subselect_data_by_idxs(
+        spine_movement_onset, spine_idxs
+    )
+    spine_movement_calcium_onset = d_utils.subselect_data_by_idxs(
+        spine_movement_calcium_onset, spine_idxs
+    )
+
+    # Get the data for the correlation plot
+    mrs_mvmt_amps = spine_movement_amplitude[movement_spines]
+    mrs_mvmt_calcium_amps = spine_movement_calcium_amplitude[movement_spines]
+
+    ## Seperate groups into dictionaries for grouped plots
+    mvmt_fractions = {}
+    nonmvmt_fractions = {}
+    rwd_mvmt_fractions = {}
+    nonrwd_mvmt_fractions = {}
+    mrs_ind_mvmt_traces = {}
+    mrs_ind_mvmt_calcium_traces = {}
+    mrs_avg_mvmt_traces = {}
+    mrs_avg_mvmt_calcium_traces = {}
+    mrs_sem_mvmt_traces = {}
+    mrs_sem_mvmt_calcium_traces = {}
+    mrs_grouped_mvmt_amps = {}
+    mrs_grouped_mvmt_calcium_amps = {}
+    mrs_grouped_mvmt_onsets = {}
+    mrs_grouped_mvmt_calcium_onsets = {}
+
+    for key, value in spine_groups.items():
+        ## Get spine types
+        spines = eval(value)
+        mvmt_spines = spines * movement_spines
+        nmvmt_spines = spines * nonmovement_spines
+        rwd_mvmt_spines = spines * rwd_movement_spines
+        nrwd_mvmt_spines = spines * nonrwd_movement_spines
+        ## Get fractions of the different types
+        mvmt_fractions[key] = np.sum(mvmt_spines)
+        nonmvmt_fractions[key] = np.sum(nmvmt_spines)
+        rwd_mvmt_fractions[key] = np.sum(rwd_mvmt_spines)
+        nonrwd_mvmt_fractions[key] = np.sum(nrwd_mvmt_spines)
+        ## Grab grouped traces, amps, onsets
+        mrs_traces = compress(spine_movement_traces, mvmt_spines)
+        mrs_calcium_traces = compress(spine_movement_calcium_traces, mvmt_spines)
+        ### Avg individual events
+        trace_means = [
+            np.mnanmean(x, axis=1) for x in mrs_traces if type(x) == np.ndarray
+        ]
+        ca_trace_means = [
+            np.nanmean(x, axis=1) for x in mrs_calcium_traces if type(x) == np.ndarray
+        ]
+        trace_means = np.vstack(trace_means)
+        ca_trace_means = np.vstack(ca_trace_means)
+        ### Add individual traces for heatmap plotting
+        mrs_ind_mvmt_traces[key] = trace_means.T
+        mrs_ind_mvmt_calcium_traces[key] = ca_trace_means.T
+        ### Get avg traces
+        group_trace_means = np.nanmean(trace_means, axis=0)
+        group_ca_trace_means = np.nanmean(ca_trace_means, axis=0)
+        group_trace_sem = stats.sem(trace_means, axis=0, nan_policy="omit")
+        group_ca_trace_sem = stats.sem(ca_trace_means, axis=0, nan_policy="omit")
+        mrs_avg_mvmt_traces[key] = group_trace_means
+        mrs_avg_mvmt_calcium_traces[key] = group_ca_trace_means
+        mrs_sem_mvmt_traces[key] = group_trace_sem
+        mrs_sem_mvmt_calcium_traces[key] = group_ca_trace_sem
+        ### Amps and Onsets
+        mvmt_amps = spine_movement_amplitude[mvmt_spines]
+        mvmt_onsets = spine_movement_onset[mvmt_spines]
+        mvmt_ca_amps = spine_movement_calcium_amplitude[mvmt_spines]
+        mvmt_ca_onsets = spine_movement_calcium_onset[mvmt_spines]
+        mrs_grouped_mvmt_amps[key] = mvmt_amps[~np.isnan(mvmt_amps)]
+        mrs_grouped_mvmt_calcium_amps[key] = mvmt_ca_amps[~np.isnan(mvmt_ca_amps)]
+        mrs_grouped_mvmt_onsets[key] = mvmt_onsets[~np.isnan(mvmt_onsets)]
+        mrs_grouped_mvmt_calcium_onsets[key] = mvmt_ca_onsets[~np.isnan(mvmt_ca_onsets)]
+
+    # Construct the figure
+    fig, axes = plt.subplot_mosaic(
+        """
+        ABCDEF
+        GHCDEF
+        IJKLM.
+        NOPQR.
+        """,
+        figsize=figsize,
+    )
+    fig.suptitle("Movement-Related Spine Activity")
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    ########################## Plot data onto the axes #############################
+    ## Fractions of MRSs
+    plot_pie_chart(
+        mvmt_fractions,
+        title="MRSs",
+        figsize=(5, 5),
+        colors=COLORS,
+        alpha=0.7,
+        edgecolor="white",
+        txt_color="white",
+        txt_size=9,
+        legend="top",
+        donut=0.6,
+        linewidth=1.5,
+        ax=axes["A"],
+        save=False,
+        save_path=None,
+    )
+    ## Fraction non MRSs
+    plot_pie_chart(
+        nonmvmt_fractions,
+        title="nMRSs",
+        figsize=(5, 5),
+        colors=COLORS,
+        alpha=0.7,
+        edgecolor="white",
+        txt_color="white",
+        txt_size=9,
+        legend=None,
+        donut=0.6,
+        linewidth=1.5,
+        ax=axes["G"],
+        save=False,
+        save_path=None,
+    )
+    ## Fraction of reward MRSs
+    plot_pie_chart(
+        rwd_mvmt_fractions,
+        figsize=(5, 5),
+        title="rMRSs",
+        colors=COLORS,
+        alpha=0.7,
+        edgecolor="white",
+        txt_color="white",
+        txt_size=9,
+        legende=None,
+        donut=0.6,
+        linewidth=1.5,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+    ## Fraction of non reward MRSs
+    plot_pie_chart(
+        nonrwd_mvmt_fractions,
+        title="nrMRSs",
+        colors=COLORS,
+        alpha=0.7,
+        edgecolor="white",
+        txt_color="white",
+        txt_size=9,
+        legend=None,
+        donut=0.6,
+        linewidth=1.5,
+        ax=axes["H"],
+        save=False,
+        save_path=None,
+    )
+    ## All MRS heatmap
+    all_traces = np.hstack(mrs_ind_mvmt_traces.values())
+    plot_activity_heatmap(
+        all_traces,
+        figsize=(4, 5),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        title="All MRSs",
+        cbar_label=activity_type,
+        hmap_range=(0, 1),
+        center=None,
+        sorted="peak",
+        normalize=True,
+        cmap="plasma",
+        axis_width=2,
+        minor_ticks="x",
+        tick_len=3,
+        ax=axes["C"],
+        save=False,
+        save_path=None,
+    )
+    ## Enlarged MRS heatmap
+    plot_activity_heatmap(
+        mrs_ind_mvmt_traces["Enlarged"],
+        figsize=(4, 5),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        title="Enlarged MRSs",
+        cbar_label=activity_type,
+        hmap_range=(0, 1),
+        center=None,
+        sorted="peak",
+        normalize=True,
+        cmap="plasma",
+        axis_width=2,
+        minor_ticks="x",
+        tick_len=3,
+        ax=axes["D"],
+        save=False,
+        save_path=None,
+    )
+    ## Shrunken MRS heatmap
+    plot_activity_heatmap(
+        mrs_ind_mvmt_traces["Shrunken"],
+        figsize=(4, 5),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        title="Shrunken MRSs",
+        cbar_label=activity_type,
+        hmap_range=(0, 1),
+        center=None,
+        sorted="peak",
+        normalize=True,
+        cmap="plasma",
+        axis_width=2,
+        minor_ticks="x",
+        tick_len=3,
+        ax=axes["E"],
+        save=False,
+        save_path=None,
+    )
+    ## Stable MRS heatmap
+    plot_activity_heatmap(
+        mrs_ind_mvmt_traces["Stable"],
+        figsize=(4, 5),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        title="Stable MRSs",
+        cbar_labl=activity_type,
+        hmap_range=(0, 1),
+        center=None,
+        sorted="peak",
+        normalize=True,
+        cmap="plasma",
+        axis_width=2,
+        minor_ticks="x",
+        tick_len=3,
+        ax=axes["F"],
+        save=False,
+        save_path=None,
+    )
+    ## Movement-related GluSnFr traces
+    plot_mean_activity_traces(
+        means=list(mrs_avg_mvmt_traces.values()),
+        sems=list(mrs_sem_mvmt_traces.values()),
+        group_names=list(mrs_avg_mvmt_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahline=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="iGluSnFr Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["I"],
+        save=False,
+        save_path=None,
+    )
+    ## Movement-related calcium traces
+    plot_mean_activity_traces(
+        means=list(mrs_avg_mvmt_calcium_traces.values()),
+        sems=list(mrs_sem_mvmt_calcium_traces.values()),
+        group_names=list(mrs_avg_mvmt_calcium_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahline=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Calcium Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["N"],
+        save=False,
+        save_path=None,
+    )
+    ## GluSnFr amp correlation
+    plot_scatter_correlation(
+        x_var=mrs_mvmt_amps,
+        y_var=delta_volume,
+        CI=95,
+        title="GluSnFr",
+        xtitle=f"Event amplitude ({activity_type})",
+        ytitle="\u0394 Volume",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=25,
+        face_color="cmap",
+        edge_color="white",
+        edge_width=0.3,
+        line_color="black",
+        s_alpha=1,
+        line_width=1.5,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["J"],
+        save=False,
+        save_path=None,
+    )
+    ## Calcium amp correlation
+    plot_scatter_correlation(
+        x_var=mrs_mvmt_calcium_amps,
+        y_var=delta_volume,
+        CI=95,
+        title="Calcium",
+        xtitle=f"Event amplitude ({activity_type})",
+        ytitle="\u0394 Volume",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=25,
+        face_color="cmap",
+        edge_color="white",
+        edge_width=0.3,
+        line_color="black",
+        s_alpha=1,
+        line_width=1.5,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["O"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped GluSnFr amplitude
+    plot_swarm_bar_plot(
+        mrs_grouped_mvmt_amps,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsze=(5, 5),
+        title="GluSnFr",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["K"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped Calcium amplitude
+    plot_swarm_bar_plot(
+        mrs_grouped_mvmt_calcium_amps,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsze=(5, 5),
+        title="Calcium",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["P"],
+        save=False,
+        save_path=None,
+    )
+    ## GluSnFr onset histogram
+    plot_histogram(
+        data=list(mrs_grouped_mvmt_onsets.values()),
+        bins=hist_bins,
+        stat="probability",
+        avlines=[0],
+        title="GluSnFr",
+        xtitle="Relative onset (s)",
+        xlim=None,
+        figsize=(5, 5),
+        color=COLORS,
+        alpha=0.3,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["L"],
+        save=False,
+        save_path=None,
+    )
+    ## GluSnFr onset histogram
+    plot_histogram(
+        data=list(mrs_grouped_mvmt_calcium_onsets.values()),
+        bins=hist_bins,
+        stat="probability",
+        avlines=[0],
+        title="Calcium",
+        xtitle="Relative onset (s)",
+        xlim=None,
+        figsize=(5, 5),
+        color=COLORS,
+        alpha=0.3,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["Q"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped GluSnFr onsets
+    plot_swarm_bar_plot(
+        mrs_grouped_mvmt_onsets,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsze=(5, 5),
+        title="GluSnFr",
+        xtitle=None,
+        ytitle=f"Relative onset (s)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["M"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped GluSnFr onsets
+    plot_swarm_bar_plot(
+        mrs_grouped_mvmt_calcium_onsets,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsze=(5, 5),
+        title="Calcium",
+        xtitle=None,
+        ytitle=f"Relative onset (s)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["R"],
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_2")
+        fig.save_fig(fname + ".pdf")
 
