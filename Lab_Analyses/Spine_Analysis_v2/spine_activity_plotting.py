@@ -341,7 +341,7 @@ def plot_basic_features(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_1_Stats")
-        fig.savefig(fname + ".pdf")
+        fig2.savefig(fname + ".pdf")
 
 
 def plot_movement_related_activity(
@@ -944,3 +944,106 @@ def plot_movement_related_activity(
         fname = os.path.join(save_path, "Spine_Activity_Figure_2")
         fig.save_fig(fname + ".pdf")
 
+    ######################### Statistics Section ############################
+    if display_stats == False:
+        return
+
+    ## Perform the statistics
+    if test_type == "parametric":
+        g_amp_f, g_amp_p, _, g_amp_df = t_utils.ANOVA_1way_posthoc(
+            mrs_grouped_mvmt_amps, test_method,
+        )
+        c_amp_f, c_amp_p, _, c_amp_df = t_utils.ANOVA_1way_posthoc(
+            mrs_grouped_mvmt_calcium_amps, test_method,
+        )
+        g_onset_f, g_onset_p, _, g_onset_df = t_utils.ANOVA_1way_posthoc(
+            mrs_grouped_mvmt_onsets, test_method,
+        )
+        c_onset_f, c_onset_p, _, c_onset_df = t_utils.ANOVA_1way_posthoc(
+            mrs_grouped_mvmt_calcium_onsets, test_method,
+        )
+        test_title = f"One-Way ANOVA {test_method}"
+    elif test_type == "nonparametric":
+        g_amp_f, g_amp_p, g_amp_df = t_utils.kruskal_wallis_test(
+            mrs_grouped_mvmt_amps, test_method,
+        )
+        c_amp_f, c_amp_p, c_amp_df = t_utils.kruskal_wallis_test(
+            mrs_grouped_mvmt_calcium_amps, test_method,
+        )
+        g_onset_f, g_onset_p, g_onset_df = t_utils.kruskal_wallis_test(
+            mrs_grouped_mvmt_onsets, test_method,
+        )
+        c_onset_f, c_onset_p, c_onset_df = t_utils.kruskal_wallis_test(
+            mrs_grouped_mvmt_calcium_onsets, test_method,
+        )
+        test_title = f"Kruskal-Wallis {test_method}"
+    # Display the statistics
+    fig2, axes2 = plt.subplot_mosaic(
+        """
+        AB
+        CD
+        """,
+        figsize=(8, 6),
+    )
+    ## Format the tables
+    axes2["A"].axis("off")
+    axes2["A"].axes("tight")
+    axes2["A"].set_title(
+        f"GluSnFr Amp {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+    )
+    A_table = axes2["A"].table(
+        cellText=g_amp_df.values,
+        colLabels=g_amp_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    A_table.autoset_font_size(False)
+    A_table.set_fontsize(8)
+    axes2["B"].axis("off")
+    axes2["B"].axes("tight")
+    axes2["B"].set_title(
+        f"Calcium Amp {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+    )
+    B_table = axes2["B"].table(
+        cellText=c_amp_df.values,
+        colLabels=c_amp_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    B_table.autoset_font_size(False)
+    B_table.set_fontsize(8)
+    axes2["C"].axis("off")
+    axes2["C"].axes("tight")
+    axes2["C"].set_title(
+        f"GluSnFr Onsets {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+    )
+    C_table = axes2["C"].table(
+        cellText=g_onset_df.values,
+        colLabels=g_onset_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    C_table.autoset_font_size(False)
+    C_table.set_fontsize(8)
+    axes2["D"].axis("off")
+    axes2["D"].axes("tight")
+    axes2["D"].set_title(
+        f"Calcium Onset {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+    )
+    C_table = axes2["C"].table(
+        cellText=c_onset_df.values,
+        colLabels=c_onset_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    C_table.autoset_font_size(False)
+    C_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_2_Stats")
+        fig2.savefig(fname + ".pdf")
