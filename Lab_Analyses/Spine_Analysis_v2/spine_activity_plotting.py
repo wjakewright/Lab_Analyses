@@ -435,7 +435,7 @@ def plot_movement_related_activity(
     delta_volume, spine_idxs = calculate_volume_change(
         volumes, flags, norm=False, exclude=exclude,
     )
-    enlarged, shrunken, stable = classify_plasticity(
+    enlarged_spines, shrunken_spines, stable_spined = classify_plasticity(
         delta_volume, threshold=threshold, norm=False,
     )
 
@@ -704,7 +704,7 @@ def plot_movement_related_activity(
         sampling_rate=sampling_rate,
         activity_window=activity_window,
         avlines=None,
-        ahline=None,
+        ahlines=None,
         figsize=(5, 5),
         colors=COLORS,
         title="iGluSnFr Traces",
@@ -725,7 +725,7 @@ def plot_movement_related_activity(
         sampling_rate=sampling_rate,
         activity_window=activity_window,
         avlines=None,
-        ahline=None,
+        ahlines=None,
         figsize=(5, 5),
         colors=COLORS,
         title="Calcium Traces",
@@ -965,16 +965,16 @@ def plot_movement_related_activity(
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         g_amp_f, g_amp_p, g_amp_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_amps, test_method,
+            mrs_grouped_mvmt_amps, "Conover", test_method,
         )
         c_amp_f, c_amp_p, c_amp_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_calcium_amps, test_method,
+            mrs_grouped_mvmt_calcium_amps, "Conover", test_method,
         )
         g_onset_f, g_onset_p, g_onset_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_onsets, test_method,
+            mrs_grouped_mvmt_onsets, "Conover", test_method,
         )
         c_onset_f, c_onset_p, c_onset_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_calcium_onsets, test_method,
+            mrs_grouped_mvmt_calcium_onsets, "Conover", test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
     # Display the statistics
@@ -1002,7 +1002,7 @@ def plot_movement_related_activity(
     axes2["B"].axis("off")
     axes2["B"].axes("tight")
     axes2["B"].set_title(
-        f"Calcium Amp {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+        f"Calcium Amp {test_title}\nF = {c_amp_f:.4}  p = {c_amp_p:.3E}"
     )
     B_table = axes2["B"].table(
         cellText=c_amp_df.values,
@@ -1015,7 +1015,7 @@ def plot_movement_related_activity(
     axes2["C"].axis("off")
     axes2["C"].axes("tight")
     axes2["C"].set_title(
-        f"GluSnFr Onsets {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+        f"GluSnFr Onsets {test_title}\nF = {g_onset_f:.4}  p = {g_onset_p:.3E}"
     )
     C_table = axes2["C"].table(
         cellText=g_onset_df.values,
@@ -1028,7 +1028,7 @@ def plot_movement_related_activity(
     axes2["D"].axis("off")
     axes2["D"].axes("tight")
     axes2["D"].set_title(
-        f"Calcium Onset {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
+        f"Calcium Onset {test_title}\nF = {c_onset_f:.4}  p = {c_onset_p:.3E}"
     )
     C_table = axes2["C"].table(
         cellText=c_onset_df.values,
@@ -1047,3 +1047,735 @@ def plot_movement_related_activity(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_2_Stats")
         fig2.savefig(fname + ".pdf")
+
+
+def plot_reward_movement_related_activity(
+    dataset,
+    followup_dataset=None,
+    exclude="Shaft Spine",
+    threshold=0.3,
+    figsize=(10, 6),
+    hist_bins=25,
+    mean_type="median",
+    err_type="CI",
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    save=False,
+    save_path=None,
+):
+    """
+    Function to plot rewarded and non-rewarded movement related activity for different
+    spine classes
+
+    INPUT PARAMETERS
+        dataset - Spine_Activity_Data object
+            
+        followup_dataset - optional Spine_Activity_Data object of the subsequent 
+                            session to use for volume comparision. Default is None,
+                            to sue the followup volumes in the dataset
+        
+        exclude - str specifying type of spine to exclude from analysis
+        
+        threshold - float or tuple of floats specifying the threshold cutoffs for
+                    classifying plasticity
+                    
+        figsize - tuple specifying the figure size
+        
+        hist_bins - int specifying how many  bins to plot for the histograms
+        
+        mean_type - str specifying the mean type for bar plots
+        
+        err_type - str specifying the error type for bar plots
+        
+        test_type - str specifying whether to perform parametric or nonparametric stats
+        
+        test_method - str specifying the type of posthoc test to perform
+        
+        display_stats - boolean specifying whether to display stat results
+        
+        save - boolean specifying whether to save the figure or not
+        
+        save_path - str specifying where to save the figures
+    
+    """
+    COLORS = ["darkorange", "darkviolet", "silver"]
+    plastic_groups = {
+        "Enlarged": "enlarged_spines",
+        "Shrunken": "shrunken_spines",
+        "Stable": "stable_spines,",
+    }
+    mvmt_groups = {
+        "Rewarded": "rwd_movement_spines",
+        "Non-rewarded": "nonrwd_movement_spines",
+    }
+
+    # Pull relevant data
+    sampling_rate = dataset.parameters["Sampling Rate"]
+    activity_window = dataset.parameters["Activity Window"]
+    if dataset.parameters["zscore"]:
+        activity_type = "zscore"
+    else:
+        activity_type = "\u0394F/F"
+    ## Volume related information
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_dataset == None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_dataset.followup_volumes
+        followup_flags = followup_dataset.followup_flags
+    ## Movement identifiers
+    rwd_movement_spines = dataset.rwd_movement_spines
+    nonrwd_movement_spines = dataset.nonrwd_movement_spines
+    ## Movement-related activity
+    spine_movement_traces = dataset.spine_movement_traces
+    spine_movement_calcium_traces = dataset.spine_movement_calcium_traces
+    spine_movement_amplitude = dataset.spine_movement_amplitude
+    spine_movement_calcium_amplitude = dataset.spine_movement_calcium_amplitude
+    spine_movement_onset = dataset.spine_movement_onset
+    spine_movement_calcium_onset = dataset.spine_movement_calcium_onset
+
+    # Calculate the relative volumes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes, flags, norm=False, exclude=exclude,
+    )
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
+        delta_volume, threshold=threshold, norm=False,
+    )
+
+    # Organize data
+    ## Subselct present spines
+    rwd_movement_spines = d_utils.subselect_data_by_idxs(
+        rwd_movement_spines, spine_idxs
+    )
+    nonrwd_movement_spines = d_utils.subselect_data_by_idxs(
+        nonrwd_movement_spines, spine_idxs
+    )
+    spine_movement_traces = d_utils.subselect_data_by_idxs(
+        spine_movement_traces, spine_idxs
+    )
+    spine_movement_calcium_traces = d_utils.subselect_data_by_idxs(
+        spine_movement_calcium_traces, spine_idxs
+    )
+    spine_movement_amplitude = d_utils.subselect_data_by_idxs(
+        spine_movement_amplitude, spine_idxs
+    )
+    spine_movement_calcium_amplitude = d_utils.subselect_data_by_idxs(
+        spine_movement_calcium_amplitude, spine_idxs
+    )
+    spine_movement_onset = d_utils.subselect_data_by_idxs(
+        spine_movement_onset, spine_idxs
+    )
+    spine_movement_calcium_onset = d_utils.subselect_data_by_idxs(
+        spine_movement_calcium_onset, spine_idxs
+    )
+
+    ## Seperate groups
+    ### Rewarded vs nonrewarded groups
+    rwd_nonrwd_ind_traces = {}
+    rwd_nonrwd_avg_traces = {}
+    rwd_nonrwd_sem_traces = {}
+    rwd_nonrwd_avg_calcium_traces = {}
+    rwd_nonrwd_sem_calcium_traces = {}
+    rwd_nonrwd_amps = {}
+    rwd_nonrwd_calcium_amps = {}
+    ### Rewarded plastic spines
+    group_avg_traces = {}
+    group_sem_traces = {}
+    group_amps = {}
+    group_onsets = {}
+    group_avg_calcium_traces = {}
+    group_sem_calcium_traces = {}
+    group_calcium_amps = {}
+    group_calcium_onsets = {}
+
+    for mvmt_key, mvmt_value in mvmt_groups.items():
+        mvmt_spines = eval(mvmt_value)
+        ## Grab grouped mvmt data
+        mvmt_traces = compress(spine_movement_traces, mvmt_spines)
+        mvmt_calcium_traces = compress(spine_movement_calcium_traces, mvmt_spines)
+        ## Avg individual events
+        mvmt_trace_means = [
+            np.nanmean(x, axis=1) for x in mvmt_traces if type(x) == np.ndarray
+        ]
+        mvmt_ca_trace_means = [
+            np.nanmean(x, axis=1) for x in mvmt_calcium_traces if type(x) == np.ndarray
+        ]
+        mvmt_trace_means = np.vstack(mvmt_trace_means)
+        mvmt_ca_trace_means = np.vstack(mvmt_ca_trace_means)
+        ## Add individual traces
+        rwd_nonrwd_ind_traces[mvmt_key] = mvmt_trace_means.T
+        ## Get avg traces
+        group_trace_means = np.nanmean(mvmt_trace_means, axis=0)
+        group_ca_trace_means = np.nanmean(mvmt_ca_trace_means, axis=0)
+        group_trace_sem = stats.sem(mvmt_trace_means, axis=0, nan_policy="omit")
+        group_ca_trace_sem = stats.sem(mvmt_ca_trace_means, axis=0, nan_policy="omit")
+        rwd_nonrwd_avg_traces[mvmt_key] = group_trace_means
+        rwd_nonrwd_avg_calcium_traces[mvmt_key] = group_ca_trace_means
+        rwd_nonrwd_sem_traces[mvmt_key] = group_trace_sem
+        rwd_nonrwd_sem_calcium_traces[mvmt_key] = group_ca_trace_sem
+        ## Amplitudes
+        amps = spine_movement_amplitude[mvmt_spines]
+        ca_amps = spine_movement_calcium_amplitude[mvmt_spines]
+        rwd_nonrwd_amps[mvmt_key] = amps[~np.isnan(amps)]
+        rwd_nonrwd_calcium_amps[mvmt_key] = ca_amps[~np.isnan(ca_amps)]
+        onsets = spine_movement_onset[mvmt_spines]
+        ca_onsets = spine_movement_calcium_onset[mvmt_spines]
+
+        # Get plastic spine data
+        avg_traces = {}
+        avg_ca_traces = {}
+        sem_traces = {}
+        sem_ca_traces = {}
+        plastic_group_amps = {}
+        plastic_group_ca_amps = {}
+        plastic_group_onsets = {}
+        plastic_group_ca_onsets = {}
+
+        mvmt_spine_idxs = np.nonzero(mvmt_spines)[0]
+        for plastic_key, plastic_value in plastic_groups.items():
+            plastic_spines = eval(plastic_value)[mvmt_spine_idxs]
+            plastic_traces = mvmt_trace_means[plastic_spines, :]
+            plastic_ca_traces = mvmt_ca_trace_means[plastic_spines, :]
+            avg_plastic_trace = np.nanmean(plastic_traces, axis=0)
+            avg_plastic_ca_trace = np.nanmean(plastic_ca_traces, axis=0)
+            sem_plastic_traces = stats.sem(plastic_traces, axis=0, nan_policy="omit")
+            sem_plastic_ca_traces = stats.sem(
+                plastic_ca_traces, axis=0, nan_policy="omit"
+            )
+            plastic_amps = amps[plastic_spines]
+            plastic_ca_amps = ca_amps[plastic_spines]
+            plastic_onsets = onsets[plastic_spines]
+            plastic_ca_onsets = ca_onsets[plastic_spines]
+            avg_traces[plastic_key] = avg_plastic_trace
+            avg_ca_traces[plastic_key] = avg_plastic_ca_trace
+            sem_traces[plastic_key] = sem_plastic_traces
+            sem_ca_traces[plastic_key] = sem_plastic_ca_traces
+            plastic_group_amps[plastic_key] = plastic_amps[~np.isnan(plastic_amps)]
+            plastic_group_ca_amps[plastic_key] = plastic_ca_amps[
+                ~np.isnan(plastic_ca_amps)
+            ]
+            plastic_group_onsets[plastic_key] = plastic_onsets[
+                ~np.isnan(plastic_onsets)
+            ]
+            plastic_group_ca_onsets[plastic_key] = plastic_ca_onsets[
+                ~np.isnan(plastic_ca_onsets)
+            ]
+        group_avg_traces[mvmt_key] = avg_traces
+        group_sem_traces[mvmt_key] = sem_traces
+        group_amps[mvmt_key] = plastic_group_amps
+        group_onsets[mvmt_key] = plastic_group_onsets
+        group_avg_calcium_traces[mvmt_key] = avg_ca_traces
+        group_sem_calcium_traces[mvmt_key] = sem_ca_traces
+        group_calcium_amps[mvmt_key] = plastic_group_ca_amps
+        group_calcium_onsets[mvmt_key] = plastic_group_ca_onsets
+
+    # Construct the figure
+    fig, axes = plt.subplot_mosaic(
+        """
+        ABCDEF
+        GHIJKL
+        MNOPQR
+        """,
+        figsize=figsize,
+    )
+    fig.suptitle("Rewarded Movement-Related Spine Activity")
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    ######################## Plot data onto the axes #########################
+    ## Rewarded movement heatmap
+    plot_activity_heatmap(
+        rwd_nonrwd_ind_traces["Rewarded"],
+        figsize=(4, 5),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        title="Rewarded",
+        cbar_label=activity_type,
+        hmap_range=(0, 1),
+        center=None,
+        sorted="peak",
+        normalize=True,
+        cmap="plasma",
+        axis_width=2,
+        minor_ticks="x",
+        tick_len=3,
+        ax=axes["A"],
+        save=False,
+        save_path=None,
+    )
+    ## Non-rewarded heatmap
+    plot_activity_heatmap(
+        rwd_nonrwd_ind_traces["Non-rewarded"],
+        figsize=(4, 5),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        title="Rewarded",
+        cbar_label=activity_type,
+        hmap_range=(0, 1),
+        center=None,
+        sorted="peak",
+        normalize=True,
+        cmap="plasma",
+        axis_width=2,
+        minor_ticks="x",
+        tick_len=3,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+    ## Reward and non-reward GluSnFr Traces
+    plot_mean_activity_traces(
+        means=list(rwd_nonrwd_avg_traces.values()),
+        sems=list(rwd_nonrwd_sem_traces.values()),
+        group_names=list(rwd_nonrwd_avg_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=["mediumblue", "firebrick"],
+        title="GluSnFr Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["C"],
+        save=False,
+        save_path=None,
+    )
+    ## Reward and non-reward Calcium Traces
+    plot_mean_activity_traces(
+        means=list(rwd_nonrwd_avg_calcium_traces.values()),
+        sems=list(rwd_nonrwd_sem_calcium_traces.values()),
+        group_names=list(rwd_nonrwd_avg_calcium_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=["mediumblue", "firebrick"],
+        title="Calcium Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["E"],
+        save=False,
+        save_path=None,
+    )
+    ## Reward and non-reward GluSnFr Amplitudes
+    plot_swarm_bar_plot(
+        rwd_nonrwd_amps,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="GluSnFr",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=["mediumblue", "firebrick"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=["mediumblue", "firebrick"],
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["D"],
+        save=False,
+        save_path=None,
+    )
+    ## Reward and non-reward Calcium Amplitudes
+    plot_swarm_bar_plot(
+        rwd_nonrwd_calcium_amps,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Calcium",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=["mediumblue", "firebrick"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=["mediumblue", "firebrick"],
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["F"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped rewarded movement GluSnFr traces
+    plot_mean_activity_traces(
+        means=list(group_avg_traces["Rewarded"].values()),
+        sems=list(group_sem_traces["Rewarded"].values()),
+        group_names=list(group_avg_traces["Rewarded"].keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Rewarded GluSnFr Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["G"],
+        save=False,
+    )
+    ## Grouped non-rewarded movement GluSnFr traces
+    plot_mean_activity_traces(
+        means=list(group_avg_traces["Non-rewarded"].values()),
+        sems=list(group_sem_traces["Non-rewarded"].values()),
+        group_names=list(group_avg_traces["Non-rewarded"].keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Non-rewarded GluSnFr Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["M"],
+        save=False,
+    )
+    ## Grouped rewarded movement Calcium traces
+    plot_mean_activity_traces(
+        means=list(group_avg_calcium_traces["Rewarded"].values()),
+        sems=list(group_sem_calcium_traces["Rewarded"].values()),
+        group_names=list(group_avg_calcium_traces["Rewarded"].keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Rewarded Calcium Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["J"],
+        save=False,
+    )
+    ## Grouped non-rewarded movement GluSnFr traces
+    plot_mean_activity_traces(
+        means=list(group_avg_calcium_traces["Non-rewarded"].values()),
+        sems=list(group_sem_calcium_traces["Non-rewarded"].values()),
+        group_names=list(group_avg_calcium_traces["Non-rewarded"].keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Non-rewarded Calcium Traces",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["P"],
+        save=False,
+    )
+    ## Grouped rewarded GluSnFr amplitudes
+    plot_swarm_bar_plot(
+        group_amps["Rewarded"],
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="GluSnFr",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["H"],
+        save=False,
+        save_path=True,
+    )
+    ## Grouped non-rewarded GluSnFr amplitudes
+    plot_swarm_bar_plot(
+        group_amps["Non-rewarded"],
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="GluSnFr",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["N"],
+        save=False,
+        save_path=True,
+    )
+    ## Grouped rewarded Calcium amplitudes
+    plot_swarm_bar_plot(
+        group_calcium_amps["Rewarded"],
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Calcium",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["K"],
+        save=False,
+        save_path=True,
+    )
+    ## Grouped non-rewarded Calcium amplitudes
+    plot_swarm_bar_plot(
+        group_calcium_amps["Non-rewarded"],
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Calcium",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["Q"],
+        save=False,
+        save_path=True,
+    )
+    ## Grouped rewarded GluSnFr onsets
+    plot_histogram(
+        data=list(group_onsets["Rewarded"].values()),
+        bins=hist_bins,
+        stat="probability",
+        avlines=[0],
+        title="GluSnFr",
+        xtitle="Relative onset (s)",
+        xlime=None,
+        figsize=(5, 5),
+        color=COLORS,
+        alpha=0.3,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["I"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped non-rewarded GluSnFr onsets
+    plot_histogram(
+        data=list(group_onsets["Non-rewarded"].values()),
+        bins=hist_bins,
+        stat="probability",
+        avlines=[0],
+        title="GluSnFr",
+        xtitle="Relative onset (s)",
+        xlime=None,
+        figsize=(5, 5),
+        color=COLORS,
+        alpha=0.3,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["O"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped rewarded Calcium onsets
+    plot_histogram(
+        data=list(group_calcium_onsets["Rewarded"].values()),
+        bins=hist_bins,
+        stat="probability",
+        avlines=[0],
+        title="Calcium",
+        xtitle="Relative onset (s)",
+        xlime=None,
+        figsize=(5, 5),
+        color=COLORS,
+        alpha=0.3,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["L"],
+        save=False,
+        save_path=None,
+    )
+    ## Grouped rewarded GluSnFr onsets
+    plot_histogram(
+        data=list(group_calcium_onsets["Non-rewarded"].values()),
+        bins=hist_bins,
+        stat="probability",
+        avlines=[0],
+        title="Calcium",
+        xtitle="Relative onset (s)",
+        xlime=None,
+        figsize=(5, 5),
+        color=COLORS,
+        alpha=0.3,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["R"],
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_3")
+        fig.save_fig(fname + ".pdf")
+
+    ########################### Statistics Section #################################
+    if display_stats == False:
+        return
+
+    ## Perform the statistics
+    ## T-Tests
+    rwd_nonrwd_amp_t, rwd_nonrwd_amp_p = stats.ttest_ind(
+        rwd_nonrwd_amps["Rewarded"], rwd_nonrwd_amps["Non-rewarded"]
+    )
+    rwd_nonrwd_ca_amp_t, rwd_nonrwd_ca_amp_p = stats.ttest_ind(
+        rwd_nonrwd_calcium_amps["Rewarded"], rwd_nonrwd_calcium_amps["Non-rewarded"],
+    )
+    ## F-tests
+    if test_type == "parametric":
+        rwd_amp_f, rwd_amp_p, _, rwd_amp_df = t_utils.ANOVA_1way_posthoc(
+            group_amps["Rewarded"], test_method,
+        )
+        rwd_ca_amp_f, rwd_ca_amp_p, _, rwd_ca_amp_df = t_utils.ANOVA_1way_posthoc(
+            group_calcium_amps["Rewarded"], test_method,
+        )
+        rwd_onset_f, rwd_onset_p, _, rwd_onset_df = t_utils.ANOVA_1way_posthoc(
+            group_onsets["Rewarded"], test_method,
+        )
+        rwd_ca_onset_f, rwd_ca_onset_p, _, rwd_ca_onset_df = t_utils.ANOVA_1way_posthoc(
+            group_calcium_onsets["Rewarded"], test_method,
+        )
+        nonrwd_amp_f, nonrwd_amp_p, _, nonrwd_amp_df = t_utils.ANOVA_1way_posthoc(
+            group_amps["Non-rewarded"], test_method,
+        )
+        (
+            nonrwd_ca_amp_f,
+            nonrwd_ca_amp_p,
+            _,
+            nonrwd_ca_amp_df,
+        ) = t_utils.ANOVA_1way_posthoc(group_calcium_amps["Non-rewarded"], test_method,)
+        nonrwd_onset_f, nonrwd_onset_p, _, nonrwd_onset_df = t_utils.ANOVA_1way_posthoc(
+            group_onsets["Non-rewarded"], test_method,
+        )
+        (
+            nonrwd_ca_onset_f,
+            nonrwd_ca_onset_p,
+            _,
+            nonrwd_ca_onset_df,
+        ) = t_utils.ANOVA_1way_posthoc(
+            group_calcium_onsets["Non-rewarded"], test_method,
+        )
+        test_title = f"One-Way ANOVA {test_method}"
+    elif test_type == "nonparametric":
+        rwd_amp_f, rwd_amp_p, rwd_amp_df = t_utils.kruskal_wallis_test(
+            group_amps["Rewarded"], "Conover", test_method,
+        )
+        rwd_ca_amp_f, rwd_ca_amp_p, rwd_ca_amp_df = t_utils.kruskal_wallis_test(
+            group_calcium_amps["Rewarded"], "Conover", test_method,
+        )
+        rwd_onset_f, rwd_onset_p, rwd_onset_df = t_utils.kruskal_wallis_test(
+            group_onsets["Rewarded"], "Conover", test_method,
+        )
+        rwd_ca_onset_f, rwd_ca_onset_p, rwd_ca_onset_df = t_utils.kruskal_wallis_test(
+            group_calcium_onsets["Rewarded"], "Conover", test_method,
+        )
+        nonrwd_amp_f, nonrwd_amp_p, nonrwd_amp_df = t_utils.kruskal_wallis_test(
+            group_amps["Non-rewarded"], "Conover", test_method,
+        )
+        (
+            nonrwd_ca_amp_f,
+            nonrwd_ca_amp_p,
+            nonrwd_ca_amp_df,
+        ) = t_utils.kruskal_wallis_test(
+            group_calcium_amps["Non-rewarded"], "Conover", test_method,
+        )
+        nonrwd_onset_f, nonrwd_onset_p, nonrwd_onset_df = t_utils.kruskal_wallis_test(
+            group_onsets["Non-rewarded"], "Conover", test_method,
+        )
+        (
+            nonrwd_ca_onset_f,
+            nonrwd_ca_onset_p,
+            nonrwd_ca_onset_df,
+        ) = t_utils.kruskal_wallis_test(
+            group_calcium_onsets["Non-rewarded"], "Conover", test_method,
+        )
+        test_title = f"Kruskal-Wallis {test_method}"
+    # Display the statistics
