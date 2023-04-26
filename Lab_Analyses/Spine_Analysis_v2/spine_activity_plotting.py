@@ -88,7 +88,7 @@ def plot_basic_features(
         followup_flags = dataset.followup_flags
     else:
         followup_volumes = followup_dataset.spine_volumes
-        followup_flags = followup_dataset.followup_flags
+        followup_flags = followup_dataset.spine_flags
     ## Setup input lists
     volumes = [initial_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
@@ -412,8 +412,8 @@ def plot_movement_related_activity(
         followup_volumes = dataset.followup_volumes
         followup_flags = dataset.followup_flags
     else:
-        followup_volumes = followup_dataset.followup_volumes
-        followup_flags = followup_dataset.followup_flags
+        followup_volumes = followup_dataset.spine_volumes
+        followup_flags = followup_dataset.spine_flags
 
     ## Movement identifiers
     movement_spines = dataset.movement_spines
@@ -1124,8 +1124,8 @@ def plot_reward_movement_related_activity(
         followup_volumes = dataset.followup_volumes
         followup_flags = dataset.followup_flags
     else:
-        followup_volumes = followup_dataset.followup_volumes
-        followup_flags = followup_dataset.followup_flags
+        followup_volumes = followup_dataset.spine_volumes
+        followup_flags = followup_dataset.spine_flags
     ## Movement identifiers
     rwd_movement_spines = dataset.rwd_movement_spines
     nonrwd_movement_spines = dataset.nonrwd_movement_spines
@@ -1702,15 +1702,14 @@ def plot_reward_movement_related_activity(
         return
 
     ## Perform the statistics
-    ## T-Tests
-    rwd_nonrwd_amp_t, rwd_nonrwd_amp_p = stats.ttest_ind(
-        rwd_nonrwd_amps["Rewarded"], rwd_nonrwd_amps["Non-rewarded"]
-    )
-    rwd_nonrwd_ca_amp_t, rwd_nonrwd_ca_amp_p = stats.ttest_ind(
-        rwd_nonrwd_calcium_amps["Rewarded"], rwd_nonrwd_calcium_amps["Non-rewarded"],
-    )
-    ## F-tests
     if test_type == "parametric":
+        rwd_nonrwd_amp_t, rwd_nonrwd_amp_p = stats.ttest_ind(
+            rwd_nonrwd_amps["Rewarded"], rwd_nonrwd_amps["Non-rewarded"]
+        )
+        rwd_nonrwd_ca_amp_t, rwd_nonrwd_ca_amp_p = stats.ttest_ind(
+            rwd_nonrwd_calcium_amps["Rewarded"],
+            rwd_nonrwd_calcium_amps["Non-rewarded"],
+        )
         rwd_amp_f, rwd_amp_p, _, rwd_amp_df = t_utils.ANOVA_1way_posthoc(
             group_amps["Rewarded"], test_method,
         )
@@ -1745,6 +1744,13 @@ def plot_reward_movement_related_activity(
         )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
+        rwd_nonrwd_amp_t, rwd_nonrwd_amp_p = stats.mannwhitneyu(
+            rwd_nonrwd_amps["Rewarded"], rwd_nonrwd_amps["Non-rewarded"]
+        )
+        rwd_nonrwd_ca_amp_t, rwd_nonrwd_ca_amp_p = stats.mannwhitneyu(
+            rwd_nonrwd_calcium_amps["Rewarded"],
+            rwd_nonrwd_calcium_amps["Non-rewarded"],
+        )
         rwd_amp_f, rwd_amp_p, rwd_amp_df = t_utils.kruskal_wallis_test(
             group_amps["Rewarded"], "Conover", test_method,
         )
@@ -1909,4 +1915,665 @@ def plot_reward_movement_related_activity(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_3_Stats")
         fig2.savefig(fname + ".pdf")
+
+
+def plot_spine_movement_encoding(
+    dataset,
+    followup_dataset=None,
+    exclude="Shaft Spine",
+    threshold=0.3,
+    figsize=(10, 4),
+    mean_type="median",
+    err_type="CI",
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    save=False,
+    save_path=None,
+):
+    """Function to plot the movement encoding related variables for the different 
+        groups
+
+        INPUT PARAMETERS
+            dataset - Spine_Activity_Data object
+
+            followup_dataset - optional Spine_Activity_Data object of the subsequent
+                                session to use for volume comparison. Default is None,
+                                to use the followup volumes in the dataset
+            
+            exclude - str specifying type of spine to exclude from analysis
+
+            threshold - float or tuple of floats specifying the threshold cutoffs for 
+                        classifying plasticity
+            
+            figsize - tuple specifying the figure size
+
+            mean_type - str specifying the mean type for bar plots
+
+            err_type - str specifying the error type for bar plots
+
+            test_type - str specifying whether to perform parametric or nonparametric stats
+
+            display_stats - boolean specifying whether to display stat results
+
+            save - boolean specifying whether to save the figure or not
+
+            save_path - str specifying where to save the figures
+        
+    """
+    COLORS = ["darkorange", "darkviolet", "silver"]
+    plastic_groups = {
+        "Enlarged": "enlarged_spines",
+        "Shrunken": "shrunken_spines",
+        "Stable": "stable_spines",
+    }
+
+    # Pull relevant data
+    sampling_rate = dataset.parameters["Sampling Rate"]
+    activity_window = dataset.parameters["Activity Window"]
+    if dataset.parameters["zscore"]:
+        activity_type = "zscore"
+    else:
+        activity_type = "\u0394F/F"
+    ## Volume related information
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_dataset == None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_dataset.spine_volumes
+        followup_flags = followup_dataset.spine_flags
+    ## Movement-encoding variables
+    spine_movement_correlation = dataset.spine_movement_correlation
+    spine_movement_stereotypy = dataset.spine_movement_stereotypy
+    spine_movement_reliability = dataset.spine_movement_reliability
+    spine_movement_specificity = dataset.spine_movement_specificity
+    spine_LMP_reliability = dataset.spine_LMP_reliability
+    spine_LMP_specificity = dataset.spine_LMP_specificity
+    spine_rwd_movement_correlation = dataset.spine_rwd_movement_correlation
+    spine_rwd_movement_stereotypy = dataset.spine_rwd_movement_stereotypy
+    spine_rwd_movement_reliability = dataset.spine_rwd_movement_reliablity
+    spine_rwd_movement_specificity = dataset.spine_rwd_movement_specificity
+
+    # Calculate the relative volumes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes, flags, norm=False, exclude=exclude,
+    )
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
+        delta_volume, threshold=threshold, norm=False,
+    )
+
+    # Organize the data
+    ## Subselect present spines
+    spine_movement_correlation = d_utils.subselect_data_by_idxs(
+        spine_movement_correlation, spine_idxs,
+    )
+    spine_movement_stereotypy = d_utils.subselect_data_by_idxs(
+        spine_movement_stereotypy, spine_idxs,
+    )
+    spine_movement_reliability = d_utils.subselect_data_by_idxs(
+        spine_movement_reliability, spine_idxs,
+    )
+    spine_movement_specificity = d_utils.subselect_data_by_idxs(
+        spine_movement_specificity, spine_idxs,
+    )
+    spine_LMP_reliability = d_utils.subselect_data_by_idxs(
+        spine_LMP_reliability, spine_idxs,
+    )
+    spine_LMP_specificity = d_utils.subselect_data_by_idxs(
+        spine_LMP_specificity, spine_idxs,
+    )
+    spine_rwd_movement_correlation = d_utils.subselect_data_by_idxs(
+        spine_rwd_movement_correlation, spine_idxs,
+    )
+    spine_rwd_movement_stereotypy = d_utils.subselect_data_by_idxs(
+        spine_rwd_movement_stereotypy, spine_idxs
+    )
+    spine_rwd_movement_reliability = d_utils.subselect_data_by_idxs(
+        spine_rwd_movement_reliability, spine_idxs,
+    )
+    spine_rwd_movement_specificity = d_utils.subselect_data_by_idxs(
+        spine_rwd_movement_specificity, spine_idxs,
+    )
+
+    ## Seperate groups
+    group_mvmt_corr = {}
+    group_mvmt_stero = {}
+    group_mvmt_reli = {}
+    group_mvmt_spec = {}
+    group_LMP_reli = {}
+    group_LMP_spec = {}
+    group_rwd_mvmt_corr = {}
+    group_rwd_mvmt_stero = {}
+    group_rwd_mvmt_reli = {}
+    group_rwd_mvmt_spec = {}
+    for key, value in plastic_groups.items():
+        spines = eval(value)
+        group_mvmt_corr[key] = spine_movement_correlation[spines]
+        group_mvmt_stero[key] = spine_movement_stereotypy[spines]
+        group_mvmt_reli[key] = spine_movement_reliability[spines]
+        group_mvmt_spec[key] = spine_movement_specificity[spines]
+        group_LMP_reli[key] = spine_LMP_reliability[spines]
+        group_LMP_spec[key] = spine_LMP_specificity[spines]
+        group_rwd_mvmt_corr[key] = spine_rwd_movement_correlation[spines]
+        group_rwd_mvmt_stero[key] = spine_rwd_movement_stereotypy[spines]
+        group_rwd_mvmt_reli[key] = spine_rwd_movement_reliability[spines]
+        group_rwd_mvmt_spec[key] = spine_rwd_movement_specificity[spines]
+
+    # Construct the figure
+    fig, axes = plt.subplot_moasic(
+        """
+        ABCDEF
+        GHIJ..
+        """,
+        figsize=figsize,
+    )
+    fig.suptitle("Spine Movement Encoding")
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    ############################## Plot data onto the axes ###########################
+    ## Spine movement correlation
+    plot_swarm_bar_plot(
+        group_mvmt_corr,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="All Mvmts",
+        xtitle=None,
+        ytitle="LMP Correlation (r)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["A"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine movement stereotypy
+    plot_swarm_bar_plot(
+        group_mvmt_stero,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="All Mvmts",
+        xtitle=None,
+        ytitle="Movement stereotypy",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine movement reliability
+    plot_swarm_bar_plot(
+        group_mvmt_reli,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="All Mvmts",
+        xtitle=None,
+        ytitle="Movement reliability",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["C"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine movement reliability
+    plot_swarm_bar_plot(
+        group_mvmt_spec,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="All Mvmts",
+        xtitle=None,
+        ytitle="Movement specificity",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["D"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine LMP reliability
+    plot_swarm_bar_plot(
+        group_LMP_reli,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="All Mvmts",
+        xtitle=None,
+        ytitle="Learned movement reliability",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["E"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine LMP specificity
+    plot_swarm_bar_plot(
+        group_LMP_spec,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="All Mvmts",
+        xtitle=None,
+        ytitle="Learned movement specificity",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["F"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine reward movement correlation
+    plot_swarm_bar_plot(
+        group_rwd_mvmt_corr,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Rewarded Mvmts",
+        xtitle=None,
+        ytitle="LMP correlation (r)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["G"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine reward movement stereotypy
+    plot_swarm_bar_plot(
+        group_rwd_mvmt_stero,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Rewarded Mvmts",
+        xtitle=None,
+        ytitle="Movement stereotypy",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["H"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine reward movement reliability
+    plot_swarm_bar_plot(
+        group_rwd_mvmt_reli,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Rewarded Mvmts",
+        xtitle=None,
+        ytitle="Movement reliability",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["I"],
+        save=False,
+        save_path=None,
+    )
+    ## Spine reward movement specificity
+    plot_swarm_bar_plot(
+        group_rwd_mvmt_spec,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title="Rewarded Mvmts",
+        xtitle=None,
+        ytitle="Movement specificity",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["J"],
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_4")
+        fig.savefig(fname + ".pdf")
+
+    ######################### Statistics Section ################################
+    if display_stats == False:
+        return
+
+    # Perform the statistics
+    if test_type == "parametric":
+        mvmt_corr_f, mvmt_corr_p, _, mvmt_corr_df = t_utils.ANOVA_1way_posthoc(
+            group_mvmt_corr, test_method,
+        )
+        mvmt_stereo_f, mvmt_stereo_p, _, mvmt_stereo_df = t_utils.ANOVA_1way_posthoc(
+            group_mvmt_stero, test_method,
+        )
+        mvmt_rel_f, mvmt_rel_p, _, mvmt_rel_df = t_utils.ANOVA_1way_posthoc(
+            group_mvmt_reli, test_method,
+        )
+        mvmt_spec_f, mvmt_spec_p, _, mvmt_spec_df = t_utils.ANOVA_1way_posthoc(
+            group_mvmt_spec, test_method,
+        )
+        LMP_rel_f, LMP_rel_p, _, LMP_rel_df = t_utils.ANOVA_1way_posthoc(
+            group_LMP_reli, test_method,
+        )
+        LMP_spec_f, LMP_spec_p, _, LMP_spec_df = t_utils.ANOVA_1way_posthoc(
+            group_LMP_spec, test_method,
+        )
+        rwd_corr_f, rwd_corr_p, _, rwd_corr_df = t_utils.ANOVA_1way_posthoc(
+            group_rwd_mvmt_corr, test_method,
+        )
+        rwd_stereo_f, rwd_stereo_p, _, rwd_stereo_df = t_utils.ANOVA_1way_posthoc(
+            group_rwd_mvmt_stero, test_method,
+        )
+        rwd_rel_f, rwd_rel_p, _, rwd_rel_df = t_utils.ANOVA_1way_posthoc(
+            group_rwd_mvmt_reli, test_method,
+        )
+        rwd_spec_f, rwd_spec_p, _, rwd_spec_df = t_utils.ANOVA_1way_posthoc(
+            group_rwd_mvmt_spec, test_method,
+        )
+        test_title = f"One-Way ANOVA {test_method}"
+    elif test_type == "nonparametric":
+        mvmt_corr_f, mvmt_corr_p, mvmt_corr_df = t_utils.kruskal_wallis_test(
+            group_mvmt_corr, "Conover", test_method,
+        )
+        mvmt_stereo_f, mvmt_stereo_p, mvmt_stereo_df = t_utils.kruskal_wallis_test(
+            group_mvmt_stero, "Conover", test_method,
+        )
+        mvmt_rel_f, mvmt_rel_p, mvmt_rel_df = t_utils.kruskal_wallis_test(
+            group_mvmt_reli, "Conover", test_method,
+        )
+        mvmt_spec_f, mvmt_spec_p, mvmt_spec_df = t_utils.kruskal_wallis_test(
+            group_mvmt_spec, "Conover", test_method,
+        )
+        LMP_rel_f, LMP_rel_p, LMP_rel_df = t_utils.kruskal_wallis_test(
+            group_LMP_reli, "Conover", test_method,
+        )
+        LMP_spec_f, LMP_spec_p, LMP_spec_df = t_utils.kruskal_wallis_test(
+            group_LMP_spec, "Conover", test_method,
+        )
+        rwd_corr_f, rwd_corr_p, rwd_corr_df = t_utils.kruskal_wallis_test(
+            group_rwd_mvmt_corr, "Conover", test_method,
+        )
+        rwd_stereo_f, rwd_stereo_p, rwd_stereo_df = t_utils.kruskal_wallis_test(
+            group_rwd_mvmt_stero, "Conover", test_method,
+        )
+        rwd_rel_f, rwd_rel_p, rwd_rel_df = t_utils.kruskal_wallis_test(
+            group_rwd_mvmt_reli, "Conover", test_method,
+        )
+        rwd_spec_f, rwd_spec_p, rwd_spec_df = t_utils.kruskal_wallis_test(
+            group_rwd_mvmt_spec, "Conover", test_method,
+        )
+        test_title = f"Kruskal-Wallis {test_method}"
+
+    # Display the statistics
+    fig2, axes2 = plt.subplot_mosaic(
+        """
+        AB
+        CD
+        EF
+        GH
+        IJ
+        """,
+        figsize=(8, 12),
+    )
+    ## Format the tables
+    axes2["A"].axis("off")
+    axes2["A"].axis("tight")
+    axes2["A"].set_title(
+        f"Movement Correlation {test_title}\nF = {mvmt_corr_f:.4}  p = {mvmt_corr_p:.3E}"
+    )
+    A_table = axes2["A"].table(
+        cellText=mvmt_corr_df.values,
+        colLabels=mvmt_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    A_table.autoset_font_size(False)
+    A_table.set_fontsize(8)
+    axes2["B"].axis("off")
+    axes2["B"].axis("tight")
+    axes2["B"].set_title(
+        f"Movement Stereotypy {test_title}\nF = {mvmt_stereo_f:.4}  p = {mvmt_stereo_p:.3E}"
+    )
+    B_table = axes2["B"].table(
+        cellText=mvmt_stereo_df.values,
+        colLabels=mvmt_stereo_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    B_table.autoset_font_size(False)
+    B_table.set_fontsize(8)
+    axes2["C"].axis("off")
+    axes2["C"].axis("tight")
+    axes2["C"].set_title(
+        f"Movement Reliability {test_title}\nF = {mvmt_rel_f:.4}  p = {mvmt_rel_p:.3E}"
+    )
+    C_table = axes2["C"].table(
+        cellText=mvmt_rel_df.values,
+        colLabels=mvmt_rel_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    C_table.autoset_font_size(False)
+    C_table.set_fontsize(8)
+    axes2["D"].axis("off")
+    axes2["D"].axis("tight")
+    axes2["D"].set_title(
+        f"Movement Specificity {test_title}\nF = {mvmt_spec_f:.4}  p = {mvmt_spec_p:.3E}"
+    )
+    D_table = axes2["D"].table(
+        cellText=mvmt_spec_df.values,
+        colLabels=mvmt_spec_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    D_table.autoset_font_size(False)
+    D_table.set_fontsize(8)
+    axes2["E"].axis("off")
+    axes2["E"].axis("tight")
+    axes2["E"].set_title(
+        f"Learned Movement Reliability {test_title}\nF = {LMP_rel_f:.4}  p = {LMP_rel_p:.3E}"
+    )
+    E_table = axes2["E"].table(
+        cellText=LMP_rel_df.values,
+        colLabels=LMP_rel_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    E_table.autoset_font_size(False)
+    E_table.set_fontsize(8)
+    axes2["F"].axis("off")
+    axes2["F"].axis("tight")
+    axes2["F"].set_title(
+        f"Learned Movement Specificity {test_title}\nF = {LMP_spec_f:.4}  p = {LMP_spec_p:.3E}"
+    )
+    F_table = axes2["F"].table(
+        cellText=LMP_spec_df.values,
+        colLabels=LMP_spec_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    F_table.autoset_font_size(False)
+    F_table.set_fontsize(8)
+    axes2["G"].axis("off")
+    axes2["G"].axis("tight")
+    axes2["G"].set_title(
+        f"Rewarded Movement Correlation {test_title}\nF = {rwd_corr_f:.4}  p = {rwd_corr_p:.3E}"
+    )
+    G_table = axes2["G"].table(
+        cellText=rwd_corr_df.values,
+        colLabels=rwd_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    G_table.autoset_font_size(False)
+    G_table.set_fontsize(8)
+    axes2["H"].axis("off")
+    axes2["H"].axis("tight")
+    axes2["H"].set_title(
+        f"Rewarded Movement Stereotypy {test_title}\nF = {rwd_stereo_f:.4}  p = {rwd_stereo_p:.3E}"
+    )
+    H_table = axes2["H"].table(
+        cellText=rwd_stereo_df.values,
+        colLabels=rwd_stereo_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    H_table.autoset_font_size(False)
+    H_table.set_fontsize(8)
+    axes2["I"].axis("off")
+    axes2["I"].axis("tight")
+    axes2["I"].set_title(
+        f"Rewarded Movement Reliability {test_title}\nF = {rwd_rel_f:.4}  p = {rwd_rel_p:.3E}"
+    )
+    I_table = axes2["I"].table(
+        cellText=rwd_rel_df.values,
+        colLabels=rwd_rel_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    I_table.autoset_font_size(False)
+    I_table.set_fontsize(8)
+    axes2["J"].axis("off")
+    axes2["J"].axis("tight")
+    axes2["J"].set_title(
+        f"Rewarded Movement Specificity {test_title}\nF = {rwd_spec_f:.4}  p = {rwd_spec_p:.3E}"
+    )
+    J_table = axes2["J"].table(
+        cellText=rwd_spec_df.values,
+        colLabels=rwd_spec_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    J_table.autoset_font_size(False)
+    J_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_4_Stats")
+        fig2.savefig(fname, ".pdf")
 
