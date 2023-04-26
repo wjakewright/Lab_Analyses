@@ -987,7 +987,7 @@ def plot_movement_related_activity(
     )
     ## Format the tables
     axes2["A"].axis("off")
-    axes2["A"].axes("tight")
+    axes2["A"].axis("tight")
     axes2["A"].set_title(
         f"GluSnFr Amp {test_title}\nF = {g_amp_f:.4}  p = {g_amp_p:.3E}"
     )
@@ -1000,7 +1000,7 @@ def plot_movement_related_activity(
     A_table.autoset_font_size(False)
     A_table.set_fontsize(8)
     axes2["B"].axis("off")
-    axes2["B"].axes("tight")
+    axes2["B"].axis("tight")
     axes2["B"].set_title(
         f"Calcium Amp {test_title}\nF = {c_amp_f:.4}  p = {c_amp_p:.3E}"
     )
@@ -1013,7 +1013,7 @@ def plot_movement_related_activity(
     B_table.autoset_font_size(False)
     B_table.set_fontsize(8)
     axes2["C"].axis("off")
-    axes2["C"].axes("tight")
+    axes2["C"].axis("tight")
     axes2["C"].set_title(
         f"GluSnFr Onsets {test_title}\nF = {g_onset_f:.4}  p = {g_onset_p:.3E}"
     )
@@ -1026,7 +1026,7 @@ def plot_movement_related_activity(
     C_table.autoset_font_size(False)
     C_table.set_fontsize(8)
     axes2["D"].axis("off")
-    axes2["D"].axes("tight")
+    axes2["D"].axis("tight")
     axes2["D"].set_title(
         f"Calcium Onset {test_title}\nF = {c_onset_f:.4}  p = {c_onset_p:.3E}"
     )
@@ -1770,12 +1770,143 @@ def plot_reward_movement_related_activity(
         nonrwd_onset_f, nonrwd_onset_p, nonrwd_onset_df = t_utils.kruskal_wallis_test(
             group_onsets["Non-rewarded"], "Conover", test_method,
         )
-        (
-            nonrwd_ca_onset_f,
-            nonrwd_ca_onset_p,
-            nonrwd_ca_onset_df,
-        ) = t_utils.kruskal_wallis_test(
+        (nonrwd_ca_onset_f, nonrwd_ca_onset_df,) = t_utils.kruskal_wallis_test(
             group_calcium_onsets["Non-rewarded"], "Conover", test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
     # Display the statistics
+    fig2, axes2 = plt.subplot_mosaic(
+        """
+        AB
+        CD
+        EF
+        GH
+        IJ
+        """,
+        figsize=(8, 12),
+    )
+    ## Format the tables
+    axes2["A"].axis("off")
+    axes2["A"].axes("tight")
+    axes2["A"].set_title(
+        f"Reward vs. Nonreward Amp t-test\nt = {rwd_nonrwd_amp_t:.4}  p = {rwd_nonrwd_amp_p:.3E}"
+    )
+    axes2["B"].axis("off")
+    axes2["B"].axis("tight")
+    axes2["B"].set_title(
+        f"Reward vs. Nonreward Calcium Amp t-test\nt = {rwd_nonrwd_ca_amp_t:.4}  p = {rwd_nonrwd_ca_amp_p:.3E}"
+    )
+    axes2["C"].axis("off")
+    axes2["C"].axis("tight")
+    axes2["C"].set_title(
+        f"Rewarded Amp {test_title}\nF = {rwd_amp_f:.4}  p= {rwd_amp_p:.3E}"
+    )
+    C_table = axes2["C"].table(
+        cellText=rwd_amp_df.values,
+        colLabels=rwd_amp_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    C_table.autoset_font_size(False)
+    C_table.set_fontsize(8)
+    axes2["D"].axis("off")
+    axes2["D"].axis("tight")
+    axes2["D"].set_title(
+        f"Rewarded Calcium Amp {test_title}\nF = {rwd_ca_amp_f:.4}  p= {rwd_ca_amp_p:.3E}"
+    )
+    D_table = axes2["D"].table(
+        cellText=rwd_ca_amp_df.values,
+        colLabels=rwd_ca_amp_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    D_table.autoset_font_size(False)
+    D_table.set_fontsize(8)
+    axes2["E"].axis("off")
+    axes2["E"].axis("tight")
+    axes2["E"].set_title(
+        f"Rewarded Onset {test_title}\nF = { rwd_onset_f:.4}  p= {rwd_onset_p:.3E}"
+    )
+    E_table = axes2["E"].table(
+        cellText=rwd_onset_df.values,
+        colLabels=rwd_onset_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    E_table.autoset_font_size(False)
+    E_table.set_fontsize(8)
+    axes2["F"].axis("off")
+    axes2["F"].axis("tight")
+    axes2["F"].set_title(
+        f"Rewarded Calcium Onset {test_title}\nF = { rwd_ca_onset_f:.4}  p= {rwd_ca_onset_p:.3E}"
+    )
+    F_table = axes2["F"].table(
+        cellText=rwd_ca_onset_df.values,
+        colLabels=rwd_ca_onset_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    F_table.autoset_font_size(False)
+    F_table.set_fontsize(8)
+    axes2["G"].axis("off")
+    axes2["G"].axis("tight")
+    axes2["G"].set_title(
+        f"Non-Rewarded Amp {test_title}\nF = {nonrwd_amp_f:.4}  p= {nonrwd_amp_p:.3E}"
+    )
+    G_table = axes2["G"].table(
+        cellText=nonrwd_amp_df.values,
+        colLabels=nonrwd_amp_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    G_table.autoset_font_size(False)
+    G_table.set_fontsize(8)
+    axes2["H"].axis("off")
+    axes2["H"].axis("tight")
+    axes2["H"].set_title(
+        f"Non-Rewarded Calcium Amp {test_title}\nF = {nonrwd_ca_amp_f:.4}  p= {nonrwd_ca_amp_p:.3E}"
+    )
+    H_table = axes2["H"].table(
+        cellText=nonrwd_ca_amp_df.values,
+        colLabels=nonrwd_ca_amp_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    H_table.autoset_font_size(False)
+    H_table.set_fontsize(8)
+    axes2["I"].axis("off")
+    axes2["I"].axis("tight")
+    axes2["I"].set_title(
+        f"Non-Rewarded Onset {test_title}\nF = {nonrwd_onset_f:.4}  p= {nonrwd_onset_p:.3E}"
+    )
+    I_table = axes2["I"].table(
+        cellText=nonrwd_onset_df.values,
+        colLabels=nonrwd_onset_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    I_table.autoset_font_size(False)
+    I_table.set_fontsize(8)
+    axes2["J"].axis("off")
+    axes2["J"].axis("tight")
+    axes2["J"].set_title(
+        f"Non-Rewarded Calcium Onset {test_title}\nF = {nonrwd_ca_onset_f:.4}  p= {nonrwd_ca_onset_p:.3E}"
+    )
+    J_table = axes2["J"].table(
+        cellText=nonrwd_ca_onset_df.values,
+        colLabels=nonrwd_ca_onset_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    J_table.autoset_font_size(False)
+    J_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Spine_Activity_Figure_3_Stats")
+        fig2.savefig(fname + ".pdf")
+
