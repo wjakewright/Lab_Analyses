@@ -63,6 +63,7 @@ def spine_activity_analysis(
             return "Calcium constants have not been generated!!!"
 
     # Analyze each mouse seperately
+    dendrite_tracker = 0
     analyzed_data = []
     for mouse in mice_list:
         print("----------------------------------------")
@@ -104,6 +105,10 @@ def spine_activity_analysis(
                 nonrwd_movement_spines,
             ) = parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines)
             # Dendrite activity
+            dendrite_number = np.zeros(spine_activity.shape[1])
+            for grouping in spine_groupings:
+                dendrite_number[grouping] = dendrite_tracker
+                dendrite_tracker = dendrite_tracker + 1
             dendrite_activity = data.dendrite_calcium_activity
             dendrite_dFoF = data.dendrite_calcium_processed_dFoF
             # Dendrite MRD information
@@ -376,6 +381,7 @@ def spine_activity_analysis(
                 followup_flags=followup_flags,
                 spine_volumes=spine_volumes,
                 followoup_volumes=followup_volumes,
+                dendrite_number=dendrite_number,
                 movement_spines=movement_spines,
                 nonmovement_spines=nonmovement_spines,
                 rwd_movement_spines=rwd_movement_spines,
