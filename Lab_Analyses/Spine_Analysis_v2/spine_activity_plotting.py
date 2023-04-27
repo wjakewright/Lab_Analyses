@@ -435,6 +435,7 @@ def plot_movement_related_activity(
     delta_volume, spine_idxs = calculate_volume_change(
         volumes, flags, norm=False, exclude=exclude,
     )
+    delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spined = classify_plasticity(
         delta_volume, threshold=threshold, norm=False,
     )
@@ -942,7 +943,7 @@ def plot_movement_related_activity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_2")
-        fig.save_fig(fname + ".pdf")
+        fig.savefig(fname + ".pdf")
 
     ######################### Statistics Section ############################
     if display_stats == False:
@@ -1147,6 +1148,7 @@ def plot_rewarded_movement_related_activity(
     delta_volume, spine_idxs = calculate_volume_change(
         volumes, flags, norm=False, exclude=exclude,
     )
+    delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spined = classify_plasticity(
         delta_volume, threshold=threshold, norm=False,
     )
@@ -1660,7 +1662,7 @@ def plot_rewarded_movement_related_activity(
         avlines=[0],
         title="Rewarded GluSnFr",
         xtitle="Relative onset (s)",
-        xlime=None,
+        xlim=None,
         figsize=(5, 5),
         color=COLORS,
         alpha=0.3,
@@ -2038,6 +2040,7 @@ def plot_spine_movement_encoding(
     delta_volume, spine_idxs = calculate_volume_change(
         volumes, flags, norm=False, exclude=exclude,
     )
+    delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
         delta_volume, threshold=threshold, norm=False,
     )
