@@ -22,6 +22,7 @@ class Spine_Activity_Data:
     followup_flags: list
     spine_volumes: np.ndarray
     followup_volumes: np.ndarray
+    dendrite_number: np.ndarray
     movement_spines: np.ndarray
     nonmovement_spines: np.ndarray
     rwd_movement_spines: np.ndarray
