@@ -119,6 +119,7 @@ def spine_activity_analysis(
             lever_active = data.lever_active
             lever_force = data.lever_force_smooth
             lever_active_rwd = data.rewarded_movement_binary
+            lever_active_nonrwd = lever_active - lever_active_rwd
 
             # zscore activity if specified
             if zscore:
@@ -221,6 +222,52 @@ def spine_activity_analysis(
                 dendrite_rwd_movement_onsets,
             ) = movement_related_activity(
                 lever_active=lever_active_rwd,
+                activity=dendrite_activity,
+                dFoF=dendrite_dFoF,
+                norm=None,
+                smooth=True,
+                avg_window=None,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
+
+            # Analyze activity during Non-rewarded movements
+            (
+                spine_nonrwd_movement_traces,
+                spine_nonrwd_movement_amplitudes,
+                spine_nonrwd_movement_onsets,
+            ) = movement_related_activity(
+                lever_active=lever_active_nonrwd,
+                activity=spine_activity,
+                dFoF=spine_dFoF,
+                norm=curr_glu_constants,
+                smooth=True,
+                avg_window=None,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
+            ## Spine Calcium
+            (
+                spine_nonrwd_movement_calcium_traces,
+                spine_nonrwd_movement_calcium_amplitudes,
+                spine_nonrwd_movement_calcium_onsets,
+            ) = movement_related_activity(
+                lever_active=lever_active_nonrwd,
+                activity=spine_activity,
+                dFoF=spine_calcium_dFoF,
+                norm=curr_ca_constants,
+                smooth=True,
+                avg_window=None,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
+            ## Dendrite Calcium
+            (
+                dendrite_nonrwd_movement_traces,
+                dendrite_nonrwd_movement_amplitudes,
+                dendrite_nonrwd_movement_onsets,
+            ) = movement_related_activity(
+                lever_active=lever_active_nonrwd,
                 activity=dendrite_activity,
                 dFoF=dendrite_dFoF,
                 norm=None,
@@ -357,6 +404,15 @@ def spine_activity_analysis(
                 dendrite_rwd_movement_traces=dendrite_rwd_movement_traces,
                 dendrite_rwd_movement_amplitude=dendrite_rwd_movement_amplitudes,
                 dendrite_rwd_movement_onset=dendrite_rwd_movement_onsets,
+                spine_nonrwd_movement_traces=spine_nonrwd_movement_traces,
+                spine_nonrwd_movement_calcium_traces=spine_nonrwd_movement_calcium_traces,
+                spine_nonrwd_movement_amplitude=spine_nonrwd_movement_amplitudes,
+                spine_nonrwd_movement_calcium_amplitude=spine_nonrwd_movement_calcium_amplitudes,
+                spine_nonrwd_movement_onset=spine_nonrwd_movement_onsets,
+                spine_nonrwd_movement_calcium_onset=spine_nonrwd_movement_calcium_onsets,
+                dendrite_nonrwd_movement_traces=dendrite_nonrwd_movement_traces,
+                dendrite_nonrwd_movement_amplitude=dendrite_nonrwd_movement_amplitudes,
+                dendrite_nonrwd_movement_onset=dendrite_nonrwd_movement_onsets,
                 learned_movement_pattern=learned_movement_pattern,
                 spine_movements=spine_movements,
                 spine_movement_correlation=spine_movement_correlation,
