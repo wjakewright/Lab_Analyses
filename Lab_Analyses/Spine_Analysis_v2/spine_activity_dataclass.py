@@ -53,6 +53,16 @@ class Spine_Activity_Data:
     dendrite_rwd_movement_traces: list
     dendrite_rwd_movement_amplitude: np.ndarray
     dendrite_rwd_movement_onset: np.ndarray
+    # Non-Rewarded movement related activity variables
+    spine_nonrwd_movement_traces: list
+    spine_nonrwd_movement_calcium_traces: list
+    spine_nonrwd_movement_amplitude: np.ndarray
+    spine_nonrwd_movement_calcium_amplitude: np.ndarray
+    spine_nonrwd_movement_onset: np.ndarray
+    spine_nonrwd_movement_calcium_onset: np.ndarray
+    dendrite_nonrwd_movement_traces: list
+    dendrite_nonrwd_movement_amplitude: np.ndarray
+    dendrite_nonrwd_movement_onset: np.ndarray
     # Spine movement encoding
     learned_movement_pattern: list
     spine_movements: list
