@@ -29,6 +29,10 @@ from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
 from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import (
     load_norm_constants,
 )
+from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
+    calculate_volume_change,
+    classify_plasticity,
+)
 from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import (
     variable_distance_dependence,
 )
@@ -309,6 +313,48 @@ def local_coactivity_analysis(
                 method="local",
                 iterations=1000,
             )
+            ## Plasticity
+            relative_volumes = np.zeros(spine_activity.shape[1]) * np.nan
+            rel_vols, stable_idxs = calculate_volume_change(
+                [spine_volumes, followup_volumes],
+                [spine_flags, followup_flags],
+                norm=False,
+                exclude="Shaft Spine",
+            )
+            relative_volumes[stable_idxs] = rel_vols[-1]
+            enlarged, shrunken, _ = classify_plasticity(
+                relative_volumes, threshold=0.3, norm=False,
+            )
+            ### Enlarged spines
+            (
+                local_nn_enlarged,
+                shuff_nn_enlarged,
+                enlarged_spine_distribution,
+            ) = variable_distance_dependence(
+                enlarged,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="nearest",
+                iterations=1000,
+            )
+            ### Enlarged spines
+            (
+                local_nn_shrunken,
+                shuff_nn_shrunken,
+                shrunken_spine_distribution,
+            ) = variable_distance_dependence(
+                shrunken,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="nearest",
+                iterations=1000,
+            )
 
             # Analyze coactive and noncoactive spine events
             print(f"---- Analyzing coactive and noncoactive events")
@@ -529,6 +575,12 @@ def local_coactivity_analysis(
                 avg_nearby_spine_volume=avg_nearby_spine_volume,
                 shuff_nearby_spine_volume=shuff_nearby_spine_volume,
                 nearby_spine_volume_distribution=nearby_spine_volume_distribution,
+                local_nn_enlarged=local_nn_enlarged,
+                shuff_nn_enlarged=shuff_nn_enlarged,
+                enlarged_spine_distribution=enlarged_spine_distribution,
+                local_nn_shrunken=local_nn_shrunken,
+                shuff_nn_shrunken=shuff_nn_shrunken,
+                shrunken_spine_distribution=shrunken_spine_distribution,
                 spine_coactive_event_num=spine_coactive_event_num,
                 spine_coactive_traces=spine_coactive_traces,
                 spine_noncoactive_traces=spine_noncoactive_traces,
