@@ -160,7 +160,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             data_1 = np.array(data_1[variable])
             data_2 = np.array(data_2[variable])
             # Perform t-test
-            t, p = stats.ttest_ind(data_1, data_2)
+            t, p = stats.ttest_ind(data_1, data_2, nan_policy="omit")
             t_vals.append(t)
             raw_pvals.append(p)
         _, adj_pvals, _, alpha_corrected = multipletests(
@@ -402,6 +402,61 @@ def significant_vs_shuffle(real_values, shuffle_values, alpha, nan_policy="omit"
     significance = np.array(significance)
 
     return ranks, significance
+
+
+def correlate_grouped_data(data_dict, x_vals):
+    """Function to correlate multiple groups of data
+    
+        INPUT PARAMETERS
+            data_dict - dictionary of 2d arrays with each row corresponding to a 
+                        time point / measurement while each col corresponds to 
+                        different rois / subjects
+        
+            x_vals - np.array of the x values corresponding to each row of the 2d arrays
+    """
+    corr_dict = {
+        "Group": [],
+        "r": [],
+        "p val": [],
+    }
+    for key, value in data_dict.items():
+        binned_v = []
+        binned_p = []
+        for i in range(value.shape[0]):
+            binned_v.append(value[i, :])
+            binned_p.append([x_vals[i] for x in range(value.shape[1])])
+        binned_values = np.concatenate(binned_v)
+        binned_pos = np.array([y for x in binned_p for y in x])
+        binned_non_nan = np.nonzero(~np.isnan(binned_values))[0]
+        binned_values = binned_values[binned_non_nan]
+        binned_pos = binned_pos[binned_non_nan]
+        r, p = stats.pearsonr(binned_pos, binned_values)
+        corr_dict["Group"].append(key)
+        corr_dict["r"].append(r)
+        corr_dict["p val"].append(p)
+
+    corr_df = pd.DataFrame.from_dict(corr_dict)
+
+    return corr_dict, corr_df
+
+
+def test_against_chance(real_array, shuff_matrix):
+    """Function to test statistical significance against chance distributions
+
+        INPUT PARAMETERS
+            real_array - 1d np.array of the real values
+
+            shuff_matrix - 2d np.array of the shuff values. Each row represents 
+                            a shuff and each column represents each data point
+    
+    """
+    real_median = np.nanmedian(real_array)
+    shuff_medians = np.nanmedian(shuff_matrix, axis=1)
+    # Get fraction following null hypothesis
+    frac_below = np.sum(shuff_medians <= real_median) / len(shuff_medians)
+    frac_above = np.sum(shuff_medians >= real_median) / len(shuff_medians)
+
+    return frac_above, frac_below
 
 
 def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method):
