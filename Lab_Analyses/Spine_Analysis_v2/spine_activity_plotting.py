@@ -1324,7 +1324,8 @@ def plot_rewarded_movement_related_activity(
         ABCDEF
         GHIJKL
         MNOPQR
-        """
+        """,
+        figsize=figsize,
     )
     fig.suptitle("Rewarded Movement-Related Spine Activity")
     fig.subplots_adjust(hspace=1, wspace=0.5)
@@ -1746,9 +1747,11 @@ def plot_rewarded_movement_related_activity(
 
     # Perform the statistics
     if test_type == "parametric":
-        r_n_amp_t, r_n_amp_p = stats.ttest_ind(rewarded_amps, nonrewarded_amps)
+        r_n_amp_t, r_n_amp_p = stats.ttest_ind(
+            rewarded_amps, nonrewarded_amps, nan_policy="omit"
+        )
         r_n_ca_amp_t, r_n_ca_amp_p = stats.ttest_ind(
-            rewarded_ca_amps, nonrewarded_ca_amps
+            rewarded_ca_amps, nonrewarded_ca_amps, nan_policy="omit"
         )
         t_title = "T-Test"
         rwd_amp_f, rwd_amp_p, _, rwd_amp_df = t_utils.ANOVA_1way_posthoc(
@@ -1783,9 +1786,11 @@ def plot_rewarded_movement_related_activity(
         ) = t_utils.ANOVA_1way_posthoc(nonrwd_ca_onsets, test_method)
         test_title = f"One-Way ANOVA {test_method}"
     if test_type == "nonparametric":
-        r_n_amp_t, r_n_amp_p = stats.mannwhitneyu(rewarded_amps, nonrewarded_amps)
+        r_n_amp_t, r_n_amp_p = stats.mannwhitneyu(
+            rewarded_amps, nonrewarded_amps, nan_policy="omit"
+        )
         r_n_ca_amp_t, r_n_ca_amp_p = stats.mannwhitneyu(
-            rewarded_ca_amps, nonrewarded_ca_amps
+            rewarded_ca_amps, nonrewarded_ca_amps, nan_policy="omit"
         )
         t_title = "Mann-Whitney U"
         rwd_amp_f, rwd_amp_p, rwd_amp_df = t_utils.kruskal_wallis_test(
