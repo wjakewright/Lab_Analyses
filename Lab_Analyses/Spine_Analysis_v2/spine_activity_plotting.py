@@ -1149,7 +1149,7 @@ def plot_rewarded_movement_related_activity(
         volumes, flags, norm=False, exclude=exclude,
     )
     delta_volume = delta_volume[-1]
-    enlarged_spines, shrunken_spines, stable_spined = classify_plasticity(
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
         delta_volume, threshold=threshold, norm=False,
     )
 
