@@ -69,6 +69,8 @@ def ANOVA_1way_posthoc(data_dict, method):
             "adjusted p-vals": adj_pvals,
         }
         results_df = pd.DataFrame.from_dict(results_dict)
+        results_df.update(results_df[["raw p-vals"]].applymap("{:.4E}".format))
+        results_df.update(results_df[["adjusted p-vals"]].applymap("{:.4E}".format))
 
     if method == "Tukey":
         # Organize data for input
@@ -173,6 +175,8 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             "adjusted p-vals": adj_pvals,
         }
         posthoc_df = pd.DataFrame.from_dict(posthoc_dict)
+        posthoc_df.update(posthoc_df[["raw p-vals"]].applymap("{:.4E}".format))
+        posthoc_df.update(posthoc_df[["adjusted p-vals"]].applymap("{:.4E}".format))
 
     if method == "Tukey":
         # Organize data to put into Tukey
@@ -241,6 +245,7 @@ def kruskal_wallis_test(data_dict, post_method, adj_method):
     }
 
     results_df = pd.DataFrame.from_dict(results_dict)
+    results_df.update(results_df[["adjusted p-vals"]].applymap("{:.4E}".format))
 
     # results_table = tabulate(results_dict, headers="keys", tablefmt="fancy_grid")
     results_table = results_df
