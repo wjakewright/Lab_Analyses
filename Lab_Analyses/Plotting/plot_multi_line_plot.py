@@ -75,7 +75,7 @@ def plot_multi_line_plot(
     """
     # Check if axis was passed
     if ax is None:
-        fig, ax = plt.subplot(figsize=figsize)
+        fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
     else:
         save = False  # Don't wish to save if part of another plot
