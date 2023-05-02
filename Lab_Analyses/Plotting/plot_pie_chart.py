@@ -55,24 +55,29 @@ def plot_pie_chart(
     """
     # Check if axis was passed
     if ax is None:
-        fig, ax = plt.subplot(figsize=figsize)
+        fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
     else:
         save = False  # Don't wish to save if part of another plot
 
     # Sort data
     labels = list(data_dict.keys())
-    data = list(data.values())
+    data = list(data_dict.values())
 
     # Sort out the colors
     if type(colors) == str:
         colors = [colors for i in range(len(data))]
-    
+
     # Set the title
     ax.set_title(title)
 
     # Set up some properties
-    wedgeprops = {"width":  donut, "alpha": alpha, "linewidth": linewidth, "edgecolor": edgecolor}
+    wedgeprops = {
+        "width": donut,
+        "alpha": alpha,
+        "linewidth": linewidth,
+        "edgecolor": edgecolor,
+    }
     textprops = {"color": txt_color, "fontsize": txt_size, "weight": "bold"}
 
     # Plot the data
@@ -104,7 +109,7 @@ def plot_pie_chart(
             bbox_to_anchor=(1, 0, 0.5, 1),
             frameon=False,
         )
-    
+
     # Save section
     if save:
         if save_path is None:
