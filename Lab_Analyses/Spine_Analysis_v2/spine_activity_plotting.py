@@ -307,7 +307,7 @@ def plot_basic_features(
     fig2, axes2 = plt.subplot_mosaic([["left", "right"]], figsize=(8, 4))
     ## Format the first table
     axes2["left"].axis("off")
-    axes2["left"].axes("tight")
+    axes2["left"].axis("tight")
     axes2["left"].set_title(
         f"Initial Volume {test_title}\nF = {vol_f:.4}   p = {vol_p:.3E}"
     )
@@ -327,7 +327,7 @@ def plot_basic_features(
     )
     right_table = axes2["right"].table(
         cellText=activity_test_df.values,
-        cellLabels=vol_test_df.columns,
+        colLabels=vol_test_df.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
@@ -436,7 +436,7 @@ def plot_movement_related_activity(
         volumes, flags, norm=False, exclude=exclude,
     )
     delta_volume = delta_volume[-1]
-    enlarged_spines, shrunken_spines, stable_spined = classify_plasticity(
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
         delta_volume, threshold=threshold, norm=False,
     )
 
@@ -497,13 +497,13 @@ def plot_movement_related_activity(
         rwd_mvmt_spines = spines * rwd_movement_spines
         nrwd_mvmt_spines = spines * nonrwd_movement_spines
         ## Get fractions of the different types
-        mvmt_fractions[key] = np.sum(mvmt_spines)
-        nonmvmt_fractions[key] = np.sum(nmvmt_spines)
-        rwd_mvmt_fractions[key] = np.sum(rwd_mvmt_spines)
-        nonrwd_mvmt_fractions[key] = np.sum(nrwd_mvmt_spines)
+        mvmt_fractions[key] = np.nansum(mvmt_spines)
+        nonmvmt_fractions[key] = np.nansum(nmvmt_spines)
+        rwd_mvmt_fractions[key] = np.nansum(rwd_mvmt_spines)
+        nonrwd_mvmt_fractions[key] = np.nansum(nrwd_mvmt_spines)
         ## Grab grouped traces, amps, onsets
-        mrs_traces = compress(spine_movement_traces, mvmt_spines)
-        mrs_calcium_traces = compress(spine_movement_calcium_traces, mvmt_spines)
+        mrs_traces = list(compress(spine_movement_traces, mvmt_spines))
+        mrs_calcium_traces = list(compress(spine_movement_calcium_traces, mvmt_spines))
         ### Avg individual events
         trace_means = [
             np.nanmean(x, axis=1) for x in mrs_traces if type(x) == np.ndarray
@@ -538,15 +538,23 @@ def plot_movement_related_activity(
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        ABCDEF
-        GHCDEF
-        IJKLM.
-        NOPQR.
+        ABGH.
+        CDEF.
+        IJKLM
+        NOPQR
         """,
         figsize=figsize,
     )
+    # fig, axes = plt.subplot_mosaic(
+    #    """
+    #    ABCDEF
+    #    GHCDEF
+    #    IJKLM.
+    #    NOPQR.
+    #    """,
+    #   figsize=figsize,
+    # )
     fig.suptitle("Movement-Related Spine Activity")
-    fig.subplots_adjust(hspace=1, wspace=0.5)
 
     ########################## Plot data onto the axes #############################
     ## Fractions of MRSs
@@ -559,7 +567,7 @@ def plot_movement_related_activity(
         edgecolor="white",
         txt_color="white",
         txt_size=9,
-        legend="top",
+        legend=None,
         donut=0.6,
         linewidth=1.5,
         ax=axes["A"],
@@ -593,7 +601,7 @@ def plot_movement_related_activity(
         edgecolor="white",
         txt_color="white",
         txt_size=9,
-        legende=None,
+        legend=None,
         donut=0.6,
         linewidth=1.5,
         ax=axes["B"],
@@ -684,7 +692,7 @@ def plot_movement_related_activity(
         sampling_rate=sampling_rate,
         activity_window=activity_window,
         title="Stable MRSs",
-        cbar_labl=activity_type,
+        cbar_label=activity_type,
         hmap_range=(0, 1),
         center=None,
         sorted="peak",
@@ -794,7 +802,7 @@ def plot_movement_related_activity(
         mrs_grouped_mvmt_amps,
         mean_type=mean_type,
         err_type=err_type,
-        figsze=(5, 5),
+        figsize=(5, 5),
         title="GluSnFr",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
@@ -821,7 +829,7 @@ def plot_movement_related_activity(
         mrs_grouped_mvmt_calcium_amps,
         mean_type=mean_type,
         err_type=err_type,
-        figsze=(5, 5),
+        figsize=(5, 5),
         title="Calcium",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
@@ -886,7 +894,7 @@ def plot_movement_related_activity(
         mrs_grouped_mvmt_onsets,
         mean_type=mean_type,
         err_type=err_type,
-        figsze=(5, 5),
+        figsize=(5, 5),
         title="GluSnFr",
         xtitle=None,
         ytitle=f"Relative onset (s)",
@@ -913,7 +921,7 @@ def plot_movement_related_activity(
         mrs_grouped_mvmt_calcium_onsets,
         mean_type=mean_type,
         err_type=err_type,
-        figsze=(5, 5),
+        figsize=(5, 5),
         title="Calcium",
         xtitle=None,
         ytitle=f"Relative onset (s)",
@@ -936,7 +944,9 @@ def plot_movement_related_activity(
         save_path=None,
     )
 
+    # fig.tight_layout()
     fig.tight_layout()
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
 
     # Save section
     if save:
@@ -998,7 +1008,7 @@ def plot_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    A_table.autoset_font_size(False)
+    A_table.auto_set_font_size(False)
     A_table.set_fontsize(8)
     axes2["B"].axis("off")
     axes2["B"].axis("tight")
@@ -1011,7 +1021,7 @@ def plot_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    B_table.autoset_font_size(False)
+    B_table.auto_set_font_size(False)
     B_table.set_fontsize(8)
     axes2["C"].axis("off")
     axes2["C"].axis("tight")
@@ -1024,21 +1034,21 @@ def plot_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    C_table.autoset_font_size(False)
+    C_table.auto_set_font_size(False)
     C_table.set_fontsize(8)
     axes2["D"].axis("off")
     axes2["D"].axis("tight")
     axes2["D"].set_title(
         f"Calcium Onset {test_title}\nF = {c_onset_f:.4}  p = {c_onset_p:.3E}"
     )
-    C_table = axes2["C"].table(
+    D_table = axes2["D"].table(
         cellText=c_onset_df.values,
         colLabels=c_onset_df.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    C_table.autoset_font_size(False)
-    C_table.set_fontsize(8)
+    D_table.auto_set_font_size(False)
+    D_table.set_fontsize(8)
 
     fig2.tight_layout()
 
@@ -1104,7 +1114,7 @@ def plot_rewarded_movement_related_activity(
     plastic_groups = {
         "Enlarged": "enlarged_spines",
         "Shrunken": "shrunken_spines",
-        "Stable": "stable_spines,",
+        "Stable": "stable_spines",
     }
 
     # Pull relevant data
@@ -1238,15 +1248,17 @@ def plot_rewarded_movement_related_activity(
     nonrewarded_ca_trace_group_sem = stats.sem(
         nonrewarded_ca_trace_means, axis=0, nan_policy="omit"
     )
-    rewarded_amps = spine_rwd_movement_amplitude[np.isnan(spine_rwd_movement_amplitude)]
+    rewarded_amps = spine_rwd_movement_amplitude[
+        ~np.isnan(spine_rwd_movement_amplitude)
+    ]
     nonrewarded_amps = spine_nonrwd_movement_amplitude[
-        np.isnan(spine_nonrwd_movement_amplitude)
+        ~np.isnan(spine_nonrwd_movement_amplitude)
     ]
     rewarded_ca_amps = spine_rwd_movement_calcium_amplitude[
-        np.isnan(spine_rwd_movement_calcium_amplitude)
+        ~np.isnan(spine_rwd_movement_calcium_amplitude)
     ]
     nonrewarded_ca_amps = spine_nonrwd_movement_calcium_amplitude[
-        np.isnan(spine_nonrwd_movement_calcium_amplitude)
+        ~np.isnan(spine_nonrwd_movement_calcium_amplitude)
     ]
 
     ## Plastic spine groups
@@ -1272,10 +1284,10 @@ def plot_rewarded_movement_related_activity(
         spines = eval(value)
         spines = spines * movement_spines
         # Process traces
-        r_traces = compress(spine_rwd_movement_traces, spines)
-        r_ca_traces = compress(spine_rwd_movement_calcium_traces, spines)
-        n_traces = compress(spine_nonrwd_movement_traces, spines)
-        n_ca_traces = compress(spine_nonrwd_movement_calcium_traces, spines)
+        r_traces = list(compress(spine_rwd_movement_traces, spines))
+        r_ca_traces = list(compress(spine_rwd_movement_calcium_traces, spines))
+        n_traces = list(compress(spine_nonrwd_movement_traces, spines))
+        n_ca_traces = list(compress(spine_nonrwd_movement_calcium_traces, spines))
         r_trace_means = [
             np.nanmean(x, axis=1) for x in r_traces if type(x) == np.ndarray
         ]
@@ -1293,7 +1305,7 @@ def plot_rewarded_movement_related_activity(
         n_means = np.vstack(n_trace_means)
         n_ca_means = np.vstack(n_ca_trace_means)
         rwd_traces[key] = np.nanmean(r_means, axis=0)
-        rwd_sems[key] = stats.sem(r_means, axis=0, nan_polity="omit")
+        rwd_sems[key] = stats.sem(r_means, axis=0, nan_policy="omit")
         rwd_ca_traces[key] = np.nanmean(r_ca_means, axis=0)
         rwd_ca_sems[key] = stats.sem(r_ca_means, axis=0, nan_policy="omit")
         nonrwd_traces[key] = np.nanmean(n_means, axis=0)
@@ -1339,7 +1351,7 @@ def plot_rewarded_movement_related_activity(
         activity_window=activity_window,
         title="Rewarded Mvmts",
         cbar_label=activity_type,
-        hmap_rate=(0, 1),
+        hmap_range=(0, 1),
         center=None,
         sorted="peak",
         normalize=True,
@@ -1359,7 +1371,7 @@ def plot_rewarded_movement_related_activity(
         activity_window=activity_window,
         title="Non-rewarded Mvmts",
         cbar_label=activity_type,
-        hmap_rate=(0, 1),
+        hmap_range=(0, 1),
         center=None,
         sorted="peak",
         normalize=True,
@@ -1463,7 +1475,7 @@ def plot_rewarded_movement_related_activity(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["D"],
+        ax=axes["F"],
         save=False,
         save_path=None,
     )
@@ -1547,7 +1559,7 @@ def plot_rewarded_movement_related_activity(
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["Q"],
+        ax=axes["P"],
         save=False,
         save_path=None,
     )
@@ -1682,7 +1694,7 @@ def plot_rewarded_movement_related_activity(
         avlines=[0],
         title="Non-rewarded GluSnFr",
         xtitle="Relative onset (s)",
-        xlime=None,
+        xlim=None,
         figsize=(5, 5),
         color=COLORS,
         alpha=0.3,
@@ -1701,7 +1713,7 @@ def plot_rewarded_movement_related_activity(
         avlines=[0],
         title="Rewarded Calcium",
         xtitle="Relative onset (s)",
-        xlime=None,
+        xlim=None,
         figsize=(5, 5),
         color=COLORS,
         alpha=0.3,
@@ -1720,7 +1732,7 @@ def plot_rewarded_movement_related_activity(
         avlines=[0],
         title="Non-rewarded Calcium",
         xtitle="Relative onset (s)",
-        xlime=None,
+        xlim=None,
         figsize=(5, 5),
         color=COLORS,
         alpha=0.3,
@@ -1787,10 +1799,12 @@ def plot_rewarded_movement_related_activity(
         test_title = f"One-Way ANOVA {test_method}"
     if test_type == "nonparametric":
         r_n_amp_t, r_n_amp_p = stats.mannwhitneyu(
-            rewarded_amps, nonrewarded_amps, nan_policy="omit"
+            rewarded_amps[~np.isnan(rewarded_amps)],
+            nonrewarded_amps[~np.isnan(nonrewarded_amps)],
         )
         r_n_ca_amp_t, r_n_ca_amp_p = stats.mannwhitneyu(
-            rewarded_ca_amps, nonrewarded_ca_amps, nan_policy="omit"
+            rewarded_ca_amps[~np.isnan(rewarded_ca_amps)],
+            nonrewarded_ca_amps[~np.isnan(nonrewarded_ca_amps)],
         )
         t_title = "Mann-Whitney U"
         rwd_amp_f, rwd_amp_p, rwd_amp_df = t_utils.kruskal_wallis_test(
@@ -1848,7 +1862,7 @@ def plot_rewarded_movement_related_activity(
     axes2["C"].axis("off")
     axes2["C"].axis("tight")
     axes2["C"].set_title(
-        f"Rewarded GluSnFr Amp {test_title}\nF = {rwd_amp_f:.4}  p = {rwd_amp_p:.3E}"
+        f"Rewarded GluSnFr Amp\n {test_title}\nF = {rwd_amp_f:.4}  p = {rwd_amp_p:.3E}"
     )
     C_table = axes2["C"].table(
         cellText=rwd_amp_df.values,
@@ -1856,12 +1870,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    C_table.autoset_font_size(False)
+    C_table.auto_set_font_size(False)
     C_table.set_fontsize(8)
     axes2["D"].axis("off")
     axes2["D"].axis("tight")
     axes2["D"].set_title(
-        f"Rewarded Calcium Amp {test_title}\nF = {rwd_ca_amp_f:.4}  p = {rwd_ca_amp_p:.3E}"
+        f"Rewarded Calcium Amp\n {test_title}\nF = {rwd_ca_amp_f:.4}  p = {rwd_ca_amp_p:.3E}"
     )
     D_table = axes2["D"].table(
         cellText=rwd_ca_amp_df.values,
@@ -1869,12 +1883,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    D_table.autoset_font_size(False)
+    D_table.auto_set_font_size(False)
     D_table.set_fontsize(8)
     axes2["E"].axis("off")
     axes2["E"].axis("tight")
     axes2["E"].set_title(
-        f"Non-rewarded GluSnFr Amp {test_title}\nF = {nonrwd_amp_f:.4}  p = {nonrwd_amp_p:.3E}"
+        f"Non-rewarded GluSnFr Amp\n {test_title}\nF = {nonrwd_amp_f:.4}  p = {nonrwd_amp_p:.3E}"
     )
     E_table = axes2["E"].table(
         cellText=nonrwd_amp_df.values,
@@ -1882,12 +1896,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    E_table.autoset_font_size(False)
+    E_table.auto_set_font_size(False)
     E_table.set_fontsize(8)
     axes2["F"].axis("off")
     axes2["F"].axis("tight")
     axes2["F"].set_title(
-        f"Non-rewarded Calcium Amp {test_title}\nF = {nonrwd_ca_amp_f:.4}  p = {nonrwd_ca_amp_p:.3E}"
+        f"Non-rewarded Calcium Amp\n {test_title}\nF = {nonrwd_ca_amp_f:.4}  p = {nonrwd_ca_amp_p:.3E}"
     )
     F_table = axes2["F"].table(
         cellText=nonrwd_ca_amp_df.values,
@@ -1895,12 +1909,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    F_table.autoset_font_size(False)
+    F_table.auto_set_font_size(False)
     F_table.set_fontsize(8)
     axes2["G"].axis("off")
     axes2["G"].axis("tight")
     axes2["G"].set_title(
-        f"Rewarded GluSnFr Onset {test_title}\nF = {rwd_onset_f:.4}  p = {rwd_onset_p:.3E}"
+        f"Rewarded GluSnFr Onset\n {test_title}\nF = {rwd_onset_f:.4}  p = {rwd_onset_p:.3E}"
     )
     G_table = axes2["G"].table(
         cellText=rwd_onset_df.values,
@@ -1908,12 +1922,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    G_table.autoset_font_size(False)
+    G_table.auto_set_font_size(False)
     G_table.set_fontsize(8)
     axes2["H"].axis("off")
     axes2["H"].axis("tight")
     axes2["H"].set_title(
-        f"Rewarded Calcium Onset {test_title}\nF = {rwd_ca_onset_f:.4}  p = {rwd_ca_onset_p:.3E}"
+        f"Rewarded Calcium Onset\n {test_title}\nF = {rwd_ca_onset_f:.4}  p = {rwd_ca_onset_p:.3E}"
     )
     H_table = axes2["H"].table(
         cellText=rwd_ca_onset_df.values,
@@ -1921,12 +1935,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    H_table.autoset_font_size(False)
+    H_table.auto_set_font_size(False)
     H_table.set_fontsize(8)
     axes2["I"].axis("off")
     axes2["I"].axis("tight")
     axes2["I"].set_title(
-        f"Non-rewarded GluSnFr Onset {test_title}\nF = {nonrwd_onset_f:.4}  p = {nonrwd_onset_p:.3E}"
+        f"Non-rewarded GluSnFr Onset\n {test_title}\nF = {nonrwd_onset_f:.4}  p = {nonrwd_onset_p:.3E}"
     )
     I_table = axes2["I"].table(
         cellText=nonrwd_onset_df.values,
@@ -1934,12 +1948,12 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    I_table.autoset_font_size(False)
+    I_table.auto_set_font_size(False)
     I_table.set_fontsize(8)
     axes2["J"].axis("off")
     axes2["J"].axis("tight")
     axes2["J"].set_title(
-        f"Non-rewarded Calcium Onset {test_title}\nF = {nonrwd_ca_onset_f:.4}  p = {nonrwd_ca_onset_p:.3E}"
+        f"Non-rewarded Calcium Onset\n {test_title}\nF = {nonrwd_ca_onset_f:.4}  p = {nonrwd_ca_onset_p:.3E}"
     )
     J_table = axes2["J"].table(
         cellText=nonrwd_ca_onset_df.values,
@@ -1947,7 +1961,7 @@ def plot_rewarded_movement_related_activity(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    J_table.autoset_font_size(False)
+    J_table.auto_set_font_size(False)
     J_table.set_fontsize(8)
 
     fig2.tight_layout()
@@ -2036,7 +2050,7 @@ def plot_spine_movement_encoding(
     spine_LMP_specificity = dataset.spine_LMP_specificity
     spine_rwd_movement_correlation = dataset.spine_rwd_movement_correlation
     spine_rwd_movement_stereotypy = dataset.spine_rwd_movement_stereotypy
-    spine_rwd_movement_reliability = dataset.spine_rwd_movement_reliablity
+    spine_rwd_movement_reliability = dataset.spine_rwd_movement_reliability
     spine_rwd_movement_specificity = dataset.spine_rwd_movement_specificity
 
     # Calculate the relative volumes
@@ -2108,10 +2122,10 @@ def plot_spine_movement_encoding(
         group_rwd_mvmt_spec[key] = spine_rwd_movement_specificity[spines]
 
     # Construct the figure
-    fig, axes = plt.subplot_moasic(
+    fig, axes = plt.subplot_mosaic(
         """
-        ABCDEF
-        GHIJ..
+        ABCDE
+        GHIJF
         """,
         figsize=figsize,
     )
@@ -2484,7 +2498,7 @@ def plot_spine_movement_encoding(
     axes2["A"].axis("off")
     axes2["A"].axis("tight")
     axes2["A"].set_title(
-        f"Movement Correlation {test_title}\nF = {mvmt_corr_f:.4}  p = {mvmt_corr_p:.3E}"
+        f"Movement Correlation\n {test_title}\nF = {mvmt_corr_f:.4}  p = {mvmt_corr_p:.3E}"
     )
     A_table = axes2["A"].table(
         cellText=mvmt_corr_df.values,
@@ -2492,12 +2506,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    A_table.autoset_font_size(False)
+    A_table.auto_set_font_size(False)
     A_table.set_fontsize(8)
     axes2["B"].axis("off")
     axes2["B"].axis("tight")
     axes2["B"].set_title(
-        f"Movement Stereotypy {test_title}\nF = {mvmt_stereo_f:.4}  p = {mvmt_stereo_p:.3E}"
+        f"Movement Stereotypy\n {test_title}\nF = {mvmt_stereo_f:.4}  p = {mvmt_stereo_p:.3E}"
     )
     B_table = axes2["B"].table(
         cellText=mvmt_stereo_df.values,
@@ -2505,12 +2519,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    B_table.autoset_font_size(False)
+    B_table.auto_set_font_size(False)
     B_table.set_fontsize(8)
     axes2["C"].axis("off")
     axes2["C"].axis("tight")
     axes2["C"].set_title(
-        f"Movement Reliability {test_title}\nF = {mvmt_rel_f:.4}  p = {mvmt_rel_p:.3E}"
+        f"Movement Reliability\n {test_title}\nF = {mvmt_rel_f:.4}  p = {mvmt_rel_p:.3E}"
     )
     C_table = axes2["C"].table(
         cellText=mvmt_rel_df.values,
@@ -2518,12 +2532,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    C_table.autoset_font_size(False)
+    C_table.auto_set_font_size(False)
     C_table.set_fontsize(8)
     axes2["D"].axis("off")
     axes2["D"].axis("tight")
     axes2["D"].set_title(
-        f"Movement Specificity {test_title}\nF = {mvmt_spec_f:.4}  p = {mvmt_spec_p:.3E}"
+        f"Movement Specificity\n {test_title}\nF = {mvmt_spec_f:.4}  p = {mvmt_spec_p:.3E}"
     )
     D_table = axes2["D"].table(
         cellText=mvmt_spec_df.values,
@@ -2531,12 +2545,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    D_table.autoset_font_size(False)
+    D_table.auto_set_font_size(False)
     D_table.set_fontsize(8)
     axes2["E"].axis("off")
     axes2["E"].axis("tight")
     axes2["E"].set_title(
-        f"Learned Movement Reliability {test_title}\nF = {LMP_rel_f:.4}  p = {LMP_rel_p:.3E}"
+        f"Learned Movement Reliability\n {test_title}\nF = {LMP_rel_f:.4}  p = {LMP_rel_p:.3E}"
     )
     E_table = axes2["E"].table(
         cellText=LMP_rel_df.values,
@@ -2544,12 +2558,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    E_table.autoset_font_size(False)
+    E_table.auto_set_font_size(False)
     E_table.set_fontsize(8)
     axes2["F"].axis("off")
     axes2["F"].axis("tight")
     axes2["F"].set_title(
-        f"Learned Movement Specificity {test_title}\nF = {LMP_spec_f:.4}  p = {LMP_spec_p:.3E}"
+        f"Learned Movement Specificity\n {test_title}\nF = {LMP_spec_f:.4}  p = {LMP_spec_p:.3E}"
     )
     F_table = axes2["F"].table(
         cellText=LMP_spec_df.values,
@@ -2557,12 +2571,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    F_table.autoset_font_size(False)
+    F_table.auto_set_font_size(False)
     F_table.set_fontsize(8)
     axes2["G"].axis("off")
     axes2["G"].axis("tight")
     axes2["G"].set_title(
-        f"Rewarded Movement Correlation {test_title}\nF = {rwd_corr_f:.4}  p = {rwd_corr_p:.3E}"
+        f"Rewarded Movement Correlation\n {test_title}\nF = {rwd_corr_f:.4}  p = {rwd_corr_p:.3E}"
     )
     G_table = axes2["G"].table(
         cellText=rwd_corr_df.values,
@@ -2570,12 +2584,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    G_table.autoset_font_size(False)
+    G_table.auto_set_font_size(False)
     G_table.set_fontsize(8)
     axes2["H"].axis("off")
     axes2["H"].axis("tight")
     axes2["H"].set_title(
-        f"Rewarded Movement Stereotypy {test_title}\nF = {rwd_stereo_f:.4}  p = {rwd_stereo_p:.3E}"
+        f"Rewarded Movement Stereotypy\n {test_title}\nF = {rwd_stereo_f:.4}  p = {rwd_stereo_p:.3E}"
     )
     H_table = axes2["H"].table(
         cellText=rwd_stereo_df.values,
@@ -2583,12 +2597,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    H_table.autoset_font_size(False)
+    H_table.auto_set_font_size(False)
     H_table.set_fontsize(8)
     axes2["I"].axis("off")
     axes2["I"].axis("tight")
     axes2["I"].set_title(
-        f"Rewarded Movement Reliability {test_title}\nF = {rwd_rel_f:.4}  p = {rwd_rel_p:.3E}"
+        f"Rewarded Movement Reliability\n {test_title}\nF = {rwd_rel_f:.4}  p = {rwd_rel_p:.3E}"
     )
     I_table = axes2["I"].table(
         cellText=rwd_rel_df.values,
@@ -2596,12 +2610,12 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    I_table.autoset_font_size(False)
+    I_table.auto_set_font_size(False)
     I_table.set_fontsize(8)
     axes2["J"].axis("off")
     axes2["J"].axis("tight")
     axes2["J"].set_title(
-        f"Rewarded Movement Specificity {test_title}\nF = {rwd_spec_f:.4}  p = {rwd_spec_p:.3E}"
+        f"Rewarded Movement Specificity\n {test_title}\nF = {rwd_spec_f:.4}  p = {rwd_spec_p:.3E}"
     )
     J_table = axes2["J"].table(
         cellText=rwd_spec_df.values,
@@ -2609,7 +2623,7 @@ def plot_spine_movement_encoding(
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    J_table.autoset_font_size(False)
+    J_table.auto_set_font_size(False)
     J_table.set_fontsize(8)
 
     fig2.tight_layout()
