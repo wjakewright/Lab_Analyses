@@ -728,7 +728,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_spine_coactivity_rate_norm=avg_nearby_spine_coactivity_rate_norm,
                 shuff_nearby_spine_coactivity_rate_norm=shuff_nearby_spine_coactivity_rate_norm,
                 coactivity_rate_norm_distribution=coactivity_rate_norm_distribution,
-                rel_nearby_spine_coactivity_rate=rel_nearby_spine_coactivity_rate,
+                rel_nearby_spine_coactivity_rate_norm=rel_nearby_spine_coactivity_rate_norm,
                 avg_nearby_spine_conj_rate=avg_nearby_spine_conj_rate,
                 shuff_nearby_spine_conj_rate=shuff_nearby_spine_conj_rate,
                 conj_coactivity_rate_distribution=conj_coactivity_rate_distribution,
@@ -789,14 +789,14 @@ def dendritic_coactivity_analysis(
             # Save individual data if specified
             if save_ind:
                 dendritic_coactivity_data.save()
-            
+
             # Append data to the list
             analyzed_data.append(dendritic_coactivity_data)
-    
+
     # Make the grouped data
     grouped_dendritic_coactivity_data = Grouped_Dendritic_Coactivity_Data(analyzed_data)
     if save_grouped:
         grouped_dendritic_coactivity_data.save()
-    
+
     return grouped_dendritic_coactivity_data
 
