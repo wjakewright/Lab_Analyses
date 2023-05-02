@@ -69,7 +69,7 @@ def spine_activity_analysis(
         print("----------------------------------------")
         print(f"- Analyzing {mouse}")
         # Load the datasets
-        datasets = load_spine_datasets(mouse, session, fov_type)
+        datasets = load_spine_datasets(mouse, [session], fov_type)
 
         # Analyze each FOV seperately
         for FOV, dataset in datasets.items():
@@ -99,21 +99,21 @@ def spine_activity_analysis(
             spine_calcium_dFoF = data.spine_calcium_processed_dFoF
             # Spine MRS informattion
             movement_spines = np.array(data.movement_spines)
-            rwd_movement_spines = np.array(data.rwd_movement_spines)
+            rwd_movement_spines = np.array(data.reward_movement_spines)
             (
                 nonmovement_spines,
                 nonrwd_movement_spines,
             ) = parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines)
             # Dendrite activity
-            dendrite_number = np.zeros(spine_activity.shape[1])
+            dendrite_number = np.zeros(spine_activity.shape[1]) * np.nan
             for grouping in spine_groupings:
                 dendrite_number[grouping] = dendrite_tracker
-                dendrite_tracker = dendrite_tracker + 1
+            dendrite_tracker = dendrite_tracker + 1
             dendrite_activity = data.dendrite_calcium_activity
             dendrite_dFoF = data.dendrite_calcium_processed_dFoF
             # Dendrite MRD information
             movement_dendrites = np.array(data.movement_dendrites)
-            rwd_movement_dendrites = np.array(data.rwd_movement_dendrites)
+            rwd_movement_dendrites = np.array(data.reward_movement_dendrites)
             (
                 nonmovement_dendrites,
                 nonrwd_movement_dendrites,
@@ -380,7 +380,7 @@ def spine_activity_analysis(
                 spine_flags=spine_flags,
                 followup_flags=followup_flags,
                 spine_volumes=spine_volumes,
-                followoup_volumes=followup_volumes,
+                followup_volumes=followup_volumes,
                 dendrite_number=dendrite_number,
                 movement_spines=movement_spines,
                 nonmovement_spines=nonmovement_spines,
