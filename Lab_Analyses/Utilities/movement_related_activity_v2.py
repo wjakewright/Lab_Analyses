@@ -71,10 +71,12 @@ def movement_related_activity(
     for spine in range(dFoF.shape[1]):
         curr_dFoF = dFoF[:, spine]
         curr_activity = activity[:, spine]
+        if not np.nansum(curr_activity):
+            continue
         # Identify which movements the spine is active during
         active_movements = []
         for movement in movement_epochs:
-            if np.sum(curr_activity[movement[0] : movement[1]]):
+            if np.nansum(curr_activity[movement[0] : movement[1]]):
                 active_movements.append(movement[0])
         # Skip is spine is not active during any movements
         if len(active_movements) == 0:
