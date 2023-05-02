@@ -144,6 +144,7 @@ def find_peak_amplitude(
     for i, trace in enumerate(mean_traces):
         if trace is None:
             continue
+        trace[np.isnan(trace)] = 0
         if smooth:
             trace = sysignal.savgol_filter(trace, 31, 3)
         trace_med = np.nanmedian(trace)
@@ -201,9 +202,10 @@ def find_activity_onset(mean_traces, sampling_rate=60):
             activity_onsets[i] = np.nan
             continue
         # Smooth the trace
-        trace = sysignal.savgol_flter(trace, 31, 3)
+        trace[np.isnan(trace)] = 0
+        trace = sysignal.savgol_filter(trace, 31, 3)
         # Find the offset of the rising phase
-        peak_trace = trace[: peak_idxs[i]]
+        peak_trace = trace[: int(peak_idxs[i])]
         try:
             trace_offset = np.nonzero(peak_trace < 0.75 * peak_amps[i])[0][-1]
         except IndexError:
