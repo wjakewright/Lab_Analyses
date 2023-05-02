@@ -232,6 +232,7 @@ def parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines):
     movement_non_rwd_spines = np.array(movement_spines, dtype=int) - np.array(
         rwd_movement_spines, dtype=int
     ).astype(bool)
+    movement_non_rwd_spines[movement_non_rwd_spines < 0] = 0
 
     return nonmovement_spines, movement_non_rwd_spines
 
