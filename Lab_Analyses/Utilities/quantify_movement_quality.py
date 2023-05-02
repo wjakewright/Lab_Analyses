@@ -90,7 +90,7 @@ def quantify_movement_quality(
     learned_move_resample = learned_move_resample[:corr_interval]
 
     # Expand movement intervals
-    expansion_const = np.onses(EXPANSION, dtype=int)
+    expansion_const = np.ones(EXPANSION, dtype=int)
     npad = len(expansion_const) - 1
     lever_active_padded = np.pad(
         lever_active, (npad // 2, npad - npad // 2), mode="constant"
@@ -116,7 +116,7 @@ def quantify_movement_quality(
     LMP_num = 0
     LMP_binary = np.zeros(len(lever_active))
     for movement in movement_epochs:
-        force = lever_force[movement[0] : movement[0] + corr_duration]
+        force = lever_force[movement[0] : movement[0] + corr_interval]
         force = force - force[0]
         r = stats.pearsonr(learned_move_resample, force)[0]
         if r >= threshold:
@@ -139,12 +139,21 @@ def quantify_movement_quality(
     LMP_specificity = []
     for i in range(activity_matrix.shape[1]):
         active_trace = activity_matrix[:, i]
+        if not np.nansum(active_trace):
+            active_movements.append(np.zeros(corr_interval).reshape(-1, 1) * np.nan)
+            movement_correlation.append(np.nan)
+            movement_stereotypy.append(np.nan)
+            movement_reliability.append(np.nan)
+            LMP_reliability.append(np.nan)
+            movement_specificity.append(np.nan)
+            LMP_specificity.append(np.nan)
+            continue
         # Get all the movements active during
         a_movements = []
         for movement, e_movement in zip(movement_epochs, exp_movement_epochs):
             active_epoch = active_trace[e_movement[0] : e_movement[1]]
-            if np.sum(active_epoch):
-                active_move = lever_force[movement[0] : movement[0] + corr_duration]
+            if np.nansum(active_epoch):
+                active_move = lever_force[movement[0] : movement[0] + corr_interval]
                 active_move = active_move - active_move[0]
                 a_movements.append(active_move)
         # calculate correlations and reliability
