@@ -69,7 +69,7 @@ def plot_activity_heatmap(
     """
     # Check if axis was passed
     if ax is None:
-        fig, ax = plt.subplot(figsize=figsize)
+        fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
     else:
         save = False  # Don't wish to save if part of another plot
@@ -112,7 +112,8 @@ def plot_activity_heatmap(
     t = np.linspace(0, activity_window[1] - activity_window[0], data_t.shape[1])
     xticks = np.unique(x.astype(int))
     t = np.unique(t.astype(int))
-    ax.set_xticks(ticks=t * 60, labels=xticks)
+    ax.set_xticks(ticks=t * 60)
+    ax.set_xticklabels(labels=xticks)
     ax.set_xlabel("Time (s)", labelpad=15)
     hax.patch.set_edgecolor("black")
     hax.patch.set_linewidth(axis_width)
