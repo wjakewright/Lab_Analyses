@@ -82,7 +82,7 @@ class Spine_Activity_Data:
     dendrite_movements: list
     dendrite_movement_correlation: np.ndarray
     dendrite_movement_stereotypy: np.ndarray
-    dendrite_movement_reliablility: np.ndarray
+    dendrite_movement_reliability: np.ndarray
     dendrite_movement_specificity: np.ndarray
     dendrite_rwd_movements: list
     dendrite_rwd_movement_correlation: np.ndarray
@@ -129,7 +129,7 @@ class Grouped_Spine_Activity_Data:
         # Concatenate all the other attributes
         self.concatenate_data(data_list)
 
-    def contanetnate_data(self, data_list):
+    def concatenate_data(self, data_list):
         """Method to concatenate all the attributes from the different dataclass together
             and store as attributes in the current class
         """
@@ -163,9 +163,7 @@ class Grouped_Spine_Activity_Data:
 
     def save(self):
         """Method to save the grouped dataclass"""
-        save_path = (
-            r"C:\Users\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
-        )
+        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
