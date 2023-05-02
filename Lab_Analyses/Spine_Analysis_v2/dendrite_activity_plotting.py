@@ -94,6 +94,9 @@ def plot_activity_features(
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
         delta_volume, threshold=threshold, norm=False
     )
+    enlarged_spines = np.array(enlarged_spines)
+    shrunken_spines = np.array(shrunken_spines)
+    stable_spines = np.array(stable_spines)
 
     # Subselect present spines
     dendrite_number = d_utils.subselect_data_by_idxs(dendrite_number, spine_idxs)
@@ -129,6 +132,7 @@ def plot_activity_features(
     )
 
     # Organize data based on fraction of plastic spine groups
+    dendrite_number = dendrite_number.astype(int)
     unique_dend = np.unique(dendrite_number)
     fraction_enlarged = np.zeros(len(unique_dend))
     fraction_shrunken = np.zeros(len(unique_dend))
@@ -188,7 +192,7 @@ def plot_activity_features(
         figsize=figsize,
     )
     fig.suptitle("Dendrite Activity")
-    fig.subplot_adjust(hspace=1, wspace=0.5)
+    fig.subplots_adjust(hspace=1, wspace=0.5)
 
     #################### Plot data onto the axes #######################
     # Fraction enlarged histogram
@@ -718,7 +722,7 @@ def plot_dendrite_movement_encoding(
     dendrite_LMP_specificity = dataset.dendrite_LMP_specificity
     dendrite_rwd_movement_correlation = dataset.dendrite_rwd_movement_correlation
     dendrite_rwd_movement_stereotypy = dataset.dendrite_rwd_movement_stereotypy
-    dendrite_rwd_movement_reliability = dataset.dendrite_rwd_movement_reliablity
+    dendrite_rwd_movement_reliability = dataset.dendrite_rwd_movement_reliability
     dendrite_rwd_movement_specificity = dataset.dendrite_rwd_movement_specificity
 
     # Calculate volumes
@@ -731,8 +735,11 @@ def plot_dendrite_movement_encoding(
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
         delta_volume, threshold=threshold, norm=False
     )
+    enlarged_spines = np.array(enlarged_spines)
+    shrunken_spines = np.array(shrunken_spines)
 
     # Subselect present spines
+    dendrite_number = d_utils.subselect_data_by_idxs(dendrite_number, spine_idxs)
     dendrite_movement_correlation = d_utils.subselect_data_by_idxs(
         dendrite_movement_correlation, spine_idxs
     )
@@ -765,6 +772,7 @@ def plot_dendrite_movement_encoding(
     )
 
     # Organize based on fraction of plastic spines
+    dendrite_number = dendrite_number.astype(int)
     unique_dend = np.unique(dendrite_number)
     fraction_enlarged = np.zeros(len(unique_dend))
     fraction_shrunken = np.zeros(len(unique_dend))
@@ -806,7 +814,7 @@ def plot_dendrite_movement_encoding(
         figsize=figsize,
     )
     fig.suptitle("Dendrite Movement Encoding")
-    fig.subplot_adjust(hspace=1, wspace=0.5)
+    fig.subplots_adjust(hspace=1, wspace=0.5)
 
     #################### Plot data onto the axes ########################
     # Mvmt corr vs fraction enlarged
