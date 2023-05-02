@@ -20,7 +20,13 @@ def check_file_exists(path, name, includes):
             
     """
     # Get filenames without extensions
-    fnames = os.listdir(path)
+    try:
+        fnames = os.listdir(path)
+    except FileNotFoundError:
+        exists = False
+        exist_files = []
+        return exists, exist_files
+
     exists = False
 
     exist_files = []
