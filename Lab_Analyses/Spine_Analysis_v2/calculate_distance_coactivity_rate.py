@@ -116,6 +116,11 @@ def calculate_distance_coactivity_rate(
 
             # Calculate the coactivity with each other spine
             for partner in range(s_activity.shape[1]):
+                # Skip spines that contain only nans as they are absent
+                if not np.nansum(curr_spine):
+                    curr_coactivity.append(np.nan)
+                    curr_coactivity_norm.append(np.nan)
+                    continue
                 # Don't compare spines to themselves
                 if partner == spine:
                     continue
