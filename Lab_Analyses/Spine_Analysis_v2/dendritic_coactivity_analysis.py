@@ -580,6 +580,7 @@ def dendritic_coactivity_analysis(
             # Assess movement encoding
             ## All coactive events
             (
+                all_coactive_movements,
                 all_coactive_movement_correlation,
                 all_coactive_movement_stereotypy,
                 all_coactive_movement_reliability,
@@ -598,6 +599,7 @@ def dendritic_coactivity_analysis(
             )
             ## Conj coactive events
             (
+                conj_movements,
                 conj_movement_correlation,
                 conj_movement_stereotypy,
                 conj_movement_reliability,
@@ -615,6 +617,7 @@ def dendritic_coactivity_analysis(
                 sampling_rate=sampling_rate,
             )
             (
+                nonconj_movements,
                 nonconj_movement_correlation,
                 nonconj_movement_stereotypy,
                 nonconj_movement_reliability,
@@ -767,18 +770,21 @@ def dendritic_coactivity_analysis(
                 nonparticipating_spine_calcium_amplitude=nonparticipating_spine_calcium_amplitude,
                 nonparticipating_spine_calcium_traces=nonparticipating_spine_calcium_traces,
                 learned_movement_pattern=learned_movement_pattern,
+                all_coactive_movements=all_coactive_movements,
                 all_coactive_movement_correlation=all_coactive_movement_correlation,
                 all_coactive_movement_stereotypy=all_coactive_movement_stereotypy,
                 all_coactive_movement_reliability=all_coactive_movement_reliability,
                 all_coactive_movement_specificity=all_coactive_movement_specificity,
                 all_coactive_LMP_reliability=all_coactive_LMP_reliability,
                 all_coactive_LMP_specificity=all_coactive_LMP_specificity,
+                conj_movements=conj_movements,
                 conj_movement_correlation=conj_movement_correlation,
                 conj_movement_stereotypy=conj_movement_stereotypy,
                 conj_movement_reliability=conj_movement_reliability,
                 conj_movement_specificity=conj_movement_specificity,
                 conj_LMP_reliability=conj_LMP_reliability,
                 conj_LMP_specificity=conj_LMP_specificity,
+                nonconj_movements=nonconj_movements,
                 nonconj_movement_correlation=nonconj_movement_correlation,
                 nonconj_movement_stereotypy=nonconj_movement_stereotypy,
                 nonconj_movement_reliability=nonconj_movement_reliability,
