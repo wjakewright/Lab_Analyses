@@ -368,9 +368,10 @@ def plot_coactive_vs_noncoactive_events(
         fig2.savefig(fname + ".pdf")
 
 
-def plot_mvmt_vs_nonmvmt_coactivity(
+def plot_comparative_mvmt_coactivity(
     mvmt_dataset,
     nonmvmt_dataset,
+    rwd_mvmts=False,
     figsize=(10, 6),
     mean_type="median",
     err_type="CI",
@@ -386,6 +387,8 @@ def plot_mvmt_vs_nonmvmt_coactivity(
             mvmt_dataset - Local_Coactivity_Data that was constrained to only mvmt periods
 
             nonmvmt_dataset - Local_Coactivity_Data that was constrained to nonmvmt periods
+
+            rwd_mvmts - boolean of whether or not the datasets are rwd mvmts
 
             figsize - tuple specifying the size of the figure
 
@@ -405,6 +408,12 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     
     """
     COLORS = ["mediumblue", "firebrick"]
+    if rwd_mvmts:
+        mvmt_key = "Rwd movement"
+        nonmvmt_key = "Nonrwd movement"
+    else:
+        mvmt_key = "Movement"
+        nonmvmt_key = "Non-movement"
 
     # Pull relevant data
     sampling_rate = mvmt_dataset.parameters["Sampling Rate"]
@@ -417,58 +426,54 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ## Coactivity related variables
     distance_bins = mvmt_dataset.parameters["position bins"][1:]
     distance_coactivity_rate = {
-        "Movement": mvmt_dataset.distance_coactivity_rate,
-        "Non-movement": nonmvmt_dataset.distance_coactivity_rate,
+        mvmt_key: mvmt_dataset.distance_coactivity_rate,
+        nonmvmt_key: nonmvmt_dataset.distance_coactivity_rate,
     }
     distance_coactivity_rate_norm = {
-        "Movement": mvmt_dataset.distance_coactivity_rate_norm,
-        "Non-movement": nonmvmt_dataset.distance_coactivity_rate_norm,
+        mvmt_key: mvmt_dataset.distance_coactivity_rate_norm,
+        nonmvmt_key: nonmvmt_dataset.distance_coactivity_rate_norm,
     }
     avg_local_coactivity_rate = {
-        "Movement": mvmt_dataset.avg_local_coactivity_rate,
-        "Non-movement": nonmvmt_dataset.avg_local_coactivity_rate,
+        mvmt_key: mvmt_dataset.avg_local_coactivity_rate,
+        nonmvmt_key: nonmvmt_dataset.avg_local_coactivity_rate,
     }
 
     shuff_local_coactivity_rate = {
-        "Movement": mvmt_dataset.shuff_local_coactivity_rate.flatten().astype(
-            np.float32
-        ),
-        "Non-movement": nonmvmt_dataset.shuff_local_coactivity_rate.flatten().astype(
+        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate.flatten().astype(np.float32),
+        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate.flatten().astype(
             np.float32
         ),
     }
     shuff_local_coactivity_medians = {
-        "Movement": np.nanmedian(shuff_local_coactivity_rate["Movement"], axis=1),
-        "Non-movement": np.nanmedian(
-            shuff_local_coactivity_rate["Non-movement"], axis=1
-        ),
+        mvmt_key: np.nanmedian(shuff_local_coactivity_rate["Movement"], axis=1),
+        nonmvmt_key: np.nanmedian(shuff_local_coactivity_rate["Non-movement"], axis=1),
     }
     real_vs_shuff_diff = {
-        "Movement": mvmt_dataset.real_vs_shuff_coactivity_diff,
-        "Non-movement": nonmvmt_dataset.real_vs_shuff_coactivity_diff,
+        mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff,
+        nonmvmt_key: nonmvmt_dataset.real_vs_shuff_coactivity_diff,
     }
     avg_local_coactivity_rate_norm = {
-        "Movement": mvmt_dataset.avg_local_coactivity_rate_norm,
-        "Non-movement": nonmvmt_dataset.avg_local_coactivity_rate_norm,
+        mvmt_key: mvmt_dataset.avg_local_coactivity_rate_norm,
+        nonmvmt_key: nonmvmt_dataset.avg_local_coactivity_rate_norm,
     }
 
     shuff_local_coactivity_rate_norm = {
-        "Movement": mvmt_dataset.shuff_local_coactivity_rate_norm.flatten().astype(
+        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate_norm.flatten().astype(
             np.float32
         ),
-        "Non-movement": nonmvmt_dataset.shuff_local_coactivity_rate_norm.flatten().astype(
+        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate_norm.flatten().astype(
             np.float32
         ),
     }
     shuff_local_coactivity_medians_norm = {
-        "Movement": np.nanmedian(shuff_local_coactivity_rate_norm["Movement"], axis=1),
-        "Non-movement": np.nanmedian(
+        mvmt_key: np.nanmedian(shuff_local_coactivity_rate_norm["Movement"], axis=1),
+        nonmvmt_key: np.nanmedian(
             shuff_local_coactivity_rate_norm["Non-movement"], axis=1
         ),
     }
     real_vs_shuff_diff_norm = {
-        "Movement": mvmt_dataset.real_vs_shuff_coactivity_diff_norm,
-        "Non-movement": nonmvmt_dataset.real_vs_shuff_coactivity_diff_norm,
+        mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff_norm,
+        nonmvmt_key: nonmvmt_dataset.real_vs_shuff_coactivity_diff_norm,
     }
     ### Traces
     mvmt_coactive_traces = mvmt_dataset.spine_coactive_traces
@@ -482,12 +487,12 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ]
     nonmvmt_coactive_means = np.vstack(nonmvmt_coactive_means)
     coactive_trace_means = {
-        "Movement": np.nanmean(mvmt_coactive_means, axis=0),
-        "Non-movement": np.nanmean(nonmvmt_coactive_means, axis=0),
+        mvmt_key: np.nanmean(mvmt_coactive_means, axis=0),
+        nonmvmt_key: np.nanmean(nonmvmt_coactive_means, axis=0),
     }
     coactive_trace_sems = {
-        "Movement": stats.sem(mvmt_coactive_means, axis=0, nan_policy="omit"),
-        "Non-movement": stats.sem(nonmvmt_coactive_means, axis=0, nan_policy="omit"),
+        mvmt_key: stats.sem(mvmt_coactive_means, axis=0, nan_policy="omit"),
+        nonmvmt_key: stats.sem(nonmvmt_coactive_means, axis=0, nan_policy="omit"),
     }
     ### Calcium Traces
     mvmt_coactive_ca_traces = mvmt_dataset.spine_coactive_calcium_traces
@@ -503,20 +508,20 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ]
     nonmvmt_coactive_ca_means = np.vstack(nonmvmt_coactive_ca_means)
     coactive_trace_ca_means = {
-        "Movement": np.nanmean(mvmt_coactive_ca_means, axis=0),
-        "Non-movement": np.nanmean(nonmvmt_coactive_ca_means, axis=0),
+        mvmt_key: np.nanmean(mvmt_coactive_ca_means, axis=0),
+        nonmvmt_key: np.nanmean(nonmvmt_coactive_ca_means, axis=0),
     }
     coactive_trace_ca_sems = {
-        "Movement": stats.sem(mvmt_coactive_ca_means, axis=0, nan_policy="omit"),
-        "Non-movement": stats.sem(nonmvmt_coactive_ca_means, axis=0, nan_policy="omit"),
+        mvmt_key: stats.sem(mvmt_coactive_ca_means, axis=0, nan_policy="omit"),
+        nonmvmt_key: stats.sem(nonmvmt_coactive_ca_means, axis=0, nan_policy="omit"),
     }
     coactive_amplitude = {
-        "Movement": mvmt_dataset.spine_coactive_amplitude,
-        "Non-movement": nonmvmt_dataset.spine_coactive_amplitude,
+        mvmt_key: mvmt_dataset.spine_coactive_amplitude,
+        nonmvmt_key: nonmvmt_dataset.spine_coactive_amplitude,
     }
     coactive_calcium_amplitude = {
-        "Movement": mvmt_dataset.spine_coactive_calcium_amplitude,
-        "Non-movement": nonmvmt_dataset.spine_coactive_calcium_amplitude,
+        mvmt_key: mvmt_dataset.spine_coactive_calcium_amplitude,
+        nonmvmt_key: nonmvmt_dataset.spine_coactive_calcium_amplitude,
     }
 
     # Construct the figure
@@ -528,7 +533,7 @@ def plot_mvmt_vs_nonmvmt_coactivity(
         """,
         figsize=figsize,
     )
-    fig.suptitle("Movement vs Non-movement Coactivity")
+    fig.suptitle(f"{mvmt_key} vs {nonmvmt_key} Coactivity")
     fig.subplots_adjust(hspace=1, wspace=0.5)
 
     ######################## Plot data onto the axes #######################
@@ -636,13 +641,12 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate["Movement"],
-            shuff_local_coactivity_rate["Movement"],
+            avg_local_coactivity_rate[mvmt_key], shuff_local_coactivity_rate[mvmt_key],
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
-        title="Movements",
+        title=mvmt_key,
         xtitle="Coactivity rate (events/min)",
         xlim=None,
         figsize=(5, 5),
@@ -660,8 +664,8 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     sns.despine(ax=ax_c_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": avg_local_coactivity_rate["Movement"],
-            "shuff": shuff_local_coactivity_medians["Movement"],
+            "data": avg_local_coactivity_rate[mvmt_key],
+            "shuff": shuff_local_coactivity_medians[mvmt_key],
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -691,13 +695,13 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate["Non-movement"],
-            shuff_local_coactivity_rate["Non-movement"],
+            avg_local_coactivity_rate[nonmvmt_key],
+            shuff_local_coactivity_rate[nonmvmt_key],
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
-        title="Non-movements",
+        title=nonmvmt_key,
         xtitle="Coactivity rate (events/min)",
         xlim=None,
         figsize=(5, 5),
@@ -715,8 +719,8 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     sns.despine(ax=ax_d_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": avg_local_coactivity_rate["Non-movement"],
-            "shuff": shuff_local_coactivity_medians["Non-movement"],
+            "data": avg_local_coactivity_rate[nonmvmt_key],
+            "shuff": shuff_local_coactivity_medians[nonmvmt_key],
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -746,13 +750,13 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate_norm["Movement"],
-            shuff_local_coactivity_rate_norm["Movement"],
+            avg_local_coactivity_rate_norm[mvmt_key],
+            shuff_local_coactivity_rate_norm[mvmt_key],
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
-        title="Movements",
+        title=mvmt_key,
         xtitle="Norm. coactivity rate",
         xlim=None,
         figsize=(5, 5),
@@ -770,8 +774,8 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     sns.despine(ax=ax_h_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": avg_local_coactivity_rate_norm["Movement"],
-            "shuff": shuff_local_coactivity_medians_norm["Movement"],
+            "data": avg_local_coactivity_rate_norm[mvmt_key],
+            "shuff": shuff_local_coactivity_medians_norm[mvmt_key],
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -801,13 +805,13 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate_norm["Non-movement"],
-            shuff_local_coactivity_rate_norm["Non-movement"],
+            avg_local_coactivity_rate_norm[nonmvmt_key],
+            shuff_local_coactivity_rate_norm[nonmvmt_key],
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
-        title="Non-movements",
+        title=nonmvmt_key,
         xtitle="Norm. coactivity rate",
         xlim=None,
         figsize=(5, 5),
@@ -825,8 +829,8 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     sns.despine(ax=ax_i_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": avg_local_coactivity_rate_norm["Non-movement"],
-            "shuff": shuff_local_coactivity_medians_norm["Non-movement"],
+            "data": avg_local_coactivity_rate_norm[nonmvmt_key],
+            "shuff": shuff_local_coactivity_medians_norm[nonmvmt_key],
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -1008,7 +1012,10 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_2")
+        if rwd_mvmts:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_3")
+        else:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_2")
         fig.savefig(fname + ".pdf")
 
     ########################### Statistics Section ###########################
@@ -1018,65 +1025,65 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     # Perform t-tests / mann-whitney u tests
     if test_type == "parametric":
         coactivity_t, coactivity_p = stats.ttest_ind(
-            avg_local_coactivity_rate["Movement"],
-            avg_local_coactivity_rate["Non-movement"],
+            avg_local_coactivity_rate[mvmt_key],
+            avg_local_coactivity_rate[nonmvmt_key],
             nan_policy="omit",
         )
         coactivity_norm_t, coactivity_norm_p = stats.ttest_ind(
-            avg_local_coactivity_rate_norm["Movement"],
-            avg_local_coactivity_rate_norm["Non-movement"],
+            avg_local_coactivity_rate_norm[mvmt_key],
+            avg_local_coactivity_rate_norm[nonmvmt_key],
             nan_policy="omit",
         )
         rel_diff_t, rel_diff_p = stats.ttest_ind(
-            real_vs_shuff_diff["Movement"],
-            real_vs_shuff_diff["Non-movement"],
+            real_vs_shuff_diff[mvmt_key],
+            real_vs_shuff_diff[nonmvmt_key],
             nan_policy="omit",
         )
         rel_diff_norm_t, rel_diff_norm_p = stats.ttest_ind(
-            real_vs_shuff_diff_norm["Movement"],
-            real_vs_shuff_diff_norm["Non-movement"],
+            real_vs_shuff_diff_norm[mvmt_key],
+            real_vs_shuff_diff_norm[nonmvmt_key],
             nan_policy="omit",
         )
         amp_t, amp_p = stats.ttest_ind(
-            coactive_amplitude["Movement"],
-            coactive_amplitude["Non-movement"],
+            coactive_amplitude[mvmt_key],
+            coactive_amplitude[nonmvmt_key],
             nan_policy="omit",
         )
         amp_ca_t, amp_ca_p = stats.ttest_ind(
-            coactive_calcium_amplitude["Movement"],
-            coactive_calcium_amplitude["Non-movement"],
+            coactive_calcium_amplitude[mvmt_key],
+            coactive_calcium_amplitude[nonmvmt_key],
             nan_policy="omit",
         )
         test_title = "T-Test"
     elif test_type == "nonparametric":
         coactivity_t, coactivity_p = stats.mannwhitneyu(
-            avg_local_coactivity_rate["Movement"],
-            avg_local_coactivity_rate["Non-movement"],
+            avg_local_coactivity_rate[mvmt_key],
+            avg_local_coactivity_rate[nonmvmt_key],
             nan_policy="omit",
         )
         coactivity_norm_t, coactivity_norm_p = stats.mannwhitneyu(
-            avg_local_coactivity_rate_norm["Movement"],
-            avg_local_coactivity_rate_norm["Non-movement"],
+            avg_local_coactivity_rate_norm[mvmt_key],
+            avg_local_coactivity_rate_norm[nonmvmt_key],
             nan_policy="omit",
         )
         rel_diff_t, rel_diff_p = stats.mannwhitneyu(
-            real_vs_shuff_diff["Movement"],
-            real_vs_shuff_diff["Non-movement"],
+            real_vs_shuff_diff[mvmt_key],
+            real_vs_shuff_diff[nonmvmt_key],
             nan_policy="omit",
         )
         rel_diff_norm_t, rel_diff_norm_p = stats.mannwhitneyu(
-            real_vs_shuff_diff_norm["Movement"],
-            real_vs_shuff_diff_norm["Non-movement"],
+            real_vs_shuff_diff_norm[mvmt_key],
+            real_vs_shuff_diff_norm[nonmvmt_key],
             nan_policy="omit",
         )
         amp_t, amp_p = stats.mannwhitneyu(
-            coactive_amplitude["Movement"],
-            coactive_amplitude["Non-movement"],
+            coactive_amplitude[mvmt_key],
+            coactive_amplitude[nonmvmt_key],
             nan_policy="omit",
         )
         amp_ca_t, amp_ca_p = stats.mannwhitneyu(
-            coactive_calcium_amplitude["Movement"],
-            coactive_calcium_amplitude["Non-movement"],
+            coactive_calcium_amplitude[mvmt_key],
+            coactive_calcium_amplitude[nonmvmt_key],
             nan_policy="omit",
         )
         test_title = "Mann-Whitney U"
@@ -1120,22 +1127,27 @@ def plot_mvmt_vs_nonmvmt_coactivity(
 
     ## Comparisons to chance
     mvmt_above, mvmt_below = t_utils.test_against_chance(
-        avg_local_coactivity_rate["Movement"], shuff_local_coactivity_rate["Movement"]
+        avg_local_coactivity_rate[mvmt_key], shuff_local_coactivity_rate[mvmt_key]
     )
     nonmvmt_above, nonmvmt_below = t_utils.test_against_chance(
-        avg_local_coactivity_rate["Non-movement"],
-        shuff_local_coactivity_rate["Non-movement"],
+        avg_local_coactivity_rate[nonmvmt_key],
+        shuff_local_coactivity_rate[nonmvmt_key],
     )
     mvmt_above_norm, mvmt_below_norm = t_utils.test_against_chance(
-        avg_local_coactivity_rate_norm["Movement"],
-        shuff_local_coactivity_rate_norm["Movement"],
+        avg_local_coactivity_rate_norm[mvmt_key],
+        shuff_local_coactivity_rate_norm[mvmt_key],
     )
     nonmvmt_above_norm, nonmvmt_below_norm = t_utils.test_against_chance(
-        avg_local_coactivity_rate_norm["Non-movement"],
-        shuff_local_coactivity_rate_norm["Non-movement"],
+        avg_local_coactivity_rate_norm[nonmvmt_key],
+        shuff_local_coactivity_rate_norm[nonmvmt_key],
     )
     chance_dict = {
-        "Comparison": ["Mvmt", "Non-mvmt", "Mvmt norm", "Non-mvmt norm"],
+        "Comparison": [
+            mvmt_key,
+            nonmvmt_key,
+            f"{mvmt_key} norm",
+            f"{nonmvmt_key} norm",
+        ],
         "p-val above": [mvmt_above, nonmvmt_above, mvmt_above_norm, nonmvmt_above_norm],
         "p-val below": [mvmt_below, nonmvmt_below, mvmt_below_norm, nonmvmt_below_norm],
     }
@@ -1201,7 +1213,10 @@ def plot_mvmt_vs_nonmvmt_coactivity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_2_Stats")
+        if rwd_mvmts:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_3_Stats")
+        else:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_2_Stats")
         fig2.savefig(fname, ".pdf")
 
 
