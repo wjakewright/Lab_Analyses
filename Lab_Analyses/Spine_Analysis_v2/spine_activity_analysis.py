@@ -321,6 +321,10 @@ def spine_activity_analysis(
                 corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
+            spine_fraction_rwd_mvmts = [
+                x.shape[0] / y.shape[0]
+                for x, y in zip(spine_rwd_movements, spine_movements)
+            ]
             ## All dendrite movements
             (
                 dendrite_movements,
@@ -359,6 +363,10 @@ def spine_activity_analysis(
                 corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
+            dendrite_fraction_rwd_mvmts = [
+                x.shape[0] / y.shape[0]
+                for x, y in zip(dendrite_rwd_movements, dendrite_movements)
+            ]
 
             LMP = [LMP_trace for i in range(spine_activity.shape[1])]
             learned_movement_pattern = np.stack(LMP).reshape(-1, 1)
@@ -432,6 +440,7 @@ def spine_activity_analysis(
                 spine_rwd_movement_specificity=spine_rwd_movement_specificity,
                 spine_LMP_reliability=spine_LMP_reliability,
                 spine_LMP_specificity=spine_LMP_specificity,
+                spine_fraction_rwd_mvmts=np.array(spine_fraction_rwd_mvmts),
                 dendrite_movements=dendrite_movements,
                 dendrite_movement_correlation=dendrite_movement_correlation,
                 dendrite_movement_stereotypy=dendrite_movement_stereotypy,
@@ -444,6 +453,7 @@ def spine_activity_analysis(
                 dendrite_rwd_movement_specificity=dendrite_rwd_movement_specificity,
                 dendrite_LMP_reliability=dendrite_LMP_reliability,
                 dendrite_LMP_specificity=dendrite_LMP_specificity,
+                dendrite_fraction_rwd_mvmts=np.array(dendrite_fraction_rwd_mvmts),
             )
 
             # Save individual data if specified
