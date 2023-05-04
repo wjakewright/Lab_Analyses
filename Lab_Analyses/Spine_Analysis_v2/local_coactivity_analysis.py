@@ -455,6 +455,7 @@ def local_coactivity_analysis(
             )
             ## Local coactivity
             (
+                coactive_movements,
                 coactive_movement_correlation,
                 coactive_movement_stereotypy,
                 coactive_movement_reliability,
@@ -472,6 +473,7 @@ def local_coactivity_analysis(
                 sampling_rate=sampling_rate,
             )
             (
+                coactive_rwd_movements,
                 coactive_rwd_movement_correlation,
                 coactive_rwd_movement_stereotypy,
                 coactive_rwd_movement_reliability,
@@ -488,6 +490,10 @@ def local_coactivity_analysis(
                 corr_duration=0.5,
                 sampling_rate=sampling_rate,
             )
+            coactive_frac_rwd_mvmts = [
+                x.shape[0] / y.shape[0]
+                for x, y in zip(coactive_rwd_movements, coactive_movements)
+            ]
 
             LMP = [learned_movement_pattern for i in range(spine_activity.shape[1])]
             learned_movement_pattern = np.stack(LMP).reshape(-1, 1)
@@ -610,18 +616,21 @@ def local_coactivity_analysis(
                 nearby_rwd_movement_stereotypy=nearby_rwd_movement_stereotypy,
                 nearby_rwd_movement_reliability=nearby_rwd_movement_reliability,
                 nearby_rwd_movement_specificity=nearby_rwd_movement_specificity,
+                coactive_movements=coactive_movements,
                 coactive_movement_correlation=coactive_movement_correlation,
                 coactive_movement_stereotypy=coactive_movement_stereotypy,
                 coactive_movement_reliability=coactive_movement_reliability,
                 coactive_movement_specificity=coactive_movement_specificity,
                 coactive_LMP_reliability=coactive_LMP_reliability,
                 coactive_LMP_specificity=coactive_LMP_speicficity,
+                coactive_rwd_movements=coactive_rwd_movements,
                 coactive_rwd_movement_correlation=coactive_rwd_movement_correlation,
                 coactive_rwd_movement_stereotypy=coactive_rwd_movement_stereotypy,
                 coactive_rwd_movement_reliability=coactive_rwd_movement_reliability,
                 coactive_rwd_movement_specificity=coactive_rwd_movement_specificity,
                 coactive_local_dend_traces=coactive_local_dend_traces,
                 coactive_local_dend_amplitude=coactive_local_dend_amplitude,
+                coactive_fraction_rwd_mvmts=np.array(coactive_frac_rwd_mvmts),
                 noncoactive_local_dend_traces=noncoactive_local_dend_traces,
                 noncoactive_local_dend_amplitude=noncoactive_local_dend_amplitude,
                 nearby_local_dend_traces=nearby_local_dend_traces,
