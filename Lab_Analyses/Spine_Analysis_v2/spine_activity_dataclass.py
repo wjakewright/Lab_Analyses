@@ -78,6 +78,7 @@ class Spine_Activity_Data:
     spine_rwd_movement_specificity: np.ndarray
     spine_LMP_reliability: np.ndarray
     spine_LMP_specificity: np.ndarray
+    spine_fraction_rwd_mvmts: np.ndarray
     # Dendrite movement encoding
     dendrite_movements: list
     dendrite_movement_correlation: np.ndarray
@@ -91,6 +92,7 @@ class Spine_Activity_Data:
     dendrite_rwd_movement_specificity: np.ndarray
     dendrite_LMP_reliability: np.ndarray
     dendrite_LMP_specificity: np.ndarray
+    dendrite_fraction_rwd_mvmts: np.ndarray
 
     def save(self):
         """method to save the dataclass"""
