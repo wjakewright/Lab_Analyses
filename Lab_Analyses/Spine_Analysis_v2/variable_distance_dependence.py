@@ -1,9 +1,7 @@
-from Lab_Analyses.Spine_Analysis_v2.variable_spatial_clustering import (
-    variable_spatial_clustering,
-)
-from Lab_Analyses.Spine_Analysis_v2.variable_spatial_distribution import (
-    variable_spatial_distribution,
-)
+from Lab_Analyses.Spine_Analysis_v2.variable_spatial_clustering import \
+    variable_spatial_clustering
+from Lab_Analyses.Spine_Analysis_v2.variable_spatial_distribution import \
+    variable_spatial_distribution
 
 
 def variable_distance_dependence(
@@ -21,7 +19,7 @@ def variable_distance_dependence(
     """
 
     # Spatial distribution
-    variable_distribution, _ = variable_spatial_distribution(
+    variable_distribution, _ , _= variable_spatial_distribution(
         spine_data, spine_positions, spine_flags, spine_groupings, bin_size=bin_size,
     )
 
