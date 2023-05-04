@@ -145,6 +145,7 @@ def dendritic_coactivity_analysis(
             lever_force = data.lever_force
             lever_active_rwd = data.rewarded_movement_binary
             lever_inactive = np.absolute(lever_active - 1)
+            lever_active_nonrwd = lever_active - lever_active_rwd
 
             # zscore activity if specified
             if zscore:
@@ -174,6 +175,8 @@ def dendritic_coactivity_analysis(
                 constrain_matrix = lever_inactive
             elif movement_period == "rewarded movement":
                 constrain_matrix = lever_active_rwd
+            elif movement_period == "nonrewarded movement":
+                constrain_matrix = lever_active_nonrwd
             else:
                 constrain_matrix = None
 
