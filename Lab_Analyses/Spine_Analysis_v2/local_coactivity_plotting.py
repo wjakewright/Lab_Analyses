@@ -1226,6 +1226,7 @@ def plot_plasticity_coactivity_rates(
     nonmvmt_dataset,
     followup_dataset=None,
     norm=False,
+    rwd_mvmt=False,
     exclude="Shaft",
     threshold=0.3,
     figsize=(10, 8),
@@ -1253,6 +1254,8 @@ def plot_plasticity_coactivity_rates(
                 
             norm - boolean term specifying whether to use the normalized coactivity rate
                     or not
+
+            rwd_mvmt - boolean term of whether or not we are comparing rwd mvmts
             
         `   exclude - str specifying spine type to exclude from analysis
 
@@ -1284,6 +1287,12 @@ def plot_plasticity_coactivity_rates(
         "Shrunken": "shrunken_spines",
         "Stable": "stable_spines",
     }
+    if rwd_mvmt:
+        mvmt_key = "Rwd movement"
+        nonmvmt_key = "Nonrwd movement"
+    else:
+        mvmt_key = "Movement"
+        nonmvmt_key = "Non-movemment"
 
     # Pull relevant data
     spine_volumes = dataset.spine_volumes
@@ -1297,6 +1306,7 @@ def plot_plasticity_coactivity_rates(
 
     ## Coactivity-related variables
     if norm == False:
+        nname = "Raw"
         coactivity_title = "Coactivity rate (event/min)"
         distance_coactivity_rate = dataset.distance_coactivity_rate
         avg_local_coactivity_rate = dataset.avg_local_coactivity_rate
@@ -1310,6 +1320,7 @@ def plot_plasticity_coactivity_rates(
         coactive_event_num = dataset.spine_coactive_event_num
         mvmt_coactive_event_num = mvmt_dataset.spine_coactive_event_num
     else:
+        nname = "Norm."
         coactivity_title = "Norm. coactivity rate"
         distance_coactivity_rate = dataset.distance_coactivity_rate_norm
         avg_local_coactivity_rate = dataset.avg_local_coactivity_rate_norm
@@ -1412,7 +1423,7 @@ def plot_plasticity_coactivity_rates(
         """,
         figsize=figsize,
     )
-    fig.suptitle("Plastic Coactivity Rates")
+    fig.suptitle(f"Plastic {nname} Coactivity Rates")
     fig.subplots_adjust(hspace=1, wspace=0.5)
 
     ########################### Plot data onto axes ######################
@@ -1445,7 +1456,7 @@ def plot_plasticity_coactivity_rates(
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
-        title="Mvmt periods",
+        title=mvmt_key,
         ytitle=coactivity_title,
         xtitle="Distance (\u03BCm)",
         ylim=None,
@@ -1468,7 +1479,7 @@ def plot_plasticity_coactivity_rates(
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
-        title="Nonmvmt periods",
+        title=nonmvmt_key,
         ytitle=coactivity_title,
         xtitle="Distance (\u03BCm)",
         ylim=None,
@@ -1514,7 +1525,7 @@ def plot_plasticity_coactivity_rates(
         x_var=mvmt_avg_local_coactivity_rate,
         y_var=delta_volume,
         CI=95,
-        title="Mvmt periods",
+        title=mvmt_key,
         xtitle=f"Local {coactivity_title}",
         ytitle="\u0394 volume",
         figsize=(5, 5),
@@ -1538,7 +1549,7 @@ def plot_plasticity_coactivity_rates(
         x_var=nonmvmt_avg_local_coactivity_rate,
         y_var=delta_volume,
         CI=95,
-        title="Nonmvmt periods",
+        title=nonmvmt_key,
         xtitle=f"Local {coactivity_title}",
         ytitle="\u0394 volume",
         figsize=(5, 5),
@@ -1590,7 +1601,7 @@ def plot_plasticity_coactivity_rates(
         mean_type=mean_type,
         err_type=err_type,
         figsize=(5, 5),
-        title="Mvmt periods",
+        title=mvmt_key,
         xtitle=None,
         ytitle=f"Local {coactivity_title}",
         ylim=None,
@@ -1617,7 +1628,7 @@ def plot_plasticity_coactivity_rates(
         mean_type=mean_type,
         err_type=err_type,
         figsize=(5, 5),
-        title="Nonmvmt periods",
+        title=nonmvmt_key,
         xtitle=None,
         ytitle=f"Local {coactivity_title}",
         ylim=None,
@@ -1671,7 +1682,7 @@ def plot_plasticity_coactivity_rates(
         mean_type=mean_type,
         err_type=err_type,
         figsize=(5, 5),
-        title="Mvmt events",
+        title=mvmt_key,
         xtitle=None,
         ytitle=f"Fraction of events",
         ylim=None,
@@ -1879,9 +1890,15 @@ def plot_plasticity_coactivity_rates(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if norm == False:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_3")
+            if not rwd_mvmt:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_3")
+            else:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_4")
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_4")
+            if not rwd_mvmt:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_5")
+            else:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_6")
         fig.savefig(fname + ".pdf")
 
     #################### Statistics Section ##################3
@@ -1985,7 +2002,7 @@ def plot_plasticity_coactivity_rates(
     A_table.set_fontsize(8)
     axes2["B"].axis("off")
     axes2["B"].axis("tight")
-    axes2["B"].set_title("Mvmt Distance Coactivity Rate")
+    axes2["B"].set_title(f"{mvmt_key} Distance Coactivity Rate")
     B_table = axes2["B"].table(
         cellText=mvmt_distance_corr_df.values,
         colLabels=mvmt_distance_corr_df.columns,
@@ -1996,7 +2013,7 @@ def plot_plasticity_coactivity_rates(
     B_table.set_fontsize(8)
     axes2["C"].axis("off")
     axes2["C"].axis("tight")
-    axes2["C"].set_title("Nonmvmt Distance Coactivity Rate")
+    axes2["C"].set_title(f"{nonmvmt_key} Distance Coactivity Rate")
     C_table = axes2["C"].table(
         cellText=nonmvmt_distance_corr_df.values,
         colLabels=nonmvmt_distance_corr_df.columns,
@@ -2021,7 +2038,7 @@ def plot_plasticity_coactivity_rates(
     axes2["E"].axis("off")
     axes2["E"].axis("tight")
     axes2["E"].set_title(
-        f"Mvmt Local Rate {test_title}\nF = {mvmt_coactivity_f:.4} p = {mvmt_coactivity_p:.3E}"
+        f"{mvmt_key} Local Rate {test_title}\nF = {mvmt_coactivity_f:.4} p = {mvmt_coactivity_p:.3E}"
     )
     E_table = axes2["E"].table(
         cellText=mvmt_coactivity_df.values,
@@ -2034,7 +2051,7 @@ def plot_plasticity_coactivity_rates(
     axes2["F"].axis("off")
     axes2["F"].axis("tight")
     axes2["F"].set_title(
-        f"Nonmvmt Local Rate {test_title}\nF = {non_coactivity_f:.4} p = {non_coactivity_p:.3E}"
+        f"{nonmvmt_key} Local Rate {test_title}\nF = {non_coactivity_f:.4} p = {non_coactivity_p:.3E}"
     )
     F_table = axes2["F"].table(
         cellText=non_coactivity_df.values,
@@ -2058,7 +2075,7 @@ def plot_plasticity_coactivity_rates(
     axes2["H"].axis("off")
     axes2["H"].axis("tight")
     axes2["H"].set_title(
-        f"Fraction mvmt {test_title}\nF = {frac_mvmt_f:.4} p = {frac_mvmt_p:.3E}"
+        f"Fraction {mvmt_key} {test_title}\nF = {frac_mvmt_f:.4} p = {frac_mvmt_p:.3E}"
     )
     H_table = axes2["H"].table(
         cellText=frac_mvmt_df.values,
@@ -2087,8 +2104,14 @@ def plot_plasticity_coactivity_rates(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if norm == False:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_3_Stats")
+            if not rwd_mvmt:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_3_Stats")
+            else:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_4_Stats")
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_4_Stats")
+            if not rwd_mvmt:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_5_Stats")
+            else:
+                fname = os.path.join(save_path, "Local_Coactivity_Figure_6_Stats")
         fig2.savefig(fname + ".pdf")
 
