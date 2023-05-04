@@ -98,16 +98,19 @@ class Local_Coactivity_Data:
     nearby_rwd_movement_stereotypy: np.ndarray
     nearby_rwd_movement_reliablity: np.ndarray
     nearby_rwd_movement_specificity: np.ndarray
+    coactive_movements: list
     coactive_movement_correlation: np.ndarray
     coactive_movement_stereotypy: np.ndarray
     coactive_movement_reliability: np.ndarray
     coactive_movement_specificity: np.ndarray
     coactive_LMP_reliability: np.ndarray
     coactive_LMP_specificity: np.ndarray
+    coactive_rwd_movements: list
     coactive_rwd_movement_correlation: np.ndarray
     coactive_rwd_movement_stereotypy: np.ndarray
     coactive_rwd_movement_reliability: np.ndarray
     coactive_rwd_movement_specificity: np.ndarray
+    coactive_fraction_rwd_mvmts: np.ndarray
     # Local dendritic calcium signals
     coactive_local_dend_traces: list
     coactive_local_dend_amplitude: np.ndarray
