@@ -236,3 +236,113 @@ def parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines):
 
     return nonmovement_spines, movement_non_rwd_spines
 
+
+def load_analyzed_datasets(
+    type,
+    grouped=True,
+    session="Early",
+    norm=True,
+    activity_type="dFoF",
+    extended=None,
+    mouse=None,
+    fov=None,
+    fov_type="apical",
+    period=None,
+    partner=None,
+):
+    """Function to handle loading of analyzed datasets
+    
+        INPUT PARAMETERS
+            type - str specifying the type of data to load. Will be used for 
+                    searching for files. Accepts 'Activity', 'Local', 'Global'
+                    
+            grouped - boolean specifying whether to load a grouped or individual
+                    dataset
+
+            session - str specifying what session to load
+
+            norm - boolean specifying whether to load normalized dataset or not
+
+            activity_type - str specifying what type of activity the dataset
+                            used (dFoF or zscore)
+
+            extended - boolean specifying whetehr or not the dataset to load
+                        used extended activity periods
+            
+            mouse - str specifying which mouse and fov to load. Used only if loading 
+                    individual dataset. 
+            
+            fov - str specifying the FOV to load. Only used if loading individual 
+                    dataset
+
+            fov_type - str specifying what type of fovs the data come from. eg.
+                        apical or basal
+                    
+            period - str specifying whether to load a dataset that was constrained
+                    to specific movement periods. Accepts 'movement', 'nonmovement'
+                    and 'rewarded movement'. Default is None to load unconstrained
+                    dataset
+
+            partner - str specifying whether to load a dataset that examined coactivity
+                    for only given partner types. Accepts 'MRS', 'nMRS' and 'rMRS'.
+                    Default is None to load unrestricted data set
+        
+        OUTPUT PARAMETERS
+            loaded_dataset - object containing the specified dataset
+            
+    """
+    if norm:
+        n_name = "_norm"
+    else:
+        n_name = ""
+    if period is None:
+        period = "session"
+    if partner is None:
+        pname = ""
+    else:
+        pname = f"_{partner}"
+    if extended is None:
+        ename = ""
+    else:
+        ename = "_extended"
+
+    # Set up the path
+    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data"
+    if grouped:
+        load_path = os.path.join(
+            initial_path, "grouped", "Dual_Spine_Imaging", "Coactivity_Data"
+        )
+    else:
+        if mouse == None:
+            return "Must specify mouse ID if loading individual dataset"
+        load_path = os.path.join(
+            initial_path, mouse, "coactivity_data", f"{fov}_{fov_type}", session
+        )
+
+    # Construct the file name to load
+    if type == "Activity":
+        if grouped:
+            fname = f"{session}_{fov_type}_{activity_type}{n_name}_grouped_spine_activity_data"
+        else:
+            fname = f"{mouse}_{session}_{activity_type}{n_name}_spine_activity_data"
+    elif type == "Local":
+        if grouped:
+            fname = f"{session}_{fov_type}_{activity_type}{n_name}_{period}{pname}_grouped_local_coactivity_data"
+        else:
+            fname = f"{mouse}_{session}_{activity_type}{n_name}_{period}{pname}_local_coactivity_data"
+    elif type == "Global":
+        if grouped:
+            fname = f"{session}_{fov_type}_{activity_type}{n_name}_{period}{pname}{ename}_grouped_dendritic_coactivity_data"
+        else:
+            fname = f"{mouse}_{session}_{activity_type}{n_name}_{period}{pname}{ename}_dendritic_coactivity_data"
+    else:
+        return f"Does not accept {type} type of dataset to load"
+
+    # Load the data
+    try:
+        load_name = os.path.join(load_path, fname)
+        loaded_data = load_pickle([load_name])[0]
+    except FileNotFoundError:
+        return "File matching input parameters does not exist"
+
+    return loaded_data
