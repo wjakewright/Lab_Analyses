@@ -139,18 +139,21 @@ class Dendritic_Coactivity_Data:
     nonparticipating_spine_calcium_traces: list
     # Movement encoding
     learned_movement_pattern: np.ndarray
+    all_coactive_movements: list
     all_coactive_movement_correlation: np.ndarray
     all_coactive_movement_stereotypy: np.ndarray
     all_coactive_movement_reliability: np.ndarray
     all_coactive_movement_specificity: np.ndarray
     all_coactive_LMP_reliability: np.ndarray
     all_coactive_LMP_specificity: np.ndarray
+    conj_movements: list
     conj_movement_correlation: np.ndarray
     conj_movement_stereotypy: np.ndarray
     conj_movement_reliability: np.ndarray
     conj_movement_specificity: np.ndarray
     conj_LMP_reliability: np.ndarray
     conj_LMP_specificity: np.ndarray
+    nonconj_movements: list
     nonconj_movement_correlation: np.ndarray
     nonconj_movement_stereotypy: np.ndarray
     nonconj_movement_reliability: np.ndarray
