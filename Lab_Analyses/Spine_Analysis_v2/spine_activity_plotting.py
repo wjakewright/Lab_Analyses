@@ -2052,6 +2052,7 @@ def plot_spine_movement_encoding(
     spine_rwd_movement_stereotypy = dataset.spine_rwd_movement_stereotypy
     spine_rwd_movement_reliability = dataset.spine_rwd_movement_reliability
     spine_rwd_movement_specificity = dataset.spine_rwd_movement_specificity
+    spine_fraction_rwd_mvmts = dataset.spine_fraction_rwd_mvmts
 
     # Calculate the relative volumes
     volumes = [spine_volumes, followup_volumes]
@@ -2096,6 +2097,9 @@ def plot_spine_movement_encoding(
     spine_rwd_movement_specificity = d_utils.subselect_data_by_idxs(
         spine_rwd_movement_specificity, spine_idxs,
     )
+    spine_fraction_rwd_mvmts = d_utils.subselect_data_by_idxs(
+        spine_fraction_rwd_mvmts, spine_idxs,
+    )
 
     ## Seperate groups
     group_mvmt_corr = {}
@@ -2108,6 +2112,7 @@ def plot_spine_movement_encoding(
     group_rwd_mvmt_stero = {}
     group_rwd_mvmt_reli = {}
     group_rwd_mvmt_spec = {}
+    group_frac_rwd = {}
     for key, value in plastic_groups.items():
         spines = eval(value)
         group_mvmt_corr[key] = spine_movement_correlation[spines]
@@ -2120,12 +2125,14 @@ def plot_spine_movement_encoding(
         group_rwd_mvmt_stero[key] = spine_rwd_movement_stereotypy[spines]
         group_rwd_mvmt_reli[key] = spine_rwd_movement_reliability[spines]
         group_rwd_mvmt_spec[key] = spine_rwd_movement_specificity[spines]
+        group_frac_rwd[key] = spine_fraction_rwd_mvmts[spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
         ABCDE
         GHIJF
+        K....
         """,
         figsize=figsize,
     )
@@ -2403,6 +2410,33 @@ def plot_spine_movement_encoding(
         save=False,
         save_path=None,
     )
+    ## Spine fraction rwd movements
+    plot_swarm_bar_plot(
+        group_frac_rwd,
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Fraction rwd movements",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=0,
+        b_alpha=0.3,
+        s_colors=COLORS,
+        s_size=5,
+        s_alpha=0.7,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["K"],
+        save=False,
+        save_path=None,
+    )
 
     fig.tight_layout()
 
@@ -2449,6 +2483,9 @@ def plot_spine_movement_encoding(
         rwd_spec_f, rwd_spec_p, _, rwd_spec_df = t_utils.ANOVA_1way_posthoc(
             group_rwd_mvmt_spec, test_method,
         )
+        frac_f, frac_p, _, frac_df = t_utils.ANOVA_1way_posthoc(
+            group_frac_rwd, test_method,
+        )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         mvmt_corr_f, mvmt_corr_p, mvmt_corr_df = t_utils.kruskal_wallis_test(
@@ -2481,6 +2518,9 @@ def plot_spine_movement_encoding(
         rwd_spec_f, rwd_spec_p, rwd_spec_df = t_utils.kruskal_wallis_test(
             group_rwd_mvmt_spec, "Conover", test_method,
         )
+        frac_f, frac_p, frac_df = t_utils.kruskal_wallis_test(
+            group_frac_rwd, "Conover", test_method,
+        )
         test_title = f"Kruskal-Wallis {test_method}"
 
     # Display the statistics
@@ -2491,6 +2531,7 @@ def plot_spine_movement_encoding(
         EF
         GH
         IJ
+        K.
         """,
         figsize=(8, 12),
     )
@@ -2625,6 +2666,19 @@ def plot_spine_movement_encoding(
     )
     J_table.auto_set_font_size(False)
     J_table.set_fontsize(8)
+    axes2["K"].axis("off")
+    axes2["K"].axis("tight")
+    axes2["K"].set_title(
+        f"Fraction Rewarded Movements\n {test_title}\nF = {rwd_spec_f:.4}  p = {rwd_spec_p:.3E}"
+    )
+    K_table = axes2["K"].table(
+        cellText=frac_df.values,
+        colLabels=frac_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    K_table.auto_set_font_size(False)
+    K_table.set_fontsize(8)
 
     fig2.tight_layout()
 
