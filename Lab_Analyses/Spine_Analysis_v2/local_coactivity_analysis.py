@@ -99,7 +99,7 @@ def local_coactivity_analysis(
         print("----------------------------------------")
         print(f"- Analyzing {mouse}")
         # Load the datasets
-        datasets = load_spine_datasets(mouse, session, fov_type)
+        datasets = load_spine_datasets(mouse, [session], fov_type)
 
         # Analyze each FOV seperately
         for FOV, dataset in datasets.items():
