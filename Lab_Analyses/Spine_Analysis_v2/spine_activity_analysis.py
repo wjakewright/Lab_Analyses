@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 import Lab_Analyses.Utilities.data_utilities as d_utils
