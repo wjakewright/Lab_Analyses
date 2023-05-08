@@ -2,7 +2,9 @@ import numpy as np
 from scipy import stats
 
 from Lab_Analyses.Utilities.activity_timestamps import (
-    get_activity_timestamps, refine_activity_timestamps)
+    get_activity_timestamps,
+    refine_activity_timestamps,
+)
 
 
 def calculate_coactivity(
@@ -43,7 +45,7 @@ def calculate_coactivity(
     duration = duration / sampling_rate  # converted to seconds
 
     # Check if traces display activity
-    if (np.sum(trace_1) == 0) or (np.sum(trace_2) == 0):
+    if (np.nansum(trace_1) == 0) or (np.nansum(trace_2) == 0):
         return (0, 0, 0, 0, np.zeros(len(trace_1)))
 
     # Calculate the coactivity rate
@@ -162,7 +164,7 @@ def calculate_relative_onset(
         ## Calculate relative onset
         rel_onset = (onset_1 - onset_2) / sampling_rate
         relative_onsets[event] = rel_onset
-    
+
     # Get mean onset and jitter
     avg_relative_onset = np.nanmean(relative_onsets)
     onset_jitter = np.nanstd(relative_onsets)
