@@ -44,6 +44,8 @@ def preprocess_dual_plane_data(data):
         lower_threshold=0,
         lower_limit=None,
         sampling_rate=sampling_rate,
+        filt_poly=1,
+        sec_smooth=0.5,
     )
     somatic_activity, _, _ = event_detection(
         somatic_dFoF,
@@ -51,6 +53,8 @@ def preprocess_dual_plane_data(data):
         lower_threshold=0,
         lower_limit=None,
         sampling_rate=sampling_rate,
+        filt_poly=1,
+        sec_smooth=0.5,
     )
 
     # Put relevant data into an output
