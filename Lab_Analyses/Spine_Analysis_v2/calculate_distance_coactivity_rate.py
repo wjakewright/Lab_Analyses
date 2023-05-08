@@ -110,14 +110,18 @@ def calculate_distance_coactivity_rate(
             curr_coactivity_norm = []
             curr_spine = s_activity[:, spine]
             if type(duration) == list:
-                dur = duration[spine] / sampling_rate
+                dur = duration[spine]
             else:
-                dur = duration / sampling_rate
+                dur = duration
 
             # Calculate the coactivity with each other spine
             for partner in range(s_activity.shape[1]):
                 # Skip spines that contain only nans as they are absent
                 if not np.nansum(curr_spine):
+                    curr_coactivity.append(np.nan)
+                    curr_coactivity_norm.append(np.nan)
+                    continue
+                if not np.nansum(s_activity[:, partner]):
                     curr_coactivity.append(np.nan)
                     curr_coactivity_norm.append(np.nan)
                     continue
@@ -149,7 +153,7 @@ def calculate_distance_coactivity_rate(
                     curr_spine,
                     partner_spine,
                     norm_method=norm_method,
-                    duration=dur,
+                    duration=None,
                     sampling_rate=sampling_rate,
                 )
                 curr_coactivity.append(co_rate)
