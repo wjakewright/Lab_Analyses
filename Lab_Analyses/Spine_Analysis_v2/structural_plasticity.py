@@ -84,7 +84,7 @@ def classify_plasticity(relative_volumes, threshold=0.3, norm=False):
     # Split threshold if tuple given
     if type(threshold) == tuple:
         lower = threshold[0]
-        upper = threshold = [1]
+        upper = threshold[1]
     else:
         lower = threshold
         upper = threshold
