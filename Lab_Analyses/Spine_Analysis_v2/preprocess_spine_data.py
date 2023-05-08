@@ -7,11 +7,9 @@ import numpy as np
 
 from Lab_Analyses.Behavior.align_lever_behavior import align_lever_behavior
 from Lab_Analyses.Utilities.check_file_exists import get_existing_files
-from Lab_Analyses.Utilities.data_utilities import (join_dictionaries,
-                                                   pad_array_to_length)
+from Lab_Analyses.Utilities.data_utilities import join_dictionaries, pad_array_to_length
 from Lab_Analyses.Utilities.event_detection import event_detection
-from Lab_Analyses.Utilities.movement_responsiveness_v2 import \
-    movement_responsiveness
+from Lab_Analyses.Utilities.movement_responsiveness_v2 import movement_responsiveness
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
@@ -277,6 +275,8 @@ def organize_dual_spine_data(
                     lower_threshold=1,
                     lower_limit=0.2,
                     sampling_rate=imaging_parameters["Sampling Rate"],
+                    filt_poly=4,
+                    sec_smooth=1,
                 )
                 spine_calcium_activity, spine_calcium_floored, _ = event_detection(
                     spine_calcium_processed_dFoF,
@@ -284,6 +284,8 @@ def organize_dual_spine_data(
                     lower_threshold=1,
                     lower_limit=0.2,
                     sampling_rate=imaging_parameters["Sampling Rate"],
+                    filt_poly=4,
+                    sec_smooth=1,
                 )
             else:
                 spine_GluSnFr_activity = GluSnFr_activity["Spine"]
@@ -298,7 +300,9 @@ def organize_dual_spine_data(
                 reward_movement_spines,
                 reward_silent_spines,
                 _,
-            ) = movement_responsiveness(spine_GluSnFr_processed_dFoF, rewarded_movement_binary)
+            ) = movement_responsiveness(
+                spine_GluSnFr_processed_dFoF, rewarded_movement_binary
+            )
 
             ## Dendrite related variables
             d_lengths = [x[-1] for x in GluSnFr.ROI_positions["Dendrite"]]
@@ -328,6 +332,8 @@ def organize_dual_spine_data(
                             lower_threshold=0,
                             lower_limit=None,
                             sampling_rate=imaging_parameters["Sampling Rate"],
+                            filt_poly=4,
+                            sec_smooth=1,
                         )
                         dendrite_calcium_activity[:, s] = da.reshape(1, -1)
                         dendrite_calcium_floored[:, s] = df.reshape(1, -1)
@@ -345,7 +351,9 @@ def organize_dual_spine_data(
                 reward_movement_dendrites,
                 reward_silent_dendrites,
                 _,
-            ) = movement_responsiveness(dendrite_calcium_processed_dFoF, rewarded_movement_binary)
+            ) = movement_responsiveness(
+                dendrite_calcium_processed_dFoF, rewarded_movement_binary
+            )
 
             ## Poly Dendrite roi-related variables
             poly_dendrite_positions = Calcium.ROI_positions["Dendrite"]
