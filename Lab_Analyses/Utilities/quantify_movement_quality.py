@@ -140,7 +140,7 @@ def quantify_movement_quality(
     for i in range(activity_matrix.shape[1]):
         active_trace = activity_matrix[:, i]
         if not np.nansum(active_trace):
-            active_movements.append(np.zeros(corr_interval) * np.nan)
+            active_movements.append(np.zeros(corr_interval).reshape(1, -1) * np.nan)
             movement_correlation.append(np.nan)
             movement_stereotypy.append(np.nan)
             movement_reliability.append(np.nan)
@@ -183,7 +183,7 @@ def quantify_movement_quality(
                 LMP_reliability.append(0)
         # Handle exceptions when there are no active movements
         except ValueError:
-            active_movements.append(np.zeros(corr_interval).reshape(-1, 1) * np.nan)
+            active_movements.append(np.zeros(corr_interval).reshape(1, -1) * np.nan)
             movement_correlation.append(np.nan)
             movement_stereotypy.append(np.nan)
             movement_reliability.append(np.nan)
