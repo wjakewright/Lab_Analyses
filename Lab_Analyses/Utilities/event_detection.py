@@ -5,7 +5,9 @@ import numpy as np
 import scipy.signal as sysignal
 
 
-def event_detection(dFoF, threshold, lower_threshold, lower_limit, sampling_rate):
+def event_detection(
+    dFoF, threshold, lower_threshold, lower_limit, sampling_rate, filt_poly=2, sec_smooth=1,
+):
     """Function to indentify periods of activity. Used a threshold multiplier
         to find periods above the estimated noise of the trace
     
@@ -32,7 +34,7 @@ def event_detection(dFoF, threshold, lower_threshold, lower_limit, sampling_rate
     #### Important for silent ROIs
     LOWER_THRESH = lower_threshold
     LOWER_LIMIT = lower_limit
-    SEC_TO_SMOOTH = 0.5
+    SEC_TO_SMOOTH = sec_smooth
 
     smooth_window = int(sampling_rate * SEC_TO_SMOOTH)
     # Make sure smooth window is odd
@@ -71,7 +73,7 @@ def event_detection(dFoF, threshold, lower_threshold, lower_limit, sampling_rate
         thresh_values["Artifact Limit"].append(artifact_limit)
 
         # Generate a smoothed trace
-        temp_smooth = sysignal.savgol_filter(roi, smooth_window, 1)
+        temp_smooth = sysignal.savgol_filter(roi, smooth_window, filt_poly)
         # Find periods above the thrsholds
         above_low = temp_smooth > low_thresh
         above_high = temp_smooth > high_thresh
