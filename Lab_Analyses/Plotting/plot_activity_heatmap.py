@@ -107,14 +107,18 @@ def plot_activity_heatmap(
         yticklabels=False,
         ax=ax,
     )
+
+    # Adjust colorbar
+    cbar = hax.collections[0].colorbar
+    cbar.set_label(label=cbar_label, rotation=270, labelpad=-1)
     # Setup the axes
     x = np.linspace(activity_window[0], activity_window[1], data_t.shape[1])
     t = np.linspace(0, activity_window[1] - activity_window[0], data_t.shape[1])
     xticks = np.unique(x.astype(int))
     t = np.unique(t.astype(int))
     ax.set_xticks(ticks=t * 60)
-    ax.set_xticklabels(labels=xticks)
-    ax.set_xlabel("Time (s)", labelpad=15)
+    ax.set_xticklabels(labels=xticks, rotation=0)
+    ax.set_xlabel("Time (s)", labelpad=7)
     hax.patch.set_edgecolor("black")
     hax.patch.set_linewidth(axis_width)
     if minor_ticks == "x":
