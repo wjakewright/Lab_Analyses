@@ -168,10 +168,19 @@ def plot_swarm_bar_plot(
         ecolor=b_err_colors,
         linewidth=b_linewidth,
         alpha=b_alpha,
+        tick_label=list(data_dict.keys()),
     )
 
     # Format the axes
-    adjust_axes(ax, minor_ticks, xtitle, ytitle, None, ylim, tick_len, axis_width)
+    adjust_axes(
+        ax, minor_ticks, xtitle, ytitle, None, ylim, tick_len, axis_width,
+    )
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+
+    if not plot_ind and ylim is None:
+        ax.set_ymargin(0.2)
+    ax.set_xmargin(0.15)
 
     # Save section
     if save:
