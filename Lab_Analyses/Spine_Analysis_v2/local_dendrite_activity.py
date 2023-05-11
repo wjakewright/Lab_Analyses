@@ -172,6 +172,8 @@ def local_dendrite_activity(
                 _, _, _, _, isolated_activity = calculate_coactivity(
                     nearby_activity, spine_inactivity, sampling_rate,
                 )
+                if not np.nansum(isolated_activity):
+                    continue
                 isolated_stamps = t_stamps.get_activity_timestamps(isolated_activity)
                 isolated_stamps = [x[0] for x in isolated_stamps]
                 isolated_stamps = t_stamps.refine_activity_timestamps(
@@ -187,6 +189,12 @@ def local_dendrite_activity(
                 nearby_amplitude.append(amplitude)
 
             ## Pool and average across nearby spines
+            if len(nearby_traces) == 0:
+                continue
+            if len(nearby_traces) == 1:
+                nearby_local_dend_traces[spines[spine]] = nearby_traces
+                nearby_local_dend_amplitude[spines[spine]] = nearby_amplitude
+                continue
             nearby_local_dend_traces[spines[spine]] = np.hstack(nearby_traces)
             nearby_local_dend_amplitude[spines[spine]] = np.nanmean(nearby_amplitude)
 
