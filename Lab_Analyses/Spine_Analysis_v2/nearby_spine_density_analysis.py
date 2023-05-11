@@ -54,7 +54,7 @@ def nearby_spine_density_analysis(
     """
     # First get the overall spine density distribution
     present_spines = find_present_spines(spine_flags).astype(int)
-    base_density_distribution, _ = variable_spatial_distribution(
+    base_density_distribution, _, _ = variable_spatial_distribution(
         present_spines,
         spine_positions,
         spine_flags,
@@ -89,7 +89,7 @@ def nearby_spine_density_analysis(
         avg_local_density = cat_density_distribution[0, :]
 
     # Setup shuffle outputs
-    shuff_local_density = np.zeros((iterations, len(real_category))) * np.array
+    shuff_local_density = np.zeros((iterations, len(real_category))) * np.nan
 
     # Iterate through each shuffle
     for i in range(iterations):
@@ -102,7 +102,7 @@ def nearby_spine_density_analysis(
             spine_flags,
             spine_groupings,
             bin_size=cluster_dist,
-            dendity=True,
+            density=True,
         )
         shuff_local_density[i, :] = shuff_distribution[0, :]
 
