@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 
 import numpy as np
+
 from Lab_Analyses.Behavior.dispatcher_to_frames_continuous import (
     dispatcher_to_frames_continuous,
 )
