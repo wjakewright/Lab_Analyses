@@ -2690,5 +2690,5 @@ def plot_spine_movement_encoding(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Activity_Figure_4_Stats")
-        fig2.savefig(fname, ".pdf")
+        fig2.savefig(fname + ".pdf")
 
