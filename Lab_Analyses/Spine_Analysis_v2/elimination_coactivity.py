@@ -5,7 +5,9 @@ import seaborn as sns
 sns.set()
 sns.set_style("ticks")
 
+from Lab_Analyses.Plotting.plot_histogram import plot_histogram
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
+from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2 import spine_utilities as s_utils
 from Lab_Analyses.Spine_Analysis_v2.calculate_distance_coactivity_rate import (
     calculate_distance_coactivity_rate,
@@ -28,6 +30,7 @@ def elimination_coactivity_analysis(
     spine_density = {"Early": [], "Mid": [], "Late": []}
     fraction_elim = {"Early": [], "Mid": [], "Late": []}
     fraction_new = {"Early": [], "Mid": [], "Late": []}
+    spine_volumes = {"Stable": [], "New": [], "Elim": []}
     # Analyze each mouse
     for mouse in mice_list:
         datasets = s_utils.load_spine_datasets(
@@ -129,9 +132,12 @@ def elimination_coactivity_analysis(
             mid_new = np.array(
                 s_utils.find_spine_classes(elim_corrected_flags[0], "New Spine")
             )
-            mid_new = np.array([not x for x in mid_new])
+            late_new = np.array(
+                s_utils.find_spine_classes(elim_corrected_flags[1], "New Spine")
+            )
+            mid_new_not = np.array([not x for x in mid_new])
 
-            new_late_elim = late_elim * mid_new
+            new_late_elim = late_elim * mid_new_not
 
             mid_elim_coactivity = early_coactivity[:, mid_elim]
             late_elim_coactivity = mid_coactivity[:, new_late_elim]
@@ -162,6 +168,8 @@ def elimination_coactivity_analysis(
                     ]
                 )
             )
+            mid_stable = mid_stable.astype(bool)
+            late_stable = late_stable.astype(bool)
 
             mid_stable_coactivity = early_coactivity[:, mid_stable]
             late_stable_coactivity = mid_coactivity[:, late_stable]
@@ -186,6 +194,31 @@ def elimination_coactivity_analysis(
                 fraction_elim[day].append(frac_elim[i])
                 fraction_new[day].append(frac_new[i])
 
+            # Get volumes
+            mid_zoom = mid_data.imaging_parameters["Zoom"]
+            early_zoom = early_data.imaging_parameters["Zoom"]
+            late_zoom = late_data.imaging_parameters["Zoom"]
+            early_volumes = (
+                np.sqrt(np.array(early_data.spine_volume)) / (early_zoom / 2)
+            ) ** 2
+            mid_volumes = (
+                np.sqrt(np.array(mid_data.spine_volume)) / (mid_zoom / 2)
+            ) ** 2
+            late_volumes = (
+                np.sqrt(np.array(late_data.spine_volume)) / (late_zoom / 2)
+            ) ** 2
+
+            elim_volume = np.concatenate(
+                [early_volumes[mid_elim], early_volumes[new_late_elim]]
+            )
+            new_volume = np.concatenate([mid_volumes[mid_new], late_volumes[late_new]])
+            stable_volume = np.concatenate(
+                [mid_volumes[mid_stable], late_volumes[late_stable]]
+            )
+            spine_volumes["Stable"].append(stable_volume)
+            spine_volumes["Elim"].append(elim_volume)
+            spine_volumes["New"].append(new_volume)
+
     # Join all mice/fovs together
     all_elim_coactivity = np.hstack(eliminated_coactivity)
     all_elim_coactivity_norm = np.hstack(eliminated_coactivity_norm)
@@ -197,7 +230,6 @@ def elimination_coactivity_analysis(
     all_density = {}
     all_elim = {}
     all_new = {}
-    print(spine_density)
     for day in ["Early", "Mid", "Late"]:
         all_density[day] = np.concatenate(spine_density[day])
         all_elim[day] = np.concatenate(fraction_elim[day])
@@ -206,14 +238,21 @@ def elimination_coactivity_analysis(
     all_elim = np.vstack(list(all_elim.values()))
     all_new = np.vstack(list(all_new.values()))
 
+    # join together the volume data
+    joined_volumes = {}
+    for key, value in spine_volumes.items():
+        joined_volumes[key] = np.concatenate(value)
+        print(f"{key}: {np.nanmean(np.concatenate(value))}")
+
     # Plot results
     fig, axes = plt.subplot_mosaic(
         """
         AB
         CD
-        E.
+        EF
+        GH
         """,
-        figsize=(10, 12),
+        figsize=(10, 15),
     )
     fig.subplots_adjust(hspace=1, wspace=0.5)
     plot_multi_line_plot(
@@ -328,6 +367,67 @@ def elimination_coactivity_analysis(
         legend=True,
         save=False,
         save_path=False,
+    )
+    plot_swarm_bar_plot(
+        data_dict=joined_volumes,
+        mean_type="median",
+        err_type="CI",
+        figsize=(5, 5),
+        title="Spine Volumes",
+        xtitle=None,
+        ytitle="Spine Volume \u03BCm",
+        ylim=None,
+        b_colors=["grey", "royalblue", "firebrick"],
+        b_err_colors="black",
+        b_width=0.6,
+        b_linewidth=0,
+        b_alpha=0.5,
+        s_colors=["grey", "royalblue", "firebrick"],
+        s_size=5,
+        s_alpha=0.8,
+        plot_ind=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["F"],
+        save=False,
+        save_path=None,
+    )
+    plot_histogram(
+        data=[joined_volumes["Stable"], joined_volumes["New"]],
+        bins=25,
+        stat="probability",
+        avlines=None,
+        title="Stable and New Spines",
+        xtitle="Spine Volume",
+        xlim=None,
+        figsize=(5, 5),
+        color=["grey", "royalblue"],
+        alpha=0.6,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["G"],
+        save=False,
+        save_path=None,
+    )
+    plot_histogram(
+        data=[joined_volumes["Stable"], joined_volumes["Elim"]],
+        bins=25,
+        stat="probability",
+        avlines=None,
+        title="Stable and Elim Spines",
+        xtitle="Spine Volume",
+        xlim=None,
+        figsize=(5, 5),
+        color=["grey", "firebrick"],
+        alpha=0.6,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["H"],
+        save=False,
+        save_path=None,
     )
 
     fig.tight_layout()
