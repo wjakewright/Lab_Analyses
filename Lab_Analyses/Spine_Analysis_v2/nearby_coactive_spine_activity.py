@@ -110,14 +110,20 @@ def nearby_coactive_spine_activity(
 
         # Get relevant spine data
         nearby_spines = nearby_spine_idxs[spine]
+        if nearby_spines is None:
+            continue
         coactivity = coactivity_matrix[:, spine]
         target_activity = spine_activity[:, spine]
         nearby_activity = spine_activity[:, nearby_spines]
         nearby_dFoF = spine_dFoF[:, nearby_spines]
         nearby_calcium = spine_calcium[:, nearby_spines]
+        if len(nearby_activity) == 1:
+            nearby_activity = nearby_activity.reshape(-1, 1)
         nearby_coactivity = nearby_activity * target_activity.reshape(-1, 1)
 
         # Get coactivity timestamps
+        if not np.nansum(coactivity):
+            continue
         timestamps = get_activity_timestamps(coactivity)
         timestamps = refine_activity_timestamps(
             timestamps,
@@ -129,6 +135,10 @@ def nearby_coactive_spine_activity(
             timestamps = timestamp_onset_correction(
                 timestamps, activity_window, offsets[spine], sampling_rate
             )
+        if len(timestamps) == 0:
+            continue
+
+        timestamps = [x[0] for x in timestamps]
 
         # Iterate through each coactivity event
         spine_wise_onsets = [[] for i in range(nearby_activity.shape[1])]
