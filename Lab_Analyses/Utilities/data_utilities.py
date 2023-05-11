@@ -437,7 +437,7 @@ def roll_2d_array(array, shift_range, axis=1):
             rolled = np.roll(d, shift)
             rolled_array[:, i] = rolled
 
-    return rolled
+    return rolled_array
 
 
 def subselect_data_by_idxs(data, idxs):
