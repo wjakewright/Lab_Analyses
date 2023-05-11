@@ -53,9 +53,16 @@ def analyze_event_activity(
     activity_traces = []
     mean_traces = []
     for spine in range(dFoF.shape[1]):
-        if len(timestamps[spine]) == 0 or timestamps[spine] is None:
-            activity_traces.appned(None)
-            mean_traces.append(None)
+        try:
+            if len(timestamps[spine]) == 0:
+                activity_traces.appned(None)
+                mean_traces.append(None)
+                continue
+        except TypeError:
+            if timestamps[spine] is None:
+                activity_traces.append(None)
+                mean_traces.append(None)
+                continue
         traces, mean = d_utils.get_trace_mean_sem(
             dFoF[:, spine].reshape(-1, 1),
             ["Activity"],
