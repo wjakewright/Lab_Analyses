@@ -160,27 +160,37 @@ def coactive_vs_noncoactive_event_analysis(
             combined_nearby_activity
         )
         ## Get the coactive and noncoactive onset timestamps
-        coactive_stamps = t_stamps.get_activity_timestamps(coactive)
-        coactive_stamps = [x[0] for x in coactive_stamps]
-        refined_coactive_stamps = t_stamps.refine_activity_timestamps(
-            coactive_stamps,
-            window=activity_window,
-            max_len=len(activity_matrix[:, spine]),
-            sampling_rate=sampling_rate,
-        )
-        noncoactive_stamps = t_stamps.get_activity_timestamps(noncoactive)
-        noncoactive_stamps = [x[0] for x in noncoactive_stamps]
-        refined_noncoactive_stamps = t_stamps.refine_activity_timestamps(
-            noncoactive_stamps,
-            window=activity_window,
-            max_len=len(activity_matrix[:, spine]),
-            sampling_rate=sampling_rate,
-        )
+        if np.nansum(coactive):
+            coactive_stamps = t_stamps.get_activity_timestamps(coactive)
+            coactive_stamps = [x[0] for x in coactive_stamps]
+            refined_coactive_stamps = t_stamps.refine_activity_timestamps(
+                coactive_stamps,
+                window=activity_window,
+                max_len=len(activity_matrix[:, spine]),
+                sampling_rate=sampling_rate,
+            )
+        else:
+            refined_coactive_stamps = None
+        if np.nansum(noncoactive):
+            noncoactive_stamps = t_stamps.get_activity_timestamps(noncoactive)
+            noncoactive_stamps = [x[0] for x in noncoactive_stamps]
+            refined_noncoactive_stamps = t_stamps.refine_activity_timestamps(
+                noncoactive_stamps,
+                window=activity_window,
+                max_len=len(activity_matrix[:, spine]),
+                sampling_rate=sampling_rate,
+            )
+        else:
+            refined_noncoactive_stamps = None
+
         coactive_binary[:, spine] = coactive
         noncoactive_binary[:, spine] = noncoactive
         coactive_onsets[spine] = refined_coactive_stamps
         noncoactive_onsets[spine] = refined_noncoactive_stamps
-        spine_coactive_event_num[spine] = len(refined_coactive_stamps)
+        try:
+            spine_coactive_event_num[spine] = len(refined_coactive_stamps)
+        except TypeError:
+            spine_coactive_event_num[spine] = 0
         fraction_spine_coactive[spine] = frac_coactive
         fraction_coactivity_participation[spine] = frac_participating
 
