@@ -132,14 +132,14 @@ def local_coactivity_analysis(
             spine_calcium_dFoF = data.spine_calcium_processed_dFoF
             ## Spine movement-related information
             movement_spines = np.array(data.movement_spines)
-            rwd_movement_spines = np.array(data.rwd_movement_spines)
+            rwd_movement_spines = np.array(data.reward_movement_spines)
             (
                 nonmovement_spines,
                 nonrwd_movement_spines,
             ) = parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines)
             ## Dendrite movement-related information
             movement_dendrites = np.array(data.movement_dendrites)
-            rwd_movement_dendrites = np.array(data.rwd_movement_dendrites)
+            rwd_movement_dendrites = np.array(data.reward_movement_dendrites)
             (
                 nonmovement_dendrites,
                 nonrwd_movement_dendrites,
@@ -328,6 +328,8 @@ def local_coactivity_analysis(
             enlarged, shrunken, _ = classify_plasticity(
                 relative_volumes, threshold=0.3, norm=False,
             )
+            enlarged = np.array(enlarged)
+            shrunken = np.array(shrunken)
             ### Enlarged spines
             (
                 local_nn_enlarged,
@@ -427,7 +429,6 @@ def local_coactivity_analysis(
                 nearby_movement_specificity,
                 nearby_LMP_reliability,
                 nearby_LMP_speicficity,
-                learned_movement_pattern,
             ) = neraby_spine_movement_quality(
                 mouse,
                 nearby_spine_idxs,
@@ -443,7 +444,6 @@ def local_coactivity_analysis(
                 nearby_rwd_movement_stereotypy,
                 nearby_rwd_movement_reliability,
                 nearby_rwd_movement_specificity,
-                _,
                 _,
                 _,
             ) = neraby_spine_movement_quality(
@@ -465,7 +465,7 @@ def local_coactivity_analysis(
                 coactive_movement_specificity,
                 coactive_LMP_reliability,
                 coactive_LMP_speicficity,
-                _,
+                learned_movement_pattern,
             ) = quantify_movement_quality(
                 mouse,
                 coactive_binary,
