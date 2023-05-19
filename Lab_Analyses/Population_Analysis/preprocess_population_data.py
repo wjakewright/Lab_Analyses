@@ -4,6 +4,8 @@ from copy import copy
 from dataclasses import dataclass
 
 import numpy as np
+import scipy.signal as sysignal
+from scipy.ndimage import uniform_filter1d
 
 from Lab_Analyses.Behavior.align_lever_behavior_suite2p import (
     align_lever_behavior_suite2p,
@@ -21,7 +23,6 @@ def organize_population_data(
     roi_match=False,
     sensor="RCaMP2",
     zoom_factor=2,
-    deconvolve=False,
     reprocess=True,
     save=False,
 ):
@@ -33,13 +34,12 @@ def organize_population_data(
             
             roi_match - boolean specifying whether or not to take only cells tracked
                         across all sessions
-                        
-            deconvolve - boolean of whether or not to deconovle the calcium traces
             
             reprocess - boolean specifying whether to reprocess the data or try to load it
             
             save - boolean specifying if the data is to be saved or not
     """
+
     print(
         f"--------------------------------------------------\nProcessing Mouse {mouse_id}"
     )
@@ -130,29 +130,39 @@ def organize_population_data(
         activity, floored, _ = event_detection(
             processed_dFoF,
             threshold=3,
-            lower_threshold=0,
+            lower_threshold=1,
             lower_limit=0,
             sampling_rate=int(ops_file["fs"]),
             filt_poly=3,
             sec_smooth=1,
         )
 
-        deconvolved = np.zeros(activity.shape)
-        if deconvolve:
-            if sensor == "GCaMP6f":
-                tau = 0.7
-            elif sensor == "GCaMP6s":
-                tau = 1.5
-            elif sensor == "GCaMP7b":
-                tau = 1.2
-            elif sensor == "RCaMP2":
-                tau = 1.5
-            deconvolved = oasis(
-                fluo=fluoro, batch_size=500, tau=tau, sampling_rate=int(ops_file["fs"]),
-            )
+        if sensor == "GCaMP6f":
+            tau = 0.7
+        elif sensor == "GCaMP6s":
+            tau = 1.5
+        elif sensor == "GCaMP7b":
+            tau = 1.2
+        elif sensor == "RCaMP2":
+            tau = 1.5
+        deconvolved = oasis(
+            fluo=fluoro, batch_size=500, tau=tau, sampling_rate=int(ops_file["fs"]),
+        )
+
+        deconvolved = uniform_filter1d(deconvolved, 6, axis=0)
+
+        # process spikes
+        smooth_int = int(ops_file["fs"])
+        if not smooth_int % 2:
+            smooth_int = smooth_int + 1
+        processed_deconvolved = np.zeros(deconvolved.shape)
+        for i in range(deconvolved.shape[1]):
+            smooth_spikes = sysignal.savgol_filter(deconvolved[:i], smooth_int, 3)
+            processed_deconvolved[:, i] = smooth_spikes
 
         # Store important prameters
         parameters = {
+            "Matched": roi_match,
             "Sampling Rate": int(ops_file["fs"]),
             "Sensor": sensor,
             "tau": tau,
@@ -170,6 +180,7 @@ def organize_population_data(
             activity_trace=activity,
             floored_trace=floored,
             deconvolved_spikes=deconvolved,
+            processed_deconvolved_spikes=processed_deconvolved,
             parameters=parameters,
             roi_positions=roi_positions,
         )
@@ -245,15 +256,29 @@ def organize_population_data(
         aligned_activity = np.vstack(imaging.activity_trace)
         aligned_floored = np.vstack(imaging.floored_trace)
         aligned_spikes = np.vstack(imaging.spikes)
+        aligned_processed_spikes = np.vstack(imaging.processed_spikes)
 
         cell_positions = imaging.roi_positions
 
         # Classify movement responsiveness
         movement_cells, silent_cells, _ = movement_responsiveness(
-            aligned_processed_dFoF, lever_active
+            aligned_processed_dFoF, lever_active, permutations=1000, percentile=99
         )
         reward_movement_cells, reward_silent_cells, _ = movement_responsiveness(
-            aligned_processed_dFoF, rewarded_movement_binary
+            aligned_processed_dFoF,
+            rewarded_movement_binary,
+            permutations=1000,
+            percentile=99,
+        )
+        movement_cells_spikes, silent_cells_spikes, _ = movement_responsiveness(
+            aligned_spikes, lever_active, permutations=1000, percentile=99
+        )
+        (
+            reward_movement_cells_spikes,
+            reward_silent_cells_spikes,
+            _,
+        ) = movement_responsiveness(
+            aligned_spikes, rewarded_movement_binary, permutations=1000, percentile=99
         )
 
         # Store the data in the dataclass
@@ -277,12 +302,17 @@ def organize_population_data(
             dFoF=aligned_dFoF,
             processed_dFoF=aligned_processed_dFoF,
             estimated_spikes=aligned_spikes,
+            processed_estimated_spikes=aligned_processed_spikes,
             activity_trace=aligned_activity,
             floored_trace=aligned_floored,
             movement_cells=movement_cells,
             silent_cells=silent_cells,
             reward_movement_cells=reward_movement_cells,
             reward_silent_cells=reward_silent_cells,
+            movement_cells_spikes=movement_cells_spikes,
+            silent_cells_spikes=silent_cells_spikes,
+            reward_movement_cells_spikes=reward_movement_cells_spikes,
+            reward_silent_cells_spikes=reward_silent_cells_spikes,
         )
 
         # Save section
@@ -291,7 +321,11 @@ def organize_population_data(
             if not os.path.isdir(save_path):
                 os.makedirs(save_path)
             # make the file name and save
-            fname = f"{population_data.mouse_id}_{session}_population_data"
+            if roi_match:
+                mname = "_matched"
+            else:
+                mname = ""
+            fname = f"{population_data.mouse_id}_{session}{mname}_population_data"
             save_pickle(fname, population_data, save_path)
 
 
@@ -305,6 +339,7 @@ class Temp_Suite2P_activity:
     activity_trace: np.ndarray
     floored_trace: np.ndarray
     deconvolved_spikes: np.ndarray
+    processed_deconvolved_spikes: np.ndarray
     parameters: dict
     roi_positions: np.ndarray
 
@@ -336,10 +371,15 @@ class Population_Data:
     dFoF: np.ndarray
     processed_dFoF: np.ndarray
     estimated_spikes: np.ndarray
+    processed_estimated_spikes: np.ndarray
     activity_trace: np.ndarray
     floored_trace: np.ndarray
     movement_cells: list
     silent_cells: list
     reward_movement_cells: list
     reward_silent_cells: list
+    movement_cells_spikes: list
+    silent_cells_spikes: list
+    reward_movement_cells_spikes: list
+    reward_silent_cells_spikes: list
 
