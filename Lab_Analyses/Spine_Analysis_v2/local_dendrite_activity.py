@@ -113,39 +113,53 @@ def local_dendrite_activity(
             dend_dFoF = curr_dend_dFoF[:, dend_idx]
 
             # Get coactive and noncoactive timestamps
-            combined_nearby_activity = np.sum(
-                activity_matrix[:, curr_nearby_spines[spine]], axis=1
-            )
-            combined_nearby_activity[combined_nearby_activity > 1] = 1
+            if (curr_nearby_spines[spine] is None) or (
+                len(curr_nearby_spines[spine]) == 0
+            ):
+                combined_nearby_activity = np.zeros(curr_s_activity.shape[0])
+            else:
+                combined_nearby_activity = np.nansum(
+                    activity_matrix[:, curr_nearby_spines[spine]], axis=1
+                )
+                combined_nearby_activity[combined_nearby_activity > 1] = 1
             combined_nearby_inactivity = 1 - combined_nearby_activity
             ## Get binary trace
             _, _, _, _, coactive = calculate_coactivity(
                 curr_s_activity[:, spine],
                 combined_nearby_activity,
                 sampling_rate=sampling_rate,
+                norm_method="mean",
             )
             _, _, _, _, noncoactive = calculate_coactivity(
                 curr_s_activity[:, spine],
                 combined_nearby_inactivity,
                 sampling_rate=sampling_rate,
+                norm_method="mean",
             )
+
             ## timestamps and refine
-            coactive_stamps = t_stamps.get_activity_timestamps(coactive)
-            coactive_stamps = [x[0] for x in coactive_stamps]
-            coactive_stamps = t_stamps.refine_activity_timestamps(
-                coactive_stamps,
-                window=activity_window,
-                max_len=len(curr_s_activity[:, spine]),
-                sampling_rate=sampling_rate,
-            )
-            noncoactive_stamps = t_stamps.get_activity_timestamps(noncoactive)
-            noncoactive_stamps = [x[0] for x in noncoactive_stamps]
-            noncoactive_stamps = t_stamps.refine_activity_timestamps(
-                noncoactive_stamps,
-                window=activity_window,
-                max_len=len(curr_s_activity[:, spine]),
-                sampling_rate=sampling_rate,
-            )
+            if np.nansum(coactive):
+                coactive_stamps = t_stamps.get_activity_timestamps(coactive)
+                coactive_stamps = [x[0] for x in coactive_stamps]
+                coactive_stamps = t_stamps.refine_activity_timestamps(
+                    coactive_stamps,
+                    window=activity_window,
+                    max_len=len(curr_s_activity[:, spine]),
+                    sampling_rate=sampling_rate,
+                )
+            else:
+                coactive_stamps = []
+            if np.nansum(noncoactive):
+                noncoactive_stamps = t_stamps.get_activity_timestamps(noncoactive)
+                noncoactive_stamps = [x[0] for x in noncoactive_stamps]
+                noncoactive_stamps = t_stamps.refine_activity_timestamps(
+                    noncoactive_stamps,
+                    window=activity_window,
+                    max_len=len(curr_s_activity[:, spine]),
+                    sampling_rate=sampling_rate,
+                )
+            else:
+                noncoactive_stamps = []
 
             # Get the dendrite traces and amplitude
             ## Coactive events
@@ -167,10 +181,13 @@ def local_dendrite_activity(
             nearby_amplitude = []
             ## Get the activity for every nearby spine individually
             for nearby in curr_nearby_spines[spine]:
-                nearby_activity = activity_matrix[:nearby]
+                nearby_activity = activity_matrix[:, nearby]
                 spine_inactivity = 1 - curr_s_activity[:, spine]
                 _, _, _, _, isolated_activity = calculate_coactivity(
-                    nearby_activity, spine_inactivity, sampling_rate,
+                    nearby_activity,
+                    spine_inactivity,
+                    sampling_rate=sampling_rate,
+                    norm_method="mean",
                 )
                 if not np.nansum(isolated_activity):
                     continue
@@ -192,8 +209,8 @@ def local_dendrite_activity(
             if len(nearby_traces) == 0:
                 continue
             if len(nearby_traces) == 1:
-                nearby_local_dend_traces[spines[spine]] = nearby_traces
-                nearby_local_dend_amplitude[spines[spine]] = nearby_amplitude
+                nearby_local_dend_traces[spines[spine]] = nearby_traces[0]
+                nearby_local_dend_amplitude[spines[spine]] = nearby_amplitude[0]
                 continue
             nearby_local_dend_traces[spines[spine]] = np.hstack(nearby_traces)
             nearby_local_dend_amplitude[spines[spine]] = np.nanmean(nearby_amplitude)
@@ -213,6 +230,10 @@ def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
         dendrite traces. Works with only one set of timestamps and a single
         local dendendrite dfoF trace
     """
+    if len(timestamps) == 0:
+        traces = None
+        amplitude = np.nan
+        return traces, amplitude
     # Get the traces
     traces, mean = d_utils.get_trace_mean_sem(
         dend_dFoF.reshape(-1, 1),
