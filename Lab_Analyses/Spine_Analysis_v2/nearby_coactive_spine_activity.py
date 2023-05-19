@@ -110,14 +110,14 @@ def nearby_coactive_spine_activity(
 
         # Get relevant spine data
         nearby_spines = nearby_spine_idxs[spine]
-        if nearby_spines is None:
+        if (nearby_spines is None) or (len(nearby_spines) == 0):
             continue
         coactivity = coactivity_matrix[:, spine]
         target_activity = spine_activity[:, spine]
         nearby_activity = spine_activity[:, nearby_spines]
         nearby_dFoF = spine_dFoF[:, nearby_spines]
         nearby_calcium = spine_calcium[:, nearby_spines]
-        if len(nearby_activity) == 1:
+        if len(nearby_activity.shape) == 1:
             nearby_activity = nearby_activity.reshape(-1, 1)
         nearby_coactivity = nearby_activity * target_activity.reshape(-1, 1)
 
@@ -152,7 +152,7 @@ def nearby_coactive_spine_activity(
                     event + before_f : event + after_f
                 ]
                 # Grab trace and onset if there is activity
-                if np.sum(event_activity):
+                if np.nansum(event_activity):
                     activity = nearby_activity[:, nearby][
                         event + before_f : event + after_f
                     ]
@@ -199,6 +199,7 @@ def nearby_coactive_spine_activity(
             ca_sum_trace = np.nansum(ca_trace_array, axis=1)
             sum_nearby_traces.append(sum_trace)
             sum_nearby_ca_traces.append(ca_sum_trace)
+            coactive_spine_num.append(trace_array.shape[1])
 
         # Check how many coactive events there are
         ## Skip if there are no coactive events
