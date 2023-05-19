@@ -144,14 +144,14 @@ def elimination_coactivity_analysis(
             mid_elim_coactivity_norm = early_coactivity_norm[:, mid_elim]
             late_elim_coactivity_norm = mid_coactivity_norm[:, new_late_elim]
 
-            eliminated_coactivity.append(
-                np.hstack((mid_elim_coactivity, late_elim_coactivity))
-            )
-            eliminated_coactivity_norm.append(
-                np.hstack((mid_elim_coactivity_norm, late_elim_coactivity_norm))
-            )
-            # eliminated_coactivity.append(mid_elim_coactivity)
-            # eliminated_coactivity_norm.append(mid_elim_coactivity_norm)
+            # eliminated_coactivity.append(
+            #     np.hstack((mid_elim_coactivity, late_elim_coactivity))
+            # )
+            # eliminated_coactivity_norm.append(
+            #     np.hstack((mid_elim_coactivity_norm, late_elim_coactivity_norm))
+            # )
+            eliminated_coactivity.append(mid_elim_coactivity)
+            eliminated_coactivity_norm.append(mid_elim_coactivity_norm)
 
             # Get stable spines
             mid_stable = np.array(
@@ -176,12 +176,14 @@ def elimination_coactivity_analysis(
             mid_stable_coactivity_norm = early_coactivity_norm[:, mid_stable]
             late_stable_coactivity_norm = mid_coactivity_norm[:, late_stable]
 
-            stable_coactivity.append(
-                np.hstack((mid_stable_coactivity, late_stable_coactivity))
-            )
-            stable_coactivity_norm.append(
-                np.hstack((mid_stable_coactivity_norm, late_stable_coactivity_norm))
-            )
+            # stable_coactivity.append(
+            #     np.hstack((mid_stable_coactivity, late_stable_coactivity))
+            # )
+            # stable_coactivity_norm.append(
+            #     np.hstack((mid_stable_coactivity_norm, late_stable_coactivity_norm))
+            # )
+            stable_coactivity.append(mid_stable_coactivity)
+            stable_coactivity_norm.append(mid_stable_coactivity_norm)
 
             density, frac_new, frac_elim = calculate_spine_dynamics(
                 spine_flag_list=flag_list,
