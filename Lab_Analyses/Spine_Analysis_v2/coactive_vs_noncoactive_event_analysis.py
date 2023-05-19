@@ -124,8 +124,8 @@ def coactive_vs_noncoactive_event_analysis(
     ## Initialize some variables
     coactive_binary = np.zeros(spine_activity.shape)
     noncoactive_binary = np.zeros(spine_activity.shape)
-    coactive_onsets = [None for i in range(spine_activity.shape[1])]
-    noncoactive_onsets = [None for i in range(spine_activity.shape[1])]
+    coactive_onsets = [[] for i in range(spine_activity.shape[1])]
+    noncoactive_onsets = [[] for i in range(spine_activity.shape[1])]
     spine_coactive_event_num = np.zeros(spine_activity.shape[1])
     fraction_spine_coactive = np.zeros(spine_activity.shape[1])
     fraction_coactivity_participation = np.zeros(spine_activity.shape[1])
@@ -138,9 +138,13 @@ def coactive_vs_noncoactive_event_analysis(
         if present_spines[spine] == False:
             continue
         ## Generate combined nearby activity trace
-        nearby_spine_activity = activity_matrix[:, nearby_spine_idxs[spine]]
-        combined_nearby_activity = np.sum(nearby_spine_activity, axis=1)
-        combined_nearby_activity[combined_nearby_activity > 1] = 1
+        ### Make combined activity zeros if there are no nearby spines
+        if (nearby_spine_idxs[spine] is None) or (len(nearby_spine_idxs[spine]) == 0):
+            combined_nearby_activity = np.zeros(spine_activity.shape[0])
+        else:
+            nearby_spine_activity = activity_matrix[:, nearby_spine_idxs[spine]]
+            combined_nearby_activity = np.nansum(nearby_spine_activity, axis=1)
+            combined_nearby_activity[combined_nearby_activity > 1] = 1
         ## Get coactivity trace
         _, _, frac_coactive, _, coactive = calculate_coactivity(
             activity_matrix[:, spine],
@@ -170,7 +174,7 @@ def coactive_vs_noncoactive_event_analysis(
                 sampling_rate=sampling_rate,
             )
         else:
-            refined_coactive_stamps = None
+            refined_coactive_stamps = []
         if np.nansum(noncoactive):
             noncoactive_stamps = t_stamps.get_activity_timestamps(noncoactive)
             noncoactive_stamps = [x[0] for x in noncoactive_stamps]
@@ -181,16 +185,13 @@ def coactive_vs_noncoactive_event_analysis(
                 sampling_rate=sampling_rate,
             )
         else:
-            refined_noncoactive_stamps = None
+            refined_noncoactive_stamps = []
 
         coactive_binary[:, spine] = coactive
         noncoactive_binary[:, spine] = noncoactive
         coactive_onsets[spine] = refined_coactive_stamps
         noncoactive_onsets[spine] = refined_noncoactive_stamps
-        try:
-            spine_coactive_event_num[spine] = len(refined_coactive_stamps)
-        except TypeError:
-            spine_coactive_event_num[spine] = 0
+        spine_coactive_event_num[spine] = len(refined_coactive_stamps)
         fraction_spine_coactive[spine] = frac_coactive
         fraction_coactivity_participation[spine] = frac_participating
 
