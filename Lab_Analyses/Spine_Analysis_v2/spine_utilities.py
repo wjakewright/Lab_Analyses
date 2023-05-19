@@ -53,7 +53,7 @@ def find_stable_spines_across_days(spine_flag_list):
             )
         else:
             padded_spines.append(ds)
-    stable_spines = np.prod(np.vstack(daily_stable_spines), axis=0)
+    stable_spines = np.prod(np.vstack(padded_spines), axis=0)
 
     return stable_spines
 
@@ -204,7 +204,10 @@ def find_nearby_spines(
                 nearby_spines = [
                     x for x in nearby_spines if partner_list[spines[x]] == True
                 ]
-            nearby_spine_idxs[spines[spine]] = nearby_spines
+            try:
+                nearby_spine_idxs[spines[spine]] = np.array(spines)[nearby_spines]
+            except TypeError:
+                nearby_spine_idxs[spines[spine]] = []
 
     return nearby_spine_idxs
 
