@@ -96,6 +96,7 @@ def align_lever_behavior_suite2p(
     activity_trace = []
     floored_trace = []
     spikes = []
+    processed_spikes = []
 
     # Go through each trial
     for i in trial_idxs:
@@ -287,6 +288,11 @@ def align_lever_behavior_suite2p(
         )
         spikes.append(deconv)
 
+        processed_dconv = align_activity(
+            imaging_data.processed_deconvolved_spikes, behavior_data.behavior_frames[i]
+        )
+        processed_spikes.append(processed_dconv)
+
         ## Append all the behavioral results
         trial_time.append(times)
         results.append(result)
@@ -328,6 +334,7 @@ def align_lever_behavior_suite2p(
         activity_trace=activity_trace,
         floored_trace=floored_trace,
         spikes=spikes,
+        processed_spikes=processed_spikes,
     )
 
     # save data if specified
@@ -416,4 +423,5 @@ class Trial_Aligned_Suite2P_Activity:
     activity_trace: list
     floored_trace: list
     spikes: list
+    processed_spikes: list
 
