@@ -15,6 +15,10 @@ def get_activity_timestamps(activity):
     diff = np.insert(np.diff(activity), 0, 0)
     onsets = np.nonzero(diff == 1)[0]
     offsets = np.nonzero(diff == -1)[0]
+    # Skip if no onsets
+    if not len(onsets):
+        timestamps = []
+        return timestamps
     # Check onset offset order
     if onsets[0] > offsets[0]:
         offsets = offsets[1:]
