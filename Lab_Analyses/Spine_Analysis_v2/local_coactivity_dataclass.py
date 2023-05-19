@@ -96,7 +96,7 @@ class Local_Coactivity_Data:
     nearby_LMP_specificity: np.ndarray
     nearby_rwd_movement_correlation: np.ndarray
     nearby_rwd_movement_stereotypy: np.ndarray
-    nearby_rwd_movement_reliablity: np.ndarray
+    nearby_rwd_movement_reliability: np.ndarray
     nearby_rwd_movement_specificity: np.ndarray
     coactive_movements: list
     coactive_movement_correlation: np.ndarray
@@ -162,7 +162,7 @@ class Grouped_Local_Coactivity_Data:
         self.parameters = data_list[0].parameters
 
         # Concatenate all the other attributes
-        self.concatenate_data(self, data_list)
+        self.concatenate_data(data_list)
 
     def concatenate_data(self, data_list):
         """Method to concatenate all the attributes from the different dataclasses
@@ -198,9 +198,7 @@ class Grouped_Local_Coactivity_Data:
 
     def save(self):
         """Method to save the grouped dataclass"""
-        save_path = (
-            r"C:\Users\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
-        )
+        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         # Prepare the save name
