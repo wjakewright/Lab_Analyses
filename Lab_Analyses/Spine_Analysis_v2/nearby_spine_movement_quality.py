@@ -37,15 +37,17 @@ def neraby_spine_movement_quality(
     )
 
     # Setup outputs
-    nearby_correlation = np.zeros(len(spine_movement_correlation))
-    nearby_stereotypy = np.zeros(len(spine_movement_stereotypy))
-    nearby_reliability = np.zeros(len(spine_movement_reliability))
-    nearby_specificity = np.zeros(len(spine_movement_specificity))
-    nearby_LMP_reliability = np.zeros(len(spine_LMP_reliability))
-    nearby_LMP_specificity = np.zeros(len(spine_LMP_specificity))
+    nearby_correlation = np.zeros(len(spine_movement_correlation)) * np.nan
+    nearby_stereotypy = np.zeros(len(spine_movement_stereotypy)) * np.nan
+    nearby_reliability = np.zeros(len(spine_movement_reliability)) * np.nan
+    nearby_specificity = np.zeros(len(spine_movement_specificity)) * np.nan
+    nearby_LMP_reliability = np.zeros(len(spine_LMP_reliability)) * np.nan
+    nearby_LMP_specificity = np.zeros(len(spine_LMP_specificity)) * np.nan
 
     # Iterate through each spine
     for n, spines in enumerate(nearby_spines):
+        if (spines is None) or (len(spines) == 0):
+            continue
         nearby_correlation[n] = np.nanmean(spine_movement_correlation[spines])
         nearby_stereotypy[n] = np.nanmean(spine_movement_stereotypy[spines])
         nearby_reliability[n] = np.nanmean(spine_movement_reliability[spines])
