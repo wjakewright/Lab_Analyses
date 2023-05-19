@@ -53,16 +53,10 @@ def analyze_event_activity(
     activity_traces = []
     mean_traces = []
     for spine in range(dFoF.shape[1]):
-        try:
-            if len(timestamps[spine]) == 0:
-                activity_traces.appned(None)
-                mean_traces.append(None)
-                continue
-        except TypeError:
-            if timestamps[spine] is None:
-                activity_traces.append(None)
-                mean_traces.append(None)
-                continue
+        if len(timestamps[spine]) == 0:
+            activity_traces.append(None)
+            mean_traces.append(None)
+            continue
         traces, mean = d_utils.get_trace_mean_sem(
             dFoF[:, spine].reshape(-1, 1),
             ["Activity"],
@@ -151,7 +145,6 @@ def find_peak_amplitude(
     for i, trace in enumerate(mean_traces):
         if trace is None:
             continue
-        trace[np.isnan(trace)] = 0
         if smooth:
             trace = sysignal.savgol_filter(trace, 31, 3)
         trace_med = np.nanmedian(trace)
@@ -209,7 +202,6 @@ def find_activity_onset(mean_traces, sampling_rate=60):
             activity_onsets[i] = np.nan
             continue
         # Smooth the trace
-        trace[np.isnan(trace)] = 0
         trace = sysignal.savgol_filter(trace, 31, 3)
         # Find the offset of the rising phase
         peak_trace = trace[: int(peak_idxs[i])]
