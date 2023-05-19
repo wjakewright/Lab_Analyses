@@ -44,15 +44,23 @@ def calculate_coactivity(
         duration = len(trace_1)
     duration = duration / sampling_rate  # converted to seconds
 
+    duration = float(duration)
+
     # Check if traces display activity
     if (np.nansum(trace_1) == 0) or (np.nansum(trace_2) == 0):
         return (0, 0, 0, 0, np.zeros(len(trace_1)))
+
+    # Check if traces are active at the very beginning
+    if trace_1[0] == 1:
+        trace_1[0] = 0
+    if trace_2[0] == 1:
+        trace_2[0] = 0
 
     # Calculate the coactivity rate
     coactivity = trace_1 * trace_2
 
     ## Skip if no coactivity
-    if not np.sum(coactivity):
+    if not np.nansum(coactivity):
         return (0, 0, 0, 0, np.zeros(len(trace_1)))
 
     coactive_events = np.nonzero(np.diff(coactivity) == 1)[0]
@@ -82,7 +90,7 @@ def calculate_coactivity(
     ## Compare active epochs to other trace
     coactive_idxs = []
     for t in timestamps:
-        if np.sum(trace_2[t[0] : t[1]]):
+        if np.nansum(trace_2[t[0] : t[1]]):
             coactive_idxs.append(t)
     ## Generate coactive trace
     coactivity_trace = np.zeros(len(trace_1))
@@ -90,6 +98,7 @@ def calculate_coactivity(
         coactivity_trace[epoch[0] : epoch[1]] = 1
     ## Calculate fractions
     fraction_active_1 = len(coactive_idxs) / trace_1_event_num
+
     fraction_active_2 = (
         len(coactive_idxs) / trace_2_event_num
     )  ## There is a problem with this
