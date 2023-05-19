@@ -193,7 +193,7 @@ def local_coactivity_analysis(
                 constrain_matrix = None
 
             # Get distance-dependent coactivity rates
-            print(f"---- Calulating distance-dependent coactivity")
+            print(f"---- Calculating distance-dependent coactivity")
             (
                 position_bins,
                 distance_coactivity_rate,
@@ -499,7 +499,8 @@ def local_coactivity_analysis(
             ]
 
             LMP = [learned_movement_pattern for i in range(spine_activity.shape[1])]
-            learned_movement_pattern = np.stack(LMP).reshape(-1, 1)
+            # learned_movement_pattern = np.stack(LMP).reshape(-1, 1)
+            learned_movement_pattern = LMP
 
             # Analyze the local dendritic calcium levels
             print(f"---- Assessing local dendritic calcium")
@@ -511,7 +512,6 @@ def local_coactivity_analysis(
                 noncoactive_local_dend_amplitude,
                 nearby_local_dend_traces,
                 nearby_local_dend_amplitude,
-                _,
             ) = local_dendrite_activity(
                 spine_activity,
                 spine_positions,
