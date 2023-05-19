@@ -102,7 +102,7 @@ def movement_related_activity(
 
     # Get the max amplitudes
     movement_amplitudes, _ = find_peak_amplitude(
-        mean_traces, smooth=smooth, window=avg_window, sampling_rate=60
+        mean_traces, smooth=smooth, window=avg_window, sampling_rate=sampling_rate
     )
 
     # Get the onsets
