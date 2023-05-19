@@ -195,9 +195,9 @@ def quantify_movement_quality(
         active_move_events = 0
         active_LMP_events = 0
         for event in activity_epochs:
-            if np.sum(exp_lever_active[event[0] : event[1]]):
+            if np.nansum(exp_lever_active[event[0] : event[1]]):
                 active_move_events += 1
-            if np.sum(exp_LMP_binary[event[0] : event[1]]):
+            if np.nansum(exp_LMP_binary[event[0] : event[1]]):
                 active_LMP_events += 1
         try:
             move_specificity = active_move_events / len(activity_epochs)
