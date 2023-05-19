@@ -79,10 +79,11 @@ def calculate_distance_coactivity_rate(
     if constrain_matrix is not None:
         if len(constrain_matrix.shape) == 1:
             constrain_matrix = constrain_matrix.reshape(-1, 1)
-            duration = np.sum(constrain_matrix)
+            duration = np.nansum(constrain_matrix)
         else:
             duration = [
-                np.sum(constrain_matrix[:, i]) for i in range(constrain_matrix.shape[1])
+                np.nansum(constrain_matrix[:, i])
+                for i in range(constrain_matrix.shape[1])
             ]
         activity_matrix = spine_activity * constrain_matrix
     else:
@@ -116,19 +117,10 @@ def calculate_distance_coactivity_rate(
 
             # Calculate the coactivity with each other spine
             for partner in range(s_activity.shape[1]):
-                # Skip spines that contain only nans as they are absent
-                if not np.nansum(curr_spine):
-                    curr_coactivity.append(np.nan)
-                    curr_coactivity_norm.append(np.nan)
-                    continue
-                if not np.nansum(s_activity[:, partner]):
-                    curr_coactivity.append(np.nan)
-                    curr_coactivity_norm.append(np.nan)
-                    continue
                 # Don't compare spines to themselves
                 if partner == spine:
                     continue
-                # Don't compare eliminated spines
+                # Don't compare eliminated and absent spines
                 if curr_present[spine] == False:
                     curr_coactivity.append(np.nan)
                     curr_coactivity_norm.append(np.nan)
@@ -153,7 +145,7 @@ def calculate_distance_coactivity_rate(
                     curr_spine,
                     partner_spine,
                     norm_method=norm_method,
-                    duration=None,
+                    duration=dur,
                     sampling_rate=sampling_rate,
                 )
                 curr_coactivity.append(co_rate)
