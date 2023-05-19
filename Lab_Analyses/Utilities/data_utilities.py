@@ -360,7 +360,16 @@ def neg_num_relative_difference(pre_values, post_values):
 
 def normalized_relative_difference(pre_values, post_values):
     """Method to calculate the normalized relative difference between two sets of values"""
-    rel_diff = (post_values - pre_values) / (post_values + pre_values)
+    rel_diff = []
+    for pre, post in zip(pre_values, post_values):
+        # Handle invalid operation of two zero values
+        if (pre == 0) and (post == 0):
+            diff = 0
+        else:
+            diff = (post - pre) / (post + pre)
+        rel_diff.append(diff)
+
+    # rel_diff = (post_values - pre_values) / (post_values + pre_values)
 
     return np.array(rel_diff)
 
