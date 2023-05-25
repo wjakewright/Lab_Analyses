@@ -2,9 +2,10 @@ import os
 
 import matplotlib.colors as mcolor
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
-from Lab_Analyses.Plotting.adjust_axes import adjust_axes
+from Lab_Analyses.Plotting.adjust_axes import adjust_axes, get_axis_limit
 
 sns.set()
 sns.set_style("ticks")
@@ -23,7 +24,7 @@ def plot_box_plot(
     m_color="white",
     m_width=1,
     b_width=0.5,
-    b_linewidth=0,
+    b_linewidth=1,
     b_alpha=0.7,
     b_err_alpha=0.7,
     whisker_lim=None,
@@ -55,7 +56,7 @@ def plot_box_plot(
         w_colors.append(color)
 
     # Check if axes was provided
-    if ax in None:
+    if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         fig.tight_layout()
     else:
@@ -65,7 +66,7 @@ def plot_box_plot(
     ax.set_title(title)
 
     # Set up some properties
-    whiskerprops = {"linewidth": whisk_width}
+    whiskerprops = {"linewidth": whisk_width, "zorder": 0}
     boxprops = {"linewidth": b_linewidth, "color": b_edgecolors}
     meanprops = {"marker": "x", "markeredgecolor": m_color}
     medianprops = {"color": m_color, "linewidth": m_width}
@@ -74,21 +75,26 @@ def plot_box_plot(
     if whisker_lim is None:
         whisker_lim = 1.5
 
+    # Clean out nan values
+    plot_dict = {}
+    for key, value in data_dict.items():
+        plot_dict[key] = value[~np.isnan(value)]
+
     # Plot the data
     bplot = ax.boxplot(
-        x=list(data_dict.values()),
+        x=list(plot_dict.values()),
         vert=True,
         whis=whisker_lim,
         widths=b_width,
-        labels=list(data_dict.keys()),
+        labels=list(plot_dict.keys()),
         whiskerprops=whiskerprops,
         boxprops=boxprops,
         meanprops=meanprops,
         medianprops=medianprops,
         flierprops=flierprops,
         showcaps=False,
-        shomeans=showmeans,
-        showflier=outliers,
+        showmeans=showmeans,
+        showfliers=outliers,
         patch_artist=True,
     )
 
@@ -107,8 +113,6 @@ def plot_box_plot(
         minor_ticks=minor_ticks,
         xtitle=xtitle,
         ytitle=ytitle,
-        xlim=None,
-        ylim=ylim,
         tick_len=tick_len,
         axis_width=axis_width,
     )
@@ -116,8 +120,10 @@ def plot_box_plot(
     for tick in ax.get_xticklabels():
         tick.set_rotation(45)
 
-    ax.set_ymargin(0.2)
     ax.set_xmargin(0.15)
+    ticks = ax.get_yticks()
+    bottom, top = get_axis_limit(ylim, ticks)
+    ax.set_ylim(bottom=bottom, top=top)
 
     # Save section
     if save:
