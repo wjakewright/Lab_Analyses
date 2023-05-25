@@ -7,6 +7,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
+from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
 from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
@@ -26,8 +27,7 @@ sns.set_style("ticks")
 def plot_coactive_vs_noncoactive_events(
     dataset,
     figsize=(8, 5),
-    mean_type="median",
-    err_type="CI",
+    showmeans=False,
     test_type="nonparametric",
     display_stats=True,
     save=False,
@@ -40,9 +40,7 @@ def plot_coactive_vs_noncoactive_events(
 
             figsize - tuple specifying the figure size
 
-            mean_type - str specifying the mean type for bar plots
-
-            err_type - str specifying the err type for bar plots
+            showmeans - boolean specifying whether to show means on box plots
 
             test_type - str specifying whether to perform parametric or nonparametric tests
 
@@ -121,7 +119,7 @@ def plot_coactive_vs_noncoactive_events(
     noncoactive_dend_traces = np.vstack(noncoactive_dend_traces)
     noncoactive_dend_means = np.nanmean(noncoactive_dend_traces, axis=0)
     noncoactive_dend_sems = stats.sem(
-        noncoactive_dend_traces, axis=0, nan_policty="omit"
+        noncoactive_dend_traces, axis=0, nan_policy="omit"
     )
 
     # Construct the figure
@@ -133,7 +131,7 @@ def plot_coactive_vs_noncoactive_events(
         figsize=figsize,
     )
     fig.suptitle("Coactive vs Noncoactive Activity")
-    fig.subplot_adjust(hspace=1, wspace=0.5)
+    fig.subplots_adjust(hspace=1, wspace=0.5)
 
     ########################### Plot data onto the axes ######################
     # coactive vs noncoactive GluSnFr traces
@@ -200,28 +198,29 @@ def plot_coactive_vs_noncoactive_events(
         save_path=None,
     )
     # Coactive vs Noncoactive GluSnFr amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         data_dict={
             "Coactive": spine_coactive_amplitude,
             "Noncoactive": spine_noncoactive_amplitude,
         },
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="GluSnFr",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
         b_alpha=0.8,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=False,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -230,28 +229,29 @@ def plot_coactive_vs_noncoactive_events(
         save_path=None,
     )
     # Coactive vs Noncoactive Calcium amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         data_dict={
             "Coactive": spine_coactive_calcium_amplitude,
             "Noncoactive": spine_noncoactive_calcium_amplitude,
         },
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Calcium",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
+        b_linewidth=1,
         b_alpha=0.8,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=False,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -260,28 +260,29 @@ def plot_coactive_vs_noncoactive_events(
         save_path=None,
     )
     # Coactive vs Noncoactive local amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         data_dict={
             "Coactive": coactive_local_dend_amplitude,
             "Noncoactive": noncoactive_local_dend_amplitude,
         },
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Local Dendrite",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
+        b_linewidth=1,
         b_alpha=0.8,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=False,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -296,7 +297,7 @@ def plot_coactive_vs_noncoactive_events(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save, "Local_Coactivity_Figure_1")
+        fname = os.path.join(save_path, "Local_Coactivity_Figure_1")
         fig.savefig(fname + ".pdf")
 
     ############################# Statistics Section #################################
@@ -321,17 +322,22 @@ def plot_coactive_vs_noncoactive_events(
         test_title = "T-Test"
     elif test_type == "nonparametric":
         amp_t, amp_p = stats.mannwhitneyu(
-            spine_coactive_amplitude, spine_noncoactive_amplitude, nan_policy="omit"
+            spine_coactive_amplitude[~np.isnan(spine_coactive_amplitude)],
+            spine_noncoactive_amplitude[~np.isnan(spine_noncoactive_amplitude)],
         )
         ca_amp_t, ca_amp_p = stats.mannwhitneyu(
-            spine_coactive_calcium_amplitude,
-            spine_noncoactive_calcium_amplitude,
-            nan_policy="omit",
+            spine_coactive_calcium_amplitude[
+                ~np.isnan(spine_coactive_calcium_amplitude)
+            ],
+            spine_noncoactive_calcium_amplitude[
+                ~np.isnan(spine_noncoactive_calcium_amplitude)
+            ],
         )
         dend_amp_t, dend_amp_p = stats.mannwhitneyu(
-            coactive_local_dend_amplitude,
-            noncoactive_local_dend_amplitude,
-            nan_policy="omit",
+            coactive_local_dend_amplitude[~np.isnan(coactive_local_dend_amplitude)],
+            noncoactive_local_dend_amplitude[
+                ~np.isnan(noncoactive_local_dend_amplitude)
+            ],
         )
         test_title = "Mann-Whitney U"
 
@@ -342,6 +348,7 @@ def plot_coactive_vs_noncoactive_events(
         "p-val": [amp_p, ca_amp_p, dend_amp_p],
     }
     results_df = pd.DataFrame.from_dict(results_dict)
+    results_df.update(results_df[["p-val"]].applymap("{:.4E}".format))
 
     # Display the stats
     fig2, axes2 = plt.subplot_mosaic("""A""", figsize=(4, 4))
@@ -373,6 +380,7 @@ def plot_comparative_mvmt_coactivity(
     nonmvmt_dataset,
     rwd_mvmts=False,
     figsize=(10, 6),
+    showmeans=False,
     mean_type="median",
     err_type="CI",
     hist_bins=30,
@@ -392,9 +400,7 @@ def plot_comparative_mvmt_coactivity(
 
             figsize - tuple specifying the size of the figure
 
-            mean_type - str specifying the mean type for bar plots
-
-            err_type - str specifying the err type for bar plots
+            showmeans - boolean specifying whether to plot means on box plots
 
             hist_bins - int specifying how many bins for the histograms
 
@@ -409,11 +415,11 @@ def plot_comparative_mvmt_coactivity(
     """
     COLORS = ["mediumblue", "firebrick"]
     if rwd_mvmts:
-        mvmt_key = "Rwd movement"
-        nonmvmt_key = "Nonrwd movement"
+        mvmt_key = "Rwd mvmt"
+        nonmvmt_key = "Nonrwd mvmt"
     else:
-        mvmt_key = "Movement"
-        nonmvmt_key = "Non-movement"
+        mvmt_key = "Mvmt"
+        nonmvmt_key = "Nonmvmt"
 
     # Pull relevant data
     sampling_rate = mvmt_dataset.parameters["Sampling Rate"]
@@ -445,8 +451,8 @@ def plot_comparative_mvmt_coactivity(
         ),
     }
     shuff_local_coactivity_medians = {
-        mvmt_key: np.nanmedian(shuff_local_coactivity_rate["Movement"], axis=1),
-        nonmvmt_key: np.nanmedian(shuff_local_coactivity_rate["Non-movement"], axis=1),
+        mvmt_key: np.nanmedian(mvmt_dataset.shuff_local_coactivity_rate, axis=1),
+        nonmvmt_key: np.nanmedian(nonmvmt_dataset.shuff_local_coactivity_rate, axis=1),
     }
     real_vs_shuff_diff = {
         mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff,
@@ -466,9 +472,9 @@ def plot_comparative_mvmt_coactivity(
         ),
     }
     shuff_local_coactivity_medians_norm = {
-        mvmt_key: np.nanmedian(shuff_local_coactivity_rate_norm["Movement"], axis=1),
+        mvmt_key: np.nanmedian(mvmt_dataset.shuff_local_coactivity_rate_norm, axis=1),
         nonmvmt_key: np.nanmedian(
-            shuff_local_coactivity_rate_norm["Non-movement"], axis=1
+            nonmvmt_dataset.shuff_local_coactivity_rate_norm, axis=1
         ),
     }
     real_vs_shuff_diff_norm = {
@@ -527,10 +533,11 @@ def plot_comparative_mvmt_coactivity(
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        AABCCDDE
-        FFGHHIIJ
-        KKLMMN..
+        ABCDE
+        FGHIJ
+        KL.MN
         """,
+        width_ratios=[2, 1, 2, 2, 1],
         figsize=figsize,
     )
     fig.suptitle(f"{mvmt_key} vs {nonmvmt_key} Coactivity")
@@ -549,7 +556,7 @@ def plot_comparative_mvmt_coactivity(
         ylim=None,
         line_color=COLORS,
         face_color="white",
-        m_size=7,
+        m_size=5,
         linewidth=1.5,
         linestyle="-",
         axis_width=1.5,
@@ -572,7 +579,7 @@ def plot_comparative_mvmt_coactivity(
         ylim=None,
         line_color=COLORS,
         face_color="white",
-        m_size=7,
+        m_size=5,
         linewidth=1.5,
         linestyle="-",
         axis_width=1.5,
@@ -584,25 +591,26 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     # Mvmt vs nonmvmt local coactivity rate
-    plot_swarm_bar_plot(
+    plot_box_plot(
         avg_local_coactivity_rate,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Local Coactivity",
         xtitle=None,
         ytitle=f"Coactivity rate (events/min)",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -611,25 +619,26 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     # Mvmt vs nonmvmt local coactivity rate norm
-    plot_swarm_bar_plot(
+    plot_box_plot(
         avg_local_coactivity_rate_norm,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Local Coactivity",
         xtitle=None,
         ytitle=f"Norm. coactivity rate",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -641,14 +650,17 @@ def plot_comparative_mvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate[mvmt_key], shuff_local_coactivity_rate[mvmt_key],
+            (
+                avg_local_coactivity_rate[mvmt_key],
+                shuff_local_coactivity_rate[mvmt_key],
+            )
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
         title=mvmt_key,
         xtitle="Coactivity rate (events/min)",
-        xlim=None,
+        xlim=(0, 10),
         figsize=(5, 5),
         color=[COLORS[0], "grey"],
         alpha=0.3,
@@ -660,7 +672,7 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_c_inset = axes["C"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_c_inset = axes["C"].inset_axes([0.8, 0.4, 0.4, 0.6])
     sns.despine(ax=ax_c_inset)
     plot_swarm_bar_plot(
         data_dict={
@@ -695,15 +707,17 @@ def plot_comparative_mvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate[nonmvmt_key],
-            shuff_local_coactivity_rate[nonmvmt_key],
+            (
+                avg_local_coactivity_rate[nonmvmt_key],
+                shuff_local_coactivity_rate[nonmvmt_key],
+            )
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
         title=nonmvmt_key,
         xtitle="Coactivity rate (events/min)",
-        xlim=None,
+        xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[1], "grey"],
         alpha=0.3,
@@ -715,7 +729,7 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_d_inset = axes["D"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_d_inset = axes["D"].inset_axes([0.8, 0.4, 0.4, 0.6])
     sns.despine(ax=ax_d_inset)
     plot_swarm_bar_plot(
         data_dict={
@@ -750,15 +764,17 @@ def plot_comparative_mvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate_norm[mvmt_key],
-            shuff_local_coactivity_rate_norm[mvmt_key],
+            (
+                avg_local_coactivity_rate_norm[mvmt_key],
+                shuff_local_coactivity_rate_norm[mvmt_key],
+            )
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
         title=mvmt_key,
         xtitle="Norm. coactivity rate",
-        xlim=None,
+        xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[0], "grey"],
         alpha=0.3,
@@ -770,7 +786,7 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_h_inset = axes["H"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_h_inset = axes["H"].inset_axes([0.8, 0.4, 0.4, 0.6])
     sns.despine(ax=ax_h_inset)
     plot_swarm_bar_plot(
         data_dict={
@@ -782,7 +798,7 @@ def plot_comparative_mvmt_coactivity(
         figsize=(5, 5),
         title=None,
         xtitle=None,
-        ytitle="Norm. coactivity rate",
+        ytitle="Norm.\ncoactivity rate",
         ylim=None,
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
@@ -805,15 +821,17 @@ def plot_comparative_mvmt_coactivity(
     ## Histogram
     plot_histogram(
         data=list(
-            avg_local_coactivity_rate_norm[nonmvmt_key],
-            shuff_local_coactivity_rate_norm[nonmvmt_key],
+            (
+                avg_local_coactivity_rate_norm[nonmvmt_key],
+                shuff_local_coactivity_rate_norm[nonmvmt_key],
+            )
         ),
         bins=hist_bins,
         stat="probability",
         avlines=None,
         title=nonmvmt_key,
         xtitle="Norm. coactivity rate",
-        xlim=None,
+        xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[1], "grey"],
         alpha=0.3,
@@ -825,7 +843,7 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_i_inset = axes["I"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_i_inset = axes["I"].inset_axes([0.8, 0.4, 0.4, 0.6])
     sns.despine(ax=ax_i_inset)
     plot_swarm_bar_plot(
         data_dict={
@@ -837,7 +855,7 @@ def plot_comparative_mvmt_coactivity(
         figsize=(5, 5),
         title=None,
         xtitle=None,
-        ytitle="Norm coactivity rate",
+        ytitle="Norm\ncoactivity rate",
         ylim=None,
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
@@ -857,25 +875,26 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     # Real vs shuff relative difference
-    plot_swarm_bar_plot(
+    plot_box_plot(
         real_vs_shuff_diff,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=None,
         xtitle=None,
         ytitle=f"Above chance difference",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -884,36 +903,37 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     # Real vs shuff relative difference norm
-    plot_swarm_bar_plot(
+    plot_box_plot(
         real_vs_shuff_diff_norm,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=None,
         xtitle=None,
         ytitle=f"Above chance difference (norm)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["E"],
+        ax=axes["J"],
         save=False,
         save_path=None,
     )
     # GluSnFr activity traces
     plot_mean_activity_traces(
         means=list(coactive_trace_means.values()),
-        sems=list(coactive_trace_sems.value()),
+        sems=list(coactive_trace_sems.values()),
         group_names=list(coactive_trace_means.keys()),
         sampling_rate=sampling_rate,
         activity_window=activity_window,
@@ -934,7 +954,7 @@ def plot_comparative_mvmt_coactivity(
     # Calcium activity traces
     plot_mean_activity_traces(
         means=list(coactive_trace_ca_means.values()),
-        sems=list(coactive_trace_ca_sems.value()),
+        sems=list(coactive_trace_ca_sems.values()),
         group_names=list(coactive_trace_ca_means.keys()),
         sampling_rate=sampling_rate,
         activity_window=activity_window,
@@ -953,25 +973,26 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     # GluSnFr amplitudes
-    plot_swarm_bar_plot(
+    plot_box_plot(
         coactive_amplitude,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="GluSnFr",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
-        ylim=None,
+        ylim=(0.1, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -980,25 +1001,26 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     # Calcium amplitudes
-    plot_swarm_bar_plot(
+    plot_box_plot(
         coactive_calcium_amplitude,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Calcium",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -1057,34 +1079,44 @@ def plot_comparative_mvmt_coactivity(
         test_title = "T-Test"
     elif test_type == "nonparametric":
         coactivity_t, coactivity_p = stats.mannwhitneyu(
-            avg_local_coactivity_rate[mvmt_key],
-            avg_local_coactivity_rate[nonmvmt_key],
-            nan_policy="omit",
+            avg_local_coactivity_rate[mvmt_key][
+                ~np.isnan(avg_local_coactivity_rate[mvmt_key])
+            ],
+            avg_local_coactivity_rate[nonmvmt_key][
+                ~np.isnan(avg_local_coactivity_rate[nonmvmt_key])
+            ],
         )
         coactivity_norm_t, coactivity_norm_p = stats.mannwhitneyu(
-            avg_local_coactivity_rate_norm[mvmt_key],
-            avg_local_coactivity_rate_norm[nonmvmt_key],
-            nan_policy="omit",
+            avg_local_coactivity_rate_norm[mvmt_key][
+                ~np.isnan(avg_local_coactivity_rate_norm[mvmt_key])
+            ],
+            avg_local_coactivity_rate_norm[nonmvmt_key][
+                ~np.isnan(avg_local_coactivity_rate_norm[nonmvmt_key])
+            ],
         )
         rel_diff_t, rel_diff_p = stats.mannwhitneyu(
-            real_vs_shuff_diff[mvmt_key],
-            real_vs_shuff_diff[nonmvmt_key],
-            nan_policy="omit",
+            real_vs_shuff_diff[mvmt_key][~np.isnan(real_vs_shuff_diff[mvmt_key])],
+            real_vs_shuff_diff[nonmvmt_key][~np.isnan(real_vs_shuff_diff[nonmvmt_key])],
         )
         rel_diff_norm_t, rel_diff_norm_p = stats.mannwhitneyu(
-            real_vs_shuff_diff_norm[mvmt_key],
-            real_vs_shuff_diff_norm[nonmvmt_key],
-            nan_policy="omit",
+            real_vs_shuff_diff_norm[mvmt_key][
+                ~np.isnan(real_vs_shuff_diff_norm[mvmt_key])
+            ],
+            real_vs_shuff_diff_norm[nonmvmt_key][
+                ~np.isnan(real_vs_shuff_diff_norm[nonmvmt_key])
+            ],
         )
         amp_t, amp_p = stats.mannwhitneyu(
-            coactive_amplitude[mvmt_key],
-            coactive_amplitude[nonmvmt_key],
-            nan_policy="omit",
+            coactive_amplitude[mvmt_key][~np.isnan(coactive_amplitude[mvmt_key])],
+            coactive_amplitude[nonmvmt_key][~np.isnan(coactive_amplitude[nonmvmt_key])],
         )
         amp_ca_t, amp_ca_p = stats.mannwhitneyu(
-            coactive_calcium_amplitude[mvmt_key],
-            coactive_calcium_amplitude[nonmvmt_key],
-            nan_policy="omit",
+            coactive_calcium_amplitude[mvmt_key][
+                ~np.isnan(coactive_calcium_amplitude[mvmt_key])
+            ],
+            coactive_calcium_amplitude[nonmvmt_key][
+                ~np.isnan(coactive_calcium_amplitude[nonmvmt_key])
+            ],
         )
         test_title = "Mann-Whitney U"
 
@@ -1116,6 +1148,7 @@ def plot_comparative_mvmt_coactivity(
         ],
     }
     result_df = pd.DataFrame.from_dict(result_dict)
+    result_df.update(result_df[["p-val"]].applymap("{:.4E}".format))
 
     # Perform correlations
     _, distance_corr_df = t_utils.correlate_grouped_data(
@@ -1127,19 +1160,19 @@ def plot_comparative_mvmt_coactivity(
 
     ## Comparisons to chance
     mvmt_above, mvmt_below = t_utils.test_against_chance(
-        avg_local_coactivity_rate[mvmt_key], shuff_local_coactivity_rate[mvmt_key]
+        avg_local_coactivity_rate[mvmt_key], mvmt_dataset.shuff_local_coactivity_rate
     )
     nonmvmt_above, nonmvmt_below = t_utils.test_against_chance(
         avg_local_coactivity_rate[nonmvmt_key],
-        shuff_local_coactivity_rate[nonmvmt_key],
+        nonmvmt_dataset.shuff_local_coactivity_rate,
     )
     mvmt_above_norm, mvmt_below_norm = t_utils.test_against_chance(
         avg_local_coactivity_rate_norm[mvmt_key],
-        shuff_local_coactivity_rate_norm[mvmt_key],
+        mvmt_dataset.shuff_local_coactivity_rate_norm,
     )
     nonmvmt_above_norm, nonmvmt_below_norm = t_utils.test_against_chance(
         avg_local_coactivity_rate_norm[nonmvmt_key],
-        shuff_local_coactivity_rate_norm[nonmvmt_key],
+        nonmvmt_dataset.shuff_local_coactivity_rate_norm,
     )
     chance_dict = {
         "Comparison": [
@@ -1152,6 +1185,8 @@ def plot_comparative_mvmt_coactivity(
         "p-val below": [mvmt_below, nonmvmt_below, mvmt_below_norm, nonmvmt_below_norm],
     }
     chance_df = pd.DataFrame.from_dict(chance_dict)
+    chance_df.update(chance_df[["p-val above"]].applymap("{:.4E}".format))
+    chance_df.update(chance_df[["p-val below"]].applymap("{:.4E}".format))
 
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
@@ -1159,7 +1194,7 @@ def plot_comparative_mvmt_coactivity(
         AB
         CD
         """,
-        figsize=(8, 6),
+        figsize=(10, 6),
     )
     # Format the tables
     axes2["A"].axis("off")
@@ -1217,7 +1252,7 @@ def plot_comparative_mvmt_coactivity(
             fname = os.path.join(save_path, "Local_Coactivity_Figure_3_Stats")
         else:
             fname = os.path.join(save_path, "Local_Coactivity_Figure_2_Stats")
-        fig2.savefig(fname, ".pdf")
+        fig2.savefig(fname + ".pdf")
 
 
 def plot_plasticity_coactivity_rates(
@@ -1231,6 +1266,7 @@ def plot_plasticity_coactivity_rates(
     threshold=0.3,
     figsize=(10, 8),
     hist_bins=30,
+    showmeans=False,
     mean_type="median",
     err_type="CI",
     test_type="nonparametric",
@@ -1265,6 +1301,8 @@ def plot_plasticity_coactivity_rates(
             figsize - tuple specifying the size of the figure
 
             hist_bins - int specifying how many bins for the histograms
+
+            showmeans - boolean specifying whether to plot means on box plots
 
             mean_type - str specifying the mean type for bar plots
 
@@ -1569,25 +1607,26 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     # Local coactivity rate bar plot
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_local_rates,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="All periods",
         xtitle=None,
         ytitle=f"Local {coactivity_title}",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -1596,25 +1635,26 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     # Mvmt local coactivity rate bar plot
-    plot_swarm_bar_plot(
+    plot_box_plot(
         mvmt_local_rates,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=mvmt_key,
         xtitle=None,
         ytitle=f"Local {coactivity_title}",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -1623,25 +1663,26 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     # Nonmvt local coactivity rate bar plot
-    plot_swarm_bar_plot(
+    plot_box_plot(
         nonmvmt_local_rates,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=nonmvmt_key,
         xtitle=None,
         ytitle=f"Local {coactivity_title}",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -1650,25 +1691,26 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     # Fraction coactive spines
-    plot_swarm_bar_plot(
+    plot_box_plot(
         fraction_coactive,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Coactive spines",
         xtitle=None,
         ytitle=f"Fraction of spines",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=False,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -1677,25 +1719,26 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     # Fraction mvmt events
-    plot_swarm_bar_plot(
+    plot_box_plot(
         fraction_mvmt,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=mvmt_key,
         xtitle=None,
         ytitle=f"Fraction of events",
-        ylim=None,
+        ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -1704,25 +1747,26 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     # Real vs shuff relative difference
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_diffs,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="All periods",
         xtitle=None,
         ytitle=f"Above chance difference",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2125,8 +2169,7 @@ def plot_coactive_event_properties(
     exclude="Shaft",
     threshold=0.3,
     figsize=(10, 8),
-    mean_type="median",
-    err_type="CI",
+    showmeans=False,
     test_type="nonparametric",
     test_method="holm-sidak",
     display_stats=True,
@@ -2155,7 +2198,7 @@ def plot_coactive_event_properties(
             
             figsize - tuple specifying the size of the figures
 
-            err_type - str specifying the error type for the bar plots
+            showmeans - boolean specifying whether to plot means on boxplots
 
             test_type - str specifying whether to perform parametric or nonparametric tests
 
@@ -2364,10 +2407,10 @@ def plot_coactive_event_properties(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
-        trace_means = list(compress(spine_coactive_means, spines))
+        trace_means = spine_coactive_means[spines, :]
         plastic_trace_means[key] = np.nanmean(trace_means, axis=0)
         plastic_trace_sems[key] = stats.sem(trace_means, axis=0, nan_policy="omit")
-        ca_trace_means = list(compress(spine_coactive_ca_means, spines))
+        ca_trace_means = spine_coactive_ca_means[spines, :]
         plastic_ca_trace_means[key] = np.nanmean(ca_trace_means, axis=0)
         plastic_ca_trace_sems[key] = stats.sem(
             ca_trace_means, axis=0, nan_policy="omit"
@@ -2378,12 +2421,12 @@ def plot_coactive_event_properties(
         plastic_frac_participating[key] = fraction_participating[spines]
         plastic_coactive_num[key] = coactive_spine_num[spines]
 
-        mvmt_trace_means = list(compress(mvmt_spine_coactive_means, spines))
+        mvmt_trace_means = mvmt_spine_coactive_means[spines, :]
         mvmt_plastic_trace_means[key] = np.nanmean(mvmt_trace_means, axis=0)
         mvmt_plastic_trace_sems[key] = stats.sem(
             mvmt_trace_means, axis=0, nan_policty="omit"
         )
-        mvmt_ca_trace_means = list(compress(mvmt_spine_coactive_ca_means, spines))
+        mvmt_ca_trace_means = mvmt_spine_coactive_ca_means[spines, :]
         mvmt_plastic_ca_trace_means[key] = np.nanmean(mvmt_ca_trace_means, axis=0)
         mvmt_plastic_ca_trace_sems[key] = stats.sem(
             mvmt_ca_trace_means, axis=0, nan_policy="omit"
@@ -2394,12 +2437,12 @@ def plot_coactive_event_properties(
         mvmt_plastic_frac_participating[key] = mvmt_fraction_participating[spines]
         mvmt_plastic_coactive_num[key] = mvmt_coactive_spine_num[spines]
 
-        nonmvmt_trace_means = list(compress(nonmvmt_spine_coactive_means, spines))
+        nonmvmt_trace_means = nonmvmt_spine_coactive_means[spines, :]
         nonmvmt_plastic_trace_means[key] = np.nanmean(nonmvmt_trace_means, axis=0)
         nonmvmt_plastic_trace_sems[key] = stats.sem(
             nonmvmt_trace_means, axis=0, nan_policty="omit"
         )
-        nonmvmt_ca_trace_means = list(compress(nonmvmt_spine_coactive_ca_means, spines))
+        nonmvmt_ca_trace_means = nonmvmt_spine_coactive_ca_means[spines, :]
         nonmvmt_plastic_ca_trace_means[key] = np.nanmean(nonmvmt_ca_trace_means, axis=0)
         nonmvmt_plastic_ca_trace_sems[key] = stats.sem(
             nonmvmt_ca_trace_means, axis=0, nan_policy="omit"
@@ -2551,24 +2594,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # All period GluSnFr amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_amps,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="All period GluSnFr",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2577,24 +2621,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # All period Calcium amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_ca_amps,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="All period Calcium",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2603,24 +2648,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Mvmt GluSnFr amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         mvmt_plastic_amps,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{mvmt_key} GluSnFr",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2629,24 +2675,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # mvmt Calcium amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         mvmt_plastic_ca_amps,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{mvmt_key} Calcium",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2655,24 +2702,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Nonmvmt GluSnFr amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         nonmvmt_plastic_amps,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{nonmvmt_key} GluSnFr",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2681,24 +2729,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Nonmvmt Calcium amplitude
-    plot_swarm_bar_plot(
+    plot_box_plot(
         nonmvmt_plastic_ca_amps,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{nonmvmt_key} Calcium",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2707,24 +2756,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # All period fraction coactive
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_frac_coactive,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"All periods",
         xtitle=None,
         ytitle=f"Fraction Coactive",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2733,24 +2783,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Mvmt fraction coactive
-    plot_swarm_bar_plot(
+    plot_box_plot(
         mvmt_plastic_frac_coactive,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{mvmt_key}",
         xtitle=None,
         ytitle=f"Fraction Coactive",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2759,24 +2810,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Nonmvmt fraction coactive
-    plot_swarm_bar_plot(
+    plot_box_plot(
         nonmvmt_plastic_frac_coactive,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{nonmvmt_key}",
         xtitle=None,
         ytitle=f"Fraction Coactive",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2785,24 +2837,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # All period fraction participating
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_frac_participating,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"All periods",
         xtitle=None,
         ytitle=f"Fraction Participating",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2811,24 +2864,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Mvmt fraction participating
-    plot_swarm_bar_plot(
+    plot_box_plot(
         mvmt_plastic_frac_participating,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{mvmt_key}",
         xtitle=None,
         ytitle=f"Fraction Participating",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2837,24 +2891,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Nonmvmt fraction participating
-    plot_swarm_bar_plot(
+    plot_box_plot(
         nonmvmt_plastic_frac_participating,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{nonmvmt_key}",
         xtitle=None,
         ytitle=f"Fraction Participating",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2863,24 +2918,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # All period coactive number
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_coactive_num,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"All periods",
         xtitle=None,
         ytitle=f"Coactive spine number",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2889,24 +2945,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Mvmt coactive number
-    plot_swarm_bar_plot(
+    plot_box_plot(
         mvmt_plastic_coactive_num,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{mvmt_key}",
         xtitle=None,
         ytitle=f"Coactive spine number",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -2915,24 +2972,25 @@ def plot_coactive_event_properties(
         save_path=None,
     )
     # Nonmvmt coactive number
-    plot_swarm_bar_plot(
+    plot_box_plot(
         nonmvmt_plastic_coactive_num,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title=f"{nonmvmt_key}",
         xtitle=None,
         ytitle=f"Coactive spine number",
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.7,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -3312,6 +3370,7 @@ def plot_nearby_spine_properties(
     figsize=(10, 12),
     mean_type="median",
     err_type="CI",
+    showmeans=False,
     hist_bins=25,
     test_type="nonparametric",
     test_method="holm-sidak",
@@ -3339,6 +3398,8 @@ def plot_nearby_spine_properties(
             mean_type - str specifying the mean type for the bar plots
 
             err_type - str specifyiung the error type for the bar plots
+
+            showmeans - boolean specifying whether to show means on boxplots
 
             test_type - str specifying whether to perform parametric or nonparametric stats
 
@@ -3603,25 +3664,26 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Avg local spine activity rate
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_avg_rates,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Nearby Activity Rate",
         xtitle=None,
         ytitle="Activity rate (events/min)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -3780,25 +3842,26 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Avg local coactivity rate
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_avg_coactivity,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Avg Local Coactivity Rate",
         xtitle=None,
         ytitle="Coactivity rate (events/min)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -3961,25 +4024,26 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Avg local MRS rate
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_MRS_density,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Local MRS Density",
         xtitle=None,
         ytitle="MRS density (spines/\u03BCm)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -4142,25 +4206,26 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Avg local rMRS rate
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_rMRS_density,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Local rMRS Density",
         xtitle=None,
         ytitle="rMRS density (spines/\u03BCm)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -4323,25 +4388,26 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged nearest neigbhr
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_nn_enlarged,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Enlarged",
         xtitle=None,
         ytitle="Enlarged nearest neighbor (\u03BCm)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -4500,25 +4566,26 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Shrunken nearest neigbhr
-    plot_swarm_bar_plot(
+    plot_box_plot(
         plastic_nn_shrunken,
-        mean_type=mean_type,
-        err_type=err_type,
         figsize=(5, 5),
         title="Shrunken",
         xtitle=None,
         ytitle="Shrunken nearest neighbor (\u03BCm)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.4,
-        s_colors=COLORS,
-        s_size=5,
-        s_alpha=0.7,
-        plot_ind=True,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=None,
+        showmeans=showmeans,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
@@ -4962,7 +5029,7 @@ def plot_nearby_spine_properties(
     axes2["J"].axis("off")
     axes2["J"].axis("tight")
     axes2["J"].set_title(
-        f"Shrunken Nearest Neighbor\n{test_title}\nF = {enlarged_f} p ={enlarged_p}"
+        f"Shrunken Nearest Neighbor\n{test_title}\nF = {shrunken_f} p ={shrunken_p}"
     )
     J_table = axes2["J"].table(
         cellText=shrunken_df.values,
@@ -5048,3 +5115,164 @@ def plot_nearby_spine_properties(
         fname = os.path.join(save_path, "Local_Coactivity_Figure_9_Stats")
         fig2.savefit(fname, ".pdf")
 
+
+def plot_nearby_spine_coactivity(
+    dataset,
+    followup_dataset=None,
+    mvmt_type="All periods",
+    exclude="Shaft",
+    threshold=0.3,
+    figsize=(10, 6),
+    hist_bins=30,
+    showmeans=False,
+    mean_type="median",
+    err_type="CI",
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    save=False,
+    save_path=None,
+):
+    """Function to plot and compare the activity of nearby spines during coactivity
+        events
+        
+        INPUT PARAMETERS
+            dataset - Local_Coactivity_Data object analyzed over all periods
+
+            followup_dataset - optional Local_Coactivity_Data object of the 
+                                subsequent session to use for volume comparision.
+                                Default is None to use the followup_volumes in the
+                                dataset
+                        
+            mvmt_type - str specifying what mvmt period the data is constrained to.
+                        Accepts "All periods", "movement", "nonmovement", "rewarded movement"
+
+            exclude - str specifying the types of spines to exclude from volume assessment
+
+            threshold - float or tuple of floats specifying the threshold cutoff for 
+                        classifying plasticity
+
+            figsize - tuple specifying the size of the figure
+
+            showmeans - boolean specifying whether to show means on box plots or not
+
+            mean_type - str specifying thge mean type for bar plots
+
+            err_type - str specifying the err type for bar plots
+
+            test_type - str specifying whether to perform parametric or nonparametric tests
+
+            test_method - str specifying the type of posthoc test to perform
+
+            display_stats - boolean specifying whetehr to display stats
+
+            save - boolean specifying whether to save the figures or not
+
+            save_path - str specifying where to save the figures
+    """
+    COLORS = ["darkorange", "darkviolet", "silver"]
+    plastic_groups = {
+        "Enlarged": "enlarged_spines",
+        "Shrunken": "shrunken_spines",
+        "Stable": "stable_spines",
+    }
+
+    # PUll relevant data
+    sampling_rate = dataset.parameters["Sampling Rate"]
+    activity_window = dataset.parameters["Activity Window"]
+    if dataset.parameters["zscore"]:
+        activity_type = "zscore"
+    else:
+        activity_type = "\u0394F/F"
+
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_dataset is None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_dataset.spine_volumes
+        followup_flags = followup_dataset.spine_flags
+
+    # Amplitude and onset-related variables
+    nearby_coactive_amplitude = dataset.nearby_coactive_amplitude
+    nearby_coactive_calcium_amplitude = dataset.nearby_coactive_calcium_amplitude
+    nearby_spine_onset = dataset.nearby_spine_onset
+    nearby_spine_onset_jitter = dataset.nearby_spine_onset_jitter
+    # Traces
+    nearby_coactive_traces = dataset.nearby_coactive_traces
+    nearby_coactive_means = [
+        np.nanmean(x, axis=1) for x in nearby_coactive_traces if type(x) == np.ndarray
+    ]
+    nearby_coactive_means = np.vstack(nearby_coactive_means)
+    nearby_coactive_calcium_traces = dataset.nearby_coactive_calcium_traces
+    nearby_coactive_calcium_means = [
+        np.nanmean(x, axis=1)
+        for x in nearby_coactive_calcium_traces
+        if type(x) == np.ndarray
+    ]
+    nearby_coactive_calcium_means = np.vstack(nearby_coactive_calcium_means)
+
+    # Calculate relative volumes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes, flags, norm=False, exclude=exclude,
+    )
+    delta_volume = delta_volume[-1]
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
+        delta_volume, threshold=threshold, norm=False,
+    )
+
+    # Subselect present spines
+    nearby_coactive_amplitude = d_utils.subselect_data_by_idxs(
+        nearby_coactive_amplitude, spine_idxs
+    )
+    nearby_coactive_calcium_amplitude = d_utils.subselect_data_by_idxs(
+        nearby_coactive_calcium_amplitude, spine_idxs
+    )
+    nearby_spine_onset = d_utils.subselect_data_by_idxs(nearby_spine_onset, spine_idxs)
+    nearby_spine_onset_jitter = d_utils.subselect_data_by_idxs(
+        nearby_spine_onset_jitter, spine_idxs
+    )
+    nearby_coactive_means = d_utils.subselect_data_by_idxs(
+        nearby_coactive_means, spine_idxs
+    )
+    nearby_coactive_calcium_means = d_utils.subselect_data_by_idxs(
+        nearby_coactive_calcium_means, spine_idxs
+    )
+
+    # Seperate into dicts for plotting
+    hmap_traces = {}
+    plastic_trace_means = {}
+    plastic_trace_sems = {}
+    plastic_ca_trace_means = {}
+    plastic_ca_trace_sems = {}
+    plastic_amps = {}
+    plastic_ca_amps = {}
+    plastic_onsets = {}
+    plastic_onset_jitter = {}
+
+    for key, value in plastic_groups.items():
+        spines = eval(value)
+        traces = nearby_coactive_means[spines, :]
+        hmap_traces[key] = traces.T
+        plastic_trace_means[key] = np.nanmean(traces, axis=0)
+        plastic_trace_sems[key] = stats.sem(traces, axis=0, nan_policy="omit")
+        ca_traces = nearby_coactive_calcium_means[spines, :]
+        plastic_ca_trace_means[key] = np.nanmean(ca_traces, axis=0)
+        plastic_ca_trace_sems[key] = stats.sem(ca_traces, axis=0, nan_policy="omit")
+        plastic_amps[key] = nearby_coactive_amplitude[spines]
+        plastic_ca_amps[key] = nearby_coactive_calcium_amplitude[spines]
+        plastic_onsets[key] = nearby_spine_onset[spines]
+        plastic_onset_jitter[key] = nearby_spine_onset_jitter[spines]
+
+    # Construct the figure
+    fig, axes = plt.subplot_mosaic(
+        """
+        ABDCE
+        FGHIJ
+        """,
+        figsize=figsize,
+    )
+    fig.suptitle(f"{mvmt_type} Nearby Spine Coactivity")
