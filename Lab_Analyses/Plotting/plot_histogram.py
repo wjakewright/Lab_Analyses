@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from Lab_Analyses.Plotting.adjust_axes import adjust_axes
+from Lab_Analyses.Plotting.adjust_axes import adjust_axes, get_axis_limit
 
 sns.set()
 sns.set_style("ticks")
@@ -93,7 +93,13 @@ def plot_histogram(
     ax.set_title(title)
 
     # Adjust axes
-    adjust_axes(ax, minor_ticks, xtitle, stat, xlim, None, tick_len, axis_width)
+    adjust_axes(ax, minor_ticks, xtitle, stat, tick_len, axis_width)
+    yticks = ax.get_yticks()
+    xticks = ax.get_xticks()
+    bottom, top = get_axis_limit(None, yticks)
+    ax.set_ylim(bottom, top)
+    left, right = get_axis_limit(xlim, xticks)
+    ax.set_xlim(left, right)
 
     # Save section
     if save:
