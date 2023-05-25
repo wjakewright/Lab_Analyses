@@ -441,6 +441,8 @@ def correlate_grouped_data(data_dict, x_vals):
         corr_dict["p val"].append(p)
 
     corr_df = pd.DataFrame.from_dict(corr_dict)
+    corr_df.update(corr_df[["p val"]].applymap("{:.4E}".format))
+    corr_df.update(corr_df[["r"]].applymap("{:.4E}".format))
 
     return corr_dict, corr_df
 
@@ -458,8 +460,8 @@ def test_against_chance(real_array, shuff_matrix):
     real_median = np.nanmedian(real_array)
     shuff_medians = np.nanmedian(shuff_matrix, axis=1)
     # Get fraction following null hypothesis
-    frac_below = np.sum(shuff_medians <= real_median) / len(shuff_medians)
-    frac_above = np.sum(shuff_medians >= real_median) / len(shuff_medians)
+    frac_below = np.nansum(shuff_medians <= real_median) / len(shuff_medians)
+    frac_above = np.nansum(shuff_medians >= real_median) / len(shuff_medians)
 
     return frac_above, frac_below
 
