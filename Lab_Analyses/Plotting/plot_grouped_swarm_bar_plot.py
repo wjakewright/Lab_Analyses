@@ -7,7 +7,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
-from Lab_Analyses.Plotting.adjust_axes import adjust_axes
+from Lab_Analyses.Plotting.adjust_axes import adjust_axes, get_axis_limit
 
 sns.set()
 sns.set_style("ticks")
@@ -209,7 +209,10 @@ def plot_grouped_swam_bar_plot(
     ax.legend(loc="upper right", borderaxespad=0, fontsize="xx-small", frameon=False)
 
     # Format the axes
-    adjust_axes(ax, minor_ticks, xtitle, ytitle, None, ylim, tick_len, axis_width)
+    adjust_axes(ax, minor_ticks, xtitle, ytitle, tick_len, axis_width)
+    ticks = ax.get_yticks()
+    bottom, top = get_axis_limit(ylim, ticks)
+    ax.set_ylim(bottom=bottom, top=top)
 
     # Save section
     if save:
