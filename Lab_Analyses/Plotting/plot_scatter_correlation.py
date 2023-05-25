@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 from scipy import stats
 
-from Lab_Analyses.Plotting.adjust_axes import adjust_axes
+from Lab_Analyses.Plotting.adjust_axes import adjust_axes, get_axis_limit
 
 sns.set()
 sns.set_style("ticks")
@@ -107,10 +107,7 @@ def plot_scatter_correlation(
     # Add correlation to the title
     fig_title = f"{title}\nr = {corr:.3}  p = {p:.3E}"
     ax.set_title(fig_title)
-    if xlim:
-        ax.set_xlim(xlim[0], xlim[1])
-    if ylim:
-        ax.set_ylim(ylim[0], ylim[1])
+
     # Set up some styles
     line_kws = {"linewidth": line_width, "color": line_color}
     ## uniform scatter points
@@ -156,7 +153,13 @@ def plot_scatter_correlation(
         )
 
     # Adjust the axes
-    adjust_axes(ax, minor_ticks, xtitle, ytitle, xlim, ylim, tick_len, axis_width)
+    adjust_axes(ax, minor_ticks, xtitle, ytitle, tick_len, axis_width)
+    xticks = ax.get_xticks()
+    yticks = ax.get_yticks()
+    bottom, top = get_axis_limit(ylim, yticks)
+    left, right = get_axis_limit(xlim, xticks)
+    ax.set_ylim(bottom, top)
+    ax.set_xlim(left, right)
 
     # Save section
     if save:
