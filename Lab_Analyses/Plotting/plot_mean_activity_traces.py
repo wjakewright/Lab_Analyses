@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from Lab_Analyses.Plotting.adjust_axes import adjust_axes
+from Lab_Analyses.Plotting.adjust_axes import adjust_axes, get_axis_limit
 
 sns.set()
 sns.set_style("ticks")
@@ -117,7 +117,11 @@ def plot_mean_activity_traces(
     # Adjust the axes
     ax.set_xticks(ticks=[activity_window[0], 0, activity_window[1]],)
     ax.set_xticklabels(labels=[activity_window[0], 0, activity_window[1]])
-    adjust_axes(ax, minor_ticks, "Time (s)", ytitle, None, ylim, tick_len, axis_width)
+    adjust_axes(ax, minor_ticks, "Time (s)", ytitle, tick_len, axis_width)
+    ticks = ax.get_yticks()
+    bottom, top = get_axis_limit(ylim, ticks)
+    ax.set_ylim(bottom=bottom, top=top)
+    ax.set_xlim(activity_window[0], activity_window[1])
 
     # Save section
     if save:
