@@ -19,6 +19,8 @@ def get_activity_timestamps(activity):
     if not len(onsets):
         timestamps = []
         return timestamps
+    if not len(offsets):
+        offsets = np.array([len(activity) - 1])
     # Check onset offset order
     if onsets[0] > offsets[0]:
         offsets = offsets[1:]
