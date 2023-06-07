@@ -146,6 +146,8 @@ def local_coactivity_analysis(
             ) = parse_movement_nonmovement_spines(
                 movement_dendrites, rwd_movement_dendrites
             )
+            # Dendrite activity
+            dendrite_activity = data.dendrite_calcium_activity
             ## Dendrite poly roi positions and activity
             poly_dendrite_positions = data.poly_dendrite_positions
             poly_dendrite_dFoF = data.poly_dendrite_calcium_processed_dFoF
@@ -514,6 +516,7 @@ def local_coactivity_analysis(
                 nearby_local_dend_amplitude,
             ) = local_dendrite_activity(
                 spine_activity,
+                dendrite_activity,
                 spine_positions,
                 spine_flags,
                 spine_groupings,
@@ -631,9 +634,9 @@ def local_coactivity_analysis(
                 coactive_rwd_movement_stereotypy=coactive_rwd_movement_stereotypy,
                 coactive_rwd_movement_reliability=coactive_rwd_movement_reliability,
                 coactive_rwd_movement_specificity=coactive_rwd_movement_specificity,
+                coactive_fraction_rwd_mvmts=np.array(coactive_frac_rwd_mvmts),
                 coactive_local_dend_traces=coactive_local_dend_traces,
                 coactive_local_dend_amplitude=coactive_local_dend_amplitude,
-                coactive_fraction_rwd_mvmts=np.array(coactive_frac_rwd_mvmts),
                 noncoactive_local_dend_traces=noncoactive_local_dend_traces,
                 noncoactive_local_dend_amplitude=noncoactive_local_dend_amplitude,
                 nearby_local_dend_traces=nearby_local_dend_traces,
