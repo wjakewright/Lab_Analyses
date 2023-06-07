@@ -319,6 +319,16 @@ def organize_dual_spine_data(
                     spines = spine_groupings[d]
                 else:
                     spines = spine_groupings
+                if redetection is True:
+                    da, df, _ = event_detection(
+                        calcium_processed_dFoF["Dendrite"][:, d].reshape(-1, 1),
+                        threshold=2,
+                        lower_threshold=0,
+                        lower_limit=None,
+                        sampling_rate=imaging_parameters["Sampling Rate"],
+                        filt_poly=4,
+                        sec_smooth=1,
+                    )
                 for s in spines:
                     dendrite_length[s] = d_lengths[d]
                     dendrite_calcium_dFoF[:, s] = calcium_dFoF["Dendrite"][:, d]
@@ -326,15 +336,6 @@ def organize_dual_spine_data(
                         "Dendrite"
                     ][:, d]
                     if redetection is True:
-                        da, df, _ = event_detection(
-                            calcium_processed_dFoF["Dendrite"][:, d].reshape(-1, 1),
-                            threshold=2,
-                            lower_threshold=0,
-                            lower_limit=None,
-                            sampling_rate=imaging_parameters["Sampling Rate"],
-                            filt_poly=4,
-                            sec_smooth=1,
-                        )
                         dendrite_calcium_activity[:, s] = da.reshape(1, -1)
                         dendrite_calcium_floored[:, s] = df.reshape(1, -1)
                     else:
