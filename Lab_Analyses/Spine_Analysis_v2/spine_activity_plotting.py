@@ -35,6 +35,7 @@ def plot_basic_features(
     test_type="nonparametric",
     test_method="holm-sidak",
     display_stats=True,
+    vol_norm=False,
     save=False,
     save_path=None,
 ):
@@ -92,13 +93,13 @@ def plot_basic_features(
     flags = [spine_flags, followup_flags]
     ## Calculate
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=False, exclude=exclude
+        volumes, flags, norm=vol_norm, exclude=exclude
     )
     delta_volume = delta_volume[-1]
 
     # Classify plasticity
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=False
+        delta_volume, threshold=threshold, norm=vol_norm
     )
 
     # Subselect data
@@ -355,6 +356,7 @@ def plot_movement_related_activity(
     test_type="nonparametric",
     test_method="holm-sidak",
     display_stats=True,
+    vol_norm=False,
     save=False,
     save_path=None,
 ):
@@ -430,11 +432,11 @@ def plot_movement_related_activity(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=False, exclude=exclude,
+        volumes, flags, norm=vol_norm, exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=False,
+        delta_volume, threshold=threshold, norm=vol_norm,
     )
 
     # Organize data
@@ -1072,6 +1074,7 @@ def plot_rewarded_movement_related_activity(
     test_type="nonparametric",
     test_method="holm-sidak",
     display_stats=True,
+    vol_norm=False,
     save=False,
     save_path=None,
 ):
@@ -1154,11 +1157,11 @@ def plot_rewarded_movement_related_activity(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=False, exclude=exclude,
+        volumes, flags, norm=vol_norm, exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=False,
+        delta_volume, threshold=threshold, norm=vol_norm,
     )
 
     # Organize data
@@ -1992,6 +1995,7 @@ def plot_spine_movement_encoding(
     test_type="nonparametric",
     test_method="holm-sidak",
     display_stats=True,
+    vol_norm=False,
     save=False,
     save_path=None,
 ):
@@ -2063,11 +2067,11 @@ def plot_spine_movement_encoding(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=False, exclude=exclude,
+        volumes, flags, norm=vol_norm, exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=False,
+        delta_volume, threshold=threshold, norm=vol_norm,
     )
 
     # Organize the data
