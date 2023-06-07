@@ -9,6 +9,7 @@ from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
 
 def local_dendrite_activity(
     spine_activity,
+    dendrite_activity,
     spine_positions,
     spine_flags,
     spine_groupings,
@@ -24,6 +25,8 @@ def local_dendrite_activity(
         
         INPUT PARAMETERS
             spine_activity - 2d np.array of the binarized spine activity
+
+            dendrite_activity - 2d np.array of the binarized global dendrite activity
             
             spine_positions - np.array of the spine positions along the dendrite
             
@@ -77,6 +80,11 @@ def local_dendrite_activity(
         activity_matrix = spine_activity * constrain_matrix
     else:
         activity_matrix = spine_activity
+
+    # Remove events that overlap with global dendritic events
+    ## Invert dendrite activity
+    dendrite_inactivity = 1 - dendrite_activity
+    activity_matrix = activity_matrix * dendrite_inactivity
 
     # Get present spines
     present_spines = find_present_spines(spine_flags)
