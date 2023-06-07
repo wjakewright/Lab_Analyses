@@ -207,8 +207,8 @@ def spine_volume_norm_constant(
     volumes = um_volumes[non_nan]
 
     # Test initial slope
-    _, p = stats.pearsonr(volumes, maximum_amplitudes)
-    if p > 0.05:
+    r, p = stats.pearsonr(volumes, maximum_amplitudes)
+    if (p > 0.05) or (r < 0):
         norm_constants = np.ones(len(um_volumes))
         if plot:
             plot_norm_constants(
