@@ -102,7 +102,7 @@ def classify_plasticity(relative_volumes, threshold=0.3, norm=False):
         for i, spine in enumerate(relative_volumes):
             if spine >= upper:
                 enlarged_spines[i] = True
-            elif spine <= lower:
+            elif spine <= -lower:
                 shrunken_spines[i] = True
             else:
                 stable_spines[i] = True
