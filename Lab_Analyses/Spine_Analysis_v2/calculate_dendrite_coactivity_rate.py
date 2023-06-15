@@ -103,7 +103,9 @@ def calculate_dendrite_coactivity_rate(
     ## Iterate through each iteration
     for i in range(iterations):
         ## Shuffle the activity
-        shuff_activity = d_utils.roll_2d_array(spine_activity, SHIFT_RANGE, axis=1)
+        shuff_activity = d_utils.roll_2d_array(
+            spine_activity.reshape(-1, 1), SHIFT_RANGE, axis=1
+        ).flatten()
         ## Get the shuffled coactivity rates
         (shuff_rate, shuff_rate_norm, _, _, _,) = calculate_coactivity(
             shuff_activity,
@@ -116,12 +118,19 @@ def calculate_dendrite_coactivity_rate(
         shuff_coactivity_rate_norm[i] = shuff_rate_norm
 
     # Calculate the relative differences
-    relative_diff = d_utils.normalized_relative_difference(
-        np.nanmedian(shuff_coactivity_rate), coactivity_rate
-    )
-    relative_diff_norm = d_utils.normalized_relative_differences(
-        np.nanmedian(shuff_coactivity_rate_norm), coactivity_rate_norm,
-    )
+    if (np.nanmedian(shuff_coactivity_rate) == 0) and (coactivity_rate == 0):
+        relative_diff = 0
+    else:
+        relative_diff = (coactivity_rate - np.nanmedian(shuff_coactivity_rate)) / (
+            coactivity_rate + np.nanmedian(shuff_coactivity_rate)
+        )
+
+    if (np.nanmedian(shuff_coactivity_rate_norm) == 0) and (coactivity_rate_norm == 0):
+        relative_diff_norm = 0
+    else:
+        relative_diff_norm = (
+            coactivity_rate_norm - np.nanmedian(shuff_coactivity_rate_norm)
+        ) / (coactivity_rate_norm + np.nanmedian(shuff_coactivity_rate_norm))
 
     return (
         coactive_trace,
