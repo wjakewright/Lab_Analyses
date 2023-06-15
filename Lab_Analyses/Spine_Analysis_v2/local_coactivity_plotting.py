@@ -5233,6 +5233,7 @@ def plot_nearby_spine_coactivity(
     test_type="nonparametric",
     test_method="holm-sidak",
     display_stats=True,
+    vol_norm=False,
     save=False,
     save_path=None,
 ):
@@ -5311,11 +5312,11 @@ def plot_nearby_spine_coactivity(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=False, exclude=exclude,
+        volumes, flags, norm=vol_norm, exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=False,
+        delta_volume, threshold=threshold, norm=vol_norm,
     )
 
     # Subselect present spines
@@ -5368,7 +5369,7 @@ def plot_nearby_spine_coactivity(
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        ABDCE
+        ABCDE
         FGHIJ
         """,
         figsize=figsize,
@@ -5402,7 +5403,7 @@ def plot_nearby_spine_coactivity(
         figsize=(4, 5),
         sampling_rate=sampling_rate,
         activity_window=activity_window,
-        title="Enlarged",
+        title="Shrunken",
         cbar_label=activity_type,
         hmap_range=(0, 1),
         center=None,
@@ -5422,7 +5423,7 @@ def plot_nearby_spine_coactivity(
         figsize=(4, 5),
         sampling_rate=sampling_rate,
         activity_window=activity_window,
-        title="Enlarged",
+        title="Stable",
         cbar_label=activity_type,
         hmap_range=(0, 1),
         center=None,
@@ -6913,3 +6914,1010 @@ def plot_local_movement_encoding(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Local_Coactivity_Figure_15_Stats")
         fig.savefig(fname + ".pdf")
+
+
+def plot_local_dendrite_activity(
+    dataset,
+    mvmt_dataset,
+    nonmvmt_dataset,
+    followup_dataset=None,
+    rwd_mvmt=False,
+    exclude="Shaft Spine",
+    threshold=0.3,
+    figsize=(12, 12),
+    showmeans=False,
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    vol_norm=False,
+    save=False,
+    save_path=None,
+):
+    """Function to examine local dendritic activity during different activity events
+
+        INPUT PARAMETERS
+            dataset - Local_Coactivity_Data object analyzed over all periods
+
+            mvmt_dataset - Local_Coactivity_Data object constrined to mvmt periods
+
+            nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
+
+            followup_dataset - optional Local_Coactivity_Data object of the subsequent
+                                session to be used for volume comparision. Default is None
+                                to use the followup volumes in the dataset
+                        
+            rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
+
+            exclude - str specifying spine type to exclude from analysis
+
+            threshold - float of tuple of floats specifying the threshold cutoff for 
+                        classifying plasticity
+
+            figsize - tuple specifying the size of the figures
+
+            showmeans - boolean specifying whether to plot means on boxplots
+
+            test_type - str specifying whether to perform parametric or nonparametric tests
+
+            test_method - str specifying the type of posthoc test to perform
+
+            display_stats - boolean specifying whether to display stats
+
+            save - boolean specifying whether to save the figures or not
+
+            save_path - str specifying where to save the figures
+    
+    """
+    COLORS = ["darkorange", "darkviolet", "silver"]
+    plastic_groups = {
+        "Enlarged": "enlarged_spines",
+        "Shrunken": "shrunken_spines",
+        "Stable": "stable_spines",
+    }
+    if rwd_mvmt:
+        mvmt_key = "Rwd movement"
+        nonmvmt_key = "Nonrwd movement"
+    else:
+        mvmt_key = "Movement"
+        nonmvmt_key = "Non-movement"
+
+    # Pull relevant data
+    sampling_rate = dataset.parameters["Sampling Rate"]
+    activity_window = dataset.parameters["Activity Window"]
+    if dataset.parameters["zscore"]:
+        activity_type = "zscore"
+    else:
+        activity_type = "\u0394F/F"
+
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_dataset is None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_dataset.spine_volumes
+        followup_flags = followup_dataset.spine_flags
+
+    # Activity related variables
+    ## All periods
+    coactive_local_dend_traces = dataset.coactive_local_dend_traces
+    coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
+    noncoactive_local_dend_traces = dataset.noncoactive_local_dend_traces
+    noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
+    nearby_local_dend_traces = dataset.nearby_local_dend_traces
+    nearby_local_dend_amplitude = dataset.nearby_local_dend_amplitude
+    ## movements
+    mvmt_coactive_local_dend_traces = mvmt_dataset.coactive_local_dend_traces
+    mvmt_coactive_local_dend_amplitude = mvmt_dataset.coactive_local_dend_amplitude
+    mvmt_noncoactive_local_dend_traces = mvmt_dataset.noncoactive_local_dend_traces
+    mvmt_noncoactive_local_dend_amplitude = (
+        mvmt_dataset.noncoactive_local_dend_amplitude
+    )
+    mvmt_nearby_local_dend_traces = mvmt_dataset.nearby_local_dend_traces
+    mvmt_nearby_local_dend_amplitude = mvmt_dataset.nearby_local_dend_amplitude
+    ## nonmovements
+    nonmvmt_coactive_local_dend_traces = nonmvmt_dataset.coactive_local_dend_traces
+    nonmvmt_coactive_local_dend_amplitude = (
+        nonmvmt_dataset.coactive_local_dend_amplitude
+    )
+    nonmvmt_noncoactive_local_dend_traces = (
+        nonmvmt_dataset.noncoactive_local_dend_traces
+    )
+    nonmvmt_noncoactive_local_dend_amplitude = (
+        nonmvmt_dataset.noncoactive_local_dend_amplitude
+    )
+    nonmvmt_nearby_local_dend_traces = nonmvmt_dataset.nearby_local_dend_traces
+    nonmvmt_nearby_local_dend_amplitude = nonmvmt_dataset.nearby_local_dend_amplitude
+
+    # Calculate the relative volumes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes, flags, norm=vol_norm, exclude=exclude,
+    )
+    delta_volume = delta_volume[-1]
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
+        delta_volume, threshold=threshold, norm=vol_norm
+    )
+
+    # Organize data
+    ## Subselect present spines
+    coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
+        coactive_local_dend_traces, spine_idxs
+    )
+    coactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        coactive_local_dend_amplitude, spine_idxs,
+    )
+    noncoactive_local_dend_traces = d_utils.subselect_data_by_idxs(
+        noncoactive_local_dend_traces, spine_idxs,
+    )
+    noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        noncoactive_local_dend_amplitude, spine_idxs,
+    )
+    nearby_local_dend_traces = d_utils.subselect_data_by_idxs(
+        nearby_local_dend_traces, spine_idxs,
+    )
+    nearby_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        nearby_local_dend_amplitude, spine_idxs,
+    )
+    mvmt_coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
+        mvmt_coactive_local_dend_traces, spine_idxs
+    )
+    mvmt_coactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        mvmt_coactive_local_dend_amplitude, spine_idxs,
+    )
+    mvmt_noncoactive_local_dend_traces = d_utils.subselect_data_by_idxs(
+        mvmt_noncoactive_local_dend_traces, spine_idxs,
+    )
+    mvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        mvmt_noncoactive_local_dend_amplitude, spine_idxs,
+    )
+    mvmt_nearby_local_dend_traces = d_utils.subselect_data_by_idxs(
+        mvmt_nearby_local_dend_traces, spine_idxs,
+    )
+    mvmt_nearby_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        mvmt_nearby_local_dend_amplitude, spine_idxs,
+    )
+    nonmvmt_coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
+        nonmvmt_coactive_local_dend_traces, spine_idxs
+    )
+    nonmvmt_coactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        nonmvmt_coactive_local_dend_amplitude, spine_idxs,
+    )
+    nonmvmt_noncoactive_local_dend_traces = d_utils.subselect_data_by_idxs(
+        nonmvmt_noncoactive_local_dend_traces, spine_idxs,
+    )
+    nonmvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        nonmvmt_noncoactive_local_dend_amplitude, spine_idxs,
+    )
+    nonmvmt_nearby_local_dend_traces = d_utils.subselect_data_by_idxs(
+        nonmvmt_nearby_local_dend_traces, spine_idxs,
+    )
+    nonmvmt_nearby_local_dend_amplitude = d_utils.subselect_data_by_idxs(
+        nonmvmt_nearby_local_dend_amplitude, spine_idxs,
+    )
+
+    ## Seperate into dicts for plotting
+    plastic_coactive_means = {}
+    plastic_coactive_sems = {}
+    plastic_coactive_amps = {}
+    plastic_noncoactive_means = {}
+    plastic_noncoactive_sems = {}
+    plastic_noncoactive_amps = {}
+    plastic_nearby_means = {}
+    plastic_nearby_sems = {}
+    plastic_nearby_amps = {}
+    mvmt_plastic_coactive_means = {}
+    mvmt_plastic_coactive_sems = {}
+    mvmt_plastic_coactive_amps = {}
+    mvmt_plastic_noncoactive_means = {}
+    mvmt_plastic_noncoactive_sems = {}
+    mvmt_plastic_noncoactive_amps = {}
+    mvmt_plastic_nearby_means = {}
+    mvmt_plastic_nearby_sems = {}
+    mvmt_plastic_nearby_amps = {}
+    nonmvmt_plastic_coactive_means = {}
+    nonmvmt_plastic_coactive_sems = {}
+    nonmvmt_plastic_coactive_amps = {}
+    nonmvmt_plastic_noncoactive_means = {}
+    nonmvmt_plastic_noncoactive_sems = {}
+    nonmvmt_plastic_noncoactive_amps = {}
+    nonmvmt_plastic_nearby_means = {}
+    nonmvmt_plastic_nearby_sems = {}
+    nonmvmt_plastic_nearby_amps = {}
+
+    for key, value in plastic_groups.items():
+        spines = eval(value)
+        ### All periods
+        coactive_traces = compress(coactive_local_dend_traces, spines)
+        coactive_means = [
+            np.nanmean(x, axis=1) for x in coactive_traces if type(x) == np.ndarray
+        ]
+        coactive_means = np.vstack(coactive_means)
+        plastic_coactive_means[key] = np.nanmean(coactive_means, axis=0)
+        plastic_coactive_sems[key] = stats.sem(
+            coactive_means, axis=0, nan_policy="omit"
+        )
+        plastic_coactive_amps[key] = coactive_local_dend_amplitude[spines]
+        noncoactive_traces = compress(noncoactive_local_dend_traces, spines)
+        noncoactive_means = [
+            np.nanmean(x, axis=1) for x in noncoactive_traces if type(x) == np.ndarray
+        ]
+        noncoactive_means = np.vstack(noncoactive_means)
+        plastic_noncoactive_means[key] = np.nanmean(noncoactive_means, axis=0)
+        plastic_noncoactive_sems[key] = stats.sem(
+            noncoactive_means, axis=0, nan_policy="omit"
+        )
+        plastic_noncoactive_amps[key] = noncoactive_local_dend_amplitude[spines]
+        nearby_traces = compress(nearby_local_dend_traces, spines)
+        nearby_means = [
+            np.nanmean(x, axis=1) for x in nearby_traces if type(x) == np.ndarray
+        ]
+        nearby_means = np.vstack(nearby_means)
+        plastic_nearby_means[key] = np.nanmean(nearby_means, axis=0)
+        plastic_nearby_sems[key] = stats.sem(nearby_means, axis=0, nan_policy="omit")
+        plastic_nearby_amps[key] = nearby_local_dend_amplitude[spines]
+        ### Movement
+        mvmt_coactive_traces = compress(mvmt_coactive_local_dend_traces, spines)
+        mvmt_coactive_means = [
+            np.nanmean(x, axis=1) for x in mvmt_coactive_traces if type(x) == np.ndarray
+        ]
+        mvmt_coactive_means = np.vstack(mvmt_coactive_means)
+        mvmt_plastic_coactive_means[key] = np.nanmean(mvmt_coactive_means, axis=0)
+        mvmt_plastic_coactive_sems[key] = stats.sem(
+            mvmt_coactive_means, axis=0, nan_policy="omit"
+        )
+        mvmt_plastic_coactive_amps[key] = mvmt_coactive_local_dend_amplitude[spines]
+        mvmt_noncoactive_traces = compress(mvmt_noncoactive_local_dend_traces, spines)
+        mvmt_noncoactive_means = [
+            np.nanmean(x, axis=1)
+            for x in mvmt_noncoactive_traces
+            if type(x) == np.ndarray
+        ]
+        mvmt_noncoactive_means = np.vstack(mvmt_noncoactive_means)
+        mvmt_plastic_noncoactive_means[key] = np.nanmean(mvmt_noncoactive_means, axis=0)
+        mvmt_plastic_noncoactive_sems[key] = stats.sem(
+            mvmt_noncoactive_means, axis=0, nan_policy="omit"
+        )
+        mvmt_plastic_noncoactive_amps[key] = mvmt_noncoactive_local_dend_amplitude[
+            spines
+        ]
+        mvmt_nearby_traces = compress(mvmt_nearby_local_dend_traces, spines)
+        mvmt_nearby_means = [
+            np.nanmean(x, axis=1) for x in mvmt_nearby_traces if type(x) == np.ndarray
+        ]
+        mvmt_nearby_means = np.vstack(mvmt_nearby_means)
+        mvmt_plastic_nearby_means[key] = np.nanmean(mvmt_nearby_means, axis=0)
+        mvmt_plastic_nearby_sems[key] = stats.sem(
+            mvmt_nearby_means, axis=0, nan_policy="omit"
+        )
+        mvmt_plastic_nearby_amps[key] = mvmt_nearby_local_dend_amplitude[spines]
+        ### Non-movement
+        nonmvmt_coactive_traces = compress(nonmvmt_coactive_local_dend_traces, spines)
+        nonmvmt_coactive_means = [
+            np.nanmean(x, axis=1)
+            for x in nonmvmt_coactive_traces
+            if type(x) == np.ndarray
+        ]
+        nonmvmt_coactive_means = np.vstack(nonmvmt_coactive_means)
+        nonmvmt_plastic_coactive_means[key] = np.nanmean(nonmvmt_coactive_means, axis=0)
+        nonmvmt_plastic_coactive_sems[key] = stats.sem(
+            nonmvmt_coactive_means, axis=0, nan_policy="omit"
+        )
+        nonmvmt_plastic_coactive_amps[key] = nonmvmt_coactive_local_dend_amplitude[
+            spines
+        ]
+        nonmvmt_noncoactive_traces = compress(
+            nonmvmt_noncoactive_local_dend_traces, spines
+        )
+        nonmvmt_noncoactive_means = [
+            np.nanmean(x, axis=1)
+            for x in nonmvmt_noncoactive_traces
+            if type(x) == np.ndarray
+        ]
+        nonmvmt_noncoactive_means = np.vstack(nonmvmt_noncoactive_means)
+        nonmvmt_plastic_noncoactive_means[key] = np.nanmean(
+            nonmvmt_noncoactive_means, axis=0
+        )
+        nonmvmt_plastic_noncoactive_sems[key] = stats.sem(
+            nonmvmt_noncoactive_means, axis=0, nan_policy="omit"
+        )
+        nonmvmt_plastic_noncoactive_amps[
+            key
+        ] = nonmvmt_noncoactive_local_dend_amplitude[spines]
+        nonmvmt_nearby_traces = compress(nonmvmt_nearby_local_dend_traces, spines)
+        nonmvmt_nearby_means = [
+            np.nanmean(x, axis=1)
+            for x in nonmvmt_nearby_traces
+            if type(x) == np.ndarray
+        ]
+        nonmvmt_nearby_means = np.vstack(nonmvmt_nearby_means)
+        nonmvmt_plastic_nearby_means[key] = np.nanmean(nonmvmt_nearby_means, axis=0)
+        nonmvmt_plastic_nearby_sems[key] = stats.sem(
+            nonmvmt_nearby_means, axis=0, nan_policy="omit"
+        )
+        nonmvmt_plastic_nearby_amps[key] = nonmvmt_nearby_local_dend_amplitude[spines]
+
+    # Construct the figure
+    fig, axes = plt.subplot_mosaic(
+        """
+        ABCDEF
+        GHIJKL
+        MNOPQR
+        """,
+        figsize=figsize,
+    )
+    fig.suptitle("Local Dendritic Activity")
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+    ########################### Plot data onto axes ###############################
+    # All periods coactive traces
+    plot_mean_activity_traces(
+        means=list(plastic_coactive_means.values()),
+        sems=list(plastic_coactive_sems.values()),
+        group_names=list(plastic_coactive_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="All Coactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["A"],
+        save=False,
+        save_path=None,
+    )
+    # All periods noncoactive traces
+    plot_mean_activity_traces(
+        means=list(plastic_noncoactive_means.values()),
+        sems=list(plastic_noncoactive_sems.values()),
+        group_names=list(plastic_noncoactive_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="All Noncoactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["C"],
+        save=False,
+        save_path=None,
+    )
+    # All periods nearby traces
+    plot_mean_activity_traces(
+        means=list(plastic_nearby_means.values()),
+        sems=list(plastic_nearby_sems.values()),
+        group_names=list(plastic_nearby_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="All Nearby",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["E"],
+        save=False,
+        save_path=None,
+    )
+    # Movement periods coactive traces
+    plot_mean_activity_traces(
+        means=list(mvmt_plastic_coactive_means.values()),
+        sems=list(mvmt_plastic_coactive_sems.values()),
+        group_names=list(mvmt_plastic_coactive_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title=f"{mvmt_key} Coactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["G"],
+        save=False,
+        save_path=None,
+    )
+    # Movement noncoactive traces
+    plot_mean_activity_traces(
+        means=list(mvmt_plastic_noncoactive_means.values()),
+        sems=list(mvmt_plastic_noncoactive_sems.values()),
+        group_names=list(mvmt_plastic_noncoactive_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title=f"{mvmt_key} Noncoactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["I"],
+        save=False,
+        save_path=None,
+    )
+    # Movement nearby traces
+    plot_mean_activity_traces(
+        means=list(mvmt_plastic_nearby_means.values()),
+        sems=list(mvmt_plastic_nearby_sems.values()),
+        group_names=list(mvmt_plastic_nearby_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title=f"{mvmt_key} Nearby",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["K"],
+        save=False,
+        save_path=None,
+    )
+    # Nonmovement periods coactive traces
+    plot_mean_activity_traces(
+        means=list(nonmvmt_plastic_coactive_means.values()),
+        sems=list(nonmvmt_plastic_coactive_sems.values()),
+        group_names=list(nonmvmt_plastic_coactive_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title=f"{nonmvmt_key} Coactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["M"],
+        save=False,
+        save_path=None,
+    )
+    # Nonmovement noncoactive traces
+    plot_mean_activity_traces(
+        means=list(nonmvmt_plastic_noncoactive_means.values()),
+        sems=list(nonmvmt_plastic_noncoactive_sems.values()),
+        group_names=list(nonmvmt_plastic_noncoactive_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title=f"{nonmvmt_key} Noncoactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["O"],
+        save=False,
+        save_path=None,
+    )
+    # Nonmovement nearby traces
+    plot_mean_activity_traces(
+        means=list(nonmvmt_plastic_nearby_means.values()),
+        sems=list(nonmvmt_plastic_nearby_sems.values()),
+        group_names=list(nonmvmt_plastic_nearby_means.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=None,
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title=f"{nonmvmt_key} Nearby",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["Q"],
+        save=False,
+        save_path=None,
+    )
+    # All period coactive amplitude
+    plot_box_plot(
+        plastic_coactive_amps,
+        figsize=(5, 5),
+        title="All Coactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+    # All period noncoactive amplitude
+    plot_box_plot(
+        plastic_noncoactive_amps,
+        figsize=(5, 5),
+        title="All Nonoactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["D"],
+        save=False,
+        save_path=None,
+    )
+    # All period nearby amplitude
+    plot_box_plot(
+        plastic_nearby_amps,
+        figsize=(5, 5),
+        title="All Nearby",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["F"],
+        save=False,
+        save_path=None,
+    )
+    # Movement coactive amplitude
+    plot_box_plot(
+        mvmt_plastic_coactive_amps,
+        figsize=(5, 5),
+        title=f"{mvmt_key} Coactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["H"],
+        save=False,
+        save_path=None,
+    )
+    # Movement noncoactive amplitude
+    plot_box_plot(
+        mvmt_plastic_noncoactive_amps,
+        figsize=(5, 5),
+        title=f"{mvmt_key} Nonoactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["J"],
+        save=False,
+        save_path=None,
+    )
+    # Movement nearby amplitude
+    plot_box_plot(
+        mvmt_plastic_nearby_amps,
+        figsize=(5, 5),
+        title=f"{mvmt_key} Nearby",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["L"],
+        save=False,
+        save_path=None,
+    )
+    # Nonmovement coactive amplitude
+    plot_box_plot(
+        nonmvmt_plastic_coactive_amps,
+        figsize=(5, 5),
+        title=f"{nonmvmt_key} Coactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["N"],
+        save=False,
+        save_path=None,
+    )
+    # Nonmovement noncoactive amplitude
+    plot_box_plot(
+        nonmvmt_plastic_noncoactive_amps,
+        figsize=(5, 5),
+        title=f"{mvmt_key} Nonoactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["P"],
+        save=False,
+        save_path=None,
+    )
+    # Nonmovement nearby amplitude
+    plot_box_plot(
+        nonmvmt_plastic_nearby_amps,
+        figsize=(5, 5),
+        title=f"{nonmvmt_key} Nearby",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        b_colors=COLORS,
+        b_edgecolors="white",
+        b_err_colors=COLORS,
+        m_color="white",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.8,
+        b_err_alpha=0.8,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["R"],
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        if not rwd_mvmt:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_16")
+        else:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_17")
+        fig.savefig(fname + ".pdf")
+
+    ######################## Statistics Section #############################
+    if display_stats == False:
+        return
+
+    # Perform the f-tests
+    if test_type == "parametric":
+        coactive_f, coactive_p, _, coactive_df = t_utils.ANOVA_1way_posthoc(
+            plastic_coactive_amps, test_method,
+        )
+        noncoactive_f, noncoactive_p, _, noncoactive_df = t_utils.ANOVA_1way_posthoc(
+            plastic_noncoactive_amps, test_method,
+        )
+        nearby_f, nearby_p, _, nearby_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nearby_amps, test_method,
+        )
+        (
+            mvmt_coactive_f,
+            mvmt_coactive_p,
+            _,
+            mvmt_coactive_df,
+        ) = t_utils.ANOVA_1way_posthoc(mvmt_plastic_coactive_amps, test_method,)
+        (
+            mvmt_noncoactive_f,
+            mvmt_noncoactive_p,
+            _,
+            mvmt_noncoactive_df,
+        ) = t_utils.ANOVA_1way_posthoc(mvmt_plastic_noncoactive_amps, test_method,)
+        mvmt_nearby_f, mvmt_nearby_p, _, mvmt_nearby_df = t_utils.ANOVA_1way_posthoc(
+            mvmt_plastic_nearby_amps, test_method,
+        )
+        non_coactive_f, non_coactive_p, _, non_coactive_df = t_utils.ANOVA_1way_posthoc(
+            nonmvmt_plastic_coactive_amps, test_method,
+        )
+        (
+            non_noncoactive_f,
+            non_noncoactive_p,
+            _,
+            non_noncoactive_df,
+        ) = t_utils.ANOVA_1way_posthoc(nonmvmt_plastic_noncoactive_amps, test_method,)
+        non_nearby_f, non_nearby_p, _, non_nearby_df = t_utils.ANOVA_1way_posthoc(
+            nonmvmt_plastic_nearby_amps, test_method,
+        )
+        test_title = f"One-way ANOVA {test_method}"
+
+    elif test_type == "nonparametric":
+        coactive_f, coactive_p, coactive_df = t_utils.kruskal_wallis_test(
+            plastic_coactive_amps, "Conover", test_method,
+        )
+        noncoactive_f, noncoactive_p, noncoactive_df = t_utils.kruskal_wallis_test(
+            plastic_noncoactive_amps, "Conover", test_method,
+        )
+        nearby_f, nearby_p, nearby_df = t_utils.kruskal_wallis_test(
+            plastic_nearby_amps, "Conover", test_method,
+        )
+        (
+            mvmt_coactive_f,
+            mvmt_coactive_p,
+            mvmt_coactive_df,
+        ) = t_utils.kruskal_wallis_test(
+            mvmt_plastic_coactive_amps, "Conover", test_method,
+        )
+        (
+            mvmt_noncoactive_f,
+            mvmt_noncoactive_p,
+            mvmt_noncoactive_df,
+        ) = t_utils.kruskal_wallis_test(
+            mvmt_plastic_noncoactive_amps, "Conover", test_method,
+        )
+        mvmt_nearby_f, mvmt_nearby_p, mvmt_nearby_df = t_utils.kruskal_wallis_test(
+            mvmt_plastic_nearby_amps, "Conover", test_method,
+        )
+        non_coactive_f, non_coactive_p, non_coactive_df = t_utils.kruskal_wallis_test(
+            nonmvmt_plastic_coactive_amps, "Conover", test_method,
+        )
+        (
+            non_noncoactive_f,
+            non_noncoactive_p,
+            non_noncoactive_df,
+        ) = t_utils.kruskal_wallis_test(
+            nonmvmt_plastic_noncoactive_amps, "Conover", test_method,
+        )
+        non_nearby_f, non_nearby_p, non_nearby_df = t_utils.kruskal_wallis_test(
+            nonmvmt_plastic_nearby_amps, "Conover", test_method,
+        )
+        test_title = f"Kruskal-Wallis {test_method}"
+
+    # Display the statistics
+    fig2, axes2 = plt.subplot_mosaic(
+        """
+        ABC
+        DEF
+        GHI
+        """,
+        figsize=(12, 10),
+    )
+    # Format the tables
+    axes2["A"].axis("off")
+    axes2["A"].axis("tight")
+    axes2["A"].set_title(
+        f"All Coactive Amplitude\n{test_title}\nF = {coactive_f:.4} p = {coactive_p:.3E}"
+    )
+    A_table = axes2["A"].table(
+        cellText=coactive_df.values,
+        colLabels=coactive_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    A_table.auto_set_font_size(False)
+    A_table.set_fontsize(8)
+    axes2["B"].axis("off")
+    axes2["B"].axis("tight")
+    axes2["B"].set_title(
+        f"All Nonoactive Amplitude\n{test_title}\nF = {noncoactive_f:.4} p = {noncoactive_p:.3E}"
+    )
+    B_table = axes2["B"].table(
+        cellText=noncoactive_df.values,
+        colLabels=noncoactive_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    B_table.auto_set_font_size(False)
+    B_table.set_fontsize(8)
+    axes2["C"].axis("off")
+    axes2["C"].axis("tight")
+    axes2["C"].set_title(
+        f"All Nearby Amplitude\n{test_title}\nF = {nearby_f:.4} p = {nearby_p:.3E}"
+    )
+    C_table = axes2["C"].table(
+        cellText=nearby_df.values,
+        colLabels=nearby_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    C_table.auto_set_font_size(False)
+    C_table.set_fontsize(8)
+    axes2["D"].axis("off")
+    axes2["D"].axis("tight")
+    axes2["D"].set_title(
+        f"{mvmt_key} Coactive Amplitude\n{test_title}\nF = {mvmt_coactive_f:.4} p = {mvmt_coactive_p:.3E}"
+    )
+    D_table = axes2["D"].table(
+        cellText=mvmt_coactive_df.values,
+        colLabels=mvmt_coactive_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    D_table.auto_set_font_size(False)
+    D_table.set_fontsize(8)
+    axes2["E"].axis("off")
+    axes2["E"].axis("tight")
+    axes2["E"].set_title(
+        f"{mvmt_key} Nonoactive Amplitude\n{test_title}\nF = {mvmt_noncoactive_f:.4} p = {mvmt_noncoactive_p:.3E}"
+    )
+    E_table = axes2["E"].table(
+        cellText=mvmt_noncoactive_df.values,
+        colLabels=mvmt_noncoactive_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    E_table.auto_set_font_size(False)
+    E_table.set_fontsize(8)
+    axes2["F"].axis("off")
+    axes2["F"].axis("tight")
+    axes2["F"].set_title(
+        f"{mvmt_key} Nearby Amplitude\n{test_title}\nF = {mvmt_nearby_f:.4} p = {mvmt_nearby_p:.3E}"
+    )
+    F_table = axes2["F"].table(
+        cellText=mvmt_nearby_df.values,
+        colLabels=mvmt_nearby_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    F_table.auto_set_font_size(False)
+    F_table.set_fontsize(8)
+    axes2["G"].axis("off")
+    axes2["G"].axis("tight")
+    axes2["G"].set_title(
+        f"{nonmvmt_key} Coactive Amplitude\n{test_title}\nF = {non_coactive_f:.4} p = {non_coactive_p:.3E}"
+    )
+    G_table = axes2["G"].table(
+        cellText=non_coactive_df.values,
+        colLabels=non_coactive_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    G_table.auto_set_font_size(False)
+    G_table.set_fontsize(8)
+    axes2["H"].axis("off")
+    axes2["H"].axis("tight")
+    axes2["H"].set_title(
+        f"{nonmvmt_key} Nonoactive Amplitude\n{test_title}\nF = {non_noncoactive_f:.4} p = {non_noncoactive_p:.3E}"
+    )
+    H_table = axes2["H"].table(
+        cellText=non_noncoactive_df.values,
+        colLabels=non_noncoactive_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    H_table.auto_set_font_size(False)
+    H_table.set_fontsize(8)
+    axes2["I"].axis("off")
+    axes2["I"].axis("tight")
+    axes2["I"].set_title(
+        f"{nonmvmt_key} Nearby Amplitude\n{test_title}\nF = {non_nearby_f:.4} p = {non_nearby_p:.3E}"
+    )
+    I_table = axes2["I"].table(
+        cellText=non_nearby_df.values,
+        colLabels=non_nearby_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    I_table.auto_set_font_size(False)
+    I_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        if not rwd_mvmt:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_16_Stats")
+        else:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_17_Stats")
+        fig2.savefig(fname + ".pdf")
+
