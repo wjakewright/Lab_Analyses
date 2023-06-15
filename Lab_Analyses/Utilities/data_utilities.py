@@ -105,8 +105,8 @@ def get_before_during_means(activity, timestamps, window, sampling_rate):
         before_values = []
         during_values = []
         for stamp in timestamps:
-            before_values.append(np.mean(d[stamp[0] - before_f : stamp[0]]))
-            during_values.append(np.mean(d[stamp[0] : stamp[1]]))
+            before_values.append(np.nanmean(d[stamp[0] - before_f : stamp[0]]))
+            during_values.append(np.nanmean(d[stamp[0] : stamp[1]]))
         all_befores.append(np.array(before_values))
         all_durings.append(np.array(during_values))
 
