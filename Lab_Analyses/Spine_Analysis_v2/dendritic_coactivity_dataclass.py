@@ -98,7 +98,7 @@ class Dendritic_Coactivity_Data:
     avg_nearby_spine_coactivity_rate_norm: np.ndarray
     shuff_nearby_spine_coactivity_rate_norm: np.ndarray
     coactivity_rate_norm_distribution: np.ndarray
-    rel_nearby_spine_coactivity_rate: np.ndarray
+    rel_nearby_spine_coactivity_rate_norm: np.ndarray
     avg_nearby_spine_conj_rate: np.ndarray
     shuff_nearby_spine_conj_rate: np.ndarray
     conj_coactivity_rate_distribution: np.ndarray
@@ -208,7 +208,7 @@ class Grouped_Dendritic_Coactivity_Data:
         self.parameters = data_list[0].parameters
 
         # Concatenate all the other attributes togehter
-        self.concatenate_data(self, data_list)
+        self.concatenate_data(data_list)
 
     def concatenate_data(self, data_list):
         """Method to concatenate all the attributes from the different dataclasses
@@ -244,9 +244,7 @@ class Grouped_Dendritic_Coactivity_Data:
 
     def save(self):
         """Method to save the grouped dataclasses"""
-        save_path = (
-            r"C:\Users\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
-        )
+        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
 
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
