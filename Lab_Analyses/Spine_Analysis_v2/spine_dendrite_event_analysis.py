@@ -178,7 +178,7 @@ def spine_dendrite_event_analysis(
     relative_onsets = np.zeros(spine_activity.shape[1]) * np.nan
     onset_jitter = np.zeros(spine_activity.shape[1]) * np.nan
 
-    coactive_onsets = [None for i in range(spine_activity.shape[1])]
+    coactive_onsets = [[] for i in range(spine_activity.shape[1])]
 
     # Iterate through each spine
     for spine in range(spine_activity.shape[1]):
@@ -239,8 +239,8 @@ def spine_dendrite_event_analysis(
         dendrite_coactive_event_num[spine] = event_num
         dendrite_coactivity_rate[spine] = event_rate
         dendrite_coactivity_rate_norm[spine] = event_rate_norm
-        shuff_dendrite_coactivity_rate[spine] = shuff_event_rate
-        shuff_dendrite_coactivity_rate_norm[spine] = shuff_event_rate_norm
+        shuff_dendrite_coactivity_rate[:, spine] = shuff_event_rate
+        shuff_dendrite_coactivity_rate_norm[:, spine] = shuff_event_rate_norm
         above_chance_coactivity[spine] = relative_diff
         above_chance_coactivity_norm[spine] = relative_diff_norm
         fraction_dend_coactive[spine] = fraction_dend
@@ -250,14 +250,17 @@ def spine_dendrite_event_analysis(
 
         # Get timestamps of coactivity
         coactive_stamps = t_stamps.get_activity_timestamps(coactive_trace)
-        coactive_stamps = [x[0] for x in coactive_stamps]
-        refine_coactive_stamps = t_stamps.refine_activity_timestamps(
-            coactive_stamps,
-            window=activity_window,
-            max_len=len(d_activity),
-            sampling_rate=sampling_rate,
-        )
-        coactive_onsets[spine] = refine_coactive_stamps
+        if len(coactive_stamps) == 0:
+            coactive_onsets[spine] = coactive_stamps
+        else:
+            coactive_stamps = [x[0] for x in coactive_stamps]
+            refine_coactive_stamps = t_stamps.refine_activity_timestamps(
+                coactive_stamps,
+                window=activity_window,
+                max_len=len(d_activity),
+                sampling_rate=sampling_rate,
+            )
+            coactive_onsets[spine] = refine_coactive_stamps
 
     # Analyze the activity during events
     ## Dendrite
@@ -280,6 +283,12 @@ def spine_dendrite_event_analysis(
     for coactive, dend in zip(coactive_onsets, dendrite_onset):
         c_onset = t_stamps.timestamp_onset_correction(
             coactive, activity_window, dend, sampling_rate
+        )
+        c_onset = t_stamps.refine_activity_timestamps(
+            coactive,
+            window=activity_window,
+            max_len=ref_dend_activity.shape[0],
+            sampling_rate=sampling_rate,
         )
         corrected_onsets.append(c_onset)
 
@@ -341,6 +350,9 @@ def extend_dendrite_activity(dend_activity, duration, sampling_rate):
     extended_activity = np.zeros(dend_activity.shape)
 
     for i in range(dend_activity.shape[1]):
+        # Skip all nan traces
+        if not np.nansum(dend_activity[:, i]):
+            extended_activity[:, i] = dend_activity[:, i]
         d_pad = np.pad(
             dend_activity[:, i], (npad // 2, npad - npad // 2), mode="constant",
         )
