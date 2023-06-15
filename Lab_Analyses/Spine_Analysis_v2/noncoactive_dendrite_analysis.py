@@ -79,8 +79,8 @@ def noncoactive_dendrite_analysis(
     conj_fraction_participating = np.zeros(coactive_matrix.shape[1])
 
     # Temporary variables
-    noncoactive_dend_stamps = [None for i in range(coactive_matrix.shape[1])]
-    nonparticipating_stamps = [None for i in range(coactive_matrix.shape[1])]
+    noncoactive_dend_stamps = [[] for i in range(coactive_matrix.shape[1])]
+    nonparticipating_stamps = [[] for i in range(coactive_matrix.shape[1])]
 
     # Iterate through each spine
     for spine in range(coactive_matrix.shape[1]):
@@ -93,16 +93,23 @@ def noncoactive_dendrite_analysis(
             dend_activity[:, spine], noncoactive_trace, sampling_rate=sampling_rate,
         )
         # Get event timestamps
-        noncoactive_stamps = t_stamps.get_activity_timestamps(dend_noncoactive)
-        noncoactive_stamps = [x[0] for x in noncoactive_stamps]
-        noncoactive_stamps = t_stamps.refine_activity_timestamps(
-            noncoactive_stamps,
-            window=activity_window,
-            max_len=len(dend_activity[:, spine]),
-            sampling_rate=sampling_rate,
-        )
+        if np.nansum(dend_noncoactive):
+            noncoactive_stamps = t_stamps.get_activity_timestamps(dend_noncoactive)
+            noncoactive_stamps = [x[0] for x in noncoactive_stamps]
+            noncoactive_stamps = t_stamps.refine_activity_timestamps(
+                noncoactive_stamps,
+                window=activity_window,
+                max_len=len(dend_activity[:, spine]),
+                sampling_rate=sampling_rate,
+            )
+        else:
+            noncoactive_stamps = []
+
+        noncoactive_dend_stamps[spine] = noncoactive_stamps
 
         # Calculate fraction participating to conj coactivity
+        if (nearby_spine_idxs[spine] is None) or (len(nearby_spine_idxs[spine]) == 0):
+            continue
         nearby_spine_activity = spine_activity[:, nearby_spine_idxs[spine]]
         combined_nearby_activity = np.sum(nearby_spine_activity, axis=1)
         combined_nearby_activity[combined_nearby_activity > 1] = 1
@@ -110,7 +117,7 @@ def noncoactive_dendrite_analysis(
             combined_nearby_activity * dend_activity[:, spine]
         )
         participating_coactivity = (
-            dend_combined_nearby_activity * spine_activity[:spine]
+            dend_combined_nearby_activity * spine_activity[:, spine]
         )
         frac_participating = np.nansum(participating_coactivity) / np.nansum(
             dend_combined_nearby_activity
@@ -127,20 +134,21 @@ def noncoactive_dendrite_analysis(
                 dend_activity[:, spine], nearby_isolated, sampling_rate=sampling_rate,
             )
             ## Get the stamps
-            np_stamps = t_stamps.get_activity_timestamps(non_part_coactivity)
-            np_stamps = [x[0] for x in np_stamps]
-            np_stamps = t_stamps.refine_activity_timestamps(
-                np_stamps,
-                window=activity_window,
-                max_len=len(dend_activity[:, spine]),
-                sampling_rate=sampling_rate,
-            )
+            if np.nansum(non_part_coactivity):
+                np_stamps = t_stamps.get_activity_timestamps(non_part_coactivity)
+                np_stamps = [x[0] for x in np_stamps]
+                np_stamps = t_stamps.refine_activity_timestamps(
+                    np_stamps,
+                    window=activity_window,
+                    max_len=len(dend_activity[:, spine]),
+                    sampling_rate=sampling_rate,
+                )
+            else:
+                np_stamps = []
             non_part_stamps.append(np_stamps)
         ## Unnest the list
         non_part_stamps = [y for x in non_part_stamps for y in x]
 
-        # Store stamps
-        noncoactive_dend_stamps[spine] = noncoactive_stamps
         nonparticipating_stamps[spine] = non_part_stamps
         conj_fraction_participating[spine] = frac_participating
 
