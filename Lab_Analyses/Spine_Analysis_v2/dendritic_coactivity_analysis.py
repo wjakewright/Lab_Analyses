@@ -91,7 +91,7 @@ def dendritic_coactivity_analysis(
         print("----------------------------------------")
         print(f"- Analyzing {mouse}")
         # Load the datasets
-        datasets = load_spine_datasets(mouse, session, fov_type)
+        datasets = load_spine_datasets(mouse, [session], fov_type)
 
         # Analyze each FOV seperately
         for FOV, dataset in datasets.items():
@@ -127,13 +127,13 @@ def dendritic_coactivity_analysis(
             dendrite_dFoF = data.dendrite_calcium_processed_dFoF
             ## Movement-related information
             movement_spines = np.array(data.movement_spines)
-            rwd_movement_spines = np.array(data.rwd_movement_spines)
+            rwd_movement_spines = np.array(data.reward_movement_spines)
             (
                 nonmovement_spines,
                 nonrwd_movement_spines,
             ) = parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines)
             movement_dendrites = np.array(data.movement_dendrites)
-            rwd_movement_dendrites = np.array(data.rwd_movement_dendrites)
+            rwd_movement_dendrites = np.array(data.reward_movement_dendrites)
             (
                 nonmovement_dendrites,
                 nonrwd_movement_dendrites,
@@ -142,7 +142,7 @@ def dendritic_coactivity_analysis(
             )
             ## Behavioral data
             lever_active = data.lever_active
-            lever_force = data.lever_force
+            lever_force = data.lever_force_smooth
             lever_active_rwd = data.rewarded_movement_binary
             lever_inactive = np.absolute(lever_active - 1)
             lever_active_nonrwd = lever_active - lever_active_rwd
@@ -306,7 +306,7 @@ def dendritic_coactivity_analysis(
             )
 
             # Assess nearby spine activity during conj coactivity events
-            print(f"Assessing properties of nearby spines")
+            print(f"---- Assessing properties of nearby spines")
             (
                 conj_coactive_spine_num,
                 conj_nearby_coactive_spine_amplitude,
@@ -639,7 +639,7 @@ def dendritic_coactivity_analysis(
             )
 
             LMP = [learned_movement_pattern for i in range(spine_activity.shape[1])]
-            learned_movement_pattern = np.stack(LMP).reshape(-1, 1)
+            learned_movement_pattern = LMP
 
             parameters = {
                 "Sampling Rate": sampling_rate,
