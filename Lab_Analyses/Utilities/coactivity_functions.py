@@ -148,10 +148,15 @@ def calculate_relative_onset(
         max_len=len(coactivity),
         sampling_rate=sampling_rate,
     )
+    # Skip if no coactivity
+    if len(timestamps) == 0:
+        return np.nan, np.nan
+
+    timestamps = [x[0] for x in timestamps]
 
     relative_onsets = np.zeros(len(timestamps)) * np.nan
     # Iterate through each event
-    for event in timestamps:
+    for i, event in enumerate(timestamps):
         event_activity = coactivity[event + before_f : event + after_f]
         ## Ensure there is coactivity
         if not np.sum(event_activity):
@@ -172,7 +177,7 @@ def calculate_relative_onset(
             onset_2 = 0
         ## Calculate relative onset
         rel_onset = (onset_1 - onset_2) / sampling_rate
-        relative_onsets[event] = rel_onset
+        relative_onsets[i] = rel_onset
 
     # Get mean onset and jitter
     avg_relative_onset = np.nanmean(relative_onsets)
