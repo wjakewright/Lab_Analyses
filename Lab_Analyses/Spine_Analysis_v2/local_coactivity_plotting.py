@@ -9,6 +9,9 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
+from Lab_Analyses.Plotting.plot_cummulative_distribution import (
+    plot_cummulative_distribution,
+)
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
 from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
@@ -384,7 +387,6 @@ def plot_comparative_mvmt_coactivity(
     showmeans=False,
     mean_type="median",
     err_type="CI",
-    hist_bins=30,
     test_type="nonparametric",
     display_stats=True,
     save=False,
@@ -402,8 +404,6 @@ def plot_comparative_mvmt_coactivity(
             figsize - tuple specifying the size of the figure
 
             showmeans - boolean specifying whether to plot means on box plots
-
-            hist_bins - int specifying how many bins for the histograms
 
             test_type - str specifying whether to perform parametric or nonparametric tests
 
@@ -446,14 +446,8 @@ def plot_comparative_mvmt_coactivity(
     }
 
     shuff_local_coactivity_rate = {
-        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate.flatten().astype(np.float32),
-        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate.flatten().astype(
-            np.float32
-        ),
-    }
-    shuff_local_coactivity_medians = {
-        mvmt_key: np.nanmedian(mvmt_dataset.shuff_local_coactivity_rate, axis=1),
-        nonmvmt_key: np.nanmedian(nonmvmt_dataset.shuff_local_coactivity_rate, axis=1),
+        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate,
+        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate,
     }
     real_vs_shuff_diff = {
         mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff,
@@ -465,19 +459,10 @@ def plot_comparative_mvmt_coactivity(
     }
 
     shuff_local_coactivity_rate_norm = {
-        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate_norm.flatten().astype(
-            np.float32
-        ),
-        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate_norm.flatten().astype(
-            np.float32
-        ),
+        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate_norm,
+        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate_norm,
     }
-    shuff_local_coactivity_medians_norm = {
-        mvmt_key: np.nanmedian(mvmt_dataset.shuff_local_coactivity_rate_norm, axis=1),
-        nonmvmt_key: np.nanmedian(
-            nonmvmt_dataset.shuff_local_coactivity_rate_norm, axis=1
-        ),
-    }
+
     real_vs_shuff_diff_norm = {
         mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff_norm,
         nonmvmt_key: nonmvmt_dataset.real_vs_shuff_coactivity_diff_norm,
@@ -649,22 +634,23 @@ def plot_comparative_mvmt_coactivity(
     )
     # Movement local coactivity vs chance
     ## Histogram
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
             (
                 avg_local_coactivity_rate[mvmt_key],
                 shuff_local_coactivity_rate[mvmt_key],
             )
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title=mvmt_key,
         xtitle="Coactivity rate (events/min)",
-        xlim=(0, 10),
+        xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -673,12 +659,12 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_c_inset = axes["C"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_c_inset = axes["C"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_c_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": avg_local_coactivity_rate[mvmt_key],
-            "shuff": shuff_local_coactivity_medians[mvmt_key],
+            "shuff": shuff_local_coactivity_rate[mvmt_key].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -706,22 +692,23 @@ def plot_comparative_mvmt_coactivity(
     )
     # Non movement local coactivity vs chance
     ## Histogram
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
             (
                 avg_local_coactivity_rate[nonmvmt_key],
                 shuff_local_coactivity_rate[nonmvmt_key],
             )
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title=nonmvmt_key,
         xtitle="Coactivity rate (events/min)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -730,12 +717,14 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_d_inset = axes["D"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_d_inset = axes["D"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_d_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": avg_local_coactivity_rate[nonmvmt_key],
-            "shuff": shuff_local_coactivity_medians[nonmvmt_key],
+            "shuff": shuff_local_coactivity_rate[nonmvmt_key]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -763,22 +752,23 @@ def plot_comparative_mvmt_coactivity(
     )
     # Movement local norm coactivity vs chance
     ## Histogram
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
             (
                 avg_local_coactivity_rate_norm[mvmt_key],
                 shuff_local_coactivity_rate_norm[mvmt_key],
             )
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title=mvmt_key,
         xtitle="Norm. coactivity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -787,12 +777,14 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_h_inset = axes["H"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_h_inset = axes["H"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_h_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": avg_local_coactivity_rate_norm[mvmt_key],
-            "shuff": shuff_local_coactivity_medians_norm[mvmt_key],
+            "shuff": shuff_local_coactivity_rate_norm[mvmt_key]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -820,22 +812,23 @@ def plot_comparative_mvmt_coactivity(
     )
     # Non movement local norm coactivity vs chance
     ## Histogram
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
             (
                 avg_local_coactivity_rate_norm[nonmvmt_key],
                 shuff_local_coactivity_rate_norm[nonmvmt_key],
             )
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title=nonmvmt_key,
         xtitle="Norm. coactivity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -844,12 +837,14 @@ def plot_comparative_mvmt_coactivity(
         save_path=None,
     )
     ## Inset bar plot
-    ax_i_inset = axes["I"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_i_inset = axes["I"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_i_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": avg_local_coactivity_rate_norm[nonmvmt_key],
-            "shuff": shuff_local_coactivity_medians_norm[nonmvmt_key],
+            "shuff": shuff_local_coactivity_rate_norm[nonmvmt_key]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -1266,7 +1261,6 @@ def plot_plasticity_coactivity_rates(
     exclude="Shaft Spine",
     threshold=0.3,
     figsize=(10, 8),
-    hist_bins=30,
     showmeans=False,
     mean_type="median",
     err_type="CI",
@@ -1301,8 +1295,6 @@ def plot_plasticity_coactivity_rates(
                         classifying plasticity
                 
             figsize - tuple specifying the size of the figure
-
-            hist_bins - int specifying how many bins for the histograms
 
             showmeans - boolean specifying whether to plot means on box plots
 
@@ -1776,22 +1768,18 @@ def plot_plasticity_coactivity_rates(
     )
     # Enlarged local vs chance
     ## histogram
-    plot_histogram(
-        data=list(
-            (
-                plastic_local_rates["Enlarged"],
-                plastic_shuff_rates["Enlarged"].flatten().astype(np.float32),
-            )
-        ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+    plot_cummulative_distribution(
+        data=list((plastic_local_rates["Enlarged"], plastic_shuff_rates["Enlarged"],)),
+        plot_ind=True,
         title="Enlarged",
         xtitle=f"Local {coactivity_title}",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -1800,12 +1788,12 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     ## Inset bar
-    ax_e_inset = axes["E"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_e_inset = axes["E"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_e_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_local_rates["Enlarged"],
-            "shuff": plastic_shuff_medians["Enlarged"],
+            "shuff": plastic_shuff_rates["Enlarged"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -1832,22 +1820,18 @@ def plot_plasticity_coactivity_rates(
     )
     # Shrunken local vs chance
     ## histogram
-    plot_histogram(
-        data=list(
-            (
-                plastic_local_rates["Shrunken"],
-                plastic_shuff_rates["Shrunken"].flatten().astype(np.float32),
-            )
-        ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+    plot_cummulative_distribution(
+        data=list((plastic_local_rates["Shrunken"], plastic_shuff_rates["Shrunken"],)),
+        plot_ind=True,
         title="Shrunken",
         xtitle=f"Local {coactivity_title}",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -1856,12 +1840,12 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     ## Inset bar
-    ax_f_inset = axes["F"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_f_inset = axes["F"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_f_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_local_rates["Shrunken"],
-            "shuff": plastic_shuff_medians["Shrunken"],
+            "shuff": plastic_shuff_rates["Shrunken"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -1888,22 +1872,18 @@ def plot_plasticity_coactivity_rates(
     )
     # Stable local vs chance
     ## histogram
-    plot_histogram(
-        data=list(
-            (
-                plastic_local_rates["Stable"],
-                plastic_shuff_rates["Stable"].flatten().astype(np.float32),
-            )
-        ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+    plot_cummulative_distribution(
+        data=list((plastic_local_rates["Stable"], plastic_shuff_rates["Stable"],)),
+        plot_ind=True,
         title="Stable",
         xtitle=f"Local {coactivity_title}",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[2], "grey"],
-        alpha=0.3,
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -1912,12 +1892,12 @@ def plot_plasticity_coactivity_rates(
         save_path=None,
     )
     ## Inset bar
-    ax_g_inset = axes["G"].inset_axes([0.8, 0.4, 0.4, 0.6])
+    ax_g_inset = axes["G"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_g_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_local_rates["Stable"],
-            "shuff": plastic_shuff_medians["Stable"],
+            "shuff": plastic_shuff_rates["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3715,22 +3695,18 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged rate vs chance
-    plot_histogram(
-        data=list(
-            (
-                plastic_avg_rates["Enlarged"],
-                plastic_shuff_rates["Enlarged"].flatten().astype(np.float32),
-            )
-        ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+    plot_cummulative_distribution(
+        data=list((plastic_avg_rates["Enlarged"], plastic_shuff_rates["Enlarged"],)),
+        plot_ind=True,
         title="Enlarged",
         xtitle="Nearby activity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -3739,12 +3715,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_c_inset = axes["C"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_c_inset = axes["C"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_c_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_avg_rates["Enlarged"],
-            "shuff": plastic_shuff_rate_medians["Enlarged"],
+            "shuff": plastic_shuff_rates["Enlarged"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3770,22 +3746,18 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Shrunken rate vs chance
-    plot_histogram(
-        data=list(
-            (
-                plastic_avg_rates["Shrunken"],
-                plastic_shuff_rates["Shrunken"].flatten().astype(np.float32),
-            )
-        ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+    plot_cummulative_distribution(
+        data=list((plastic_avg_rates["Shrunken"], plastic_shuff_rates["Shrunken"],)),
+        plot_ind=True,
         title="Shrunken",
         xtitle="Nearby activity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -3794,12 +3766,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_d_inset = axes["D"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_d_inset = axes["D"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_d_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_avg_rates["Shrunken"],
-            "shuff": plastic_shuff_rate_medians["Shrunken"],
+            "shuff": plastic_shuff_rates["Shrunken"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3825,22 +3797,18 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Stable rate vs chance
-    plot_histogram(
-        data=list(
-            (
-                plastic_avg_rates["Stable"],
-                plastic_shuff_rates["Stable"].flatten().astype(np.float32),
-            )
-        ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+    plot_cummulative_distribution(
+        data=list((plastic_avg_rates["Stable"], plastic_shuff_rates["Stable"],)),
+        plot_ind=True,
         title="Stable",
         xtitle="Nearby activity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[2], "grey"],
-        alpha=0.3,
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -3849,12 +3817,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_e_inset = axes["E"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_e_inset = axes["E"].inset_axes([0.0, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_e_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_avg_rates["Stable"],
-            "shuff": plastic_shuff_rate_medians["Stable"],
+            "shuff": plastic_shuff_rates["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3908,22 +3876,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged coactivity rate vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_avg_coactivity["Enlarged"],
-                plastic_shuff_coactivity["Enlarged"].flatten().astype(np.float32),
-            )
+            (plastic_avg_coactivity["Enlarged"], plastic_shuff_coactivity["Enlarged"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Enlarged",
         xtitle="Avg local coactivity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -3932,12 +3898,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_h_inset = axes["H"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_h_inset = axes["H"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_h_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_avg_coactivity["Enlarged"],
-            "shuff": plastic_shuff_coactivity_medians["Enlarged"],
+            "shuff": plastic_shuff_coactivity["Enlarged"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3965,20 +3931,18 @@ def plot_nearby_spine_properties(
     # Shrunken coactivity rate vs chance
     plot_histogram(
         data=list(
-            (
-                plastic_avg_coactivity["Shrunken"],
-                plastic_shuff_coactivity["Shrunken"].flatten().astype(np.float32),
-            )
+            (plastic_avg_coactivity["Shrunken"], plastic_shuff_coactivity["Shrunken"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Shrunken",
         xtitle="Avg local coactivity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -3987,12 +3951,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_I_inset = axes["I"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_I_inset = axes["I"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_I_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_avg_coactivity["Shrunken"],
-            "shuff": plastic_shuff_coactivity_medians["Shrunken"],
+            "shuff": plastic_shuff_coactivity["Shrunken"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4018,22 +3982,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Stable coactivity rate vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_avg_coactivity["Stable"],
-                plastic_shuff_coactivity["Stable"].flatten().astype(np.float32),
-            )
+            (plastic_avg_coactivity["Stable"], plastic_shuff_coactivity["Stable"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Stable",
         xtitle="Avg local coactivity rate",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[2], "grey"],
-        alpha=0.3,
+        color=[COLORS[2], "black"],
+        ind_colr=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4042,12 +4004,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_j_inset = axes["J"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_j_inset = axes["J"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_j_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_avg_coactivity["Stable"],
-            "shuff": plastic_shuff_coactivity_medians["Stable"],
+            "shuff": plastic_shuff_coactivity["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4101,22 +4063,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged MRS density vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_MRS_density["Enlarged"],
-                plastic_MRS_shuff_density["Enlarged"].flatten().astype(np.float32),
-            )
+            (plastic_MRS_density["Enlarged"], plastic_MRS_shuff_density["Enlarged"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Enlarged",
         xtitle="MRS density (spines/\u03BCm)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4125,12 +4085,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_m_inset = axes["M"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_m_inset = axes["M"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_m_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_MRS_density["Enlarged"],
-            "shuff": plastic_MRS_shuff_density_medians["Enlarged"],
+            "shuff": plastic_MRS_shuff_density["Enlarged"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4156,22 +4116,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Shrunken MRS density vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_MRS_density["Shrunken"],
-                plastic_MRS_shuff_density["Shrunken"].flatten().astype(np.float32),
-            )
+            (plastic_MRS_density["Shrunken"], plastic_MRS_shuff_density["Shrunken"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Shrunken",
         xtitle="MRS density (spines/\u03BCm)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4180,12 +4138,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_n_inset = axes["N"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_n_inset = axes["N"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_n_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_MRS_density["Shrunken"],
-            "shuff": plastic_MRS_shuff_density_medians["Shrunken"],
+            "shuff": plastic_MRS_shuff_density["Shrunken"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4211,22 +4169,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged MRS density vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_MRS_density["Stable"],
-                plastic_MRS_shuff_density["Stable"].flatten().astype(np.float32),
-            )
+            (plastic_MRS_density["Stable"], plastic_MRS_shuff_density["Stable"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Stable",
         xtitle="MRS density (spines/\u03BCm)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[2], "grey"],
-        alpha=0.3,
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4235,12 +4191,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_o_inset = axes["O"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_o_inset = axes["O"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_o_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_MRS_density["Stable"],
-            "shuff": plastic_MRS_shuff_density_medians["Stable"],
+            "shuff": plastic_MRS_shuff_density["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4294,22 +4250,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged rMRS density vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_rMRS_density["Enlarged"],
-                plastic_rMRS_shuff_density["Enlarged"].flatten().astype(np.float32),
-            )
+            (plastic_rMRS_density["Enlarged"], plastic_rMRS_shuff_density["Enlarged"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Enlarged",
         xtitle="rMRS density (spines/\u03BCm)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[0], "grey"],
-        alpha=0.3,
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4318,12 +4272,14 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_r_inset = axes["R"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_r_inset = axes["R"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_r_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_rMRS_density["Enlarged"],
-            "shuff": plastic_rMRS_shuff_density_medians["Enlarged"],
+            "shuff": plastic_rMRS_shuff_density["Enlarged"]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4349,22 +4305,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Shrunken rMRS density vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_rMRS_density["Shrunken"],
-                plastic_rMRS_shuff_density["Shrunken"].flatten().astype(np.float32),
-            )
+            (plastic_rMRS_density["Shrunken"], plastic_rMRS_shuff_density["Shrunken"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Shrunken",
         xtitle="rMRS density (spines/\u03BCm)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[1], "grey"],
-        alpha=0.3,
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4373,12 +4327,14 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_s_inset = axes["S"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_s_inset = axes["S"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_s_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_rMRS_density["Shrunken"],
-            "shuff": plastic_rMRS_shuff_density_medians["Shrunken"],
+            "shuff": plastic_rMRS_shuff_density["Shrunken"]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4404,22 +4360,20 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Enlarged rMRS density vs chance
-    plot_histogram(
+    plot_cummulative_distribution(
         data=list(
-            (
-                plastic_rMRS_density["Stable"],
-                plastic_rMRS_shuff_density["Stable"].flatten().astype(np.float32),
-            )
+            (plastic_rMRS_density["Stable"], plastic_rMRS_shuff_density["Stable"],)
         ),
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
+        plot_ind=True,
         title="Stable",
         xtitle="rMRS density (spines/\u03BCm)",
         xlim=(0, None),
         figsize=(5, 5),
-        color=[COLORS[2], "grey"],
-        alpha=0.3,
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -4428,12 +4382,12 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_t_inset = axes["T"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    ax_t_inset = axes["T"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_t_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_rMRS_density["Stable"],
-            "shuff": plastic_rMRS_shuff_density_medians["Stable"],
+            "shuff": plastic_rMRS_shuff_density["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4516,7 +4470,7 @@ def plot_nearby_spine_properties(
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_enlarged["Enlarged"],
-            "shuff": plastic_shuff_enlarged_medians["Enlarged"],
+            "shuff": plastic_shuff_enlarged["Enlarged"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4571,7 +4525,7 @@ def plot_nearby_spine_properties(
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_enlarged["Shrunken"],
-            "shuff": plastic_shuff_enlarged_medians["Shrunken"],
+            "shuff": plastic_shuff_enlarged["Shrunken"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4626,7 +4580,7 @@ def plot_nearby_spine_properties(
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_enlarged["Stable"],
-            "shuff": plastic_shuff_enlarged_medians["Stable"],
+            "shuff": plastic_shuff_enlarged["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4709,7 +4663,7 @@ def plot_nearby_spine_properties(
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_shrunken["Enlarged"],
-            "shuff": plastic_shuff_shrunken_medians["Enlarged"],
+            "shuff": plastic_shuff_shrunken["Enlarged"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4764,7 +4718,7 @@ def plot_nearby_spine_properties(
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_shrunken["Shrunken"],
-            "shuff": plastic_shuff_shrunken_medians["Shrunken"],
+            "shuff": plastic_shuff_shrunken["Shrunken"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4819,7 +4773,7 @@ def plot_nearby_spine_properties(
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_shrunken["Stable"],
-            "shuff": plastic_shuff_shrunken_medians["Stable"],
+            "shuff": plastic_shuff_shrunken["Stable"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
