@@ -239,7 +239,10 @@ def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
         local dendendrite dfoF trace
     """
     if len(timestamps) == 0:
-        traces = None
+        traces = (
+            np.zeros(((activity_window[1] - activity_window[0]) * sampling_rate, 1))
+            * np.nan
+        )
         amplitude = np.nan
         return traces, amplitude
     # Get the traces
