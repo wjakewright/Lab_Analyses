@@ -77,13 +77,13 @@ def plot_cummulative_distribution(
             ## Check to plot individual data samples
             if (plot_ind == True) and (len(d.shape) == 2):
                 idxs = list(range(d.shape[0]))
-                if len(idxs) > 100:
-                    idxs = random.sample(idxs, 100)
+                if len(idxs) > 50:
+                    idxs = random.sample(idxs, 50)
                 for i in idxs:
                     ind = d[i, :]
                     ind = ind[~np.isnan(ind)]
                     sns.ecdfplot(
-                        data=ind, color=ic, linewidth=ind_line_width, alpha=alpha
+                        data=ind, color=ic, linewidth=ind_line_width, alpha=alpha, ax=ax
                     )
                 plot_d = d.flatten().astype(np.float32)
                 plot_d = plot_d[~np.isnan(plot_d)]
@@ -91,10 +91,10 @@ def plot_cummulative_distribution(
                 plot_d = d.flatten().astype(np.float32)
             else:
                 plot_d = d[~np.isnan(d)]
-            sns.ecdfplot(data=plot_d, color=c, linewidth=line_width)
+            sns.ecdfplot(data=plot_d, color=c, linewidth=line_width, ax=ax)
     else:
         plot_d = data[~np.isnan(data)]
-        sns.ecdfplot(data=plot_d, color=color, linewidth=line_width)
+        sns.ecdfplot(data=plot_d, color=color, linewidth=line_width, ax=ax)
 
     # Add the title
     ax.set_title(title)
