@@ -468,7 +468,7 @@ def subselect_data_by_idxs(data, idxs):
             raise IndexError("Only supports up to 2D arrays")
     elif type(data) == list:
         # Check if idxs are boolean
-        if type(idxs[0]) == bool:
+        if (type(idxs[0]) == bool) or (type(idxs[0]) == np.bool_):
             selected_data = list(compress(data, idxs))
         else:
             selected_data = [data[i] for i in idxs]
