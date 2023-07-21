@@ -328,10 +328,26 @@ def local_coactivity_analysis(
             )
             relative_volumes[stable_idxs] = rel_vols[-1]
             enlarged, shrunken, _ = classify_plasticity(
-                relative_volumes, threshold=0.3, norm=False,
+                relative_volumes, threshold=(0.25, 0.3), norm=False,
             )
             enlarged = np.array(enlarged)
             shrunken = np.array(shrunken)
+            ## Relative volume
+            (
+                local_relative_vol,
+                shuff_relative_vol,
+                relative_vol_distribution,
+            ) = variable_distance_dependence(
+                relative_volumes,
+                spine_positions,
+                spine_flags,
+                spine_groupings,
+                bin_size=5,
+                cluster_dist=cluster_dist,
+                method="local",
+                iterations=1000,
+            )
+
             ### Enlarged spines
             (
                 local_nn_enlarged,
@@ -587,6 +603,9 @@ def local_coactivity_analysis(
                 avg_nearby_spine_volume=avg_nearby_spine_volume,
                 shuff_nearby_spine_volume=shuff_nearby_spine_volume,
                 nearby_spine_volume_distribution=nearby_spine_volume_distribution,
+                local_relative_vol=local_relative_vol,
+                shuff_relative_vol=shuff_relative_vol,
+                relative_vol_distribution=relative_vol_distribution,
                 local_nn_enlarged=local_nn_enlarged,
                 shuff_nn_enlarged=shuff_nn_enlarged,
                 enlarged_spine_distribution=enlarged_spine_distribution,
