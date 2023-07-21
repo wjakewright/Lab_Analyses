@@ -60,6 +60,9 @@ class Local_Coactivity_Data:
     avg_nearby_spine_volume: np.ndarray
     shuff_nearby_spine_volume: np.ndarray
     nearby_spine_volume_distribution: np.ndarray
+    local_relative_vol: np.ndarray
+    shuff_relative_vol: np.ndarray
+    relative_vol_distribution: np.ndarray
     local_nn_enlarged: np.ndarray
     shuff_nn_enlarged: np.ndarray
     enlarged_spine_distribution: np.ndarray
