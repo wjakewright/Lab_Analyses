@@ -141,8 +141,8 @@ def calculate_dendrite_coactivity_rate(
         shuff_coactivity_rate_norm,
         relative_diff,
         relative_diff_norm,
-        fraction_spine_coactive,
         fraction_dend_coactive,
+        fraction_spine_coactive,
         relative_spine_onset,
         spine_onset_jitter,
     )
