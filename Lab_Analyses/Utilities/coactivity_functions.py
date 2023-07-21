@@ -159,7 +159,7 @@ def calculate_relative_onset(
     for i, event in enumerate(timestamps):
         event_activity = coactivity[event + before_f : event + after_f]
         ## Ensure there is coactivity
-        if not np.sum(event_activity):
+        if not np.nansum(event_activity):
             continue
         ## Find onsets of trace_1
         activity_1 = trace_1[event + before_f : event + after_f]
