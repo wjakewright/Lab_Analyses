@@ -17,6 +17,7 @@ from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_t
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
 from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
+from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_present_spines
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
     calculate_volume_change,
     classify_plasticity,
@@ -213,14 +214,14 @@ def plot_coactive_vs_noncoactive_events(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.5,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -244,14 +245,14 @@ def plot_coactive_vs_noncoactive_events(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.5,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -275,14 +276,14 @@ def plot_coactive_vs_noncoactive_events(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.5,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -414,7 +415,7 @@ def plot_comparative_mvmt_coactivity(
             save_path - str specifying where to save the figure
     
     """
-    COLORS = ["mediumblue", "firebrick"]
+    COLORS = ["darkorange", "darkviolet"]
     if rwd_mvmts:
         mvmt_key = "Rwd mvmt"
         nonmvmt_key = "Nonrwd mvmt"
@@ -430,50 +431,89 @@ def plot_comparative_mvmt_coactivity(
     else:
         activity_type = "\u0394F/F"
 
+    spine_idxs = find_present_spines(mvmt_dataset.spine_flags)
+    spine_idxs1 = find_present_spines(nonmvmt_dataset.spine_flags)
+
     ## Coactivity related variables
     distance_bins = mvmt_dataset.parameters["position bins"][1:]
     distance_coactivity_rate = {
-        mvmt_key: mvmt_dataset.distance_coactivity_rate,
-        nonmvmt_key: nonmvmt_dataset.distance_coactivity_rate,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.distance_coactivity_rate, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.distance_coactivity_rate, spine_idxs1
+        ),
     }
     distance_coactivity_rate_norm = {
-        mvmt_key: mvmt_dataset.distance_coactivity_rate_norm,
-        nonmvmt_key: nonmvmt_dataset.distance_coactivity_rate_norm,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.distance_coactivity_rate_norm, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.distance_coactivity_rate_norm, spine_idxs1
+        ),
     }
     avg_local_coactivity_rate = {
-        mvmt_key: mvmt_dataset.avg_local_coactivity_rate,
-        nonmvmt_key: nonmvmt_dataset.avg_local_coactivity_rate,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.avg_local_coactivity_rate, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.avg_local_coactivity_rate, spine_idxs1
+        ),
     }
 
     shuff_local_coactivity_rate = {
-        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate,
-        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.shuff_local_coactivity_rate, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.shuff_local_coactivity_rate, spine_idxs1
+        ),
     }
     real_vs_shuff_diff = {
-        mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff,
-        nonmvmt_key: nonmvmt_dataset.real_vs_shuff_coactivity_diff,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.real_vs_shuff_coactivity_diff, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.real_vs_shuff_coactivity_diff, spine_idxs1
+        ),
     }
     avg_local_coactivity_rate_norm = {
-        mvmt_key: mvmt_dataset.avg_local_coactivity_rate_norm,
-        nonmvmt_key: nonmvmt_dataset.avg_local_coactivity_rate_norm,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.avg_local_coactivity_rate_norm, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.avg_local_coactivity_rate_norm, spine_idxs1
+        ),
     }
 
     shuff_local_coactivity_rate_norm = {
-        mvmt_key: mvmt_dataset.shuff_local_coactivity_rate_norm,
-        nonmvmt_key: nonmvmt_dataset.shuff_local_coactivity_rate_norm,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.shuff_local_coactivity_rate_norm, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.shuff_local_coactivity_rate_norm, spine_idxs1
+        ),
     }
 
     real_vs_shuff_diff_norm = {
-        mvmt_key: mvmt_dataset.real_vs_shuff_coactivity_diff_norm,
-        nonmvmt_key: nonmvmt_dataset.real_vs_shuff_coactivity_diff_norm,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.real_vs_shuff_coactivity_diff_norm, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.real_vs_shuff_coactivity_diff_norm, spine_idxs1
+        ),
     }
     ### Traces
-    mvmt_coactive_traces = mvmt_dataset.spine_coactive_traces
+    mvmt_coactive_traces = d_utils.subselect_data_by_idxs(
+        mvmt_dataset.spine_coactive_traces, spine_idxs
+    )
     mvmt_coactive_means = [
         np.nanmean(x, axis=1) for x in mvmt_coactive_traces if type(x) == np.ndarray
     ]
     mvmt_coactive_means = np.vstack(mvmt_coactive_means)
-    nonmvmt_coactive_traces = nonmvmt_dataset.spine_coactive_traces
+    nonmvmt_coactive_traces = d_utils.subselect_data_by_idxs(
+        nonmvmt_dataset.spine_coactive_traces, spine_idxs1
+    )
     nonmvmt_coactive_means = [
         np.nanmean(x, axis=1) for x in nonmvmt_coactive_traces if type(x) == np.ndarray
     ]
@@ -487,12 +527,16 @@ def plot_comparative_mvmt_coactivity(
         nonmvmt_key: stats.sem(nonmvmt_coactive_means, axis=0, nan_policy="omit"),
     }
     ### Calcium Traces
-    mvmt_coactive_ca_traces = mvmt_dataset.spine_coactive_calcium_traces
+    mvmt_coactive_ca_traces = d_utils.subselect_data_by_idxs(
+        mvmt_dataset.spine_coactive_calcium_traces, spine_idxs
+    )
     mvmt_coactive_ca_means = [
         np.nanmean(x, axis=1) for x in mvmt_coactive_ca_traces if type(x) == np.ndarray
     ]
     mvmt_coactive_ca_means = np.vstack(mvmt_coactive_ca_means)
-    nonmvmt_coactive_ca_traces = nonmvmt_dataset.spine_coactive_calcium_traces
+    nonmvmt_coactive_ca_traces = d_utils.subselect_data_by_idxs(
+        nonmvmt_dataset.spine_coactive_calcium_traces, spine_idxs1
+    )
     nonmvmt_coactive_ca_means = [
         np.nanmean(x, axis=1)
         for x in nonmvmt_coactive_ca_traces
@@ -508,12 +552,20 @@ def plot_comparative_mvmt_coactivity(
         nonmvmt_key: stats.sem(nonmvmt_coactive_ca_means, axis=0, nan_policy="omit"),
     }
     coactive_amplitude = {
-        mvmt_key: mvmt_dataset.spine_coactive_amplitude,
-        nonmvmt_key: nonmvmt_dataset.spine_coactive_amplitude,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.spine_coactive_amplitude, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.spine_coactive_amplitude, spine_idxs1
+        ),
     }
     coactive_calcium_amplitude = {
-        mvmt_key: mvmt_dataset.spine_coactive_calcium_amplitude,
-        nonmvmt_key: nonmvmt_dataset.spine_coactive_calcium_amplitude,
+        mvmt_key: d_utils.subselect_data_by_idxs(
+            mvmt_dataset.spine_coactive_calcium_amplitude, spine_idxs
+        ),
+        nonmvmt_key: d_utils.subselect_data_by_idxs(
+            nonmvmt_dataset.spine_coactive_calcium_amplitude, spine_idxs1
+        ),
     }
 
     # Construct the figure
@@ -585,14 +637,14 @@ def plot_comparative_mvmt_coactivity(
         ytitle=f"Coactivity rate (events/min)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.7,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -613,14 +665,14 @@ def plot_comparative_mvmt_coactivity(
         ytitle=f"Norm. coactivity rate",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.7,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -677,8 +729,8 @@ def plot_comparative_mvmt_coactivity(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.7,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -737,8 +789,8 @@ def plot_comparative_mvmt_coactivity(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.7,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -797,8 +849,8 @@ def plot_comparative_mvmt_coactivity(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.7,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -857,8 +909,8 @@ def plot_comparative_mvmt_coactivity(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.7,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -879,14 +931,14 @@ def plot_comparative_mvmt_coactivity(
         ytitle=f"Above chance difference",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.7,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -907,14 +959,14 @@ def plot_comparative_mvmt_coactivity(
         ytitle=f"Above chance difference (norm)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.7,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -977,14 +1029,14 @@ def plot_comparative_mvmt_coactivity(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=(0.1, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.7,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1005,14 +1057,14 @@ def plot_comparative_mvmt_coactivity(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.7,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1313,10 +1365,10 @@ def plot_plasticity_coactivity_rates(
             save_path - str specifying where to save the figures
     
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
     if rwd_mvmt:
@@ -1611,14 +1663,14 @@ def plot_plasticity_coactivity_rates(
         ytitle=f"Local {coactivity_title}",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1639,14 +1691,14 @@ def plot_plasticity_coactivity_rates(
         ytitle=f"Local {coactivity_title}",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1667,14 +1719,14 @@ def plot_plasticity_coactivity_rates(
         ytitle=f"Local {coactivity_title}",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1697,11 +1749,11 @@ def plot_plasticity_coactivity_rates(
         ytitle=f"Fraction of spines",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
@@ -1719,14 +1771,14 @@ def plot_plasticity_coactivity_rates(
         ytitle=f"Fraction of events",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1747,14 +1799,14 @@ def plot_plasticity_coactivity_rates(
         ytitle=f"Above chance difference",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -1769,7 +1821,7 @@ def plot_plasticity_coactivity_rates(
     # Enlarged local vs chance
     ## histogram
     plot_cummulative_distribution(
-        data=list((plastic_local_rates["Enlarged"], plastic_shuff_rates["Enlarged"],)),
+        data=list((plastic_local_rates["sLTP"], plastic_shuff_rates["sLTP"],)),
         plot_ind=True,
         title="Enlarged",
         xtitle=f"Local {coactivity_title}",
@@ -1792,8 +1844,8 @@ def plot_plasticity_coactivity_rates(
     sns.despine(ax=ax_e_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_local_rates["Enlarged"],
-            "shuff": plastic_shuff_rates["Enlarged"].flatten().astype(np.float32),
+            "data": plastic_local_rates["sLTP"],
+            "shuff": plastic_shuff_rates["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -1805,8 +1857,8 @@ def plot_plasticity_coactivity_rates(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -1821,7 +1873,7 @@ def plot_plasticity_coactivity_rates(
     # Shrunken local vs chance
     ## histogram
     plot_cummulative_distribution(
-        data=list((plastic_local_rates["Shrunken"], plastic_shuff_rates["Shrunken"],)),
+        data=list((plastic_local_rates["sLTD"], plastic_shuff_rates["sLTD"],)),
         plot_ind=True,
         title="Shrunken",
         xtitle=f"Local {coactivity_title}",
@@ -1844,8 +1896,8 @@ def plot_plasticity_coactivity_rates(
     sns.despine(ax=ax_f_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_local_rates["Shrunken"],
-            "shuff": plastic_shuff_rates["Shrunken"].flatten().astype(np.float32),
+            "data": plastic_local_rates["sLTD"],
+            "shuff": plastic_shuff_rates["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -1857,8 +1909,8 @@ def plot_plasticity_coactivity_rates(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -1909,8 +1961,8 @@ def plot_plasticity_coactivity_rates(
         b_edgecolors="black",
         b_err_colors="black",
         b_width=0.5,
-        b_linewidth=0,
-        b_alpha=0.3,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         s_alpha=0.7,
@@ -2003,16 +2055,16 @@ def plot_plasticity_coactivity_rates(
 
     # Comparisons to chance
     enlarged_above, enlarged_below = t_utils.test_against_chance(
-        plastic_local_rates["Enlarged"], plastic_shuff_rates["Enlarged"]
+        plastic_local_rates["sLTP"], plastic_shuff_rates["sLTP"]
     )
     shrunken_above, shrunken_below = t_utils.test_against_chance(
-        plastic_local_rates["Shrunken"], plastic_shuff_rates["Shrunken"]
+        plastic_local_rates["sLTD"], plastic_shuff_rates["sLTD"]
     )
     stable_above, stable_below = t_utils.test_against_chance(
         plastic_local_rates["Stable"], plastic_shuff_rates["Stable"]
     )
     chance_dict = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [enlarged_above, shrunken_above, stable_above],
         "p-val below": [enlarged_below, shrunken_below, stable_below],
     }
@@ -2207,10 +2259,10 @@ def plot_coactive_event_properties(
             save_path - str specifying where to save the figures
             
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
     if rwd_mvmt:
@@ -2603,14 +2655,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2630,14 +2682,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2657,14 +2709,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2684,14 +2736,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2711,14 +2763,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2738,14 +2790,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2765,14 +2817,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Fraction Coactive",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2792,14 +2844,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Fraction Coactive",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2819,14 +2871,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Fraction Coactive",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2846,14 +2898,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Fraction Participating",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2873,14 +2925,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Fraction Participating",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2900,14 +2952,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Fraction Participating",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2927,14 +2979,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Coactive spine number",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2954,14 +3006,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Coactive spine number",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -2981,14 +3033,14 @@ def plot_coactive_event_properties(
         xtitle=None,
         ytitle=f"Coactive spine number",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -3415,10 +3467,10 @@ def plot_nearby_spine_properties(
             save_path - str specifying where to save the figures
     
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
 
@@ -3448,6 +3500,12 @@ def plot_nearby_spine_properties(
     shuff_nn_enlarged = dataset.shuff_nn_enlarged
     local_nn_shrunken = dataset.local_nn_shrunken
     shuff_nn_shrunken = dataset.shuff_nn_shrunken
+    avg_nearby_spine_volume = dataset.avg_nearby_spine_volume
+    shuff_nearby_spine_volume = dataset.shuff_nearby_spine_volume
+    nearby_spine_volume_distribution = dataset.nearby_spine_volume_distribution
+    local_relative_vol = dataset.local_relative_vol
+    shuff_relative_vol = dataset.shuff_relative_vol
+    relative_vol_distribution = dataset.relative_vol_distribution
 
     # Calculate spine volume
     volumes = [spine_volumes, followup_volumes]
@@ -3501,6 +3559,20 @@ def plot_nearby_spine_properties(
     shuff_nn_enlarged = d_utils.subselect_data_by_idxs(shuff_nn_enlarged, spine_idxs,)
     local_nn_shrunken = d_utils.subselect_data_by_idxs(local_nn_shrunken, spine_idxs,)
     shuff_nn_shrunken = d_utils.subselect_data_by_idxs(shuff_nn_shrunken, spine_idxs,)
+    avg_nearby_spine_volume = d_utils.subselect_data_by_idxs(
+        avg_nearby_spine_volume, spine_idxs
+    )
+    shuff_nearby_spine_volume = d_utils.subselect_data_by_idxs(
+        shuff_nearby_spine_volume, spine_idxs
+    )
+    nearby_spine_volume_distribution = d_utils.subselect_data_by_idxs(
+        nearby_spine_volume_distribution, spine_idxs
+    )
+    local_relative_vol = d_utils.subselect_data_by_idxs(local_relative_vol, spine_idxs,)
+    shuff_relative_vol = d_utils.subselect_data_by_idxs(shuff_relative_vol, spine_idxs,)
+    relative_vol_distribution = d_utils.subselect_data_by_idxs(
+        relative_vol_distribution, spine_idxs,
+    )
 
     # Seperate into groups
     plastic_rate_dist = {}
@@ -3525,6 +3597,12 @@ def plot_nearby_spine_properties(
     plastic_nn_shrunken = {}
     plastic_shuff_shrunken = {}
     plastic_shuff_shrunken_medians = {}
+    plastic_nearby_volumes = {}
+    plastic_shuff_volumes = {}
+    plastic_volume_dist = {}
+    plastic_rel_vols = {}
+    plastic_shuff_rel_vols = {}
+    plastic_rel_vol_dist = {}
     distance_bins = dataset.parameters["position bins"][1:]
 
     for key, value in plastic_groups.items():
@@ -3557,6 +3635,12 @@ def plot_nearby_spine_properties(
         shuff_shrunken = shuff_nn_shrunken[:, spines]
         plastic_shuff_shrunken[key] = shuff_shrunken
         plastic_shuff_shrunken_medians[key] = np.nanmedian(shuff_shrunken, axis=1)
+        plastic_volume_dist[key] = nearby_spine_volume_distribution[:, spines]
+        plastic_nearby_volumes[key] = avg_nearby_spine_volume[spines]
+        plastic_shuff_volumes[key] = shuff_nearby_spine_volume[:, spines]
+        plastic_rel_vol_dist[key] = relative_vol_distribution[:, spines]
+        plastic_rel_vols[key] = local_relative_vol[spines]
+        plastic_shuff_rel_vols[key] = shuff_relative_vol[:, spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -3565,11 +3649,14 @@ def plot_nearby_spine_properties(
         FGHIJ
         KLMNO
         PQRST
-        UVWX.
-        YZab.
+        UVWXY
+        Zabc.
+        defg.
+        hijkl
         """,
         figsize=figsize,
     )
+
     fig.suptitle(f"Nearby Spine Properties")
     fig.subplots_adjust(hspace=1, wspace=0.5)
 
@@ -3666,6 +3753,52 @@ def plot_nearby_spine_properties(
         save=False,
         save_path=None,
     )
+    # Spine volume distribution
+    plot_multi_line_plot(
+        data_dict=plastic_volume_dist,
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5, 5),
+        title="Initial area",
+        ytitle="Spine area (\u03BCm)",
+        xtitle="Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["U"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    # Relative volume distribution
+    plot_multi_line_plot(
+        data_dict=plastic_rel_vol_dist,
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5, 5),
+        title="Relative volume",
+        ytitle="\u0394 Volume",
+        xtitle="Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["h"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
     # Avg local spine activity rate
     plot_box_plot(
         plastic_avg_rates,
@@ -3675,14 +3808,14 @@ def plot_nearby_spine_properties(
         ytitle="Activity rate (events/min)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -3696,7 +3829,7 @@ def plot_nearby_spine_properties(
     )
     # Enlarged rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_rates["Enlarged"], plastic_shuff_rates["Enlarged"],)),
+        data=list((plastic_avg_rates["sLTP"], plastic_shuff_rates["sLTP"],)),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby activity rate",
@@ -3719,8 +3852,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_c_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_avg_rates["Enlarged"],
-            "shuff": plastic_shuff_rates["Enlarged"].flatten().astype(np.float32),
+            "data": plastic_avg_rates["sLTP"],
+            "shuff": plastic_shuff_rates["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3732,9 +3865,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         plot_ind=False,
@@ -3747,7 +3880,7 @@ def plot_nearby_spine_properties(
     )
     # Shrunken rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_rates["Shrunken"], plastic_shuff_rates["Shrunken"],)),
+        data=list((plastic_avg_rates["sLTD"], plastic_shuff_rates["sLTD"],)),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby activity rate",
@@ -3770,8 +3903,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_d_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_avg_rates["Shrunken"],
-            "shuff": plastic_shuff_rates["Shrunken"].flatten().astype(np.float32),
+            "data": plastic_avg_rates["sLTD"],
+            "shuff": plastic_shuff_rates["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3783,9 +3916,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         plot_ind=False,
@@ -3817,7 +3950,7 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     ## Inset bar
-    ax_e_inset = axes["E"].inset_axes([0.0, 0.25, 0.4, 0.6])
+    ax_e_inset = axes["E"].inset_axes([0.8, 0.25, 0.4, 0.6])
     sns.despine(ax=ax_e_inset)
     plot_swarm_bar_plot(
         data_dict={
@@ -3834,9 +3967,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[2], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         plot_ind=False,
@@ -3856,14 +3989,14 @@ def plot_nearby_spine_properties(
         ytitle="Coactivity rate (events/min)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -3877,9 +4010,7 @@ def plot_nearby_spine_properties(
     )
     # Enlarged coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list(
-            (plastic_avg_coactivity["Enlarged"], plastic_shuff_coactivity["Enlarged"],)
-        ),
+        data=list((plastic_avg_coactivity["sLTP"], plastic_shuff_coactivity["sLTP"],)),
         plot_ind=True,
         title="Enlarged",
         xtitle="Avg local coactivity rate",
@@ -3902,8 +4033,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_h_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_avg_coactivity["Enlarged"],
-            "shuff": plastic_shuff_coactivity["Enlarged"].flatten().astype(np.float32),
+            "data": plastic_avg_coactivity["sLTP"],
+            "shuff": plastic_shuff_coactivity["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3915,9 +4046,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         plot_ind=False,
@@ -3929,10 +4060,8 @@ def plot_nearby_spine_properties(
         save_path=None,
     )
     # Shrunken coactivity rate vs chance
-    plot_histogram(
-        data=list(
-            (plastic_avg_coactivity["Shrunken"], plastic_shuff_coactivity["Shrunken"],)
-        ),
+    plot_cummulative_distribution(
+        data=list((plastic_avg_coactivity["sLTD"], plastic_shuff_coactivity["sLTD"],)),
         plot_ind=True,
         title="Shrunken",
         xtitle="Avg local coactivity rate",
@@ -3955,8 +4084,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_I_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_avg_coactivity["Shrunken"],
-            "shuff": plastic_shuff_coactivity["Shrunken"].flatten().astype(np.float32),
+            "data": plastic_avg_coactivity["sLTD"],
+            "shuff": plastic_shuff_coactivity["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -3968,9 +4097,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         plot_ind=False,
@@ -3992,7 +4121,7 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[2], "black"],
-        ind_colr=[None, "black"],
+        ind_color=[None, "black"],
         line_width=1.5,
         ind_line_width=0.5,
         alpha=0.03,
@@ -4021,9 +4150,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[2], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4043,14 +4172,14 @@ def plot_nearby_spine_properties(
         ytitle="MRS density (spines/\u03BCm)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -4064,9 +4193,7 @@ def plot_nearby_spine_properties(
     )
     # Enlarged MRS density vs chance
     plot_cummulative_distribution(
-        data=list(
-            (plastic_MRS_density["Enlarged"], plastic_MRS_shuff_density["Enlarged"],)
-        ),
+        data=list((plastic_MRS_density["sLTP"], plastic_MRS_shuff_density["sLTP"],)),
         plot_ind=True,
         title="Enlarged",
         xtitle="MRS density (spines/\u03BCm)",
@@ -4089,8 +4216,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_m_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_MRS_density["Enlarged"],
-            "shuff": plastic_MRS_shuff_density["Enlarged"].flatten().astype(np.float32),
+            "data": plastic_MRS_density["sLTP"],
+            "shuff": plastic_MRS_shuff_density["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4102,9 +4229,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4117,9 +4244,7 @@ def plot_nearby_spine_properties(
     )
     # Shrunken MRS density vs chance
     plot_cummulative_distribution(
-        data=list(
-            (plastic_MRS_density["Shrunken"], plastic_MRS_shuff_density["Shrunken"],)
-        ),
+        data=list((plastic_MRS_density["sLTD"], plastic_MRS_shuff_density["sLTD"],)),
         plot_ind=True,
         title="Shrunken",
         xtitle="MRS density (spines/\u03BCm)",
@@ -4142,8 +4267,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_n_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_MRS_density["Shrunken"],
-            "shuff": plastic_MRS_shuff_density["Shrunken"].flatten().astype(np.float32),
+            "data": plastic_MRS_density["sLTD"],
+            "shuff": plastic_MRS_shuff_density["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4155,9 +4280,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4208,9 +4333,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[2], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4230,14 +4355,14 @@ def plot_nearby_spine_properties(
         ytitle="rMRS density (spines/\u03BCm)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -4251,9 +4376,7 @@ def plot_nearby_spine_properties(
     )
     # Enlarged rMRS density vs chance
     plot_cummulative_distribution(
-        data=list(
-            (plastic_rMRS_density["Enlarged"], plastic_rMRS_shuff_density["Enlarged"],)
-        ),
+        data=list((plastic_rMRS_density["sLTP"], plastic_rMRS_shuff_density["sLTP"],)),
         plot_ind=True,
         title="Enlarged",
         xtitle="rMRS density (spines/\u03BCm)",
@@ -4276,10 +4399,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_r_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_rMRS_density["Enlarged"],
-            "shuff": plastic_rMRS_shuff_density["Enlarged"]
-            .flatten()
-            .astype(np.float32),
+            "data": plastic_rMRS_density["sLTP"],
+            "shuff": plastic_rMRS_shuff_density["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4291,9 +4412,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4306,9 +4427,7 @@ def plot_nearby_spine_properties(
     )
     # Shrunken rMRS density vs chance
     plot_cummulative_distribution(
-        data=list(
-            (plastic_rMRS_density["Shrunken"], plastic_rMRS_shuff_density["Shrunken"],)
-        ),
+        data=list((plastic_rMRS_density["sLTD"], plastic_rMRS_shuff_density["sLTD"],)),
         plot_ind=True,
         title="Shrunken",
         xtitle="rMRS density (spines/\u03BCm)",
@@ -4331,10 +4450,8 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_s_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_rMRS_density["Shrunken"],
-            "shuff": plastic_rMRS_shuff_density["Shrunken"]
-            .flatten()
-            .astype(np.float32),
+            "data": plastic_rMRS_density["sLTD"],
+            "shuff": plastic_rMRS_shuff_density["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4346,9 +4463,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4399,9 +4516,9 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[2], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         plot_ind=False,
@@ -4409,6 +4526,187 @@ def plot_nearby_spine_properties(
         minor_ticks="y",
         tick_len=3,
         ax=ax_t_inset,
+        save=False,
+        save_path=None,
+    )
+    # Avg local spine volume
+    plot_box_plot(
+        plastic_nearby_volumes,
+        figsize=(5, 5),
+        title="Avg Nearby Volume",
+        xtitle=None,
+        ytitle="Spine Volume (um)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["V"],
+        save=False,
+        save_path=None,
+    )
+    # Enlarged spine vol vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_nearby_volumes["sLTP"], plastic_shuff_volumes["sLTP"],)),
+        plot_ind=True,
+        title="Enlarged",
+        xtitle="Volume (\u03BCm)",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["W"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_w_inset = axes["W"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_w_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_nearby_volumes["sLTP"],
+            "shuff": plastic_shuff_volumes["sLTP"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Volume (\u03BCm)",
+        ylim=None,
+        b_colors=[COLORS[0], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[0], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_w_inset,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken spine vol vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_nearby_volumes["sLTD"], plastic_shuff_volumes["sLTD"],)),
+        plot_ind=True,
+        title="Shrunken",
+        xtitle="Volume (\u03BCm)",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["X"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_x_inset = axes["X"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_x_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_nearby_volumes["sLTD"],
+            "shuff": plastic_shuff_volumes["sLTD"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Volume (\u03BCm)",
+        ylim=None,
+        b_colors=[COLORS[1], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[1], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_x_inset,
+        save=False,
+        save_path=None,
+    )
+    # Stable spine vol vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_nearby_volumes["Stable"], plastic_shuff_volumes["Stable"],)),
+        plot_ind=True,
+        title="Stable",
+        xtitle="Volume (\u03BCm)",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["Y"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_y_inset = axes["Y"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_y_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_nearby_volumes["Stable"],
+            "shuff": plastic_shuff_volumes["Stable"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Volume (\u03BCm)",
+        ylim=None,
+        b_colors=[COLORS[2], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[2], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_y_inset,
         save=False,
         save_path=None,
     )
@@ -4421,14 +4719,14 @@ def plot_nearby_spine_properties(
         ytitle="Enlarged nearest neighbor (\u03BCm)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -4436,7 +4734,7 @@ def plot_nearby_spine_properties(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["U"],
+        ax=axes["Z"],
         save=False,
         save_path=None,
     )
@@ -4444,8 +4742,8 @@ def plot_nearby_spine_properties(
     plot_histogram(
         data=list(
             (
-                plastic_nn_enlarged["Enlarged"],
-                plastic_shuff_enlarged["Enlarged"].flatten().astype(np.float32),
+                plastic_nn_enlarged["sLTP"],
+                plastic_shuff_enlarged["sLTP"].flatten().astype(np.float32),
             )
         ),
         bins=hist_bins,
@@ -4456,21 +4754,21 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[0], "grey"],
-        alpha=0.3,
+        alpha=0.5,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["V"],
+        ax=axes["a"],
         save=False,
         save_path=None,
     )
     ## Inset bar
-    ax_v_inset = axes["V"].inset_axes([0.9, 0.4, 0.4, 0.6])
-    sns.despine(ax=ax_v_inset)
+    ax_A_inset = axes["a"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    sns.despine(ax=ax_A_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_nn_enlarged["Enlarged"],
-            "shuff": plastic_shuff_enlarged["Enlarged"].flatten().astype(np.float32),
+            "data": plastic_nn_enlarged["sLTP"],
+            "shuff": plastic_shuff_enlarged["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4482,16 +4780,16 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=ax_v_inset,
+        ax=ax_A_inset,
         save=False,
         save_path=None,
     )
@@ -4499,8 +4797,8 @@ def plot_nearby_spine_properties(
     plot_histogram(
         data=list(
             (
-                plastic_nn_enlarged["Shrunken"],
-                plastic_shuff_enlarged["Shrunken"].flatten().astype(np.float32),
+                plastic_nn_enlarged["sLTD"],
+                plastic_shuff_enlarged["sLTD"].flatten().astype(np.float32),
             )
         ),
         bins=hist_bins,
@@ -4511,21 +4809,21 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[1], "grey"],
-        alpha=0.3,
+        alpha=0.5,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["W"],
+        ax=axes["b"],
         save=False,
         save_path=None,
     )
     ## Inset bar
-    ax_w_inset = axes["W"].inset_axes([0.9, 0.4, 0.4, 0.6])
-    sns.despine(ax=ax_w_inset)
+    ax_B_inset = axes["b"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    sns.despine(ax=ax_B_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_nn_enlarged["Shrunken"],
-            "shuff": plastic_shuff_enlarged["Shrunken"].flatten().astype(np.float32),
+            "data": plastic_nn_enlarged["sLTD"],
+            "shuff": plastic_shuff_enlarged["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4537,16 +4835,16 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=ax_w_inset,
+        ax=ax_B_inset,
         save=False,
         save_path=None,
     )
@@ -4566,17 +4864,17 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[2], "grey"],
-        alpha=0.3,
+        alpha=0.5,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["X"],
+        ax=axes["c"],
         save=False,
         save_path=None,
     )
     ## Inset bar
-    ax_x_inset = axes["X"].inset_axes([0.9, 0.4, 0.4, 0.6])
-    sns.despine(ax=ax_x_inset)
+    ax_C_inset = axes["c"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    sns.despine(ax=ax_C_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_enlarged["Stable"],
@@ -4592,16 +4890,16 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[2], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=ax_x_inset,
+        ax=ax_C_inset,
         save=False,
         save_path=None,
     )
@@ -4614,14 +4912,14 @@ def plot_nearby_spine_properties(
         ytitle="Shrunken nearest neighbor (\u03BCm)",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -4629,7 +4927,7 @@ def plot_nearby_spine_properties(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["Y"],
+        ax=axes["d"],
         save=False,
         save_path=None,
     )
@@ -4637,8 +4935,8 @@ def plot_nearby_spine_properties(
     plot_histogram(
         data=list(
             (
-                plastic_nn_shrunken["Enlarged"],
-                plastic_shuff_shrunken["Enlarged"].flatten().astype(np.float32),
+                plastic_nn_shrunken["sLTP"],
+                plastic_shuff_shrunken["sLTP"].flatten().astype(np.float32),
             )
         ),
         bins=hist_bins,
@@ -4649,21 +4947,21 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[0], "grey"],
-        alpha=0.3,
+        alpha=0.5,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["Z"],
+        ax=axes["e"],
         save=False,
         save_path=None,
     )
     ## Inset bar
-    ax_z_inset = axes["Z"].inset_axes([0.9, 0.4, 0.4, 0.6])
-    sns.despine(ax=ax_z_inset)
+    ax_E_inset = axes["e"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    sns.despine(ax=ax_E_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_nn_shrunken["Enlarged"],
-            "shuff": plastic_shuff_shrunken["Enlarged"].flatten().astype(np.float32),
+            "data": plastic_nn_shrunken["sLTP"],
+            "shuff": plastic_shuff_shrunken["sLTP"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4675,16 +4973,16 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[0], "grey"],
         s_size=5,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=ax_z_inset,
+        ax=ax_E_inset,
         save=False,
         save_path=None,
     )
@@ -4692,8 +4990,8 @@ def plot_nearby_spine_properties(
     plot_histogram(
         data=list(
             (
-                plastic_nn_shrunken["Shrunken"],
-                plastic_shuff_shrunken["Shrunken"].flatten().astype(np.float32),
+                plastic_nn_shrunken["sLTD"],
+                plastic_shuff_shrunken["sLTD"].flatten().astype(np.float32),
             )
         ),
         bins=hist_bins,
@@ -4704,21 +5002,21 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[1], "grey"],
-        alpha=0.3,
+        alpha=0.5,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["a"],
+        ax=axes["f"],
         save=False,
         save_path=None,
     )
     ## Inset bar
-    ax_a_inset = axes["a"].inset_axes([0.9, 0.4, 0.4, 0.6])
-    sns.despine(ax=ax_a_inset)
+    ax_F_inset = axes["f"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    sns.despine(ax=ax_F_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_nn_shrunken["Shrunken"],
-            "shuff": plastic_shuff_shrunken["Shrunken"].flatten().astype(np.float32),
+            "data": plastic_nn_shrunken["sLTD"],
+            "shuff": plastic_shuff_shrunken["sLTD"].flatten().astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4730,16 +5028,16 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[1], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[1], "grey"],
         s_size=5,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=ax_a_inset,
+        ax=ax_F_inset,
         save=False,
         save_path=None,
     )
@@ -4759,17 +5057,17 @@ def plot_nearby_spine_properties(
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[2], "grey"],
-        alpha=0.3,
+        alpha=0.5,
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
-        ax=axes["b"],
+        ax=axes["g"],
         save=False,
         save_path=None,
     )
     ## Inset bar
-    ax_b_inset = axes["b"].inset_axes([0.9, 0.4, 0.4, 0.6])
-    sns.despine(ax=ax_b_inset)
+    ax_G_inset = axes["g"].inset_axes([0.9, 0.4, 0.4, 0.6])
+    sns.despine(ax=ax_G_inset)
     plot_swarm_bar_plot(
         data_dict={
             "data": plastic_nn_shrunken["Stable"],
@@ -4785,16 +5083,197 @@ def plot_nearby_spine_properties(
         b_colors=[COLORS[2], "grey"],
         b_edgecolors="black",
         b_err_colors="black",
-        b_width=0.6,
-        b_linewidth=0,
-        b_alpha=0.7,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
         s_colors=[COLORS[2], "grey"],
         s_size=5,
         plot_ind=False,
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=ax_b_inset,
+        ax=ax_G_inset,
+        save=False,
+        save_path=None,
+    )
+    # Local Relative volume
+    plot_box_plot(
+        plastic_rel_vols,
+        figsize=(5, 5),
+        title="Relative volumes",
+        xtitle=None,
+        ytitle="Nearby \u0394 Volume",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["i"],
+        save=False,
+        save_path=None,
+    )
+    # Enlarged rel vol vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_rel_vols["sLTP"], plastic_shuff_rel_vols["sLTP"],)),
+        plot_ind=True,
+        title="Enlarged",
+        xtitle="Nearby \u0394 Volume",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["j"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_J_inset = axes["j"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_J_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_rel_vols["sLTP"],
+            "shuff": plastic_shuff_rel_vols["sLTP"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Nearby \u0394 Volume",
+        ylim=None,
+        b_colors=[COLORS[0], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[0], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_J_inset,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken rel vol vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_rel_vols["sLTD"], plastic_shuff_rel_vols["sLTD"],)),
+        plot_ind=True,
+        title="Shrunken",
+        xtitle="Nearby \u0394 Volume",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["k"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_K_inset = axes["k"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_K_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_rel_vols["sLTD"],
+            "shuff": plastic_shuff_rel_vols["sLTD"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Nearby \u0394 Volume",
+        ylim=None,
+        b_colors=[COLORS[1], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[1], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_K_inset,
+        save=False,
+        save_path=None,
+    )
+    # Stable rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_rel_vols["Stable"], plastic_shuff_rel_vols["Stable"],)),
+        plot_ind=True,
+        title="Stable",
+        xtitle="Nearby \u0394 Volume",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["l"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_L_inset = axes["l"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_L_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_rel_vols["Stable"],
+            "shuff": plastic_shuff_rel_vols["Stable"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Nearby \u0394 Volume",
+        ylim=None,
+        b_colors=[COLORS[2], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[2], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_L_inset,
         save=False,
         save_path=None,
     )
@@ -4831,6 +5310,12 @@ def plot_nearby_spine_properties(
         shrunken_f, shrunken_p, _, shrunken_df = t_utils.ANOVA_1way_posthoc(
             plastic_nn_shrunken, method=test_method,
         )
+        volume_f, volume_p, _, volume_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nearby_volumes, test_method
+        )
+        relative_f, relative_p, _, relative_df = t_utils.ANOVA_1way_posthoc(
+            plastic_rel_vols, test_method,
+        )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         activity_f, activity_p, activity_df = t_utils.kruskal_wallis_test(
@@ -4851,6 +5336,12 @@ def plot_nearby_spine_properties(
         shrunken_f, shrunken_p, shrunken_df = t_utils.kruskal_wallis_test(
             plastic_nn_shrunken, "Conover", test_method,
         )
+        volume_f, volume_p, volume_df = t_utils.kruskal_wallis_test(
+            plastic_nearby_volumes, "Conover", test_method
+        )
+        relative_f, relative_p, relative_df = t_utils.kruskal_wallis_test(
+            plastic_rel_vols, "Conover", test_method
+        )
         test_title = f"Kruskal-Wallis {test_method}"
 
     # Perform correlations
@@ -4862,104 +5353,138 @@ def plot_nearby_spine_properties(
     )
     _, MRS_corr_df = t_utils.correlate_grouped_data(plastic_MRS_dist, distance_bins,)
     _, rMRS_corr_df = t_utils.correlate_grouped_data(plastic_rMRS_dist, distance_bins,)
+    _, vol_corr_df = t_utils.correlate_grouped_data(plastic_volume_dist, distance_bins)
+    _, rel_corr_df = t_utils.correlate_grouped_data(plastic_rel_vol_dist, distance_bins)
 
     # Comparisions to chance
     ## Activity rate
     e_rate_above, e_rate_below = t_utils.test_against_chance(
-        plastic_avg_rates["Enlarged"], plastic_shuff_rates["Enlarged"]
+        plastic_avg_rates["sLTP"], plastic_shuff_rates["sLTP"]
     )
     s_rate_above, s_rate_below = t_utils.test_against_chance(
-        plastic_avg_rates["Shrunken"], plastic_shuff_rates["Shrunken"]
+        plastic_avg_rates["sLTD"], plastic_shuff_rates["sLTD"]
     )
     st_rate_above, st_rate_below = t_utils.test_against_chance(
         plastic_avg_rates["Stable"], plastic_shuff_rates["Stable"]
     )
     chance_activity = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [e_rate_above, s_rate_above, st_rate_above],
         "p-val below": [e_rate_below, s_rate_below, st_rate_below],
     }
     chance_activity_df = pd.DataFrame.from_dict(chance_activity)
     ## Coactivity rate
     e_coactivity_above, e_coactivity_below = t_utils.test_against_chance(
-        plastic_avg_coactivity["Enlarged"], plastic_shuff_coactivity["Enlarged"]
+        plastic_avg_coactivity["sLTP"], plastic_shuff_coactivity["sLTP"]
     )
     s_coactivity_above, s_coactivity_below = t_utils.test_against_chance(
-        plastic_avg_coactivity["Shrunken"], plastic_shuff_coactivity["Shrunken"]
+        plastic_avg_coactivity["sLTD"], plastic_shuff_coactivity["sLTD"]
     )
     st_coactivity_above, st_coactivity_below = t_utils.test_against_chance(
         plastic_avg_coactivity["Stable"], plastic_shuff_coactivity["Stable"]
     )
     chance_coactivity = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [e_coactivity_above, s_coactivity_above, st_coactivity_above],
         "p-val below": [e_coactivity_below, s_coactivity_below, st_coactivity_below],
     }
     chance_coactivity_df = pd.DataFrame.from_dict(chance_coactivity)
     ## MRS density
     e_MRS_above, e_MRS_below = t_utils.test_against_chance(
-        plastic_MRS_density["Enlarged"], plastic_MRS_shuff_density["Enlarged"]
+        plastic_MRS_density["sLTP"], plastic_MRS_shuff_density["sLTP"]
     )
     s_MRS_above, s_MRS_below = t_utils.test_against_chance(
-        plastic_MRS_density["Shrunken"], plastic_MRS_shuff_density["Shrunken"]
+        plastic_MRS_density["sLTD"], plastic_MRS_shuff_density["sLTD"]
     )
     st_MRS_above, st_MRS_below = t_utils.test_against_chance(
         plastic_MRS_density["Stable"], plastic_MRS_shuff_density["Stable"]
     )
     chance_MRS = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [e_MRS_above, s_MRS_above, st_MRS_above],
         "p-val below": [e_MRS_below, s_MRS_below, st_MRS_below],
     }
     chance_MRS_df = pd.DataFrame.from_dict(chance_MRS)
     ## rMRS density
     e_rMRS_above, e_rMRS_below = t_utils.test_against_chance(
-        plastic_rMRS_density["Enlarged"], plastic_rMRS_shuff_density["Enlarged"]
+        plastic_rMRS_density["sLTP"], plastic_rMRS_shuff_density["sLTP"]
     )
     s_rMRS_above, s_rMRS_below = t_utils.test_against_chance(
-        plastic_rMRS_density["Shrunken"], plastic_rMRS_shuff_density["Shrunken"]
+        plastic_rMRS_density["sLTD"], plastic_rMRS_shuff_density["sLTD"]
     )
     st_rMRS_above, st_rMRS_below = t_utils.test_against_chance(
         plastic_rMRS_density["Stable"], plastic_rMRS_shuff_density["Stable"]
     )
     chance_rMRS = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [e_rMRS_above, s_rMRS_above, st_rMRS_above],
         "p-val below": [e_rMRS_below, s_rMRS_below, st_rMRS_below],
     }
     chance_rMRS_df = pd.DataFrame.from_dict(chance_rMRS)
     ## Enlarged NN
     e_enlarged_above, e_enlarged_below = t_utils.test_against_chance(
-        plastic_nn_enlarged["Enlarged"], plastic_shuff_enlarged["Enlarged"]
+        plastic_nn_enlarged["sLTP"], plastic_shuff_enlarged["sLTP"]
     )
     s_enlarged_above, s_enlarged_below = t_utils.test_against_chance(
-        plastic_nn_enlarged["Shrunken"], plastic_shuff_enlarged["Shrunken"]
+        plastic_nn_enlarged["sLTD"], plastic_shuff_enlarged["sLTD"]
     )
     st_enlarged_above, st_enlarged_below = t_utils.test_against_chance(
         plastic_nn_enlarged["Stable"], plastic_shuff_enlarged["Stable"]
     )
     chance_enlarged = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [e_enlarged_above, s_enlarged_above, st_enlarged_above],
         "p-val below": [e_enlarged_below, s_enlarged_below, st_enlarged_below],
     }
     chance_enlarged_df = pd.DataFrame.from_dict(chance_enlarged)
     ## Shrunken NN
     e_shrunken_above, e_shrunken_below = t_utils.test_against_chance(
-        plastic_nn_shrunken["Enlarged"], plastic_shuff_shrunken["Enlarged"]
+        plastic_nn_shrunken["sLTP"], plastic_shuff_shrunken["sLTP"]
     )
     s_shrunken_above, s_shrunken_below = t_utils.test_against_chance(
-        plastic_nn_shrunken["Shrunken"], plastic_shuff_shrunken["Shrunken"]
+        plastic_nn_shrunken["sLTD"], plastic_shuff_shrunken["sLTD"]
     )
     st_shrunken_above, st_shrunken_below = t_utils.test_against_chance(
         plastic_nn_shrunken["Stable"], plastic_shuff_shrunken["Stable"]
     )
     chance_shrunken = {
-        "Comparison": ["Enlarged", "Shrunken", "Stable"],
+        "Comparison": ["sLTP", "sLTD", "Stable"],
         "p-val above": [e_shrunken_above, s_shrunken_above, st_shrunken_above],
         "p-val below": [e_shrunken_below, s_shrunken_below, st_shrunken_below],
     }
     chance_shrunken_df = pd.DataFrame.from_dict(chance_shrunken)
+    ## Nearby volume
+    e_vol_above, e_vol_below = t_utils.test_against_chance(
+        plastic_nearby_volumes["sLTP"], plastic_shuff_volumes["sLTP"]
+    )
+    s_vol_above, s_vol_below = t_utils.test_against_chance(
+        plastic_nearby_volumes["sLTD"], plastic_shuff_volumes["sLTD"]
+    )
+    st_vol_above, st_vol_below = t_utils.test_against_chance(
+        plastic_nearby_volumes["Stable"], plastic_shuff_volumes["Stable"]
+    )
+    chance_volume = {
+        "Comparison": ["sLTP", "sLTD", "Stable"],
+        "p-val above": [e_vol_above, s_vol_above, st_vol_above],
+        "p-val below": [e_vol_below, s_vol_below, st_vol_below],
+    }
+    chance_volume_df = pd.DataFrame.from_dict(chance_volume)
+    ## Nearby relative volume
+    e_rel_above, e_rel_below = t_utils.test_against_chance(
+        plastic_rel_vols["sLTP"], plastic_shuff_rel_vols["sLTP"]
+    )
+    s_rel_above, s_rel_below = t_utils.test_against_chance(
+        plastic_rel_vols["sLTD"], plastic_shuff_rel_vols["sLTD"]
+    )
+    st_rel_above, st_rel_below = t_utils.test_against_chance(
+        plastic_rel_vols["Stable"], plastic_shuff_rel_vols["Stable"]
+    )
+    chance_relative = {
+        "Comparison": ["sLTP", "sLTD", "Stable"],
+        "p-val above": [e_rel_above, s_rel_above, st_rel_above],
+        "p-val below": [e_rel_below, s_rel_below, st_rel_below],
+    }
+    chance_relative_df = pd.DataFrame.from_dict(chance_relative)
 
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
@@ -4972,8 +5497,11 @@ def plot_nearby_spine_properties(
         KL
         MN
         OP
+        QR
+        ST
+        UV
         """,
-        figsize=(10, 15),
+        figsize=(10, 20),
     )
     # Format the tables
     axes2["A"].axis("off")
@@ -5164,6 +5692,76 @@ def plot_nearby_spine_properties(
     )
     P_table.auto_set_font_size(False)
     P_table.set_fontsize(8)
+    axes2["Q"].axis("off")
+    axes2["Q"].axis("tight")
+    axes2["Q"].set_title("Average Spine Volume")
+    Q_table = axes2["Q"].table(
+        cellText=vol_corr_df.values,
+        colLabels=vol_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    Q_table.auto_set_font_size(False)
+    Q_table.set_fontsize(8)
+    axes2["R"].axis("off")
+    axes2["R"].axis("tight")
+    axes2["R"].set_title(
+        f"Local Spine volume\n{test_title}\nF = {volume_f:.4} p ={volume_p:.3E}"
+    )
+    R_table = axes2["R"].table(
+        cellText=volume_df.values,
+        colLabels=volume_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    R_table.auto_set_font_size(False)
+    R_table.set_fontsize(8)
+    axes2["S"].axis("off")
+    axes2["S"].axis("tight")
+    axes2["S"].set_title(f"Chance Nearby Volume")
+    S_table = axes2["S"].table(
+        cellText=chance_volume_df.values,
+        colLabels=chance_volume_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    S_table.auto_set_font_size(False)
+    S_table.set_fontsize(8)
+    axes2["T"].axis("off")
+    axes2["T"].axis("tight")
+    axes2["T"].set_title("Average Nearby Rel. Vol.")
+    T_table = axes2["T"].table(
+        cellText=rel_corr_df.values,
+        colLabels=rel_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    T_table.auto_set_font_size(False)
+    T_table.set_fontsize(8)
+    axes2["U"].axis("off")
+    axes2["U"].axis("tight")
+    axes2["U"].set_title(
+        f"Local relative volume\n{test_title}\nF = {relative_f:.4} p ={relative_p:.3E}"
+    )
+    U_table = axes2["U"].table(
+        cellText=relative_df.values,
+        colLabels=relative_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    U_table.auto_set_font_size(False)
+    U_table.set_fontsize(8)
+    axes2["V"].axis("off")
+    axes2["V"].axis("tight")
+    axes2["V"].set_title(f"Chance Nearby Rel. Vol.")
+    V_table = axes2["V"].table(
+        cellText=chance_relative_df.values,
+        colLabels=chance_relative_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    V_table.auto_set_font_size(False)
+    V_table.set_fontsize(8)
 
     fig2.tight_layout()
 
@@ -5172,7 +5770,7 @@ def plot_nearby_spine_properties(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Local_Coactivity_Figure_10_Stats")
-        fig2.savefit(fname, ".pdf")
+        fig2.savefig(fname, ".pdf")
 
 
 def plot_nearby_spine_coactivity(
@@ -5228,10 +5826,10 @@ def plot_nearby_spine_coactivity(
 
             save_path - str specifying where to save the figures
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
 
@@ -5333,7 +5931,7 @@ def plot_nearby_spine_coactivity(
     ####################### Plot data onto axes ############################
     # Enlarged heatmap
     plot_activity_heatmap(
-        hmap_traces["Enlarged"],
+        hmap_traces["sLTP"],
         figsize=(4, 5),
         sampling_rate=sampling_rate,
         activity_window=activity_window,
@@ -5343,7 +5941,7 @@ def plot_nearby_spine_coactivity(
         center=None,
         sorted="peak",
         normalize=True,
-        cmap="Oranges",
+        cmap="Blues",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -5353,7 +5951,7 @@ def plot_nearby_spine_coactivity(
     )
     # Shrunken heatmap
     plot_activity_heatmap(
-        hmap_traces["Shrunken"],
+        hmap_traces["sLTD"],
         figsize=(4, 5),
         sampling_rate=sampling_rate,
         activity_window=activity_window,
@@ -5363,7 +5961,7 @@ def plot_nearby_spine_coactivity(
         center=None,
         sorted="peak",
         normalize=True,
-        cmap="Purples",
+        cmap="Reds",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -5442,16 +6040,16 @@ def plot_nearby_spine_coactivity(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
-        whisk_width=2,
+        whisk_width=1.5,
         outliers=False,
         showmeans=showmeans,
         axis_width=1.5,
@@ -5470,16 +6068,16 @@ def plot_nearby_spine_coactivity(
         ytitle=f"Event amplitude ({activity_type})",
         ylim=(0, None),
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
-        whisk_width=2,
+        whisk_width=1.5,
         outliers=False,
         showmeans=showmeans,
         axis_width=1.5,
@@ -5517,16 +6115,16 @@ def plot_nearby_spine_coactivity(
         ytitle=f"Relative onset (s)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
-        whisk_width=2,
+        whisk_width=1.5,
         outliers=False,
         showmeans=showmeans,
         axis_width=1.5,
@@ -5545,16 +6143,16 @@ def plot_nearby_spine_coactivity(
         ytitle=f"Onset jitter (s)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
-        whisk_width=2,
+        whisk_width=1.5,
         outliers=False,
         showmeans=showmeans,
         axis_width=1.5,
@@ -5737,10 +6335,10 @@ def plot_nearby_spine_movement_encoding(
             save_path - str specifying where to save the figures
             
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
 
@@ -5844,14 +6442,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="LMP Correlation (r)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -5872,14 +6470,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="Movement stereotypy",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -5900,14 +6498,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="Movement reliability",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -5928,14 +6526,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="Movement specificity",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -5956,14 +6554,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="LMP correlation (r)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -5984,14 +6582,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="Movement stereotypy",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6012,14 +6610,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="Movement reliability",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6040,14 +6638,14 @@ def plot_nearby_spine_movement_encoding(
         ytitle="Movement specificity",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6298,10 +6896,10 @@ def plot_local_movement_encoding(
             save_path - str specifying where to save the figures
     
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
 
@@ -6411,14 +7009,14 @@ def plot_local_movement_encoding(
         ytitle="LMP Correlation (r)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6439,14 +7037,14 @@ def plot_local_movement_encoding(
         ytitle="Movement stereotypy",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6467,14 +7065,14 @@ def plot_local_movement_encoding(
         ytitle="Movement reliability",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6495,14 +7093,14 @@ def plot_local_movement_encoding(
         ytitle="Movement specificity",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6523,14 +7121,14 @@ def plot_local_movement_encoding(
         ytitle="LMP correlation (r)",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6551,14 +7149,14 @@ def plot_local_movement_encoding(
         ytitle="Movement stereotypy",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6579,14 +7177,14 @@ def plot_local_movement_encoding(
         ytitle="Movement reliability",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6607,14 +7205,14 @@ def plot_local_movement_encoding(
         ytitle="Movement specificity",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6635,14 +7233,14 @@ def plot_local_movement_encoding(
         ytitle="Fraction of rwd mvmts",
         ylim=None,
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -6922,10 +7520,10 @@ def plot_local_dendrite_activity(
             save_path - str specifying where to save the figures
     
     """
-    COLORS = ["darkorange", "darkviolet", "silver"]
+    COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
-        "Enlarged": "enlarged_spines",
-        "Shrunken": "shrunken_spines",
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
         "Stable": "stable_spines",
     }
     if rwd_mvmt:
@@ -7401,14 +7999,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7428,14 +8026,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7455,14 +8053,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7482,14 +8080,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7509,14 +8107,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7536,14 +8134,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7563,14 +8161,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7590,14 +8188,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
@@ -7617,14 +8215,14 @@ def plot_local_dendrite_activity(
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
         b_colors=COLORS,
-        b_edgecolors="white",
-        b_err_colors=COLORS,
-        m_color="white",
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
         m_width=1.5,
         b_width=0.5,
-        b_linewidth=1,
-        b_alpha=0.8,
-        b_err_alpha=0.8,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
         whisker_lim=None,
         whisk_width=1.5,
         outliers=False,
