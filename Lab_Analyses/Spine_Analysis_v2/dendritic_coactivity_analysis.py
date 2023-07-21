@@ -74,6 +74,9 @@ def dendritic_coactivity_analysis(
             save_grouped - boolean specifying whether to save all of the FOVs grouped together
             
     """
+    MAX_DIST = 40
+    bin_num = int(MAX_DIST / 5)
+    position_bins = np.linspace(0, MAX_DIST, bin_num + 1)
     # Get normalization constants
     if volume_norm:
         try:
@@ -301,8 +304,8 @@ def dendritic_coactivity_analysis(
             )
 
             # Calulate fraction of coactivity with local coactivity
-            fraction_conj_events = (
-                conj_dendrite_coactive_event_num / all_dendrite_coactive_event_num
+            fraction_conj_events = conj_dendrite_coactive_event_num / (
+                conj_dendrite_coactive_event_num + nonconj_dendrite_coactive_event_num
             )
 
             # Assess nearby spine activity during conj coactivity events
@@ -651,6 +654,7 @@ def dendritic_coactivity_analysis(
                 "partners": partners,
                 "movement period": movement_period,
                 "extended": extend,
+                "position bins": position_bins,
             }
 
             # Store data in dataclass
