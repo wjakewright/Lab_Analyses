@@ -68,7 +68,7 @@ def plot_box_plot(
     # Set up some properties
     whiskerprops = {"linewidth": whisk_width, "zorder": 0}
     boxprops = {"linewidth": b_linewidth, "color": b_edgecolors}
-    meanprops = {"marker": "x", "markeredgecolor": m_color}
+    meanprops = {"marker": "+", "markeredgecolor": m_color, "markersize": 4}
     medianprops = {"color": m_color, "linewidth": m_width}
     flierprops = {"marker": "o"}
 
