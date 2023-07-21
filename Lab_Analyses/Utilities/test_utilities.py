@@ -43,6 +43,7 @@ def ANOVA_1way_posthoc(data_dict, method):
     # Perform the one-way ANOVA
     ### Putting all the data points in a single array
     data_array = list(data_dict.values())
+    data_array = [x[~np.isnan(x)] for x in data_array]
     f_stat, anova_p = stats.f_oneway(*data_array)
 
     # Perform multiple comparisions
@@ -55,7 +56,9 @@ def ANOVA_1way_posthoc(data_dict, method):
         raw_pvals = []
         for combo in combos:
             test_performed.append(combo[0] + " vs. " + combo[1])
-            t, p = stats.ttest_ind(data_dict[combo[0]], data_dict[combo[1]])
+            t, p = stats.ttest_ind(
+                data_dict[combo[0]], data_dict[combo[1]], nan_policy="omit"
+            )
             t_vals.append(t)
             raw_pvals.append(p)
         # Perform corrections
@@ -231,10 +234,11 @@ def kruskal_wallis_test(data_dict, post_method, adj_method):
 
     # Perform multiple comparisons
     combos = list(itertools.combinations(data_dict.keys(), 2))
+    nan_data_array = [x[~np.isnan(x)] for x in data_array]
     if post_method == "Dunn":
-        pval_df = sp.posthoc_dunn(data_array, p_adjust=adj_method).to_numpy()
+        pval_df = sp.posthoc_dunn(nan_data_array, p_adjust=adj_method).to_numpy()
     elif post_method == "Conover":
-        pval_df = sp.posthoc_conover(data_array, p_adjust=adj_method).to_numpy()
+        pval_df = sp.posthoc_conover(nan_data_array, p_adjust=adj_method).to_numpy()
     test_performed = [f"{c[0]} vs {c[1]}" for c in combos]
     p_combos = list(itertools.combinations(list(range(pval_df.shape[0])), 2))
     adj_pvals = [pval_df[c[0], c[1]] for c in p_combos]
