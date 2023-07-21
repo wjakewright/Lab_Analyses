@@ -133,7 +133,11 @@ def plot_swarm_bar_plot(
         for i, data in enumerate(data_points):
             d = (data,)
             bootstrap = stats.bootstrap(
-                d, np.nanmedian, confidence_level=0.95, method="percentile"
+                d,
+                np.nanmedian,
+                confidence_level=0.95,
+                method="percentile",
+                n_resamples=1000,
             )
             low = data_mean[i] - bootstrap.confidence_interval.low
             high = bootstrap.confidence_interval.high - data_mean[i]
