@@ -481,6 +481,14 @@ def plot_amplitude_correlations(
     soma_dend_ex2 = dend_amps[soma_examples[1]]
     soma_soma_ex2 = soma_amps[soma_examples[1]]
 
+    print(len(other_dend_amps))
+    print(f"Number of soma-dendrite pairs: {len(dend_amps)}")
+    print(
+        f"Number of dendrite-dendrite pairs: {np.sum([len(x) for x in other_dend_amps])}"
+    )
+    print(f"Total soma-dendrite paired events: {len(all_dend_amps)}")
+    print(f"Total dendrite-dendrite paired events: {len(all_dend_dend_amps)}")
+
     # Construct the subplot
     fig, axes = plt.subplot_mosaic(
         [["tll", "tlm", "trm", "trr"], ["bll", "blm", "brm", "brr"]], figsize=figsize,
