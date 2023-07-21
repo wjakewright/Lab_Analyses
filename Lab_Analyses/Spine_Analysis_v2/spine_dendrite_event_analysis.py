@@ -144,7 +144,15 @@ def spine_dendrite_event_analysis(
     if constrain_matrix is not None:
         if len(constrain_matrix.shape) == 1:
             constrain_matrix = constrain_matrix.reshape(-1, 1)
+            duration = np.nansum(constrain_matrix)
+        else:
+            duration = [
+                np.nansum(constrain_matrix[:, i])
+                for i in range(constrain_matrix.shape[1])
+            ]
         spine_activity = spine_activity * constrain_matrix
+    else:
+        duration = None
 
     # Extend dendrite activity if specified
     if extend is not None:
@@ -188,10 +196,9 @@ def spine_dendrite_event_analysis(
         # Constrain spine activity for local or without local activity
         if activity_type != "all":
             n_activity = spine_activity[:, nearby_spine_idxs[spine]]
-            combined_activity = np.sum(n_activity, axis=1)
+            combined_activity = np.nansum(n_activity, axis=1)
             combined_activity[combined_activity > 1] = 1
             if activity_type == "local":
-                duration = np.sum(combined_activity)
                 _, _, _, _, s_activity = calculate_coactivity(
                     spine_activity[:, spine],
                     combined_activity,
@@ -199,7 +206,6 @@ def spine_dendrite_event_analysis(
                 )
             elif activity_type == "no local":
                 combined_inactivity = 1 - combined_activity
-                duration = np.sum(combined_inactivity)
                 _, _, _, _, s_activity = calculate_coactivity(
                     spine_activity[:, spine],
                     combined_inactivity,
@@ -207,7 +213,6 @@ def spine_dendrite_event_analysis(
                 )
         else:
             s_activity = spine_activity[:, spine]
-            duration = None
 
         d_activity = ref_dend_activity[:, spine]
 
