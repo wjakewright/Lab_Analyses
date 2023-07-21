@@ -36,6 +36,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
             data = load_pickle([file])[0]
             datasets.append(data)
 
+    print(f"Dataset number: {len(datasets)}")
+
     # Setup outputs
     dendrite_activity = []
     somatic_activity = []
