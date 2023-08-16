@@ -99,7 +99,9 @@ def calculate_chance_local_coactivity(
     # Iterate through each shuffle
     for i in range(iterations):
         # Shuffle the activity
-        shuffled_activity = d_utils.roll_2d_array(spine_activity, SHIFT_RANGE, axis=1)
+        ## Switching the chunk shuffling
+        # shuffled_activity = d_utils.roll_2d_array(spine_activity, SHIFT_RANGE, axis=1)
+        shuffled_activity = d_utils.shuffle_binary_arrays(spine_activity, axis=1)
         # Get the shuffled coactivity
         (
             shuff_coactivity,

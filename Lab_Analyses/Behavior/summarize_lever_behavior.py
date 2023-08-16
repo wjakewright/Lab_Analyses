@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.signal as sysignal
+
 from Lab_Analyses.Behavior.profile_rewarded_movements import profile_rewarded_movements
 from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
@@ -405,6 +406,8 @@ def summarize_nonimaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
             if cue_start >= len(file.lever_force_smooth) or reward_time >= len(
                 file.lever_force_smooth
             ):
+                reward_times.append(0)
+                trial_ends.append(np.nan)
                 continue
 
             if end_trial > len(file.lever_force_smooth):

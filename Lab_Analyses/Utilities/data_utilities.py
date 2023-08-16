@@ -474,3 +474,62 @@ def subselect_data_by_idxs(data, idxs):
             selected_data = [data[i] for i in idxs]
 
     return selected_data
+
+
+def shuffle_binary_arrays(array, axis=1):
+    """Helper function to shuffle chunks of binary array data
+    
+        INPUT PARAMETERS
+            array - 1 or 2d binary array
+
+            axis - int specifying the axis to shuffle along. Optional for only 2d arrays
+        
+        OUTPUT PARAMETERS
+            shuff_array - 1 or 2d binary array now shuffled
+    """
+    if len(array.shape) == 1:
+        shuff_array = shuffle_binary_chunks(array)
+    elif len(array.shape) == 2:
+        shuff_array = []
+        for i in range(array.shape[axis]):
+            temp = array.take(i, axis=axis)
+            shuff_array.append(shuffle_binary_chunks(temp))
+        shuff_array = np.stack(shuff_array, axis=axis)
+    else:
+        return "Only accepts 1 or 2d arrays as inputs"
+
+    return shuff_array
+
+
+def shuffle_binary_chunks(array):
+    """Helper function to shuffle binary arrays
+        INPUT
+            array - 1d binary array
+        OUTPUT
+            shuff_array - 1d binary array
+    """
+    # pad data
+    pad = np.zeros(1)
+    boundary_frames = np.diff(np.concatenate((pad, array, pad)))
+    boundary_frames = np.nonzero(boundary_frames)[0]
+
+    # Split into chunks
+    chunks = []
+    first_start = array[:, boundary_frames[0]]
+    chunks.append(first_start)
+    for i, _ in enumerate(boundary_frames[1:]):
+        start = boundary_frames[i]
+        stop = boundary_frames[i + 1]
+        chunk = array[start:stop]
+        chunks.append(chunk)
+    end = array[boundary_frames[-1] :]
+    chunks.append(end)
+
+    # Shuffle the chunks
+    shuffled_chunks = random.sample(chunks, len(chunks))
+
+    # Concatenate to array
+    shuff_array = np.concatenate((shuffled_chunks))
+
+    return shuff_array
+

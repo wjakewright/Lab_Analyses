@@ -6529,4 +6529,268 @@ def plot_global_movement_encoding(
         return
 
     # Perform the f-tests
+    if test_type == "parametric":
+        all_corr_f, all_corr_p, _, all_corr_df = t_utils.ANOVA_1way_posthoc(
+            plastic_mvmt_corr, test_method,
+        )
+        all_stereo_f, all_stereo_p, _, all_stereo_df = t_utils.ANOVA_1way_posthoc(
+            plastic_mvmt_stereo, test_method,
+        )
+        all_reli_f, all_reli_p, _, all_reli_df = t_utils.ANOVA_1way_posthoc(
+            plastic_mvmt_reli, test_method,
+        )
+        all_speci_f, all_speci_p, _, all_speci_df = t_utils.ANOVA_1way_posthoc(
+            plastic_mvmt_speci, test_method,
+        )
+        conj_corr_f, conj_corr_p, _, conj_corr_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_corr, test_method,
+        )
+        conj_stereo_f, conj_stereo_p, _, conj_stereo_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_stereo, test_method,
+        )
+        conj_reli_f, conj_reli_p, _, conj_reli_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_reli, test_method,
+        )
+        conj_speci_f, conj_speci_p, _, conj_speci_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_speci, test_method,
+        )
+        nonconj_corr_f, nonconj_corr_p, _, nonconj_corr_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_corr, test_method,
+        )
+        (
+            nonconj_stereo_f,
+            nonconj_stereo_p,
+            _,
+            nonconj_stereo_df,
+        ) = t_utils.ANOVA_1way_posthoc(plastic_nonconj_stereo, test_method,)
+        nonconj_reli_f, nonconj_reli_p, _, nonconj_reli_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_reli, test_method,
+        )
+        (
+            nonconj_speci_f,
+            nonconj_speci_p,
+            _,
+            nonconj_speci_df,
+        ) = t_utils.ANOVA_1way_posthoc(plastic_nonconj_speci, test_method,)
+        test_title = f"One-way ANOVA {test_method}"
+    elif test_type == "nonparametric":
+        all_corr_f, all_corr_p, all_corr_df = t_utils.kruskal_wallis_test(
+            plastic_mvmt_corr, "Conover", test_method,
+        )
+        all_stereo_f, all_stereo_p, all_stereo_df = t_utils.kruskal_wallis_test(
+            plastic_mvmt_stereo, "Conover", test_method,
+        )
+        all_reli_f, all_reli_p, all_reli_df = t_utils.kruskal_wallis_test(
+            plastic_mvmt_reli, "Conover", test_method,
+        )
+        all_speci_f, all_speci_p, all_speci_df = t_utils.ANOVA_1way_posthoc(
+            plastic_mvmt_speci, "Conover", test_method,
+        )
+        conj_corr_f, conj_corr_p, conj_corr_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_corr, "Conover", test_method,
+        )
+        conj_stereo_f, conj_stereo_p, conj_stereo_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_stereo, "Conover", test_method,
+        )
+        conj_reli_f, conj_reli_p, conj_reli_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_reli, "Conover", test_method,
+        )
+        conj_speci_f, conj_speci_p, conj_speci_df = t_utils.ANOVA_1way_posthoc(
+            plastic_conj_speci, "Conover", test_method,
+        )
+        nonconj_corr_f, nonconj_corr_p, nonconj_corr_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_corr, "Conover", test_method,
+        )
+        (
+            nonconj_stereo_f,
+            nonconj_stereo_p,
+            nonconj_stereo_df,
+        ) = t_utils.ANOVA_1way_posthoc(plastic_nonconj_stereo, "Conover", test_method,)
+        nonconj_reli_f, nonconj_reli_p, nonconj_reli_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_reli, "Conover", test_method,
+        )
+        nonconj_speci_f, nonconj_speci_p, nonconj_speci_df = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_speci, "Conover", test_method,
+        )
+        test_title = f"Kruskal-Wallis {test_method}"
 
+    # Display the statistics
+    fig2, axes2 = plt.subplot_mosaic(
+        """
+        AB
+        CD
+        EF
+        GH
+        IJ
+        KL
+        """,
+        figsize=(8, 13),
+    )
+
+    # Format the tables
+    axes2["A"].axis("off")
+    axes2["A"].axis("tight")
+    axes2["A"].set_title(
+        f"All Mvmt Correlation\n{test_title}\nF = {all_corr_f:.4} p = {all_corr_p:.3E}"
+    )
+    A_table = axes2["A"].table(
+        cellText=all_corr_df.values,
+        colLabels=all_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    A_table.auto_set_font_size(False)
+    A_table.set_fontsize(8)
+    axes2["B"].axis("off")
+    axes2["B"].axis("tight")
+    axes2["B"].set_title(
+        f"All Mvmt Stereotypy\n{test_title}\nF = {all_stereo_f:.4} p = {all_stereo_p:.3E}"
+    )
+    B_table = axes2["B"].table(
+        cellText=all_stereo_df.values,
+        colLabels=all_stereo_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    B_table.auto_set_font_size(False)
+    B_table.set_fontsize(8)
+    axes2["C"].axis("off")
+    axes2["C"].axis("tight")
+    axes2["C"].set_title(
+        f"All Mvmt Reliability\n{test_title}\nF = {all_reli_f:.4} p = {all_reli_p:.3E}"
+    )
+    C_table = axes2["C"].table(
+        cellText=all_reli_df.values,
+        colLabels=all_reli_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    C_table.auto_set_font_size(False)
+    C_table.set_fontsize(8)
+    axes2["D"].axis("off")
+    axes2["D"].axis("tight")
+    axes2["D"].set_title(
+        f"All Mvmt Specificity\n{test_title}\nF = {all_speci_f:.4} p = {all_speci_p:.3E}"
+    )
+    D_table = axes2["D"].table(
+        cellText=all_speci_df.values,
+        colLabels=all_speci_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    D_table.auto_set_font_size(False)
+    D_table.set_fontsize(8)
+    axes2["E"].axis("off")
+    axes2["E"].axis("tight")
+    axes2["E"].set_title(
+        f"Conj Mvmt Correlation\n{test_title}\nF = {conj_corr_f:.4} p = {conj_corr_p:.3E}"
+    )
+    E_table = axes2["E"].table(
+        cellText=conj_corr_df.values,
+        colLabels=conj_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    E_table.auto_set_font_size(False)
+    E_table.set_fontsize(8)
+    axes2["F"].axis("off")
+    axes2["F"].axis("tight")
+    axes2["F"].set_title(
+        f"Conj Mvmt Stereotypy\n{test_title}\nF = {conj_stereo_f:.4} p = {conj_stereo_p:.3E}"
+    )
+    F_table = axes2["F"].table(
+        cellText=conj_stereo_df.values,
+        colLabels=conj_stereo_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    F_table.auto_set_font_size(False)
+    F_table.set_fontsize(8)
+    axes2["G"].axis("off")
+    axes2["G"].axis("tight")
+    axes2["G"].set_title(
+        f"Conj Mvmt Reliability\n{test_title}\nF = {conj_reli_f:.4} p = {conj_reli_p:.3E}"
+    )
+    G_table = axes2["G"].table(
+        cellText=conj_reli_df.values,
+        colLabels=conj_reli_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    G_table.auto_set_font_size(False)
+    G_table.set_fontsize(8)
+    axes2["H"].axis("off")
+    axes2["H"].axis("tight")
+    axes2["H"].set_title(
+        f"Conj Mvmt Specificity\n{test_title}\nF = {conj_speci_f:.4} p = {conj_speci_p:.3E}"
+    )
+    H_table = axes2["H"].table(
+        cellText=conj_speci_df.values,
+        colLabels=conj_speci_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    H_table.auto_set_font_size(False)
+    H_table.set_fontsize(8)
+    axes2["I"].axis("off")
+    axes2["I"].axis("tight")
+    axes2["I"].set_title(
+        f"Nonconj Mvmt Correlation\n{test_title}\nF = {nonconj_corr_f:.4} p = {nonconj_corr_p:.3E}"
+    )
+    I_table = axes2["I"].table(
+        cellText=nonconj_corr_df.values,
+        colLabels=nonconj_corr_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    I_table.auto_set_font_size(False)
+    I_table.set_fontsize(8)
+    axes2["J"].axis("off")
+    axes2["J"].axis("tight")
+    axes2["J"].set_title(
+        f"Nonconj Mvmt Stereotypy\n{test_title}\nF = {nonconj_stereo_f:.4} p = {nonconj_stereo_p:.3E}"
+    )
+    J_table = axes2["J"].table(
+        cellText=nonconj_stereo_df.values,
+        colLabels=nonconj_stereo_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    J_table.auto_set_font_size(False)
+    J_table.set_fontsize(8)
+    axes2["K"].axis("off")
+    axes2["K"].axis("tight")
+    axes2["K"].set_title(
+        f"Nonconj Mvmt Reliability\n{test_title}\nF = {nonconj_reli_f:.4} p = {nonconj_reli_p:.3E}"
+    )
+    K_table = axes2["K"].table(
+        cellText=nonconj_reli_df.values,
+        colLabels=nonconj_reli_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    K_table.auto_set_font_size(False)
+    K_table.set_fontsize(8)
+    axes2["L"].axis("off")
+    axes2["L"].axis("tight")
+    axes2["L"].set_title(
+        f"Nonconj Mvmt Specificity\n{test_title}\nF = {nonconj_speci_f:.4} p = {nonconj_speci_p:.3E}"
+    )
+    L_table = axes2["L"].table(
+        cellText=nonconj_speci_df.values,
+        colLabels=nonconj_speci_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    L_table.auto_set_font_size(False)
+    L_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_25_Stats")
+
+        fig2.savefig(fname + ".pdf")

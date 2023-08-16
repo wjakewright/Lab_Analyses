@@ -387,14 +387,14 @@ def local_coactivity_analysis(
                 coactive_binary,
                 noncoactive_binary,
                 spine_coactive_event_num,
-                spine_coactive_traces,
-                spine_noncoactive_traces,
-                spine_coactive_calcium_traces,
-                spine_noncoactive_calcium_traces,
-                spine_coactive_amplitude,
-                spine_noncoactive_amplitude,
-                spine_coactive_calcium_amplitude,
-                spine_noncoactive_calcium_amplitude,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
                 spine_coactive_onset,
                 spine_noncoactive_onset,
                 fraction_spine_coactive,
@@ -409,6 +409,45 @@ def local_coactivity_analysis(
                 activity_window=activity_window,
                 cluster_dist=cluster_dist,
                 constrain_matrix=constrain_matrix,
+                partner_list=partner_list,
+                sampling_rate=sampling_rate,
+                volume_norm=all_constants,
+            )
+            ## Isolated events
+            ### modify the constrain matrix
+            dendrite_inactive = 1 - dendrite_activity
+            if constrain_matrix is not None:
+                temp_matrix = constrain_matrix.reshape(-1, 1) * dendrite_inactive
+            else:
+                temp_matrix = dendrite_inactive
+
+            (
+                _,
+                _,
+                _,
+                _,
+                spine_coactive_traces,
+                spine_noncoactive_traces,
+                spine_coactive_calcium_traces,
+                spine_noncoactive_calcium_traces,
+                spine_coactive_amplitude,
+                spine_noncoactive_amplitude,
+                spine_coactive_calcium_amplitude,
+                spine_noncoactive_calcium_amplitude,
+                _,
+                _,
+                _,
+                _,
+            ) = coactive_vs_noncoactive_event_analysis(
+                spine_activity,
+                spine_dFoF,
+                spine_calcium_dFoF,
+                spine_flags,
+                spine_positions,
+                spine_groupings,
+                activity_window=activity_window,
+                cluster_dist=cluster_dist,
+                constrain_matrix=temp_matrix,
                 partner_list=partner_list,
                 sampling_rate=sampling_rate,
                 volume_norm=all_constants,
