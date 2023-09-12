@@ -88,11 +88,13 @@ def read_bit_code(xsg_trial_num):
 
                 # Catch rare instance of the xsg file cutting out before the end of the bitcode
                 if bit_boundary_max > len(binary_threshold):
-                    trial_number[idx, :] = []
+                    trial_number[idx, :] = np.nan
 
             # Get rid of duplicated trials
             _, indexes = np.unique(trial_number[:, 1], return_index=True)
             trial_number = trial_number[indexes]
+            # Remove nan values
+            trial_number = trial_number[~np.isnan(trial_number).any(axis=1)]
             # Append trial number of this test to trial_number_list to then evaluate
             trial_number_list.append(trial_number)
 
