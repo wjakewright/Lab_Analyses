@@ -116,7 +116,7 @@ def plot_activity_heatmap(
     t = np.linspace(0, activity_window[1] - activity_window[0], data_t.shape[1])
     xticks = np.unique(x.astype(int))
     t = np.unique(t.astype(int))
-    ax.set_xticks(ticks=t * 60)
+    ax.set_xticks(ticks=t * sampling_rate)
     ax.set_xticklabels(labels=xticks, rotation=0)
     ax.set_xlabel("Time (s)", labelpad=7)
     hax.patch.set_edgecolor("black")
