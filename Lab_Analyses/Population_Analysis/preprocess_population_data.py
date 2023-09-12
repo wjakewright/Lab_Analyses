@@ -7,14 +7,14 @@ import numpy as np
 import scipy.signal as sysignal
 from scipy.ndimage import uniform_filter1d
 
-from Lab_Analyses.Behavior.align_lever_behavior_suite2p import \
-    align_lever_behavior_suite2p
+from Lab_Analyses.Behavior.align_lever_behavior_suite2p import (
+    align_lever_behavior_suite2p,
+)
 from Lab_Analyses.Utilities.check_file_exists import get_existing_files
 from Lab_Analyses.Utilities.deconvolve_calcium import oasis
 from Lab_Analyses.Utilities.event_detection import event_detection
 from Lab_Analyses.Utilities.get_dFoF import get_dFoF
-from Lab_Analyses.Utilities.movement_responsiveness_v2 import \
-    movement_responsiveness
+from Lab_Analyses.Utilities.movement_responsiveness_v2 import movement_responsiveness
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
@@ -59,7 +59,7 @@ def organize_population_data(
     sessions = next(os.walk(imaging_path))[1]
     # Reorder if periods
     if "Early" and "Late" and "Middle" in sessions:
-        sessions = ["Middle", "Late"]
+        sessions = ["Early", "Middle", "Late"]
 
     # Set up containers for the data files
     imaging_datasets = []
@@ -111,7 +111,7 @@ def organize_population_data(
             return "Haven't coded for roi matching"
         else:
             cells = iscell
-        
+
         fluoro = raw_fluoro[cells].T
 
         # Calculate dFoF and processed dFoF
