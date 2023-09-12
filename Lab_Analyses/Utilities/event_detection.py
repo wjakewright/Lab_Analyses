@@ -51,7 +51,7 @@ def event_detection(
         roi = dFoF[:, i]
         # Set lower limit if None
         if LOWER_LIMIT is None:
-            l_limit = np.nanmax(roi) * 0.15
+            l_limit = np.nanmax(roi) * 0.2
         else:
             l_limit = LOWER_LIMIT
         # Estimate the noise of the traces using the mirrored below-zero trace
