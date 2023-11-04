@@ -77,11 +77,11 @@ def plot_histogram(
         b = np.histogram(np.hstack(data), bins=bins)[1]
         for d, c in zip(data, color):
             sns.histplot(
-                data=d, bins=b, color=c, alpha=alpha, stat=stat, ax=ax,
+                data=d, bins=b, color=c, alpha=alpha, stat=stat, ax=ax, zorder=0
             )
     else:
         sns.histplot(
-            data=data, bins=bins, color=color, alpha=alpha, stat=stat, ax=ax,
+            data=data, bins=bins, color=color, alpha=alpha, stat=stat, ax=ax, zorder=0
         )
 
     # Add vertical lines if given
