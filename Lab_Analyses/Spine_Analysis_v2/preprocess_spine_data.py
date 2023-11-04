@@ -9,6 +9,7 @@ from Lab_Analyses.Behavior.align_lever_behavior import align_lever_behavior
 from Lab_Analyses.Utilities.check_file_exists import get_existing_files
 from Lab_Analyses.Utilities.data_utilities import join_dictionaries, pad_array_to_length
 from Lab_Analyses.Utilities.event_detection import event_detection
+from Lab_Analyses.Utilities.get_dFoF import resmooth_dFoF
 from Lab_Analyses.Utilities.movement_responsiveness_v2 import movement_responsiveness
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
@@ -18,6 +19,7 @@ def organize_dual_spine_data(
     channels={"GluSnFr": "GreenCh", "Calcium": "RedCh"},
     fov_type="apical",
     redetection=False,
+    resmooth=False,
     reprocess=True,
     save=False,
     followup=True,
@@ -35,6 +37,8 @@ def organize_dual_spine_data(
             fov_type - str specifying whether to process apical or basal FOVs
             
             redetection - boolean specifying whether to redo the event detection
+
+            resmooth - boolean specifying whether to redo the dFoF smoothing
 
             reprocess - boolean specifying whether to reprocess or try to load the
                         data
@@ -265,9 +269,21 @@ def organize_dual_spine_data(
                 )
             ### Activity
             spine_GluSnFr_dFoF = GluSnFr_dFoF["Spine"]
-            spine_GluSnFr_processed_dFoF = GluSnFr_processed_dFoF["Spine"]
             spine_calcium_dFoF = calcium_dFoF["Spine"]
-            spine_calcium_processed_dFoF = calcium_processed_dFoF["Spine"]
+            if resmooth is True:
+                spine_GluSnFr_processed_dFoF = resmooth_dFoF(
+                    spine_GluSnFr_dFoF,
+                    sampling_rate=imaging_parameters["Sampling Rate"],
+                    smooth_window=0.5,
+                )
+                spine_calcium_processed_dFoF = resmooth_dFoF(
+                    spine_calcium_dFoF,
+                    sampling_rate=imaging_parameters["Sampling Rate"],
+                    smooth_window=0.5,
+                )
+            else:
+                spine_GluSnFr_processed_dFoF = GluSnFr_processed_dFoF["Spine"]
+                spine_calcium_processed_dFoF = calcium_processed_dFoF["Spine"]
             if redetection is True:
                 spine_GluSnFr_activity, spine_GluSnFr_floored, _ = event_detection(
                     spine_GluSnFr_processed_dFoF,
