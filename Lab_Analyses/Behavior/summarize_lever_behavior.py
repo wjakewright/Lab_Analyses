@@ -66,7 +66,6 @@ def summarize_lever_behavior(file, save=False, save_suffix=None):
     """
     MIN_MOVE_NUM = 0
     MIN_T = 3001
-
     if file is None:
         return None
 
