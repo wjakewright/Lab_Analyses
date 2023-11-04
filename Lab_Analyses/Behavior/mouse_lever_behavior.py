@@ -108,7 +108,6 @@ def analyze_mouse_lever_behavior(
         )
         files.append(p_file)
     print("")
-
     # Summarize lever press data for each session
     summarized_data = []
     for file, sess, name, suffix in zip(files, sessions, sess_names, save_suffix):
@@ -183,7 +182,6 @@ def analyze_mouse_lever_behavior(
 
     # Save section
     if save is True:
-        mouse_id = file.mouse_id
         # Set path
         save_path = os.path.join(initial_path, mouse_id, "behavior")
         if not os.path.isdir(save_path):
