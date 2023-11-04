@@ -6,7 +6,13 @@ import scipy.signal as sysignal
 
 
 def event_detection(
-    dFoF, threshold, lower_threshold, lower_limit, sampling_rate, filt_poly=2, sec_smooth=1,
+    dFoF,
+    threshold,
+    lower_threshold,
+    lower_limit,
+    sampling_rate,
+    filt_poly=2,
+    sec_smooth=1,
 ):
     """Function to indentify periods of activity. Used a threshold multiplier
         to find periods above the estimated noise of the trace
@@ -51,7 +57,7 @@ def event_detection(
         roi = dFoF[:, i]
         # Set lower limit if None
         if LOWER_LIMIT is None:
-            l_limit = np.nanmax(roi) * 0.2
+            l_limit = np.nanmax(roi) * 0.15
         else:
             l_limit = LOWER_LIMIT
         # Estimate the noise of the traces using the mirrored below-zero trace
