@@ -533,3 +533,10 @@ def shuffle_binary_chunks(array):
 
     return shuff_array
 
+
+def convert_dataclass_to_dict(dataclass):
+    output = {}
+    for attribute in dataclass.__dict__.keys():
+        output[attribute] = getattr(dataclass, attribute)
+    
+    return output
