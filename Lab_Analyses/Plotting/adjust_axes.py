@@ -7,7 +7,7 @@ sns.set()
 sns.set_style("ticks")
 
 
-def adjust_axes(ax, minor_ticks, xtitle, ytitle,tick_len, axis_width):
+def adjust_axes(ax, minor_ticks, xtitle, ytitle, tick_len, axis_width):
     """Helper function to adjust the axes of plots"""
     # Format the axes
     ## Add minor tick marks
@@ -31,6 +31,7 @@ def adjust_axes(ax, minor_ticks, xtitle, ytitle,tick_len, axis_width):
         direction="in",
         length=tick_len / 1.5,
         width=axis_width,
+        zorder=-1,
     )
     ## Adjust axis width
     for axis in ax.spines.keys():
