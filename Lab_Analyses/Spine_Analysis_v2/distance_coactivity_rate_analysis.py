@@ -4,6 +4,9 @@ from Lab_Analyses.Spine_Analysis_v2.calculate_chance_local_coactivity import (
 from Lab_Analyses.Spine_Analysis_v2.calculate_distance_coactivity_rate import (
     calculate_distance_coactivity_rate,
 )
+from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
+    calculate_nearby_vs_distance_variable,
+)
 
 
 def distance_coactivity_rate_analysis(
@@ -40,6 +43,13 @@ def distance_coactivity_rate_analysis(
         bin_size=bin_size,
         sampling_rate=sampling_rate,
         norm_method=norm_method,
+    )
+    # Calculate nearby - distance coactivity
+    near_minus_distant = calculate_nearby_vs_distance_variable(
+        distance_coactivity_rate, position_bins, cluster_dist,
+    )
+    near_minus_distant_norm = calculate_nearby_vs_distance_variable(
+        distance_coactivity_rate_norm, position_bins, cluster_dist,
     )
 
     # Local coactivity vs chance
@@ -78,4 +88,7 @@ def distance_coactivity_rate_analysis(
         relative_diff_norm,
         coactive_spines,
         coactive_norm_spines,
+        near_minus_distant,
+        near_minus_distant_norm,
     )
+
