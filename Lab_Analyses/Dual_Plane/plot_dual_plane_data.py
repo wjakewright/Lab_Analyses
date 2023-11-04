@@ -90,7 +90,7 @@ def plot_soma_dend_traces(
 
         # Set up the axes
         ax.set_title(f"Dendrite {i + 1}", fontsize=10)
-        adjust_axes(ax, None, "Time (s)", ytitle, None, None, 3, 1.5)
+        adjust_axes(ax, None, "Time (s)", ytitle, 3, 1.5)
 
     # Save section
     if save:
