@@ -349,3 +349,28 @@ def load_analyzed_datasets(
         return "File matching input parameters does not exist"
 
     return loaded_data
+
+
+def calculate_nearby_vs_distance_variable(variable_mat, position_bins, cluster_dist):
+    """Helper function to calculate the nearby coactivity rate vs
+        the distance coactivity rate for each spine"""
+    DISTANT_BIN = 30  # Distant is considered further than 30um
+
+    # Get idx for the nearby cluster bin cutoff
+    near_bin_idx = np.nonzero(position_bins == cluster_dist)[0][0]
+    dist_bin_idx = np.nonzero(position_bins >= DISTANT_BIN)[0][0]
+
+    # Slice near and distant data
+    ## Check of the bin size alignes with the cluster
+    if near_bin_idx > 0:
+        near = variable_mat[:near_bin_idx, :]
+        near = np.nansum(near, axis=0)
+    else:
+        near = variable_mat[near_bin_idx, :]
+    distant = variable_mat[dist_bin_idx:, :]
+    distant = np.nansum(distant, axis=0)
+
+    # Perform calculation
+    near_minus_dist = near - distant
+
+    return near_minus_dist
