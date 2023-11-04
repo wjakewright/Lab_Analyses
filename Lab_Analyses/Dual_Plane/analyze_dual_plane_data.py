@@ -4,8 +4,9 @@ import numpy as np
 import scipy.signal as sysignal
 
 from Lab_Analyses.Dual_Plane.dual_plane_dataclass import Dual_Plane_Data
-from Lab_Analyses.Dual_Plane.preprocess_dual_plane_data import \
-    preprocess_dual_plane_data
+from Lab_Analyses.Dual_Plane.preprocess_dual_plane_data import (
+    preprocess_dual_plane_data,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_timestamps import get_activity_timestamps
 from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
@@ -35,6 +36,8 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
             file = os.path.join(FOV_path, fname)
             data = load_pickle([file])[0]
             datasets.append(data)
+            dictionary = d_utils.convert_dataclass_to_dict(data)
+            save_pickle(f"{mouse}_{FOV}_dual_soma_dend_dict", dictionary, path=FOV_path)
 
     print(f"Dataset number: {len(datasets)}")
 
