@@ -32,6 +32,7 @@ def plot_scatter_correlation(
     axis_width=1,
     minor_ticks=None,
     tick_len=3,
+    unity=False,
     ax=None,
     save=False,
     save_path=None,
@@ -160,6 +161,10 @@ def plot_scatter_correlation(
     left, right = get_axis_limit(xlim, xticks)
     ax.set_ylim(bottom, top)
     ax.set_xlim(left, right)
+
+    # Add unity line if specified
+    if unity:
+        ax.axline(xy1=(0, 0), slope=1, color="black", linestyle="--", linewidth=0.5)
 
     # Save section
     if save:
