@@ -9,7 +9,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from Lab_Analyses.Behavior.process_lever_behavior import process_lever_behavior
-from Lab_Analyses.Behavior.summarize_lever_behavior import summarize_lever_behavior
+from Lab_Analyses.Behavior.summarize_lever_behavior_v2 import \
+    summarize_lever_behavior
 from Lab_Analyses.Utilities.check_file_exists import get_existing_files
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
