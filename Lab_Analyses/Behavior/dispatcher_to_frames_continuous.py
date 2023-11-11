@@ -88,7 +88,7 @@ def dispatcher_to_frames_continuous(file_name, path, xsg_data, imaged):
 
         # Get the frame times within the current behavioral trial window
         a = (frame_times > bhv_window[0, 1]).astype(int)
-        b = (frame_times > bhv_window[1, 0]).astype(int)
+        b = (frame_times < bhv_window[1, 0]).astype(int)
         imaged_frames = np.round(
             frame_times[np.nonzero(a & b)[0]] * XSG_SAMPLE_RATE
         ).astype(int)
