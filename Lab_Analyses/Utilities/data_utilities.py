@@ -493,7 +493,10 @@ def shuffle_binary_arrays(array, axis=1):
         shuff_array = []
         for i in range(array.shape[axis]):
             temp = array.take(i, axis=axis)
-            shuff_array.append(shuffle_binary_chunks(temp))
+            if np.nansum(temp):
+                shuff_array.append(shuffle_binary_chunks(temp))
+            else:
+                shuff_array.append(temp)
         shuff_array = np.stack(shuff_array, axis=axis)
     else:
         return "Only accepts 1 or 2d arrays as inputs"
@@ -515,7 +518,7 @@ def shuffle_binary_chunks(array):
 
     # Split into chunks
     chunks = []
-    first_start = array[:, boundary_frames[0]]
+    first_start = array[:boundary_frames[0]]
     chunks.append(first_start)
     for i, _ in enumerate(boundary_frames[1:]):
         start = boundary_frames[i]
