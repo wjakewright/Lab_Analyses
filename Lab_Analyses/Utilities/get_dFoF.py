@@ -44,6 +44,9 @@ def get_dFoF(
     SMOOTH_PAD_LENGTH = 500
     SMOOTH_WINDOW = int(smooth_window * np.round(sampling_rate))
 
+    if not SMOOTH_WINDOW % 2:
+        SMOOTH_WINDOW = SMOOTH_WINDOW + 1
+
     if artifact_frames:
         jump_correction = True
     else:
@@ -129,8 +132,7 @@ def get_dFoF(
     pad_end = np.nanstd(dFoF) * np.random.randn(SMOOTH_PAD_LENGTH)
 
     padded_dFoF = np.concatenate((pad_start, dFoF, pad_end))
-    padded_smoothed = sysignal.savgol_filter(padded_dFoF, SMOOTH_WINDOW, 2)
-    # padded_smoothed = matlab_smooth(padded_dFoF, SMOOTH_WINDOW)
+    padded_smoothed = matlab_smooth(padded_dFoF, SMOOTH_WINDOW)
 
     processed_dFoF = padded_smoothed[SMOOTH_PAD_LENGTH:-SMOOTH_PAD_LENGTH]
 
@@ -141,6 +143,8 @@ def resmooth_dFoF(dFoF, sampling_rate, smooth_window=0.5):
     """Function to resmooth dFoF traces"""
     SMOOTH_PAD_LENGTH = 500
     SMOOTH_WINDOW = int(smooth_window * np.round(sampling_rate))
+    if not SMOOTH_WINDOW % 2:
+        SMOOTH_WINDOW = SMOOTH_WINDOW + 1
 
     processed_dFoF = np.zeros(dFoF.shape)
 
@@ -148,7 +152,7 @@ def resmooth_dFoF(dFoF, sampling_rate, smooth_window=0.5):
         pad_start = np.nanstd(dFoF[:, i]) * np.random.randn(SMOOTH_PAD_LENGTH)
         pad_end = np.nanstd(dFoF[:, i]) * np.random.randn(SMOOTH_PAD_LENGTH)
         padded_dFoF = np.concatenate((pad_start, dFoF[:, i], pad_end))
-        padded_smoothed = sysignal.savgol_filter(padded_dFoF, SMOOTH_WINDOW, 2)
-        processed_dFoF[:, i] = padded_smoothed
+        padded_smoothed = matlab_smooth(padded_dFoF, SMOOTH_WINDOW)
+        processed_dFoF[:, i] = padded_smoothed[SMOOTH_PAD_LENGTH:-SMOOTH_PAD_LENGTH]
 
     return processed_dFoF
