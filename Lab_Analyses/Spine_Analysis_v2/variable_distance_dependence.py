@@ -1,12 +1,9 @@
-from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    calculate_nearby_vs_distance_variable,
-)
-from Lab_Analyses.Spine_Analysis_v2.variable_spatial_clustering import (
-    variable_spatial_clustering,
-)
-from Lab_Analyses.Spine_Analysis_v2.variable_spatial_distribution import (
-    variable_spatial_distribution,
-)
+from Lab_Analyses.Spine_Analysis_v2.spine_utilities import \
+    calculate_nearby_vs_distance_variable
+from Lab_Analyses.Spine_Analysis_v2.variable_spatial_clustering import \
+    variable_spatial_clustering
+from Lab_Analyses.Spine_Analysis_v2.variable_spatial_distribution import \
+    variable_spatial_distribution
 
 
 def variable_distance_dependence(
@@ -14,6 +11,7 @@ def variable_distance_dependence(
     spine_positions,
     spine_flags,
     spine_groupings,
+    partner_list=None,
     bin_size=5,
     cluster_dist=5,
     method="nearest",
@@ -25,7 +23,7 @@ def variable_distance_dependence(
 
     # Spatial distribution
     variable_distribution, _, bins = variable_spatial_distribution(
-        spine_data, spine_positions, spine_flags, spine_groupings, bin_size=bin_size,
+        spine_data, spine_positions, spine_flags, spine_groupings, partner_list=partner_list, bin_size=bin_size,
     )
 
     # Spatial clustering
@@ -34,6 +32,7 @@ def variable_distance_dependence(
         spine_positions,
         spine_flags,
         spine_groupings,
+        partner_list=partner_list,
         method=method,
         cluster_dist=cluster_dist,
         iterations=iterations,
