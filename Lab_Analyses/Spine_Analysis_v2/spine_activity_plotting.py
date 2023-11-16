@@ -138,6 +138,7 @@ def plot_basic_features(
 
     ######################### Plat data onto the axes #############################
     # Relative volume distributions
+    print(len(delta_volume))
     plot_histogram(
         data=delta_volume,
         bins=hist_bins,
@@ -665,7 +666,7 @@ def plot_movement_related_activity(
         center=None,
         sorted="peak",
         normalize=True,
-        cmap="plasma",
+        cmap="Blues",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -685,7 +686,7 @@ def plot_movement_related_activity(
         center=None,
         sorted="peak",
         normalize=True,
-        cmap="plasma",
+        cmap="Reds",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -705,7 +706,7 @@ def plot_movement_related_activity(
         center=None,
         sorted="peak",
         normalize=True,
-        cmap="plasma",
+        cmap="Greys",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -880,7 +881,7 @@ def plot_movement_related_activity(
         save=False,
         save_path=None,
     )
-    ## GluSnFr onset histogram
+    ## Calcium onset histogram
     plot_histogram(
         data=list(mrs_grouped_mvmt_calcium_onsets.values()),
         bins=hist_bins,
@@ -927,7 +928,7 @@ def plot_movement_related_activity(
         save=False,
         save_path=None,
     )
-    ## Grouped GluSnFr onsets
+    ## Grouped Calcium onsets
     plot_box_plot(
         mrs_grouped_mvmt_calcium_onsets,
         figsize=(5, 5),
