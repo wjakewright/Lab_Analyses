@@ -9,19 +9,18 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
-from Lab_Analyses.Plotting.plot_cummulative_distribution import (
-    plot_cummulative_distribution,
-)
+from Lab_Analyses.Plotting.plot_cummulative_distribution import \
+    plot_cummulative_distribution
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import \
+    plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
-from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import \
+    plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_present_spines
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change,
-    classify_plasticity,
-)
+    calculate_volume_change, classify_plasticity)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -78,6 +77,9 @@ def plot_coactive_vs_noncoactive_events(
     coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
     noncoactive_local_dend_traces = dataset.noncoactive_local_dend_traces
     noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
+    coactive_local_dend_amplitude_dist = dataset.coactive_local_dend_amplitude_dist
+    noncoactive_local_dend_amplitude_dist = dataset.noncoactive_local_dend_amplitude_dist
+    distance_bins = dataset.parameters["dendrite position bins"][1:]
 
     # Organize the traces for plotting
     coactive_traces = [
@@ -131,7 +133,7 @@ def plot_coactive_vs_noncoactive_events(
     fig, axes = plt.subplot_mosaic(
         """
         ABCD
-        EF..
+        EFG.
         """,
         figsize=figsize,
     )
@@ -294,6 +296,31 @@ def plot_coactive_vs_noncoactive_events(
         ax=axes["F"],
         save=False,
         save_path=None,
+    )
+    # local dendrite distance dependence amplitude
+    plot_multi_line_plot(
+        data_dict={
+            "Coactive": coactive_local_dend_amplitude_dist,
+            "Noncoactive": noncoactive_local_dend_amplitude_dist,
+        },
+        x_vals=distance_bins,
+        figsize=(5,5),
+        title="Distance Dependence Local Dendrite",
+        ytitle=f"Event amplitude ({activity_type})",
+        xtitle = "Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=5,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["G"],
+        legend=True,
+        save=False,
+        save_path=None
     )
 
     fig.tight_layout()
@@ -469,12 +496,12 @@ def plot_comparative_mvmt_coactivity(
             nonmvmt_dataset.shuff_local_coactivity_rate, spine_idxs1
         ),
     }
-    real_vs_shuff_diff = {
+    near_vs_dist_coactivity = {
         mvmt_key: d_utils.subselect_data_by_idxs(
-            mvmt_dataset.real_vs_shuff_coactivity_diff, spine_idxs
+            mvmt_dataset.near_vs_dist_coactivity, spine_idxs
         ),
         nonmvmt_key: d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.real_vs_shuff_coactivity_diff, spine_idxs1
+            nonmvmt_dataset.near_vs_dist_coactivity, spine_idxs1
         ),
     }
     avg_local_coactivity_rate_norm = {
@@ -495,12 +522,12 @@ def plot_comparative_mvmt_coactivity(
         ),
     }
 
-    real_vs_shuff_diff_norm = {
+    near_vs_dist_coactivity_norm = {
         mvmt_key: d_utils.subselect_data_by_idxs(
-            mvmt_dataset.real_vs_shuff_coactivity_diff_norm, spine_idxs
+            mvmt_dataset.near_vs_dist_coactivity_norm, spine_idxs
         ),
         nonmvmt_key: d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.real_vs_shuff_coactivity_diff_norm, spine_idxs1
+            nonmvmt_dataset.near_vs_dist_coactivity_norm, spine_idxs1
         ),
     }
     ### Traces
@@ -922,13 +949,13 @@ def plot_comparative_mvmt_coactivity(
         save=False,
         save_path=None,
     )
-    # Real vs shuff relative difference
+    # Near vs distant coactivity
     plot_box_plot(
-        real_vs_shuff_diff,
+        near_vs_dist_coactivity,
         figsize=(5, 5),
         title=None,
         xtitle=None,
-        ytitle=f"Above chance difference",
+        ytitle=f"Nearby - distant coactivity rate",
         ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
@@ -952,11 +979,11 @@ def plot_comparative_mvmt_coactivity(
     )
     # Real vs shuff relative difference norm
     plot_box_plot(
-        real_vs_shuff_diff_norm,
+        near_vs_dist_coactivity_norm,
         figsize=(5, 5),
         title=None,
         xtitle=None,
-        ytitle=f"Above chance difference (norm)",
+        ytitle=f"Nearby - distant coactivity rate norm.",
         ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
@@ -1105,13 +1132,13 @@ def plot_comparative_mvmt_coactivity(
             nan_policy="omit",
         )
         rel_diff_t, rel_diff_p = stats.ttest_ind(
-            real_vs_shuff_diff[mvmt_key],
-            real_vs_shuff_diff[nonmvmt_key],
+            near_vs_dist_coactivity[mvmt_key],
+            near_vs_dist_coactivity[nonmvmt_key],
             nan_policy="omit",
         )
         rel_diff_norm_t, rel_diff_norm_p = stats.ttest_ind(
-            real_vs_shuff_diff_norm[mvmt_key],
-            real_vs_shuff_diff_norm[nonmvmt_key],
+            near_vs_dist_coactivity_norm[mvmt_key],
+            near_vs_dist_coactivity_norm[nonmvmt_key],
             nan_policy="omit",
         )
         amp_t, amp_p = stats.ttest_ind(
@@ -1143,15 +1170,15 @@ def plot_comparative_mvmt_coactivity(
             ],
         )
         rel_diff_t, rel_diff_p = stats.mannwhitneyu(
-            real_vs_shuff_diff[mvmt_key][~np.isnan(real_vs_shuff_diff[mvmt_key])],
-            real_vs_shuff_diff[nonmvmt_key][~np.isnan(real_vs_shuff_diff[nonmvmt_key])],
+            near_vs_dist_coactivity[mvmt_key][~np.isnan(near_vs_dist_coactivity[mvmt_key])],
+            near_vs_dist_coactivity[nonmvmt_key][~np.isnan(near_vs_dist_coactivity[nonmvmt_key])],
         )
         rel_diff_norm_t, rel_diff_norm_p = stats.mannwhitneyu(
-            real_vs_shuff_diff_norm[mvmt_key][
-                ~np.isnan(real_vs_shuff_diff_norm[mvmt_key])
+            near_vs_dist_coactivity_norm[mvmt_key][
+                ~np.isnan(near_vs_dist_coactivity_norm[mvmt_key])
             ],
-            real_vs_shuff_diff_norm[nonmvmt_key][
-                ~np.isnan(real_vs_shuff_diff_norm[nonmvmt_key])
+            near_vs_dist_coactivity_norm[nonmvmt_key][
+                ~np.isnan(near_vs_dist_coactivity_norm[nonmvmt_key])
             ],
         )
         amp_t, amp_p = stats.mannwhitneyu(
@@ -1173,8 +1200,8 @@ def plot_comparative_mvmt_coactivity(
         "Comparison": [
             "Local coactivity",
             "Local norm. coactivity",
-            "Chance diff.",
-            "Chance diff. norm.",
+            "Near vs dist.",
+            "Near vs dist. norm.",
             "Amplitude",
             "Ca Amplitude",
         ],
@@ -1396,7 +1423,7 @@ def plot_plasticity_coactivity_rates(
         avg_local_coactivity_rate = dataset.avg_local_coactivity_rate
         shuff_local_coactivity_rate = dataset.shuff_local_coactivity_rate
         coactive_spines = dataset.coactive_spines
-        real_vs_shuff_diff = dataset.real_vs_shuff_coactivity_diff
+        near_vs_dist = dataset.near_vs_dist_coactivity
         mvmt_distance_coactivity_rate = mvmt_dataset.distance_coactivity_rate
         mvmt_avg_local_coactivity_rate = mvmt_dataset.avg_local_coactivity_rate
         nonmvmt_distance_coactivity_rate = nonmvmt_dataset.distance_coactivity_rate
@@ -1410,7 +1437,7 @@ def plot_plasticity_coactivity_rates(
         avg_local_coactivity_rate = dataset.avg_local_coactivity_rate_norm
         shuff_local_coactivity_rate = dataset.shuff_local_coactivity_rate_norm
         coactive_spines = dataset.coactive_norm_spines
-        real_vs_shuff_diff = dataset.real_vs_shuff_coactivity_diff_norm
+        near_vs_dist = dataset.near_vs_dist_coactivity_norm
         mvmt_distance_coactivity_rate = mvmt_dataset.distance_coactivity_rate_norm
         mvmt_avg_local_coactivity_rate = mvmt_dataset.avg_local_coactivity_rate_norm
         nonmvmt_distance_coactivity_rate = nonmvmt_dataset.distance_coactivity_rate_norm
@@ -1443,7 +1470,7 @@ def plot_plasticity_coactivity_rates(
         shuff_local_coactivity_rate, spine_idxs
     )
     coactive_spines = d_utils.subselect_data_by_idxs(coactive_spines, spine_idxs)
-    real_vs_shuff_diff = d_utils.subselect_data_by_idxs(real_vs_shuff_diff, spine_idxs)
+    near_vs_dist = d_utils.subselect_data_by_idxs(near_vs_dist, spine_idxs)
     mvmt_distance_coactivity_rate = d_utils.subselect_data_by_idxs(
         mvmt_distance_coactivity_rate, spine_idxs
     )
@@ -1481,7 +1508,7 @@ def plot_plasticity_coactivity_rates(
         # Subselect data
         plastic_distance_rates[key] = distance_coactivity_rate[:, spines]
         plastic_local_rates[key] = avg_local_coactivity_rate[spines]
-        plastic_diffs[key] = real_vs_shuff_diff[spines]
+        plastic_diffs[key] = near_vs_dist[spines]
         mvmt_distance_rates[key] = mvmt_distance_coactivity_rate[:, spines]
         mvmt_local_rates[key] = mvmt_avg_local_coactivity_rate[spines]
         nonmvmt_distance_rates[key] = nonmvmt_distance_coactivity_rate[:, spines]
@@ -1790,13 +1817,13 @@ def plot_plasticity_coactivity_rates(
         save=False,
         save_path=None,
     )
-    # Real vs shuff relative difference
+    # Near vs distant relative difference
     plot_box_plot(
         plastic_diffs,
         figsize=(5, 5),
         title="All periods",
         xtitle=None,
-        ytitle=f"Above chance difference",
+        ytitle=f"Near - distant coactivity",
         ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
@@ -3487,9 +3514,11 @@ def plot_nearby_spine_properties(
     spine_activity_rate_distribution = dataset.spine_activity_rate_distribution
     avg_nearby_spine_rate = dataset.avg_nearby_spine_rate
     shuff_nearby_spine_rate = dataset.shuff_nearby_spine_rate
+    near_vs_dist_activity_rate = dataset.near_vs_dist_activity_rate
     local_coactivity_rate_distribution = dataset.local_coactivity_rate_distribution
     avg_nearby_coactivity_rate = dataset.avg_nearby_coactivity_rate
     shuff_nearby_coactivity_rate = dataset.shuff_nearby_coactivity_rate
+    near_vs_dist_nearby_coactivity_rate = dataset.near_vs_dist_nearby_coactivity_rate
     MRS_density_distribution = dataset.MRS_density_distribution
     avg_local_MRS_density = dataset.avg_local_MRS_density
     shuff_local_MRS_density = dataset.shuff_local_MRS_density
@@ -3503,9 +3532,11 @@ def plot_nearby_spine_properties(
     avg_nearby_spine_volume = dataset.avg_nearby_spine_volume
     shuff_nearby_spine_volume = dataset.shuff_nearby_spine_volume
     nearby_spine_volume_distribution = dataset.nearby_spine_volume_distribution
+    near_vs_dist_volume = dataset.near_vs_dist_volume
     local_relative_vol = dataset.local_relative_vol
     shuff_relative_vol = dataset.shuff_relative_vol
     relative_vol_distribution = dataset.relative_vol_distribution
+    near_vs_dist_relative_volume = dataset.near_vs_dist_relative_volume
 
     # Calculate spine volume
     volumes = [spine_volumes, followup_volumes]
@@ -3528,6 +3559,9 @@ def plot_nearby_spine_properties(
     shuff_nearby_spine_rate = d_utils.subselect_data_by_idxs(
         shuff_nearby_spine_rate, spine_idxs
     )
+    near_vs_dist_activity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_activity_rate, spine_idxs
+    )
     local_coactivity_rate_distribution = d_utils.subselect_data_by_idxs(
         local_coactivity_rate_distribution, spine_idxs,
     )
@@ -3536,6 +3570,9 @@ def plot_nearby_spine_properties(
     )
     shuff_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
         shuff_nearby_coactivity_rate, spine_idxs
+    )
+    near_vs_dist_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_nearby_coactivity_rate, spine_idxs,
     )
     MRS_density_distribution = d_utils.subselect_data_by_idxs(
         MRS_density_distribution, spine_idxs
@@ -3568,10 +3605,16 @@ def plot_nearby_spine_properties(
     nearby_spine_volume_distribution = d_utils.subselect_data_by_idxs(
         nearby_spine_volume_distribution, spine_idxs
     )
+    near_vs_dist_volume = d_utils.subselect_data_by_idxs(
+        near_vs_dist_volume, spine_idxs,
+    )
     local_relative_vol = d_utils.subselect_data_by_idxs(local_relative_vol, spine_idxs,)
     shuff_relative_vol = d_utils.subselect_data_by_idxs(shuff_relative_vol, spine_idxs,)
     relative_vol_distribution = d_utils.subselect_data_by_idxs(
         relative_vol_distribution, spine_idxs,
+    )
+    near_vs_dist_relative_volume = d_utils.subselect_data_by_idxs(
+        near_vs_dist_relative_volume, spine_idxs,
     )
 
     # Seperate into groups
@@ -3579,10 +3622,12 @@ def plot_nearby_spine_properties(
     plastic_avg_rates = {}
     plastic_shuff_rates = {}
     plastic_shuff_rate_medians = {}
+    plastic_near_dist_rates = {}
     plastic_coactivity_dist = {}
     plastic_avg_coactivity = {}
     plastic_shuff_coactivity = {}
     plastic_shuff_coactivity_medians = {}
+    plastic_near_dist_coactivity = {}
     plastic_MRS_dist = {}
     plastic_MRS_density = {}
     plastic_MRS_shuff_density = {}
@@ -3600,9 +3645,11 @@ def plot_nearby_spine_properties(
     plastic_nearby_volumes = {}
     plastic_shuff_volumes = {}
     plastic_volume_dist = {}
+    plastic_near_dist_vol = {}
     plastic_rel_vols = {}
     plastic_shuff_rel_vols = {}
     plastic_rel_vol_dist = {}
+    plastic_near_dist_rel_vol = {}
     distance_bins = dataset.parameters["position bins"][1:]
 
     for key, value in plastic_groups.items():
@@ -3612,11 +3659,13 @@ def plot_nearby_spine_properties(
         shuff_rates = shuff_nearby_spine_rate[:, spines]
         plastic_shuff_rates[key] = shuff_rates
         plastic_shuff_rate_medians[key] = np.nanmedian(shuff_rates, axis=1)
+        plastic_near_dist_rates[key] = near_vs_dist_activity_rate[spines]
         plastic_coactivity_dist[key] = local_coactivity_rate_distribution[:, spines]
         plastic_avg_coactivity[key] = avg_nearby_coactivity_rate[spines]
         shuff_coactivity = shuff_nearby_coactivity_rate[:, spines]
         plastic_shuff_coactivity[key] = shuff_coactivity
         plastic_shuff_coactivity_medians[key] = np.nanmedian(shuff_coactivity, axis=1)
+        plastic_near_dist_coactivity[key] = near_vs_dist_nearby_coactivity_rate[spines]
         plastic_MRS_dist[key] = MRS_density_distribution[:, spines]
         plastic_MRS_density[key] = avg_local_MRS_density[spines]
         shuff_MRS = shuff_local_MRS_density[:, spines]
@@ -3638,9 +3687,11 @@ def plot_nearby_spine_properties(
         plastic_volume_dist[key] = nearby_spine_volume_distribution[:, spines]
         plastic_nearby_volumes[key] = avg_nearby_spine_volume[spines]
         plastic_shuff_volumes[key] = shuff_nearby_spine_volume[:, spines]
+        plastic_near_dist_vol[key] = near_vs_dist_volume[spines]
         plastic_rel_vol_dist[key] = relative_vol_distribution[:, spines]
         plastic_rel_vols[key] = local_relative_vol[spines]
         plastic_shuff_rel_vols[key] = shuff_relative_vol[:, spines]
+        plastic_near_dist_rel_vol[key] = near_vs_dist_relative_volume[spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -3653,6 +3704,7 @@ def plot_nearby_spine_properties(
         Zabc.
         defg.
         hijkl
+        mnop.
         """,
         figsize=figsize,
     )
@@ -5277,6 +5329,118 @@ def plot_nearby_spine_properties(
         save=False,
         save_path=None,
     )
+    # Near vs distant activity rates
+    plot_box_plot(
+        plastic_near_dist_rates,
+        figsize=(5, 5),
+        title="Near - distant activity rates",
+        xtitle=None,
+        ytitle="Relative activity rate (events/min)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["m"],
+        save=False,
+        save_path=None,
+    )
+    # Near vs distant coactivity rates
+    plot_box_plot(
+        plastic_near_dist_coactivity,
+        figsize=(5, 5),
+        title="Near - distant coactivity rates",
+        xtitle=None,
+        ytitle="Relative coactivity rate (events/min)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["n"],
+        save=False,
+        save_path=None,
+    )
+    # Near vs distant spine volumes
+    plot_box_plot(
+        plastic_near_dist_vol,
+        figsize=(5, 5),
+        title="Near - distant spine volumes",
+        xtitle=None,
+        ytitle="Relative spine volume (um)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["o"],
+        save=False,
+        save_path=None,
+    )
+    # Near vs distant spine relative volumes
+    plot_box_plot(
+        plastic_near_dist_rel_vol,
+        figsize=(5, 5),
+        title="Near - distant relative volumes",
+        xtitle=None,
+        ytitle="Relative relative spine volume (um)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["p"],
+        save=False,
+        save_path=None,
+    )
 
     fig.tight_layout()
     # Save section
@@ -5316,6 +5480,18 @@ def plot_nearby_spine_properties(
         relative_f, relative_p, _, relative_df = t_utils.ANOVA_1way_posthoc(
             plastic_rel_vols, test_method,
         )
+        nd_activity_f, nd_activity_p, _, nd_activity_df = t_utils.ANOVA_1way_posthoc(
+            plastic_near_dist_rates, method=test_method,
+        )
+        nd_coactivity_f, nd_coactivity_p, _, nd_coactivity_df = t_utils.ANOVA_1way_posthoc(
+            plastic_near_dist_coactivity, method=test_method,
+        )
+        nd_volume_f, nd_volume_p, _, nd_volume_df = t_utils.ANOVA_1way_posthoc(
+            plastic_near_dist_vol, method=test_method,
+        )
+        nd_rel_vol_f, nd_rel_vol_p, _, nd_rel_vol_df = t_utils.ANOVA_1way_posthoc(
+            plastic_near_dist_rel_vol, method=test_method,
+        )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         activity_f, activity_p, activity_df = t_utils.kruskal_wallis_test(
@@ -5341,6 +5517,18 @@ def plot_nearby_spine_properties(
         )
         relative_f, relative_p, relative_df = t_utils.kruskal_wallis_test(
             plastic_rel_vols, "Conover", test_method
+        )
+        nd_activity_f, nd_activity_p, nd_activity_df = t_utils.kruskal_wallis_test(
+            plastic_near_dist_rates, "Conover", test_method,
+        )
+        nd_coactivity_f, nd_coactivity_p, nd_coactivity_df = t_utils.kruskal_wallis_test(
+            plastic_near_dist_coactivity, "Conover", test_method,
+        )
+        nd_volume_f, nd_volume_p, nd_volume_df = t_utils.kruskal_wallis_test(
+            plastic_near_dist_vol, "Conover", test_method,
+        )
+        nd_rel_vol_f, nd_rel_vol_p, nd_rel_vol_df = t_utils.kruskal_wallis_test(
+            plastic_near_dist_rel_vol, "Conover", test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -5500,6 +5688,8 @@ def plot_nearby_spine_properties(
         QR
         ST
         UV
+        WX
+        YZ
         """,
         figsize=(10, 20),
     )
@@ -5762,6 +5952,50 @@ def plot_nearby_spine_properties(
     )
     V_table.auto_set_font_size(False)
     V_table.set_fontsize(8)
+    axes2["W"].axis("off")
+    axes2["W"].axis("tight")
+    axes2["W"].set_title(f"Near vs dist activity\n{test_title}\nF = {nd_activity_f:.4} p ={nd_activity_p:.3E}")
+    W_table = axes2["W"].table(
+        cellText=nd_activity_df.values,
+        colLabels=nd_activity_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    W_table.auto_set_font_size(False)
+    W_table.set_fontsize(8)
+    axes2["X"].axis("off")
+    axes2["X"].axis("tight")
+    axes2["X"].set_title(f"Near vs dist coactivity\n{test_title}\nF = {nd_coactivity_f:.4} p ={nd_coactivity_p:.3E}")
+    X_table = axes2["X"].table(
+        cellText=nd_coactivity_df.values,
+        colLabels=nd_coactivity_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    X_table.auto_set_font_size(False)
+    X_table.set_fontsize(8)
+    axes2["Y"].axis("off")
+    axes2["Y"].axis("tight")
+    axes2["Y"].set_title(f"Near vs dist volume\n{test_title}\nF = {nd_volume_f:.4} p ={nd_volume_p:.3E}")
+    Y_table = axes2["Y"].table(
+        cellText=nd_volume_df.values,
+        colLabels=nd_volume_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    Y_table.auto_set_font_size(False)
+    Y_table.set_fontsize(8)
+    axes2["Z"].axis("off")
+    axes2["Z"].axis("tight")
+    axes2["Z"].set_title(f"Near vs dist relative volume\n{test_title}\nF = {nd_rel_vol_f:.4} p ={nd_rel_vol_p:.3E}")
+    Z_table = axes2["Z"].table(
+        cellText=nd_rel_vol_df.values,
+        colLabels=nd_rel_vol_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    Z_table.auto_set_font_size(False)
+    Z_table.set_fontsize(8)
 
     fig2.tight_layout()
 
@@ -5771,6 +6005,1169 @@ def plot_nearby_spine_properties(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Local_Coactivity_Figure_10_Stats")
         fig2.savefig(fname, ".pdf")
+
+def plot_stable_nearby_spine_properties(
+    dataset,
+    followup_data=None,
+    exclude="Shaft",
+    threshold=0.3,
+    figsize=(10,12),
+    mean_type="median",
+    err_type="CI",
+    showmeans=False,
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    vol_norm=False,
+    save=False,
+    save_path=None,
+):
+    """Function to plot nearby spine properties, but for stable spines only
+    
+        INPUT PARAMETERS
+            dataset - Local_Coactivity_Data object to be analyzed
+
+            followup_data - optional Local_Coactivity_Data object of the 
+                                subsequent session to be used for volume comparision.
+                                Default is None to use the followup volumes in the
+                                dataset.
+        exclude - str specifying spine type to exclude from analysis
+
+            threshold - float or tuple of floats specifying the threshold cutoff for
+                        classifying plasticity
+
+            figsize - tuple specifying the size of the figure
+
+            mean_type - str specifying the mean type for the bar plots
+
+            err_type - str specifyiung the error type for the bar plots
+
+            showmeans - boolean specifying whether to show means on boxplots
+
+            test_type - str specifying whether to perform parametric or nonparametric stats
+
+            test_method - str specifying the type of posthoc test to perform
+
+            display_stats - boolean specifying whether to display stats
+
+            save - boolean specifying whetehr to save the figures or not
+
+            save_path - str specifying where to save the figures
+    
+    """
+    COLORS = ["mediumslateblue", "tomato", "silver"]
+    plastic_groups = {
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
+        "Stable": "stable_spines",
+    }
+
+    # Pull relevant data
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_data is None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_data.spine_volumes
+        followup_flags = followup_data.spine_flags
+
+    # Activity rate data
+    avg_nearby_enlarged_spine_rate = dataset.avg_nearby_enlarged_spine_rate
+    shuff_nearby_enlarged_spine_rate = dataset.shuff_nearby_enlarged_spine_rate
+    enlarged_spine_activity_rate_dist = dataset.enlarged_spine_activity_rate_distribution
+    near_vs_dist_enlarged_activity_rate = dataset.near_vs_dist_enlarged_activity_rate
+    avg_nearby_shrunken_spine_rate = dataset.avg_nearby_shrunken_spine_rate
+    shuff_nearby_shrunken_spine_rate = dataset.shuff_nearby_shrunken_spine_rate
+    shrunken_spine_activity_rate_dist = dataset.shrunken_spine_activity_rate_distribution
+    near_vs_dist_shrunken_activity_rate = dataset.near_vs_dist_shrunken_activity_rate
+
+    # Coactivity rate data
+    avg_nearby_enlarged_coactivity_rate = dataset.avg_nearby_enlarged_coactivity_rate
+    shuff_nearby_enlarged_coactivity_rate = dataset.shuff_nearby_enlarged_coactivity_rate
+    enlarged_local_coactivity_rate_dist = dataset.enlarged_local_coactivity_rate_distribution
+    near_vs_dist_enlarged_nearby_coactivity_rate = dataset.near_vs_dist_enlarged_nearby_coactivity_rate
+    avg_nearby_shrunken_coactivity_rate = dataset.avg_nearby_shrunken_coactivity_rate
+    shuff_nearby_shrunken_coactivity_rate = dataset.shuff_nearby_shrunken_coactivity_rate
+    shrunken_local_coactivity_rate_dist = dataset.shrunken_local_coactivity_rate_distribution
+    near_vs_dist_shrunken_nearby_coactivity_rate = dataset.near_vs_dist_shrunken_nearby_coactivity_rate
+    
+    # Calculate spine volume
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes, flags, norm=vol_norm, exclude=exclude,
+    )
+    delta_volume = delta_volume[-1]
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
+        delta_volume, threshold=threshold, norm=vol_norm
+    )
+
+    # Subselect for stable spines
+    avg_nearby_enlarged_spine_rate = d_utils.subselect_data_by_idxs(
+        avg_nearby_enlarged_spine_rate, spine_idxs
+    )
+    shuff_nearby_enlarged_spine_rate = d_utils.subselect_data_by_idxs(
+        shuff_nearby_enlarged_spine_rate, spine_idxs,
+    )
+    enlarged_spine_activity_rate_dist = d_utils.subselect_data_by_idxs(
+        enlarged_spine_activity_rate_dist, spine_idxs
+    )
+    near_vs_dist_enlarged_activity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_enlarged_activity_rate, spine_idxs,
+    )
+    avg_nearby_enlarged_coactivity_rate = d_utils.subselect_data_by_idxs(
+        avg_nearby_enlarged_coactivity_rate, spine_idxs
+    )
+    shuff_nearby_enlarged_coactivity_rate = d_utils.subselect_data_by_idxs(
+        shuff_nearby_enlarged_coactivity_rate, spine_idxs,
+    )
+    enlarged_local_coactivity_rate_dist = d_utils.subselect_data_by_idxs(
+        enlarged_local_coactivity_rate_dist, spine_idxs
+    )
+    near_vs_dist_enlarged_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_enlarged_nearby_coactivity_rate, spine_idxs,
+    )
+    avg_nearby_shrunken_spine_rate = d_utils.subselect_data_by_idxs(
+        avg_nearby_shrunken_spine_rate, spine_idxs
+    )
+    shuff_nearby_shrunken_spine_rate = d_utils.subselect_data_by_idxs(
+        shuff_nearby_shrunken_spine_rate, spine_idxs,
+    )
+    shrunken_spine_activity_rate_dist = d_utils.subselect_data_by_idxs(
+        shrunken_spine_activity_rate_dist, spine_idxs
+    )
+    near_vs_dist_shrunken_activity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_shrunken_activity_rate, spine_idxs,
+    )
+    avg_nearby_shrunken_coactivity_rate = d_utils.subselect_data_by_idxs(
+        avg_nearby_shrunken_coactivity_rate, spine_idxs
+    )
+    shuff_nearby_shrunken_coactivity_rate = d_utils.subselect_data_by_idxs(
+        shuff_nearby_shrunken_coactivity_rate, spine_idxs,
+    )
+    shrunken_local_coactivity_rate_dist = d_utils.subselect_data_by_idxs(
+        shrunken_local_coactivity_rate_dist, spine_idxs
+    )
+    near_vs_dist_shrunken_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_shrunken_nearby_coactivity_rate, spine_idxs,
+    )
+
+    # Seperate into plastic groups
+    plastic_e_rate_dist = {}
+    plastic_s_rate_dist = {}
+    plastic_e_avg_rates = {}
+    plastic_s_avg_rates = {}
+    plastic_e_shuff_rates = {}
+    plastic_s_shuff_rates = {}
+    plastic_e_shuff_rate_medians = {}
+    plastic_s_shuff_rate_medians = {}
+    plastic_e_near_dist_rates = {}
+    plastic_s_near_dist_rates = {}
+    plastic_e_coactivity_dist = {}
+    plastic_s_coactivity_dist = {}
+    plastic_e_avg_coactivity = {}
+    plastic_s_avg_coactivity = {}
+    plastic_e_shuff_coactivity = {}
+    plastic_s_shuff_coactivity = {}
+    plastic_e_shuff_coactivity_medians = {}
+    plastic_s_shuff_coactivity_medians = {}
+    plastic_e_near_dist_coactivity = {}
+    plastic_s_near_dist_coactivity = {}
+
+    distance_bins = dataset.parameters["position bins"][1:]
+
+    for key, value in plastic_groups.items():
+        spines = eval(value)
+        plastic_e_rate_dist[key] = enlarged_spine_activity_rate_dist[:, spines]
+        plastic_s_rate_dist[key] = shrunken_spine_activity_rate_dist[:, spines]
+        plastic_e_coactivity_dist[key] = enlarged_local_coactivity_rate_dist[:, spines]
+        plastic_s_coactivity_dist[key] = shrunken_local_coactivity_rate_dist[:, spines]
+        plastic_e_avg_rates[key] = avg_nearby_enlarged_spine_rate[spines]
+        plastic_s_avg_rates[key] = avg_nearby_shrunken_spine_rate[spines]
+        plastic_e_avg_coactivity[key] = avg_nearby_enlarged_coactivity_rate[spines]
+        plastic_s_avg_coactivity[key] = avg_nearby_shrunken_coactivity_rate[spines]
+        e_shuff_rates = shuff_nearby_enlarged_spine_rate[:, spines]
+        plastic_e_shuff_rates[key] = e_shuff_rates
+        plastic_e_shuff_rate_medians[key] = np.nanmedian(e_shuff_rates, axis=1)
+        s_shuff_rates = shuff_nearby_shrunken_spine_rate[:, spines]
+        plastic_s_shuff_rates[key] = s_shuff_rates
+        plastic_s_shuff_rate_medians[key] = np.nanmedian(s_shuff_rates, axis=1)
+        e_shuff_coactivity = shuff_nearby_enlarged_coactivity_rate[:, spines]
+        plastic_e_shuff_coactivity[key] = e_shuff_coactivity
+        plastic_e_shuff_coactivity_medians[key] = np.nanmedian(e_shuff_coactivity, axis=1)
+        s_shuff_coactivity = shuff_nearby_shrunken_coactivity_rate[:, spines]
+        plastic_s_shuff_coactivity[key] = s_shuff_coactivity
+        plastic_s_shuff_coactivity_medians[key] = np.nanmedian(s_shuff_coactivity, axis=1)
+        plastic_e_near_dist_rates[key] = near_vs_dist_enlarged_activity_rate[spines]
+        plastic_s_near_dist_rates[key] = near_vs_dist_shrunken_activity_rate[spines]
+        plastic_e_near_dist_coactivity[key] = near_vs_dist_enlarged_nearby_coactivity_rate[spines]
+        plastic_s_near_dist_coactivity[key] = near_vs_dist_shrunken_nearby_coactivity_rate[spines]
+
+
+    # Construct the figure
+    fig, axes = plt.subplot_mosaic(
+        """
+        ABCDEF
+        GHIJKL
+        MNOPQR
+        STUVWX
+        """,
+        figsize=figsize,
+    )
+
+    fig.suptitle(f"Nearby Stable Spine Properties")
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    ########################## Plot data onto axes #######################
+    # Enlarged activity rate distribution
+    plot_multi_line_plot(
+        data_dict=plastic_e_rate_dist,
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5,5),
+        title="Activity Rate (w/out enlarged)",
+        ytitle="Activity rate (events/min)",
+        xtitle="Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["A"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    # Enlarged coactivity rate distribution
+    plot_multi_line_plot(
+        data_dict=plastic_e_coactivity_dist,
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5,5),
+        title="Coactivity Rate (w/out enlarged)",
+        ytitle="Coactivity rate (events/min)",
+        xtitle="Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["G"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken activity rate distribution
+    plot_multi_line_plot(
+        data_dict=plastic_s_rate_dist,
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5,5),
+        title="Activity Rate (w/out shrunken)",
+        ytitle="Activity rate (events/min)",
+        xtitle="Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["M"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken coactivity rate distribution
+    plot_multi_line_plot(
+        data_dict=plastic_s_coactivity_dist,
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5,5),
+        title="Coactivity Rate (w/out shrunken)",
+        ytitle="Coactivity rate (events/min)",
+        xtitle="Distance (\u03BCm)",
+        ylim=None,
+        line_color=COLORS,
+        face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["S"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    # Enlarged avg local spine activity rate
+    plot_box_plot(
+        plastic_e_avg_rates,
+        figsize=(5, 5),
+        title="Nearby Activity Rate (w/out enlarged)",
+        xtitle=None,
+        ytitle="Activity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+    # Enlarged avg local spine coactivity rate
+    plot_box_plot(
+        plastic_e_avg_coactivity,
+        figsize=(5, 5),
+        title="Nearby Coactivity Rate (w/out enlarged)",
+        xtitle=None,
+        ytitle="Coactivity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["H"],
+        save=False,
+        save_path=None,
+    )
+    # Shrunken avg local spine activity rate
+    plot_box_plot(
+        plastic_s_avg_rates,
+        figsize=(5, 5),
+        title="Nearby Activity Rate (w/out shrunken)",
+        xtitle=None,
+        ytitle="Activity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["N"],
+        save=False,
+        save_path=None,
+    )
+    # Shrunken avg local spine coactivity rate
+    plot_box_plot(
+        plastic_s_avg_coactivity,
+        figsize=(5, 5),
+        title="Nearby Coactivity Rate (w/out shrunken)",
+        xtitle=None,
+        ytitle="Coactivity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["T"],
+        save=False,
+        save_path=None,
+    )
+    # Enlarged near vs dist local spine activity rate
+    plot_box_plot(
+        plastic_e_near_dist_rates,
+        figsize=(5, 5),
+        title="Near vs dist Activity Rate \n(w/out enlarged)",
+        xtitle=None,
+        ytitle="Activity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["F"],
+        save=False,
+        save_path=None,
+    )
+    # Enlarged near vs dist local spine coactivity rate
+    plot_box_plot(
+        plastic_e_near_dist_coactivity,
+        figsize=(5, 5),
+        title="Near vs dist Coactivity Rate \n(w/out enlarged)",
+        xtitle=None,
+        ytitle="Coactivity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["L"],
+        save=False,
+        save_path=None,
+    )
+    # Shrunken near vs dist local spine activity rate
+    plot_box_plot(
+        plastic_s_near_dist_rates,
+        figsize=(5, 5),
+        title="Near vs dist Activity Rate \n(w/out shrunken)",
+        xtitle=None,
+        ytitle="Activity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["R"],
+        save=False,
+        save_path=None,
+    )
+    # Shrunken near vs dist local spine coactivity rate
+    plot_box_plot(
+        plastic_s_near_dist_coactivity,
+        figsize=(5, 5),
+        title="Near vs dist Coactivity Rate \n(w/out shrunken)",
+        xtitle=None,
+        ytitle="Coactivity rate (events/min)",
+        ylim=(0, None),
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["X"],
+        save=False,
+        save_path=None,
+    )
+    # Enlarged  Enlarged rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_e_avg_rates["sLTP"], plastic_e_shuff_rates["sLTP"],)),
+        plot_ind=True,
+        title="Enlarged",
+        xtitle="Nearby activity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["C"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_c_inset = axes["C"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_c_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_e_avg_rates["sLTP"],
+            "shuff": plastic_e_shuff_rates["sLTP"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[0], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[0], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_c_inset,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken Enlarged rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_e_avg_rates["sLTD"], plastic_e_shuff_rates["sLTD"],)),
+        plot_ind=True,
+        title="Shrunken",
+        xtitle="Nearby activity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["D"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_d_inset = axes["D"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_d_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_e_avg_rates["sLTD"],
+            "shuff": plastic_e_shuff_rates["sLTD"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[1], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[1], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_d_inset,
+        save=False,
+        save_path=None,
+    )
+    # Stable rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_e_avg_rates["Stable"], plastic_e_shuff_rates["Stable"],)),
+        plot_ind=True,
+        title="Stable",
+        xtitle="Nearby activity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["E"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_e_inset = axes["E"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_e_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_e_avg_rates["Stable"],
+            "shuff": plastic_e_shuff_rates["Stable"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[2], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[2], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_e_inset,
+        save=False,
+        save_path=None,
+    )
+
+    # Enlarged  Enlarged coactivity rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_e_avg_coactivity["sLTP"], plastic_e_shuff_coactivity["sLTP"],)),
+        plot_ind=True,
+        title="Enlarged",
+        xtitle="Nearby coactivity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["I"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_i_inset = axes["I"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_i_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_e_avg_coactivity["sLTP"],
+            "shuff": plastic_e_shuff_coactivity["sLTP"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[0], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[0], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_i_inset,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken Enlarged coactivity rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_e_avg_coactivity["sLTD"], plastic_e_shuff_coactivity["sLTD"],)),
+        plot_ind=True,
+        title="Shrunken",
+        xtitle="Nearby coactivity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["J"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_j_inset = axes["J"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_j_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_e_avg_coactivity["sLTD"],
+            "shuff": plastic_e_shuff_coactivity["sLTD"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Coctivity rate",
+        ylim=None,
+        b_colors=[COLORS[1], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[1], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_j_inset,
+        save=False,
+        save_path=None,
+    )
+    # Stable coactivity rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_e_avg_coactivity["Stable"], plastic_e_shuff_coactivity["Stable"],)),
+        plot_ind=True,
+        title="Stable",
+        xtitle="Nearby coactivity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["K"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_k_inset = axes["K"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_k_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_e_avg_coactivity["Stable"],
+            "shuff": plastic_e_shuff_coactivity["Stable"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[2], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[2], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_k_inset,
+        save=False,
+        save_path=None,
+    )
+
+    # Enlarged Shrunken rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_s_avg_rates["sLTP"], plastic_s_shuff_rates["sLTP"],)),
+        plot_ind=True,
+        title="Enlarged",
+        xtitle="Nearby activity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["O"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_o_inset = axes["O"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_o_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_s_avg_rates["sLTP"],
+            "shuff": plastic_s_shuff_rates["sLTP"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[0], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[0], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_o_inset,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken Shrunken rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_s_avg_rates["sLTD"], plastic_s_shuff_rates["sLTD"],)),
+        plot_ind=True,
+        title="Shrunken",
+        xtitle="Nearby activity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["P"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_p_inset = axes["P"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_p_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_s_avg_rates["sLTD"],
+            "shuff": plastic_s_shuff_rates["sLTD"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[1], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[1], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_p_inset,
+        save=False,
+        save_path=None,
+    )
+    # Stable rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_s_avg_rates["Stable"], plastic_s_shuff_rates["Stable"],)),
+        plot_ind=True,
+        title="Stable",
+        xtitle="Nearby activity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["Q"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_q_inset = axes["Q"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_q_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_s_avg_rates["Stable"],
+            "shuff": plastic_s_shuff_rates["Stable"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[2], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[2], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_q_inset,
+        save=False,
+        save_path=None,
+    )
+
+    # Enlarged  Shrunken coactivity rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_s_avg_coactivity["sLTP"], plastic_s_shuff_coactivity["sLTP"],)),
+        plot_ind=True,
+        title="Enlarged",
+        xtitle="Nearby coactivity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[0], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["U"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_u_inset = axes["U"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_u_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_s_avg_coactivity["sLTP"],
+            "shuff": plastic_s_shuff_coactivity["sLTP"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[0], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[0], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_u_inset,
+        save=False,
+        save_path=None,
+    )
+    # Shrunken Shrunken coactivity rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_s_avg_coactivity["sLTD"], plastic_s_shuff_coactivity["sLTD"],)),
+        plot_ind=True,
+        title="Shrunken",
+        xtitle="Nearby coactivity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[1], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["V"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_v_inset = axes["V"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_v_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_s_avg_coactivity["sLTD"],
+            "shuff": plastic_s_shuff_coactivity["sLTD"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Coctivity rate",
+        ylim=None,
+        b_colors=[COLORS[1], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[1], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_v_inset,
+        save=False,
+        save_path=None,
+    )
+    # Stable coactivity rate vs chance
+    plot_cummulative_distribution(
+        data=list((plastic_s_avg_coactivity["Stable"], plastic_s_shuff_coactivity["Stable"],)),
+        plot_ind=True,
+        title="Stable",
+        xtitle="Nearby coactivity rate",
+        xlim=(0, None),
+        figsize=(5, 5),
+        color=[COLORS[2], "black"],
+        ind_color=[None, "black"],
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["W"],
+        save=False,
+        save_path=None,
+    )
+    ## Inset bar
+    ax_w_inset = axes["W"].inset_axes([0.8, 0.25, 0.4, 0.6])
+    sns.despine(ax=ax_w_inset)
+    plot_swarm_bar_plot(
+        data_dict={
+            "data": plastic_s_avg_coactivity["Stable"],
+            "shuff": plastic_s_shuff_coactivity["Stable"].flatten().astype(np.float32),
+        },
+        mean_type=mean_type,
+        err_type=err_type,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Activity rate",
+        ylim=None,
+        b_colors=[COLORS[2], "grey"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        s_colors=[COLORS[2], "grey"],
+        s_size=5,
+        plot_ind=False,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=ax_w_inset,
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, "Local_Coactivity_Figure_11")
+        fig.savefig(fname + ".pdf")
+    
+    ##################### Statistics Section ########################
+    if display_stats == False:
+        return
+    
+    print("Need to code in the stats")
+
+
+
 
 
 def plot_nearby_spine_coactivity(
@@ -6170,11 +7567,11 @@ def plot_nearby_spine_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if mvmt_type == "All periods":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_11")
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_12")
         if mvmt_type == "movement":
-            fname = os.path.jion(save_path, "Local_Coactivity_Figure_12")
+            fname = os.path.jion(save_path, "Local_Coactivity_Figure_13")
         if mvmt_type == "nonmovement":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_13")
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_14")
 
         fig.savefig(fname + ".pdf")
 
@@ -6281,11 +7678,11 @@ def plot_nearby_spine_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if mvmt_type == "All periods":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_11_Stats")
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_12_Stats")
         if mvmt_type == "movement":
-            fname = os.path.jion(save_path, "Local_Coactivity_Figure_12_Stats")
+            fname = os.path.jion(save_path, "Local_Coactivity_Figure_13_Stats")
         if mvmt_type == "nonmovement":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_13_Stats")
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_14_Stats")
 
         fig2.savefig(fname + ".pdf")
 
@@ -6664,7 +8061,7 @@ def plot_nearby_spine_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_14")
+        fname = os.path.join(save_path, "Local_Coactivity_Figure_15")
         fig.savefig(fname + ".pdf")
 
     ########################## Statistics Section #############################
@@ -6847,7 +8244,7 @@ def plot_nearby_spine_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_14_Stats")
+        fname = os.path.join(save_path, "Local_Coactivity_Figure_15_Stats")
         fig.savefig(fname + ".pdf")
 
 
@@ -7259,7 +8656,7 @@ def plot_local_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_15")
+        fname = os.path.join(save_path, "Local_Coactivity_Figure_16")
         fig.savefig(fname + ".pdf")
 
     ########################## Statistics Section ##############################
@@ -7464,7 +8861,7 @@ def plot_local_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_15_Stats")
+        fname = os.path.join(save_path, "Local_Coactivity_Figure_16_Stats")
         fig.savefig(fname + ".pdf")
 
 
@@ -7556,8 +8953,7 @@ def plot_local_dendrite_activity(
     coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
     noncoactive_local_dend_traces = dataset.noncoactive_local_dend_traces
     noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
-    nearby_local_dend_traces = dataset.nearby_local_dend_traces
-    nearby_local_dend_amplitude = dataset.nearby_local_dend_amplitude
+    
     ## movements
     mvmt_coactive_local_dend_traces = mvmt_dataset.coactive_local_dend_traces
     mvmt_coactive_local_dend_amplitude = mvmt_dataset.coactive_local_dend_amplitude
@@ -7565,8 +8961,7 @@ def plot_local_dendrite_activity(
     mvmt_noncoactive_local_dend_amplitude = (
         mvmt_dataset.noncoactive_local_dend_amplitude
     )
-    mvmt_nearby_local_dend_traces = mvmt_dataset.nearby_local_dend_traces
-    mvmt_nearby_local_dend_amplitude = mvmt_dataset.nearby_local_dend_amplitude
+    
     ## nonmovements
     nonmvmt_coactive_local_dend_traces = nonmvmt_dataset.coactive_local_dend_traces
     nonmvmt_coactive_local_dend_amplitude = (
@@ -7578,8 +8973,7 @@ def plot_local_dendrite_activity(
     nonmvmt_noncoactive_local_dend_amplitude = (
         nonmvmt_dataset.noncoactive_local_dend_amplitude
     )
-    nonmvmt_nearby_local_dend_traces = nonmvmt_dataset.nearby_local_dend_traces
-    nonmvmt_nearby_local_dend_amplitude = nonmvmt_dataset.nearby_local_dend_amplitude
+    
 
     # Calculate the relative volumes
     volumes = [spine_volumes, followup_volumes]
@@ -7606,12 +9000,7 @@ def plot_local_dendrite_activity(
     noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
         noncoactive_local_dend_amplitude, spine_idxs,
     )
-    nearby_local_dend_traces = d_utils.subselect_data_by_idxs(
-        nearby_local_dend_traces, spine_idxs,
-    )
-    nearby_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        nearby_local_dend_amplitude, spine_idxs,
-    )
+   
     mvmt_coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
         mvmt_coactive_local_dend_traces, spine_idxs
     )
@@ -7624,12 +9013,7 @@ def plot_local_dendrite_activity(
     mvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
         mvmt_noncoactive_local_dend_amplitude, spine_idxs,
     )
-    mvmt_nearby_local_dend_traces = d_utils.subselect_data_by_idxs(
-        mvmt_nearby_local_dend_traces, spine_idxs,
-    )
-    mvmt_nearby_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        mvmt_nearby_local_dend_amplitude, spine_idxs,
-    )
+    
     nonmvmt_coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
         nonmvmt_coactive_local_dend_traces, spine_idxs
     )
@@ -7642,12 +9026,7 @@ def plot_local_dendrite_activity(
     nonmvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
         nonmvmt_noncoactive_local_dend_amplitude, spine_idxs,
     )
-    nonmvmt_nearby_local_dend_traces = d_utils.subselect_data_by_idxs(
-        nonmvmt_nearby_local_dend_traces, spine_idxs,
-    )
-    nonmvmt_nearby_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        nonmvmt_nearby_local_dend_amplitude, spine_idxs,
-    )
+    
 
     ## Seperate into dicts for plotting
     plastic_coactive_means = {}
@@ -7656,27 +9035,21 @@ def plot_local_dendrite_activity(
     plastic_noncoactive_means = {}
     plastic_noncoactive_sems = {}
     plastic_noncoactive_amps = {}
-    plastic_nearby_means = {}
-    plastic_nearby_sems = {}
-    plastic_nearby_amps = {}
+   
     mvmt_plastic_coactive_means = {}
     mvmt_plastic_coactive_sems = {}
     mvmt_plastic_coactive_amps = {}
     mvmt_plastic_noncoactive_means = {}
     mvmt_plastic_noncoactive_sems = {}
     mvmt_plastic_noncoactive_amps = {}
-    mvmt_plastic_nearby_means = {}
-    mvmt_plastic_nearby_sems = {}
-    mvmt_plastic_nearby_amps = {}
+    
     nonmvmt_plastic_coactive_means = {}
     nonmvmt_plastic_coactive_sems = {}
     nonmvmt_plastic_coactive_amps = {}
     nonmvmt_plastic_noncoactive_means = {}
     nonmvmt_plastic_noncoactive_sems = {}
     nonmvmt_plastic_noncoactive_amps = {}
-    nonmvmt_plastic_nearby_means = {}
-    nonmvmt_plastic_nearby_sems = {}
-    nonmvmt_plastic_nearby_amps = {}
+   
 
     for key, value in plastic_groups.items():
         spines = eval(value)
@@ -7701,14 +9074,7 @@ def plot_local_dendrite_activity(
             noncoactive_means, axis=0, nan_policy="omit"
         )
         plastic_noncoactive_amps[key] = noncoactive_local_dend_amplitude[spines]
-        nearby_traces = compress(nearby_local_dend_traces, spines)
-        nearby_means = [
-            np.nanmean(x, axis=1) for x in nearby_traces if type(x) == np.ndarray
-        ]
-        nearby_means = np.vstack(nearby_means)
-        plastic_nearby_means[key] = np.nanmean(nearby_means, axis=0)
-        plastic_nearby_sems[key] = stats.sem(nearby_means, axis=0, nan_policy="omit")
-        plastic_nearby_amps[key] = nearby_local_dend_amplitude[spines]
+        
         ### Movement
         mvmt_coactive_traces = compress(mvmt_coactive_local_dend_traces, spines)
         mvmt_coactive_means = [
@@ -7734,16 +9100,7 @@ def plot_local_dendrite_activity(
         mvmt_plastic_noncoactive_amps[key] = mvmt_noncoactive_local_dend_amplitude[
             spines
         ]
-        mvmt_nearby_traces = compress(mvmt_nearby_local_dend_traces, spines)
-        mvmt_nearby_means = [
-            np.nanmean(x, axis=1) for x in mvmt_nearby_traces if type(x) == np.ndarray
-        ]
-        mvmt_nearby_means = np.vstack(mvmt_nearby_means)
-        mvmt_plastic_nearby_means[key] = np.nanmean(mvmt_nearby_means, axis=0)
-        mvmt_plastic_nearby_sems[key] = stats.sem(
-            mvmt_nearby_means, axis=0, nan_policy="omit"
-        )
-        mvmt_plastic_nearby_amps[key] = mvmt_nearby_local_dend_amplitude[spines]
+        
         ### Non-movement
         nonmvmt_coactive_traces = compress(nonmvmt_coactive_local_dend_traces, spines)
         nonmvmt_coactive_means = [
@@ -7777,25 +9134,14 @@ def plot_local_dendrite_activity(
         nonmvmt_plastic_noncoactive_amps[
             key
         ] = nonmvmt_noncoactive_local_dend_amplitude[spines]
-        nonmvmt_nearby_traces = compress(nonmvmt_nearby_local_dend_traces, spines)
-        nonmvmt_nearby_means = [
-            np.nanmean(x, axis=1)
-            for x in nonmvmt_nearby_traces
-            if type(x) == np.ndarray
-        ]
-        nonmvmt_nearby_means = np.vstack(nonmvmt_nearby_means)
-        nonmvmt_plastic_nearby_means[key] = np.nanmean(nonmvmt_nearby_means, axis=0)
-        nonmvmt_plastic_nearby_sems[key] = stats.sem(
-            nonmvmt_nearby_means, axis=0, nan_policy="omit"
-        )
-        nonmvmt_plastic_nearby_amps[key] = nonmvmt_nearby_local_dend_amplitude[spines]
+        
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        ABCDEF
-        GHIJKL
-        MNOPQR
+        ABCD
+        GHIJ
+        MNOP
         """,
         figsize=figsize,
     )
@@ -7844,27 +9190,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    # All periods nearby traces
-    plot_mean_activity_traces(
-        means=list(plastic_nearby_means.values()),
-        sems=list(plastic_nearby_sems.values()),
-        group_names=list(plastic_nearby_means.keys()),
-        sampling_rate=sampling_rate,
-        activity_window=activity_window,
-        avlines=None,
-        ahlines=None,
-        figsize=(5, 5),
-        colors=COLORS,
-        title="All Nearby",
-        ytitle=activity_type,
-        ylim=None,
-        axis_width=1.5,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["E"],
-        save=False,
-        save_path=None,
-    )
+    
     # Movement periods coactive traces
     plot_mean_activity_traces(
         means=list(mvmt_plastic_coactive_means.values()),
@@ -7907,27 +9233,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    # Movement nearby traces
-    plot_mean_activity_traces(
-        means=list(mvmt_plastic_nearby_means.values()),
-        sems=list(mvmt_plastic_nearby_sems.values()),
-        group_names=list(mvmt_plastic_nearby_means.keys()),
-        sampling_rate=sampling_rate,
-        activity_window=activity_window,
-        avlines=None,
-        ahlines=None,
-        figsize=(5, 5),
-        colors=COLORS,
-        title=f"{mvmt_key} Nearby",
-        ytitle=activity_type,
-        ylim=None,
-        axis_width=1.5,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["K"],
-        save=False,
-        save_path=None,
-    )
+    
     # Nonmovement periods coactive traces
     plot_mean_activity_traces(
         means=list(nonmvmt_plastic_coactive_means.values()),
@@ -7970,27 +9276,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    # Nonmovement nearby traces
-    plot_mean_activity_traces(
-        means=list(nonmvmt_plastic_nearby_means.values()),
-        sems=list(nonmvmt_plastic_nearby_sems.values()),
-        group_names=list(nonmvmt_plastic_nearby_means.keys()),
-        sampling_rate=sampling_rate,
-        activity_window=activity_window,
-        avlines=None,
-        ahlines=None,
-        figsize=(5, 5),
-        colors=COLORS,
-        title=f"{nonmvmt_key} Nearby",
-        ytitle=activity_type,
-        ylim=None,
-        axis_width=1.5,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["Q"],
-        save=False,
-        save_path=None,
-    )
+    
     # All period coactive amplitude
     plot_box_plot(
         plastic_coactive_amps,
@@ -8045,33 +9331,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    # All period nearby amplitude
-    plot_box_plot(
-        plastic_nearby_amps,
-        figsize=(5, 5),
-        title="All Nearby",
-        xtitle=None,
-        ytitle=f"Event amplitude ({activity_type})",
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.9,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["F"],
-        save=False,
-        save_path=None,
-    )
+    
     # Movement coactive amplitude
     plot_box_plot(
         mvmt_plastic_coactive_amps,
@@ -8126,33 +9386,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    # Movement nearby amplitude
-    plot_box_plot(
-        mvmt_plastic_nearby_amps,
-        figsize=(5, 5),
-        title=f"{mvmt_key} Nearby",
-        xtitle=None,
-        ytitle=f"Event amplitude ({activity_type})",
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.9,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["L"],
-        save=False,
-        save_path=None,
-    )
+    
     # Nonmovement coactive amplitude
     plot_box_plot(
         nonmvmt_plastic_coactive_amps,
@@ -8207,33 +9441,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    # Nonmovement nearby amplitude
-    plot_box_plot(
-        nonmvmt_plastic_nearby_amps,
-        figsize=(5, 5),
-        title=f"{nonmvmt_key} Nearby",
-        xtitle=None,
-        ytitle=f"Event amplitude ({activity_type})",
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.9,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["R"],
-        save=False,
-        save_path=None,
-    )
+    
 
     fig.tight_layout()
 
@@ -8242,9 +9450,9 @@ def plot_local_dendrite_activity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if not rwd_mvmt:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_16")
-        else:
             fname = os.path.join(save_path, "Local_Coactivity_Figure_17")
+        else:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_18")
         fig.savefig(fname + ".pdf")
 
     ######################## Statistics Section #############################
@@ -8259,9 +9467,6 @@ def plot_local_dendrite_activity(
         noncoactive_f, noncoactive_p, _, noncoactive_df = t_utils.ANOVA_1way_posthoc(
             plastic_noncoactive_amps, test_method,
         )
-        nearby_f, nearby_p, _, nearby_df = t_utils.ANOVA_1way_posthoc(
-            plastic_nearby_amps, test_method,
-        )
         (
             mvmt_coactive_f,
             mvmt_coactive_p,
@@ -8274,9 +9479,6 @@ def plot_local_dendrite_activity(
             _,
             mvmt_noncoactive_df,
         ) = t_utils.ANOVA_1way_posthoc(mvmt_plastic_noncoactive_amps, test_method,)
-        mvmt_nearby_f, mvmt_nearby_p, _, mvmt_nearby_df = t_utils.ANOVA_1way_posthoc(
-            mvmt_plastic_nearby_amps, test_method,
-        )
         non_coactive_f, non_coactive_p, _, non_coactive_df = t_utils.ANOVA_1way_posthoc(
             nonmvmt_plastic_coactive_amps, test_method,
         )
@@ -8286,9 +9488,6 @@ def plot_local_dendrite_activity(
             _,
             non_noncoactive_df,
         ) = t_utils.ANOVA_1way_posthoc(nonmvmt_plastic_noncoactive_amps, test_method,)
-        non_nearby_f, non_nearby_p, _, non_nearby_df = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_nearby_amps, test_method,
-        )
         test_title = f"One-way ANOVA {test_method}"
 
     elif test_type == "nonparametric":
@@ -8297,9 +9496,6 @@ def plot_local_dendrite_activity(
         )
         noncoactive_f, noncoactive_p, noncoactive_df = t_utils.kruskal_wallis_test(
             plastic_noncoactive_amps, "Conover", test_method,
-        )
-        nearby_f, nearby_p, nearby_df = t_utils.kruskal_wallis_test(
-            plastic_nearby_amps, "Conover", test_method,
         )
         (
             mvmt_coactive_f,
@@ -8315,9 +9511,6 @@ def plot_local_dendrite_activity(
         ) = t_utils.kruskal_wallis_test(
             mvmt_plastic_noncoactive_amps, "Conover", test_method,
         )
-        mvmt_nearby_f, mvmt_nearby_p, mvmt_nearby_df = t_utils.kruskal_wallis_test(
-            mvmt_plastic_nearby_amps, "Conover", test_method,
-        )
         non_coactive_f, non_coactive_p, non_coactive_df = t_utils.kruskal_wallis_test(
             nonmvmt_plastic_coactive_amps, "Conover", test_method,
         )
@@ -8327,9 +9520,6 @@ def plot_local_dendrite_activity(
             non_noncoactive_df,
         ) = t_utils.kruskal_wallis_test(
             nonmvmt_plastic_noncoactive_amps, "Conover", test_method,
-        )
-        non_nearby_f, non_nearby_p, non_nearby_df = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_nearby_amps, "Conover", test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -8369,19 +9559,7 @@ def plot_local_dendrite_activity(
     )
     B_table.auto_set_font_size(False)
     B_table.set_fontsize(8)
-    axes2["C"].axis("off")
-    axes2["C"].axis("tight")
-    axes2["C"].set_title(
-        f"All Nearby Amplitude\n{test_title}\nF = {nearby_f:.4} p = {nearby_p:.3E}"
-    )
-    C_table = axes2["C"].table(
-        cellText=nearby_df.values,
-        colLabels=nearby_df.columns,
-        loc="center",
-        bbox=[0, 0.2, 0.9, 0.5],
-    )
-    C_table.auto_set_font_size(False)
-    C_table.set_fontsize(8)
+    
     axes2["D"].axis("off")
     axes2["D"].axis("tight")
     axes2["D"].set_title(
@@ -8408,19 +9586,7 @@ def plot_local_dendrite_activity(
     )
     E_table.auto_set_font_size(False)
     E_table.set_fontsize(8)
-    axes2["F"].axis("off")
-    axes2["F"].axis("tight")
-    axes2["F"].set_title(
-        f"{mvmt_key} Nearby Amplitude\n{test_title}\nF = {mvmt_nearby_f:.4} p = {mvmt_nearby_p:.3E}"
-    )
-    F_table = axes2["F"].table(
-        cellText=mvmt_nearby_df.values,
-        colLabels=mvmt_nearby_df.columns,
-        loc="center",
-        bbox=[0, 0.2, 0.9, 0.5],
-    )
-    F_table.auto_set_font_size(False)
-    F_table.set_fontsize(8)
+    
     axes2["G"].axis("off")
     axes2["G"].axis("tight")
     axes2["G"].set_title(
@@ -8447,19 +9613,6 @@ def plot_local_dendrite_activity(
     )
     H_table.auto_set_font_size(False)
     H_table.set_fontsize(8)
-    axes2["I"].axis("off")
-    axes2["I"].axis("tight")
-    axes2["I"].set_title(
-        f"{nonmvmt_key} Nearby Amplitude\n{test_title}\nF = {non_nearby_f:.4} p = {non_nearby_p:.3E}"
-    )
-    I_table = axes2["I"].table(
-        cellText=non_nearby_df.values,
-        colLabels=non_nearby_df.columns,
-        loc="center",
-        bbox=[0, 0.2, 0.9, 0.5],
-    )
-    I_table.auto_set_font_size(False)
-    I_table.set_fontsize(8)
 
     fig2.tight_layout()
 
@@ -8468,8 +9621,8 @@ def plot_local_dendrite_activity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if not rwd_mvmt:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_16_Stats")
-        else:
             fname = os.path.join(save_path, "Local_Coactivity_Figure_17_Stats")
+        else:
+            fname = os.path.join(save_path, "Local_Coactivity_Figure_18_Stats")
         fig2.savefig(fname + ".pdf")
 
