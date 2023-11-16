@@ -1,30 +1,22 @@
 import numpy as np
 
 from Lab_Analyses.Spine_Analysis_v2.dendritic_coactivity_dataclass import (
-    Dendritic_Coactivity_Data,
-    Grouped_Dendritic_Coactivity_Data,
-)
-from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
-    nearby_coactive_spine_activity,
-)
-from Lab_Analyses.Spine_Analysis_v2.noncoactive_dendrite_analysis import (
-    noncoactive_dendrite_analysis,
-)
-from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import (
-    spine_dendrite_event_analysis,
-)
+    Dendritic_Coactivity_Data, Grouped_Dendritic_Coactivity_Data)
+from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import \
+    nearby_coactive_spine_activity
+from Lab_Analyses.Spine_Analysis_v2.noncoactive_dendrite_analysis import \
+    noncoactive_dendrite_analysis
+from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import \
+    spine_dendrite_event_analysis
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    load_spine_datasets,
-    parse_movement_nonmovement_spines,
-)
-from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import (
-    load_norm_constants,
-)
-from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import (
-    variable_distance_dependence,
-)
+    load_spine_datasets, parse_movement_nonmovement_spines)
+from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import \
+    load_norm_constants
+from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import \
+    variable_distance_dependence
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.quantify_movement_quality import quantify_movement_quality
+from Lab_Analyses.Utilities.quantify_movement_quality import \
+    quantify_movement_quality
 
 
 def dendritic_coactivity_analysis(
@@ -222,7 +214,7 @@ def dendritic_coactivity_analysis(
                 volume_norm=all_constants,
                 extend=extend,
                 activity_type="all",
-                iterations=1000,
+                iterations=500,
             )
             ## Events with local coactivity
             (
@@ -261,7 +253,7 @@ def dendritic_coactivity_analysis(
                 volume_norm=all_constants,
                 extend=extend,
                 activity_type="local",
-                iterations=1000,
+                iterations=500,
             )
             ## Events without any local coactivity
             (
@@ -300,7 +292,7 @@ def dendritic_coactivity_analysis(
                 volume_norm=all_constants,
                 extend=extend,
                 activity_type="no local",
-                iterations=1000,
+                iterations=10,
             )
 
             # Calulate fraction of coactivity with local coactivity
@@ -337,6 +329,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_spine_coactivity_rate,
                 shuff_nearby_spine_coactivity_rate,
                 coactivity_rate_distribution,
+                _,
             ) = variable_distance_dependence(
                 all_dendrite_coactivity_rate,
                 spine_positions,
@@ -360,6 +353,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_spine_coactivity_rate_norm,
                 shuff_nearby_spine_coactivity_rate_norm,
                 coactivity_rate_norm_distribution,
+                _,
             ) = variable_distance_dependence(
                 all_dendrite_coactivity_rate_norm,
                 spine_positions,
@@ -384,6 +378,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_spine_conj_rate,
                 shuff_nearby_spine_conj_rate,
                 conj_coactivity_rate_distribution,
+                _,
             ) = variable_distance_dependence(
                 conj_dendrite_coactivity_rate,
                 spine_positions,
@@ -407,6 +402,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_spine_conj_rate_norm,
                 shuff_nearby_spine_conj_rate_norm,
                 conj_coactivity_rate_norm_distribution,
+                _,
             ) = variable_distance_dependence(
                 conj_dendrite_coactivity_rate_norm,
                 spine_positions,
@@ -431,6 +427,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_spine_fraction,
                 shuff_nearby_spine_fraction,
                 spine_fraction_coactive_distribution,
+                _,
             ) = variable_distance_dependence(
                 all_fraction_spine_coactive,
                 spine_positions,
@@ -454,6 +451,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_dend_fraction,
                 shuff_nearby_dend_fraction,
                 dend_fraction_coactive_distribution,
+                _,
             ) = variable_distance_dependence(
                 all_fraction_dend_coactive,
                 spine_positions,
@@ -477,6 +475,7 @@ def dendritic_coactivity_analysis(
                 conj_avg_nearby_spine_fraction,
                 conj_shuff_nearby_spine_fraction,
                 conj_spine_fraction_coactive_distribution,
+                _,
             ) = variable_distance_dependence(
                 conj_fraction_spine_coactive,
                 spine_positions,
@@ -500,6 +499,7 @@ def dendritic_coactivity_analysis(
                 conj_avg_nearby_dend_fraction,
                 conj_shuff_nearby_dend_fraction,
                 conj_dend_fraction_coactive_distribution,
+                _,
             ) = variable_distance_dependence(
                 conj_fraction_dend_coactive,
                 spine_positions,
@@ -523,6 +523,7 @@ def dendritic_coactivity_analysis(
                 avg_nearby_relative_onset,
                 shuff_nearby_relative_onset,
                 relative_onset_distribution,
+                _,
             ) = variable_distance_dependence(
                 all_relative_onsets,
                 spine_positions,
@@ -544,6 +545,7 @@ def dendritic_coactivity_analysis(
                 conj_avg_nearby_relative_onset,
                 conj_shuff_nearby_relative_onset,
                 conj_relative_onset_distribution,
+                _,
             ) = variable_distance_dependence(
                 conj_relative_onsets,
                 spine_positions,
