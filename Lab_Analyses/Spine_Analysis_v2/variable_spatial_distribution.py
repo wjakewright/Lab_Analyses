@@ -1,9 +1,7 @@
 import numpy as np
 
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    bin_by_position,
-    find_present_spines,
-)
+    bin_by_position, find_present_spines)
 
 
 def variable_spatial_distribution(
@@ -11,6 +9,7 @@ def variable_spatial_distribution(
     spine_positions,
     spine_flags,
     spine_groupings,
+    partner_list=None,
     bin_size=5,
     density=False,
 ):
@@ -27,6 +26,9 @@ def variable_spatial_distribution(
             
             spine_groupings - list with the corresponding groupings of spines
                               on different dendrites
+
+            partner_list - boolean array specifying specific types of spines to include
+                          for anlaysis
                               
             bin_size - int or float specifying the distance to bin over
 
@@ -55,11 +57,19 @@ def variable_spatial_distribution(
     # Find the present spines
     present_spines = find_present_spines(spine_flags)
 
+    # Refine potential partners
+    # Refine the partner list if specified
+    if partner_list is not None:
+        present_partners = present_spines * partner_list
+    else:
+        present_partners = present_spines
+
     # Iterate through each spine grouping
     for spines in spine_groupings:
         data = spine_data[spines]
         positions = spine_positions[spines]
         curr_present = present_spines[spines]
+        curr_partners = present_partners[spines]
 
         # Iterate through each spine
         for spine in range(len(data)):
@@ -71,7 +81,7 @@ def variable_spatial_distribution(
                 if curr_present[spine] == False:
                     partner_data.append(np.nan)
                     continue
-                if curr_present[partner] == False:
+                if curr_partners[partner] == False:
                     partner_data.append(np.nan)
                     continue
                 partner_data.append(data[partner])
