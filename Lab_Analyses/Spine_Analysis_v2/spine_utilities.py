@@ -364,11 +364,11 @@ def calculate_nearby_vs_distance_variable(variable_mat, position_bins, cluster_d
     ## Check of the bin size alignes with the cluster
     if near_bin_idx > 0:
         near = variable_mat[:near_bin_idx, :]
-        near = np.nansum(near, axis=0)
+        near = np.nanmean(near, axis=0)
     else:
         near = variable_mat[near_bin_idx, :]
     distant = variable_mat[dist_bin_idx:, :]
-    distant = np.nansum(distant, axis=0)
+    distant = np.nanmean(distant, axis=0)
 
     # Perform calculation
     near_minus_dist = near - distant
