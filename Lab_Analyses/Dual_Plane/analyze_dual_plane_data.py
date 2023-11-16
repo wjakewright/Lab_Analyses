@@ -36,8 +36,6 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
             file = os.path.join(FOV_path, fname)
             data = load_pickle([file])[0]
             datasets.append(data)
-            dictionary = d_utils.convert_dataclass_to_dict(data)
-            save_pickle(f"{mouse}_{FOV}_dual_soma_dend_dict", dictionary, path=FOV_path)
 
     print(f"Dataset number: {len(datasets)}")
 
