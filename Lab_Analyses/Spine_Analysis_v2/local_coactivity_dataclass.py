@@ -76,6 +76,22 @@ class Local_Coactivity_Data:
     local_nn_shrunken: np.ndarray
     shuff_nn_shrunken: np.ndarray
     shrunken_spine_distribution: np.ndarray
+    avg_nearby_enlarged_spine_rate: np.ndarray
+    shuff_nearby_enlarged_spine_rate: np.ndarray
+    enlarged_spine_activity_rate_distribution: np.ndarray
+    near_vs_dist_enlarged_activity_rate: np.ndarray
+    avg_nearby_enlarged_coactivity_rate: np.ndarray
+    shuff_nearby_enlarged_coactivity_rate: np.ndarray
+    enlarged_local_coactivity_rate_distribution: np.ndarray
+    near_vs_dist_enlarged_nearby_coactivity_rate: np.ndarray
+    avg_nearby_shrunken_spine_rate: np.ndarray
+    shuff_nearby_shrunken_spine_rate: np.ndarray
+    shrunken_spine_activity_rate_distribution: np.ndarray
+    near_vs_dist_shrunken_activity_rate: np.ndarray
+    avg_nearby_shrunken_coactivity_rate: np.ndarray
+    shuff_nearby_shrunken_coactivity_rate: np.ndarray
+    shrunken_local_coactivity_rate_distribution: np.ndarray
+    near_vs_dist_shrunken_nearby_coactivity_rate: np.ndarray
     # Coactive and Noncoactive spine events
     spine_coactive_event_num: np.ndarray
     spine_coactive_traces: list
@@ -124,10 +140,11 @@ class Local_Coactivity_Data:
     # Local dendritic calcium signals
     coactive_local_dend_traces: list
     coactive_local_dend_amplitude: np.ndarray
+    coactive_local_dend_amplitude_dist: np.ndarray
     noncoactive_local_dend_traces: list
     noncoactive_local_dend_amplitude: np.ndarray
-    nearby_local_dend_traces: list
-    nearby_local_dend_amplitude: np.ndarray
+    noncoactive_local_dend_amplitude_dist: np.ndarray
+
 
     def save(self):
         """method to save the dataclass"""
