@@ -10,6 +10,7 @@ def variable_spatial_clustering(
     spine_positions,
     spine_flags,
     spine_groupings,
+    partner_list=None,
     method="nearest",
     cluster_dist=5,
     iterations=10000,
@@ -25,6 +26,9 @@ def variable_spatial_clustering(
             
             spine_groupings - list of the corresponding groupings of spines along the dendrite
             
+            partner_list - boolean array of spines to include in the clustering. Only used
+                            for local average method
+
             method - str specifying how you want to measure the clustering. 'nearest' will
                     find the nearest neighbor distance to a spine of a specific type. 
                     'local' will simply compare the average local values to the shuffles
@@ -53,11 +57,18 @@ def variable_spatial_clustering(
     # Find the present spines
     present_spines = find_present_spines(spine_flags)
 
+    # Refine the partner list if specified
+    if partner_list is not None:
+        present_partners = present_spines * partner_list
+    else:
+        present_partners = present_spines
+
     # Iterate through each dendrite grouping
     for spines in spine_groupings:
         s_data = spine_data[spines]
         positions = spine_positions[spines]
         curr_present = present_spines[spines]
+        curr_partners = present_partners[spines]
 
         # Iterate through each shuffle
         for i in range(iterations):
@@ -67,7 +78,7 @@ def variable_spatial_clustering(
                     real_v = find_nearest_neighbor(s_data, positions, curr_present)
                 elif method == "local":
                     real_v = get_local_avg(
-                        s_data, positions, curr_present, cluster_dist
+                        s_data, positions, curr_present, cluster_dist, curr_partners,
                     )
                 real_values[spines] = real_v
 
@@ -79,7 +90,7 @@ def variable_spatial_clustering(
                 shuff_v = find_nearest_neighbor(shuff_data, positions, curr_present)
             elif method == "local":
                 shuff_v = get_local_avg(
-                    shuff_data, positions, curr_present, cluster_dist
+                    shuff_data, positions, curr_present, cluster_dist, curr_partners
                 )
             shuff_values[i, spines] = shuff_v
 
@@ -131,7 +142,7 @@ def find_nearest_neighbor(spine_data, positions, present_spines):
     return nearest_neighbor
 
 
-def get_local_avg(spine_data, positions, present_spines, distance):
+def get_local_avg(spine_data, positions, present_spines, distance, present_partners):
     """Helper function to get the average values of nearby spines"""
     # Setup the output
     local_avg = np.zeros(len(spine_data)) * np.nan
@@ -146,7 +157,7 @@ def get_local_avg(spine_data, positions, present_spines, distance):
         relative_pos = np.absolute(positions - target_pos)
         nearby_spines = np.nonzero(relative_pos <= distance)[0]
         nearby_spines = [
-            x for x in nearby_spines if present_spines[x] == True and x != spine
+            x for x in nearby_spines if present_partners[x] == True and x != spine
         ]
 
         # Get the local average
