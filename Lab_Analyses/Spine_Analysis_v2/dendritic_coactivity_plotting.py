@@ -9,19 +9,18 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
-from Lab_Analyses.Plotting.plot_cummulative_distribution import (
-    plot_cummulative_distribution,
-)
+from Lab_Analyses.Plotting.plot_cummulative_distribution import \
+    plot_cummulative_distribution
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import \
+    plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
-from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import \
+    plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2 import spine_utilities as s_utils
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change,
-    classify_plasticity,
-)
+    calculate_volume_change, classify_plasticity)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -2652,10 +2651,10 @@ def plot_plasticity_coactivity_rates(
     # Comparisions to chance
     ## All events
     all_enlarged_above, all_enlarged_below = t_utils.test_against_chance(
-        all_coactivity_rate["Enlarged"], all_shuff_coactivity_rate["sLTP"]
+        all_coactivity_rate["sLTP"], all_shuff_coactivity_rate["sLTP"]
     )
     all_shrunken_above, all_shrunken_below = t_utils.test_against_chance(
-        all_coactivity_rate["Shrunken"], all_shuff_coactivity_rate["sLTD"],
+        all_coactivity_rate["sLTD"], all_shuff_coactivity_rate["sLTD"],
     )
     all_stable_above, all_stable_below = t_utils.test_against_chance(
         all_coactivity_rate["Stable"], all_shuff_coactivity_rate["Stable"]
@@ -4360,7 +4359,7 @@ def plot_nearby_spine_properties(
     ##################### Plot data onto axes ########################
     # Coactivity rate distribution
     plot_multi_line_plot(
-        data=plastic_rate_dist,
+        data_dict=plastic_rate_dist,
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
@@ -4383,7 +4382,7 @@ def plot_nearby_spine_properties(
     )
     ## Conj rate distribution
     plot_multi_line_plot(
-        data=plastic_conj_dist,
+        data_dict=plastic_conj_dist,
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
@@ -4391,7 +4390,7 @@ def plot_nearby_spine_properties(
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
         ylim=None,
-        line_colors=COLORS,
+        line_color=COLORS,
         face_color="white",
         m_size=6,
         linewidth=1.5,
@@ -4406,7 +4405,7 @@ def plot_nearby_spine_properties(
     )
     ## Spine fraction distribution
     plot_multi_line_plot(
-        data=plastic_spine_frac_dist,
+        data_dict=plastic_spine_frac_dist,
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
@@ -4414,7 +4413,7 @@ def plot_nearby_spine_properties(
         ytitle="Fraction of spine events",
         xtitle="Distance (\u03BCm)",
         ylim=None,
-        line_colors=COLORS,
+        line_color=COLORS,
         face_color="white",
         m_size=6,
         linewidth=1.5,
@@ -4429,7 +4428,7 @@ def plot_nearby_spine_properties(
     )
     ## Dendrite fraction distribution
     plot_multi_line_plot(
-        data=plastic_dend_frac_dist,
+        data_dict=plastic_dend_frac_dist,
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
@@ -4437,7 +4436,7 @@ def plot_nearby_spine_properties(
         ytitle="Fraction of dendrite events",
         xtitle="Distance (\u03BCm)",
         ylim=None,
-        line_colors=COLORS,
+        line_color=COLORS,
         face_color="white",
         m_size=6,
         linewidth=1.5,
@@ -4452,7 +4451,7 @@ def plot_nearby_spine_properties(
     )
     ## relative onset distribution
     plot_multi_line_plot(
-        data=plastic_onset_dist,
+        data_dict=plastic_onset_dist,
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
@@ -4460,7 +4459,7 @@ def plot_nearby_spine_properties(
         ytitle="Relative onset (s)",
         xtitle="Distance (\u03BCm)",
         ylim=None,
-        line_colors=COLORS,
+        line_color=COLORS,
         face_color="white",
         m_size=6,
         linewidth=1.5,
@@ -6071,19 +6070,19 @@ def plot_global_movement_encoding(
     all_coactive_movement_stereotypy = dataset.all_coactive_movement_stereotypy
     all_coactive_movement_reliability = dataset.all_coactive_movement_reliability
     all_coactive_movement_specificity = dataset.all_coactive_movement_specificity
-    conj_coactive_movement_correlation = dataset.conj_coactive_movement_correlation
-    conj_coactive_movement_stereotypy = dataset.conj_coactive_movement_stereotypy
-    conj_coactive_movement_reliability = dataset.conj_coactive_movement_reliability
-    conj_coactive_movement_specificity = dataset.conj_coactive_movement_specificity
+    conj_coactive_movement_correlation = dataset.conj_movement_correlation
+    conj_coactive_movement_stereotypy = dataset.conj_movement_stereotypy
+    conj_coactive_movement_reliability = dataset.conj_movement_reliability
+    conj_coactive_movement_specificity = dataset.conj_movement_specificity
     nonconj_coactive_movement_correlation = (
-        dataset.nonconj_coactive_movement_correlation
+        dataset.nonconj_movement_correlation
     )
-    nonconj_coactive_movement_stereotypy = dataset.nonconj_coactive_movement_stereotypy
+    nonconj_coactive_movement_stereotypy = dataset.nonconj_movement_stereotypy
     nonconj_coactive_movement_reliability = (
-        dataset.nonconj_coactive_movement_reliability
+        dataset.nonconj_movement_reliability
     )
     nonconj_coactive_movement_specificity = (
-        dataset.nonconj_coactive_movement_specificity
+        dataset.nonconj_movement_specificity
     )
 
     # Calculate the relative volumes
@@ -6583,33 +6582,33 @@ def plot_global_movement_encoding(
         all_reli_f, all_reli_p, all_reli_df = t_utils.kruskal_wallis_test(
             plastic_mvmt_reli, "Conover", test_method,
         )
-        all_speci_f, all_speci_p, all_speci_df = t_utils.ANOVA_1way_posthoc(
+        all_speci_f, all_speci_p, all_speci_df = t_utils.kruskal_wallis_test(
             plastic_mvmt_speci, "Conover", test_method,
         )
-        conj_corr_f, conj_corr_p, conj_corr_df = t_utils.ANOVA_1way_posthoc(
+        conj_corr_f, conj_corr_p, conj_corr_df = t_utils.kruskal_wallis_test(
             plastic_conj_corr, "Conover", test_method,
         )
-        conj_stereo_f, conj_stereo_p, conj_stereo_df = t_utils.ANOVA_1way_posthoc(
+        conj_stereo_f, conj_stereo_p, conj_stereo_df = t_utils.kruskal_wallis_test(
             plastic_conj_stereo, "Conover", test_method,
         )
-        conj_reli_f, conj_reli_p, conj_reli_df = t_utils.ANOVA_1way_posthoc(
+        conj_reli_f, conj_reli_p, conj_reli_df = t_utils.kruskal_wallis_test(
             plastic_conj_reli, "Conover", test_method,
         )
-        conj_speci_f, conj_speci_p, conj_speci_df = t_utils.ANOVA_1way_posthoc(
+        conj_speci_f, conj_speci_p, conj_speci_df = t_utils.kruskal_wallis_test(
             plastic_conj_speci, "Conover", test_method,
         )
-        nonconj_corr_f, nonconj_corr_p, nonconj_corr_df = t_utils.ANOVA_1way_posthoc(
+        nonconj_corr_f, nonconj_corr_p, nonconj_corr_df = t_utils.kruskal_wallis_test(
             plastic_nonconj_corr, "Conover", test_method,
         )
         (
             nonconj_stereo_f,
             nonconj_stereo_p,
             nonconj_stereo_df,
-        ) = t_utils.ANOVA_1way_posthoc(plastic_nonconj_stereo, "Conover", test_method,)
-        nonconj_reli_f, nonconj_reli_p, nonconj_reli_df = t_utils.ANOVA_1way_posthoc(
+        ) = t_utils.kruskal_wallis_test(plastic_nonconj_stereo, "Conover", test_method,)
+        nonconj_reli_f, nonconj_reli_p, nonconj_reli_df = t_utils.kruskal_wallis_test(
             plastic_nonconj_reli, "Conover", test_method,
         )
-        nonconj_speci_f, nonconj_speci_p, nonconj_speci_df = t_utils.ANOVA_1way_posthoc(
+        nonconj_speci_f, nonconj_speci_p, nonconj_speci_df = t_utils.kruskal_wallis_test(
             plastic_nonconj_speci, "Conover", test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
