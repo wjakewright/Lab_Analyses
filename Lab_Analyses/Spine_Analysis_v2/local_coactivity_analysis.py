@@ -25,6 +25,8 @@ from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
 from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import \
     variable_distance_dependence
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.coactivity_functions import \
+    get_conservative_coactive_binary
 from Lab_Analyses.Utilities.quantify_movement_quality import \
     quantify_movement_quality
 
@@ -485,12 +487,18 @@ def local_coactivity_analysis(
                 volume_norm=all_constants,
             )
             ## Isolated events
+            isolated_matrix = np.zeros(spine_activity.shape)
+            for c in range(spine_activity.shape[1]):
+                _, dend_inactive = get_conservative_coactive_binary(spine_activity[:, c], dendrite_activity[:, c])
+                isolated_matrix[:, c] = dend_inactive
+
+            ## Old method
             ### modify the constrain matrix
-            dendrite_inactive = 1 - dendrite_activity
-            if constrain_matrix is not None:
-                temp_matrix = constrain_matrix.reshape(-1, 1) * dendrite_inactive
-            else:
-                temp_matrix = dendrite_inactive
+            #dendrite_inactive = 1 - dendrite_activity
+            #if constrain_matrix is not None:
+            #    temp_matrix = constrain_matrix.reshape(-1, 1) * dendrite_inactive
+            #else:
+            #    temp_matrix = dendrite_inactive
 
             (
                 _,
@@ -510,7 +518,7 @@ def local_coactivity_analysis(
                 _,
                 _,
             ) = coactive_vs_noncoactive_event_analysis(
-                spine_activity,
+                isolated_matrix,
                 spine_dFoF,
                 spine_calcium_dFoF,
                 spine_flags,
@@ -518,7 +526,7 @@ def local_coactivity_analysis(
                 spine_groupings,
                 activity_window=activity_window,
                 cluster_dist=cluster_dist,
-                constrain_matrix=temp_matrix,
+                constrain_matrix=constrain_matrix,
                 partner_list=partner_list,
                 sampling_rate=sampling_rate,
                 volume_norm=all_constants,
