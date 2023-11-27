@@ -2,9 +2,7 @@ import numpy as np
 from scipy import stats
 
 from Lab_Analyses.Utilities.activity_timestamps import (
-    get_activity_timestamps,
-    refine_activity_timestamps,
-)
+    get_activity_timestamps, refine_activity_timestamps)
 
 
 def calculate_coactivity(
@@ -110,6 +108,30 @@ def calculate_coactivity(
         fraction_active_2,
         coactivity_trace,
     )
+
+def get_conservative_coactive_binary(trace_1, trace_2):
+    """Helper function to get a conservative binary coactivity trace
+        by looking for periods where there is no overlap for each event"""
+    
+    timestamps = get_activity_timestamps(trace_1)
+    # Get non overlapping idxs
+    coactive_idxs = []
+    noncoactive_idxs = []
+    for t in timestamps:
+        if np.nansum(trace_2[t[0] : t[1]]):
+            coactive_idxs.append(t)
+        else:
+            noncoactive_idxs.append(t)
+    # Generate the binary coactive trace
+    coactivity_trace = np.zeros(len(trace_1))
+    for epoch in coactive_idxs:
+        coactivity_trace[epoch[0] : epoch[1]] = 1
+    # Generate binary noncoactive trace
+    noncoactivity_trace = np.zeros(len(trace_1))
+    for epoch in noncoactive_idxs:
+        noncoactivity_trace[epoch[0] : epoch[1]] = 1
+
+    return coactivity_trace, noncoactivity_trace
 
 
 def calculate_relative_onset(
