@@ -5,7 +5,8 @@ from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
     bin_by_position, find_present_spines)
 from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.coactivity_functions import calculate_coactivity
+from Lab_Analyses.Utilities.coactivity_functions import (
+    calculate_coactivity, get_conservative_coactive_binary)
 
 
 def spatial_local_dendrite_activity(
@@ -74,9 +75,9 @@ def spatial_local_dendrite_activity(
 
     """
     # Setup position bins
-    MAX_DIST = 10
-    bin_num = 10
-    position_bins = np.linspace(0, MAX_DIST, 11)
+    MAX_DIST = 20
+    bin_num = 20
+    position_bins = np.linspace(0, MAX_DIST, 21)
 
     # Sort out the spine groupings
     if type(spine_groupings[0]) != list:
@@ -86,14 +87,20 @@ def spatial_local_dendrite_activity(
     if constrain_matrix is not None:
         if len(constrain_matrix.shape) == 1:
             constrain_matrix = constrain_matrix.reshape(-1,1)
-        activity_matrix = spine_activity * constrain_matrix
+        matrix = spine_activity * constrain_matrix
     else:
-        activity_matrix = spine_activity
+        matrix = spine_activity
 
     # Remove events that overlap with global dendritic events
-    ## Invert dendrite activity
-    dendrite_inactivity = 1 - dendrite_activity
-    activity_matrix = activity_matrix * dendrite_inactivity
+    ## Create the variable
+    activity_matrix = np.zeros(matrix.shape)
+    for c in range(matrix.shape[1]):
+        _, dend_inactive = get_conservative_coactive_binary(matrix[:, c], dendrite_activity[:, c])
+        activity_matrix[:, c] = dend_inactive
+
+    # Old method
+    #dendrite_inactivity = 1 - dendrite_activity
+    #activity_matrix = activity_matrix * dendrite_inactivity
 
     # Get present spines
     present_spines = find_present_spines(spine_flags)
