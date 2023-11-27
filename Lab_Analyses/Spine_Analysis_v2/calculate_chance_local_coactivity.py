@@ -1,8 +1,7 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis_v2.calculate_distance_coactivity_rate import (
-    calculate_distance_coactivity_rate,
-)
+from Lab_Analyses.Spine_Analysis_v2.calculate_distance_coactivity_rate import \
+    calculate_distance_coactivity_rate
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.test_utilities import significant_vs_shuffle
 
@@ -101,7 +100,7 @@ def calculate_chance_local_coactivity(
         # Shuffle the activity
         ## Switching the chunk shuffling
         # shuffled_activity = d_utils.roll_2d_array(spine_activity, SHIFT_RANGE, axis=1)
-        shuffled_activity = d_utils.shuffle_binary_arrays(spine_activity, axis=1)
+        shuffled_activity = d_utils.roll_2d_array(spine_activity, SHIFT_RANGE, axis=1)
         # Get the shuffled coactivity
         (
             shuff_coactivity,
