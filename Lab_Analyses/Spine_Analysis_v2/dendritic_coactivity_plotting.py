@@ -324,7 +324,7 @@ def plot_conj_vs_nonconj_events(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_1")
+        fname = os.path.join(save_path, "Conj_vs_Nonconj_Coactivity_Figure")
         fig.savefig(fname + ".pdf")
 
     ################################ Statistics Section ################################
@@ -406,7 +406,7 @@ def plot_conj_vs_nonconj_events(
         if save:
             if save_path is None:
                 save_path = r"C:\Users\Jake\Desktop\Figures"
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_1_Stats")
+            fname = os.path.join(save_path, "Conj_vs_Nonconj_Coactivity_Stats")
             fig2.savefig(fname + ".pdf")
 
 
@@ -482,12 +482,6 @@ def plot_comparative_mvmt_coactivity(
         nonmvmt_shuff_coactivity_rate = d_utils.subselect_data_by_idxs(
             nonmvmt_dataset.all_shuff_dendrite_coactivity_rate, spine_idxs1
         )
-        mvmt_above_chance = d_utils.subselect_data_by_idxs(
-            mvmt_dataset.all_above_chance_coactivity, spine_idxs
-        )
-        nonmvmt_above_chance = d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.all_above_chance_coactivity, spine_idxs1
-        )
         mvmt_dendrite_coactivity_rate_norm = d_utils.subselect_data_by_idxs(
             mvmt_dataset.all_dendrite_coactivity_rate_norm, spine_idxs
         )
@@ -499,12 +493,6 @@ def plot_comparative_mvmt_coactivity(
         )
         nonmvmt_shuff_coactivity_rate_norm = d_utils.subselect_data_by_idxs(
             nonmvmt_dataset.all_shuff_dendrite_coactivity_rate_norm, spine_idxs1
-        )
-        mvmt_above_chance_norm = d_utils.subselect_data_by_idxs(
-            mvmt_dataset.all_above_chance_coactivity_norm, spine_idxs
-        )
-        nonmvmt_above_chance_norm = d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.all_above_chance_coactivity_norm, spine_idxs1
         )
         mvmt_spine_coactive_traces = d_utils.subselect_data_by_idxs(
             mvmt_dataset.all_spine_coactive_traces, spine_idxs
@@ -555,12 +543,6 @@ def plot_comparative_mvmt_coactivity(
         nonmvmt_shuff_coactivity_rate = d_utils.subselect_data_by_idxs(
             nonmvmt_dataset.conj_shuff_dendrite_coactivity_rate, spine_idxs1
         )
-        mvmt_above_chance = d_utils.subselect_data_by_idxs(
-            mvmt_dataset.conj_above_chance_coactivity, spine_idxs
-        )
-        nonmvmt_above_chance = d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.conj_above_chance_coactivity, spine_idxs1
-        )
         mvmt_dendrite_coactivity_rate_norm = d_utils.subselect_data_by_idxs(
             mvmt_dataset.conj_dendrite_coactivity_rate_norm, spine_idxs
         )
@@ -572,12 +554,6 @@ def plot_comparative_mvmt_coactivity(
         )
         nonmvmt_shuff_coactivity_rate_norm = d_utils.subselect_data_by_idxs(
             nonmvmt_dataset.conj_shuff_dendrite_coactivity_rate_norm, spine_idxs1
-        )
-        mvmt_above_chance_norm = d_utils.subselect_data_by_idxs(
-            mvmt_dataset.conj_above_chance_coactivity_norm, spine_idxs
-        )
-        nonmvmt_above_chance_norm = d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.conj_above_chance_coactivity_norm, spine_idxs1
         )
         mvmt_spine_coactive_traces = d_utils.subselect_data_by_idxs(
             mvmt_dataset.conj_spine_coactive_traces, spine_idxs
@@ -628,12 +604,6 @@ def plot_comparative_mvmt_coactivity(
         nonmvmt_shuff_coactivity_rate = d_utils.subselect_data_by_idxs(
             nonmvmt_dataset.nonconj_shuff_dendrite_coactivity_rate, spine_idxs1
         )
-        mvmt_above_chance = d_utils.subselect_data_by_idxs(
-            mvmt_dataset.nonconj_above_chance_coactivity, spine_idxs
-        )
-        nonmvmt_above_chance = d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.nonconj_above_chance_coactivity, spine_idxs1
-        )
         mvmt_dendrite_coactivity_rate_norm = d_utils.subselect_data_by_idxs(
             mvmt_dataset.nonconj_dendrite_coactivity_rate_norm, spine_idxs
         )
@@ -645,12 +615,6 @@ def plot_comparative_mvmt_coactivity(
         )
         nonmvmt_shuff_coactivity_rate_norm = d_utils.subselect_data_by_idxs(
             nonmvmt_dataset.nonconj_shuff_dendrite_coactivity_rate_norm, spine_idxs1
-        )
-        mvmt_above_chance_norm = d_utils.subselect_data_by_idxs(
-            mvmt_dataset.nonconj_above_chance_coactivity_norm, spine_idxs
-        )
-        nonmvmt_above_chance_norm = d_utils.subselect_data_by_idxs(
-            nonmvmt_dataset.nonconj_above_chance_coactivity_norm, spine_idxs1
         )
         mvmt_spine_coactive_traces = d_utils.subselect_data_by_idxs(
             mvmt_dataset.nonconj_spine_coactive_traces, spine_idxs
@@ -697,14 +661,6 @@ def plot_comparative_mvmt_coactivity(
     dendrite_coactivity_rate_norm = {
         "Mvmt": mvmt_dendrite_coactivity_rate_norm,
         "Nonmvmt": nonmvmt_dendrite_coactivity_rate_norm,
-    }
-    above_chance = {
-        "Mvmt": mvmt_above_chance,
-        "Nonmvmt": nonmvmt_above_chance,
-    }
-    above_chance_norm = {
-        "Mvmt": mvmt_above_chance_norm,
-        "Nonmvmt": nonmvmt_above_chance_norm,
     }
     shuff_coactivity_rate = {
         "Mvmt": mvmt_shuff_coactivity_rate,
@@ -794,8 +750,8 @@ def plot_comparative_mvmt_coactivity(
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        ABCD
-        EFGH
+        ABC.
+        EFG.
         IJKL
         MN..
         """,
@@ -1078,62 +1034,6 @@ def plot_comparative_mvmt_coactivity(
         save=False,
         save_path=None,
     )
-    # Raw coactivity above chance
-    plot_box_plot(
-        above_chance,
-        figsize=(5, 5),
-        title="Raw",
-        xtitle=None,
-        ytitle=f"Above chance difference",
-        ylim=None,
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.7,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["D"],
-        save=False,
-        save_path=None,
-    )
-    # Norm coactivity above chance
-    plot_box_plot(
-        above_chance_norm,
-        figsize=(5, 5),
-        title="Norm.",
-        xtitle=None,
-        ytitle=f"Above chance difference",
-        ylim=None,
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.7,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["H"],
-        save=False,
-        save_path=None,
-    )
     # Spine GluSnFr traces
     plot_mean_activity_traces(
         means=list(spine_coactive_means.values()),
@@ -1288,11 +1188,11 @@ def plot_comparative_mvmt_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if coactivity_type == "All":
-            fname = os.path.join(save_path, "Dendrite_Coactivity_Figure_2")
+            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Coactivity_Figure")
         elif coactivity_type == "conj":
-            fname = os.path.join(save_path, "Dendrite_Coactivity_Figure_3")
+            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Conj_Figure")
         elif coactivity_type == "nonconj":
-            fname = os.path.join(save_path, "Dendrite_Coactivity_Figure_4")
+            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Nonconj_Figure")
         fig.savefig(fname + ".pdf")
 
     ########################### Statistics Section ###############################
@@ -1310,12 +1210,6 @@ def plot_comparative_mvmt_coactivity(
             dendrite_coactivity_rate_norm["Mvmt"],
             dendrite_coactivity_rate_norm["Nonmvmt"],
             nan_policy="omit",
-        )
-        chance_t, chance_p = stats.ttest_ind(
-            above_chance["Mvmt"], above_chance["Nonmvmt"], nan_policy="omit",
-        )
-        chance_norm_t, chance_norm_p = stats.ttest_ind(
-            above_chance_norm["Mvmt"], above_chance_norm["Nonmvmt"], nan_policy="omit",
         )
         spine_amp_t, spine_amp_p = stats.ttest_ind(
             spine_coactive_amps["Mvmt"],
@@ -1350,14 +1244,6 @@ def plot_comparative_mvmt_coactivity(
                 ~np.isnan(dendrite_coactivity_rate_norm["Nonmvmt"])
             ],
         )
-        chance_t, chance_p = stats.ttest_ind(
-            above_chance["Mvmt"][~np.isnan(above_chance["Mvmt"])],
-            above_chance["Nonmvmt"][~np.isnan(above_chance["Nonmvmt"])],
-        )
-        chance_norm_t, chance_norm_p = stats.ttest_ind(
-            above_chance_norm["Mvmt"][~np.isnan(above_chance_norm["Mvmt"])],
-            above_chance_norm["Nonmvmt"][~np.isnan(above_chance_norm["Nonmvmt"])],
-        )
         spine_amp_t, spine_amp_p = stats.ttest_ind(
             spine_coactive_amps["Mvmt"][~np.isnan(spine_coactive_amps["Mvmt"])],
             spine_coactive_amps["Nonmvmt"][~np.isnan(spine_coactive_amps["Nonmvmt"])],
@@ -1379,8 +1265,6 @@ def plot_comparative_mvmt_coactivity(
         "Comparision": [
             "Dendrite cocactivity",
             "Dendrite coactivity norm",
-            "Chance diff.",
-            "Chance diff. norm.",
             "Spine amp.",
             "Spine ca amp.",
             "Dend amp",
@@ -1388,8 +1272,6 @@ def plot_comparative_mvmt_coactivity(
         "stat": [
             coactivity_t,
             coactivity_norm_t,
-            chance_t,
-            chance_norm_t,
             spine_amp_t,
             spine_ca_t,
             dend_amp_t,
@@ -1397,8 +1279,6 @@ def plot_comparative_mvmt_coactivity(
         "p-val": [
             coactivity_p,
             coactivity_norm_p,
-            chance_p,
-            chance_norm_p,
             spine_amp_p,
             spine_ca_p,
             dend_amp_p,
@@ -1467,11 +1347,11 @@ def plot_comparative_mvmt_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if coactivity_type == "All":
-            fname = os.path.join(save_path, "Dendrite_Coactivity_Figure_2_Stats")
+            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Coactivity_Stats")
         elif coactivity_type == "conj":
-            fname = os.path.join(save_path, "Dendrite_Coactivity_Figure_3_Stats")
+            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Conj_Stats")
         elif coactivity_type == "nonconj":
-            fname = os.path.join(save_path, "Dendrite_Coactivity_Figure_4_Stats")
+            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Nonconj_Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -1481,6 +1361,7 @@ def plot_plasticity_coactivity_rates(
     period="All periods",
     norm=False,
     exclude="Shaft Spine",
+    MRSs=None,
     threshold=0.3,
     figsize=(10, 10),
     showmeans=False,
@@ -1504,6 +1385,9 @@ def plot_plasticity_coactivity_rates(
             norm - boolean specifying whether to look at normalized coactivity 
 
             exclude - str specifying spine type to exclude form analysis
+
+             MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Defualt is None to examine all spines
 
             threshold - float or tuple of floats specifying the threshold cutoff for
                         classifying plasticity
@@ -1648,6 +1532,8 @@ def plot_plasticity_coactivity_rates(
     fraction_conj_events = d_utils.subselect_data_by_idxs(
         fraction_conj_events, spine_idxs,
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     ## Seperate into groups
     all_coactivity_rate = {}
@@ -1666,6 +1552,10 @@ def plot_plasticity_coactivity_rates(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         all_coactivity_rate[key] = all_dendrite_coactivity_rate[spines]
         all_shuff_coactivity_rate[key] = all_shuff_dendrite_coactivity_rate[:, spines]
         all_dend_fraction[key] = all_fraction_dendrite_coactive[spines]
@@ -1747,7 +1637,7 @@ def plot_plasticity_coactivity_rates(
         save=False,
         save_path=None,
     )
-    # nonconj coactivity scatter
+    # conj coactivity scatter
     plot_scatter_correlation(
         x_var=conj_dendrite_coactivity_rate,
         y_var=delta_volume,
@@ -2535,20 +2425,24 @@ def plot_plasticity_coactivity_rates(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if norm == False:
             if period == "All periods":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_5")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_{mrs_name}Figure")
             elif period == "movement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_6")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Mvmt_{mrs_name}Figure")
             elif period == "nonmovement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_7")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Nonmvmt_{mrs_name}Figure")
         else:
             if period == "All periods":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_8")
+                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_{mrs_name}Figure")
             elif period == "movement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_9")
+                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Mvmt_{mrs_name}Figure")
             elif period == "nonmovement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_10")
+                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Nonmvmt_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     ########################### Statistics Section ############################
@@ -2887,20 +2781,24 @@ def plot_plasticity_coactivity_rates(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if norm == False:
             if period == "All periods":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_5_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_{mrs_name}Stats")
             elif period == "movement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_6_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Mvmt_{mrs_name}Stats")
             elif period == "nonmovement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_7_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Nonmvmt_{mrs_name}Stats")
         else:
             if period == "All periods":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_8_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_{mrs_name}Stats")
             elif period == "movement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_9_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Mvmt_{mrs_name}Stats")
             elif period == "nonmovement":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_10_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Nonmvmt_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -2910,6 +2808,7 @@ def plot_coactive_event_properties(
     period="All periods",
     followup_dataset=None,
     exclude="Shaft Spine",
+    MRSs=None,
     threshold=0.3,
     figsize=(10, 10),
     showmeans=False,
@@ -2936,6 +2835,9 @@ def plot_coactive_event_properties(
                             to use the followup volumes in the dataset
 
             exclude - str specifying spine type to exclude form analysis
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Defualt is None to examine all spines
 
             threshold - float or tuple of floats specifying the threshold cutoff
                         for classifying plasticity
@@ -2997,7 +2899,6 @@ def plot_coactive_event_properties(
         spine_coactive_calcium_amplitude = dataset.all_spine_coactive_calcium_amplitude
         dendrite_coactive_amplitude = dataset.all_dendrite_coactive_amplitude
         relative_onsets = dataset.all_relative_onsets
-        onset_jitter = dataset.all_onset_jitter
     elif event_type == "nonconj":
         spine_coactive_traces = dataset.nonconj_spine_coactive_traces
         spine_coactive_calcium_traces = dataset.nonconj_spine_coactive_calcium_traces
@@ -3008,7 +2909,6 @@ def plot_coactive_event_properties(
         )
         dendrite_coactive_amplitude = dataset.nonconj_dendrite_coactive_amplitude
         relative_onsets = dataset.nonconj_relative_onsets
-        onset_jitter = dataset.nonconj_onset_jitter
     elif event_type == "conj":
         spine_coactive_traces = dataset.conj_spine_coactive_traces
         spine_coactive_calcium_traces = dataset.conj_spine_coactive_calcium_traces
@@ -3017,7 +2917,6 @@ def plot_coactive_event_properties(
         spine_coactive_calcium_amplitude = dataset.conj_spine_coactive_calcium_amplitude
         dendrite_coactive_amplitude = dataset.conj_dendrite_coactive_amplitude
         relative_onsets = dataset.conj_relative_onsets
-        onset_jitter = dataset.conj_onset_jitter
 
     # Calculate relative volumes
     volumes = [spine_volumes, followup_volumes]
@@ -3050,7 +2949,8 @@ def plot_coactive_event_properties(
         dendrite_coactive_amplitude, spine_idxs,
     )
     relative_onsets = d_utils.subselect_data_by_idxs(relative_onsets, spine_idxs,)
-    onset_jitter = d_utils.subselect_data_by_idxs(onset_jitter, spine_idxs,)
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -3064,10 +2964,13 @@ def plot_coactive_event_properties(
     plastic_ca_amps = {}
     plastic_dend_amps = {}
     plastic_onsets = {}
-    plastic_jitter = {}
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         trace_means = compress(spine_coactive_traces, spines)
         trace_means = [
             np.nanmean(x, axis=1) for x in trace_means if type(x) == np.ndarray
@@ -3092,14 +2995,14 @@ def plot_coactive_event_properties(
         plastic_ca_amps[key] = spine_coactive_calcium_amplitude[spines]
         plastic_dend_amps[key] = dendrite_coactive_amplitude[spines]
         plastic_onsets[key] = relative_onsets[spines]
-        plastic_jitter[key] = onset_jitter[spines]
+
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
         ABCDE
         FGHI.
-        JKL..
+        JK...
         """,
         figsize=figsize,
     )
@@ -3342,34 +3245,7 @@ def plot_coactive_event_properties(
         save=False,
         save_path=None,
     )
-    # Onset jitter box plot
-    plot_box_plot(
-        plastic_amps,
-        figsize=(5, 5),
-        title=None,
-        xtitle=None,
-        ytitle=f"Onset jitter (s)",
-        ylim=None,
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.9,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["L"],
-        save=False,
-        save_path=None,
-    )
+
     # Onset cummulative distribution
     plot_cummulative_distribution(
         data=list(plastic_onsets.values()),
@@ -3397,27 +3273,31 @@ def plot_coactive_event_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if period == "All periods":
             if event_type == "All":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_11")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_{mrs_name}Figure")
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_12")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonconj_{mrs_name}Figure")
             elif event_type == "conj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_13")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Conj_{mrs_name}Figure")
         elif period == "movement":
             if event_type == "All":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_14")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_{mrs_name}Figure")
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_15")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Nonconj_{mrs_name}Figure")
             elif event_type == "conj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_16")
-        elif period == "movement":
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Conj_{mrs_name}Figure")
+        elif period == "nonmovement":
             if event_type == "All":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_17")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_{mrs_name}Figure")
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_16")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Nonconj_{mrs_name}Figure")
             elif event_type == "conj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_18")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Conj_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     ######################## Statistics Section #########################
@@ -3436,9 +3316,6 @@ def plot_coactive_event_properties(
         onset_f, onset_p, _, onset_df = t_utils.ANOVA_1way_posthoc(
             plastic_onsets, test_method,
         )
-        jitter_f, jitter_p, _, jitter_df = t_utils.ANOVA_1way_posthoc(
-            plastic_jitter, test_method,
-        )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         amp_f, amp_p, amp_df = t_utils.kruskal_wallis_test(
@@ -3453,9 +3330,6 @@ def plot_coactive_event_properties(
         onset_f, onset_p, onset_df = t_utils.kruskal_wallis_test(
             plastic_onsets, "Conover", test_method,
         )
-        jitter_f, jitter_p, jitter_df = t_utils.kruskal_wallis_test(
-            plastic_jitter, "Conover", test_method,
-        )
         test_title = f"Kruskal-Wallis {test_method}"
 
     # Display the statistics
@@ -3463,7 +3337,6 @@ def plot_coactive_event_properties(
         """
         AB
         CD
-        E.
         """,
         figsize=(8, 8),
     )
@@ -3518,19 +3391,7 @@ def plot_coactive_event_properties(
     )
     D_table.auto_set_font_size(False)
     D_table.set_fontsize(8)
-    axes2["E"].axis("off")
-    axes2["E"].axis("tight")
-    axes2["E"].set_title(
-        f"Onset jitter\n{test_title}\nF = {jitter_f:.4} p = {jitter_p:.3E}"
-    )
-    E_table = axes2["E"].table(
-        cellText=jitter_df.values,
-        colLabels=jitter_df.columns,
-        loc="center",
-        bbox=[0, 0.2, 0.9, 0.5],
-    )
-    E_table.auto_set_font_size(False)
-    E_table.set_fontsize(8)
+    
 
     fig2.tight_layout()
 
@@ -3538,27 +3399,31 @@ def plot_coactive_event_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if period == "All periods":
             if event_type == "All":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_11_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_{mrs_name}Stats")
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_12_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonconj_{mrs_name}Stats")
             elif event_type == "conj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_13_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Conj_{mrs_name}Stats")
         elif period == "movement":
             if event_type == "All":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_14_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_{mrs_name}Stats")
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_15_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Nonconj_{mrs_name}Stats")
             elif event_type == "conj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_16_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Conj_{mrs_name}Stats")
         elif period == "nonmovement":
             if event_type == "All":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_17_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_{mrs_name}Stats")
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_16_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Nonconj_{mrs_name}Stats")
             elif event_type == "conj":
-                fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_18_Stats")
+                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Conj_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -3567,6 +3432,7 @@ def plot_nearby_spine_conj_activity(
     followup_dataset=None,
     period="All periods",
     exclude="Shaft",
+    MRSs=None,
     threshold=0.3,
     figsize=(10, 6),
     hist_bins=30,
@@ -3592,6 +3458,9 @@ def plot_nearby_spine_conj_activity(
                     Accepts "All periods", "movement", "nonmovement", "rewarded movement"
 
             exclude - str specifying the types of spines to exclude from volume assessment
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Defualt is None to examine all spines
 
             threshold - float or tuple of floats specifying the threshold cutoff for 
                         classifying plasticity
@@ -3682,6 +3551,8 @@ def plot_nearby_spine_conj_activity(
     conj_nearby_coactive_spine_calcium_traces = d_utils.subselect_data_by_idxs(
         conj_nearby_coactive_spine_calcium_traces, spine_idxs,
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -3697,6 +3568,10 @@ def plot_nearby_spine_conj_activity(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         traces = compress(conj_nearby_coactive_spine_traces, spines)
         traces = [np.nanmean(x, axis=1) for x in traces if type(x) == np.ndarray]
         traces = np.vstack(traces)
@@ -3993,12 +3868,16 @@ def plot_nearby_spine_conj_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_19")
+            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_{mrs_name}Figure")
         elif period == "movement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_20")
+            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Mvmt_{mrs_name}Figure")
         elif period == "nonmovement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_21")
+            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Nonmvmt_{mrs_name}Figure")
 
         fig.savefig(fname + ".pdf")
 
@@ -4120,12 +3999,16 @@ def plot_nearby_spine_conj_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_19")
+            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_{mrs_name}Figure")
         elif period == "movement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_20")
+            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Mvmt_{mrs_name}Figure")
         elif period == "nonmovement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_21")
+            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Nonmvmt_{mrs_name}Figure")
 
         fig2.savefig(fname + ".pdf")
 
@@ -4135,6 +4018,7 @@ def plot_nearby_spine_properties(
     followup_dataset=None,
     period="All periods",
     exclude="Shaft",
+    MRSs=None,
     threshold=0.3,
     figsize=(10, 15),
     mean_type="median",
@@ -4159,6 +4043,9 @@ def plot_nearby_spine_properties(
                     period. Currently accepts "All periods", "movement", and "nonmovement"
 
             exclude - str specifying spine type to exclude from analysis
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Default is None to examine all spines
 
             threshold - float or tuple of floats specifying the threshold cutoff for
                         classifying plasticity
@@ -4295,6 +4182,8 @@ def plot_nearby_spine_properties(
     rel_nearby_relative_onset = d_utils.subselect_data_by_idxs(
         rel_nearby_relative_onset, spine_idxs,
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
 
     ## Seperate into plastic groups
     plastic_rate_dist = {}
@@ -4321,6 +4210,10 @@ def plot_nearby_spine_properties(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         plastic_rate_dist[key] = coactivity_rate_distribution[:, spines]
         plastic_avg_rates[key] = avg_nearby_spine_coactivity_rate[spines]
         plastic_shuff_rates[key] = shuff_nearby_spine_coactivity_rate[:, spines]
@@ -5540,12 +5433,16 @@ def plot_nearby_spine_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_22")
+            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_{mrs_name}Figure")
         elif period == "movement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_23")
+            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Mvmt_{mrs_name}Figure")
         elif period == "nonmovement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_24")
+            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Nonmvmt_{mrs_name}Figure")
 
         fig.savefig(fname + ".pdf")
 
@@ -5992,12 +5889,16 @@ def plot_nearby_spine_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_22_Stats")
+            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_{mrs_name}Stats")
         elif period == "movement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_23_Stats")
+            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Mvmt_{mrs_name}Stats")
         elif period == "nonmovement":
-            fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_24_Stats")
+            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Nonmvmt_{mrs_name}Stats")
 
         fig.savefig(fname + ".pdf")
 
