@@ -35,15 +35,12 @@ class Dendritic_Coactivity_Data:
     all_dendrite_coactivity_rate_norm: np.ndarray
     all_shuff_dendrite_coactivity_rate: np.ndarray
     all_shuff_dendrite_coactivity_rate_norm: np.ndarray
-    all_above_chance_coactivity: np.ndarray
-    all_above_chance_coactivity_norm: np.ndarray
     all_fraction_dendrite_coactive: np.ndarray
     all_fraction_spine_coactive: np.ndarray
     all_spine_coactive_amplitude: np.ndarray
     all_spine_coactive_calcium_amplitude: np.ndarray
     all_dendrite_coactive_amplitude: np.ndarray
     all_relative_onsets: np.ndarray
-    all_onset_jitter: np.ndarray
     all_spine_coactive_traces: list
     all_spine_coactive_calcium_traces: list
     all_dendrite_coactive_traces: list
@@ -52,15 +49,12 @@ class Dendritic_Coactivity_Data:
     conj_dendrite_coactivity_rate_norm: np.ndarray
     conj_shuff_dendrite_coactivity_rate: np.ndarray
     conj_shuff_dendrite_coactivity_rate_norm: np.ndarray
-    conj_above_chance_coactivity: np.ndarray
-    conj_above_chance_coactivity_norm: np.ndarray
     conj_fraction_dendrite_coactive: np.ndarray
     conj_fraction_spine_coactive: np.ndarray
     conj_spine_coactive_amplitude: np.ndarray
     conj_spine_coactive_calcium_amplitude: np.ndarray
     conj_dendrite_coactive_amplitude: np.ndarray
     conj_relative_onsets: np.ndarray
-    conj_onset_jitter: np.ndarray
     conj_spine_coactive_traces: list
     conj_spine_coactive_calcium_traces: list
     conj_dendrite_coactive_traces: list
@@ -69,15 +63,12 @@ class Dendritic_Coactivity_Data:
     nonconj_dendrite_coactivity_rate_norm: np.ndarray
     nonconj_shuff_dendrite_coactivity_rate: np.ndarray
     nonconj_shuff_dendrite_coactivity_rate_norm: np.ndarray
-    nonconj_above_chance_coactivity: np.ndarray
-    nonconj_above_chance_coactivity_norm: np.ndarray
     nonconj_fraction_dendrite_coactive: np.ndarray
     nonconj_fraction_spine_coactive: np.ndarray
     nonconj_spine_coactive_amplitude: np.ndarray
     nonconj_spine_coactive_calcium_amplitude: np.ndarray
     nonconj_dendrite_coactive_amplitude: np.ndarray
     nonconj_relative_onsets: np.ndarray
-    nonconj_onset_jitter: np.ndarray
     nonconj_spine_coactive_traces: list
     nonconj_spine_coactive_calcium_traces: list
     nonconj_dendrite_coactive_traces: list
@@ -163,7 +154,7 @@ class Dendritic_Coactivity_Data:
 
     def save(self):
         """method to save the dataclass"""
-        initial_path = r"C:\Users\Desktop\Analyzed_data\individual"
+        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "coactivity_data", self.FOV, self.session
         )
