@@ -329,7 +329,7 @@ def plot_coactive_vs_noncoactive_events(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_1")
+        fname = os.path.join(save_path, "Coactivity_vs_Noncoactivity_Figure")
         fig.savefig(fname + ".pdf")
 
     ############################# Statistics Section #################################
@@ -403,7 +403,7 @@ def plot_coactive_vs_noncoactive_events(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_1_Stats")
+        fname = os.path.join(save_path, "Coactivity_vs_Noncoactivity_Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -1110,9 +1110,9 @@ def plot_comparative_mvmt_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if rwd_mvmts:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_3")
+            fname = os.path.join(save_path, "Rwd_vs_Non_Coactivity_Figure")
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_2")
+            fname = os.path.join(save_path, "Mvmt_vs_Non_Coactivity_Figure")
         fig.savefig(fname + ".pdf")
 
     ########################### Statistics Section ###########################
@@ -1324,9 +1324,9 @@ def plot_comparative_mvmt_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if rwd_mvmts:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_3_Stats")
+            fname = os.path.join(save_path, "Rwd_vs_Non_Coactivity_Stats")
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_2_Stats")
+            fname = os.path.join(save_path, "Mvmt_vs_Non_Coactivity_Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -1335,6 +1335,7 @@ def plot_plasticity_coactivity_rates(
     mvmt_dataset,
     nonmvmt_dataset,
     followup_dataset=None,
+    MRSs=None,
     norm=False,
     rwd_mvmt=False,
     exclude="Shaft Spine",
@@ -1362,6 +1363,9 @@ def plot_plasticity_coactivity_rates(
             followup_dataset - optional Local_Coactivity_Data object of the subsequent
                                 session to used for volume comparision. Default is None
                                 to use the followup_volumes in the dataset
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Defualt is None to examine all spines
                 
             norm - boolean term specifying whether to use the normalized coactivity rate
                     or not
@@ -1422,7 +1426,6 @@ def plot_plasticity_coactivity_rates(
         distance_coactivity_rate = dataset.distance_coactivity_rate
         avg_local_coactivity_rate = dataset.avg_local_coactivity_rate
         shuff_local_coactivity_rate = dataset.shuff_local_coactivity_rate
-        coactive_spines = dataset.coactive_spines
         near_vs_dist = dataset.near_vs_dist_coactivity
         mvmt_distance_coactivity_rate = mvmt_dataset.distance_coactivity_rate
         mvmt_avg_local_coactivity_rate = mvmt_dataset.avg_local_coactivity_rate
@@ -1436,7 +1439,6 @@ def plot_plasticity_coactivity_rates(
         distance_coactivity_rate = dataset.distance_coactivity_rate_norm
         avg_local_coactivity_rate = dataset.avg_local_coactivity_rate_norm
         shuff_local_coactivity_rate = dataset.shuff_local_coactivity_rate_norm
-        coactive_spines = dataset.coactive_norm_spines
         near_vs_dist = dataset.near_vs_dist_coactivity_norm
         mvmt_distance_coactivity_rate = mvmt_dataset.distance_coactivity_rate_norm
         mvmt_avg_local_coactivity_rate = mvmt_dataset.avg_local_coactivity_rate_norm
@@ -1469,7 +1471,6 @@ def plot_plasticity_coactivity_rates(
     shuff_local_coactivity_rate = d_utils.subselect_data_by_idxs(
         shuff_local_coactivity_rate, spine_idxs
     )
-    coactive_spines = d_utils.subselect_data_by_idxs(coactive_spines, spine_idxs)
     near_vs_dist = d_utils.subselect_data_by_idxs(near_vs_dist, spine_idxs)
     mvmt_distance_coactivity_rate = d_utils.subselect_data_by_idxs(
         mvmt_distance_coactivity_rate, spine_idxs
@@ -1488,6 +1489,9 @@ def plot_plasticity_coactivity_rates(
         mvmt_coactive_event_num, spine_idxs
     )
 
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+
     # Seperate into groups
     plastic_distance_rates = {}
     plastic_local_rates = {}
@@ -1498,13 +1502,17 @@ def plot_plasticity_coactivity_rates(
     mvmt_local_rates = {}
     nonmvmt_distance_rates = {}
     nonmvmt_local_rates = {}
-    fraction_coactive = {}
     fraction_mvmt = {}
     distance_bins = dataset.parameters["position bins"][1:]
 
     for key, value in plastic_groups.items():
         # Get spine types
         spines = eval(value)
+        # Further subselect MRSs and nMRSs if specified
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         # Subselect data
         plastic_distance_rates[key] = distance_coactivity_rate[:, spines]
         plastic_local_rates[key] = avg_local_coactivity_rate[spines]
@@ -1518,19 +1526,16 @@ def plot_plasticity_coactivity_rates(
         plastic_shuff_rates[key] = shuff_rates
         plastic_shuff_medians[key] = np.nanmedian(shuff_rates, axis=1)
         ## Calculate fractions
-        co_spines = coactive_spines[spines]
         event_num = coactive_event_num[spines]
         mvmt_event_num = mvmt_coactive_event_num[spines]
-        fraction_coactive[key] = np.nansum(co_spines) / len(co_spines)
         fraction_mvmt[key] = mvmt_event_num / event_num
 
-    print(fraction_coactive)
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
         ABCD
-        EFGH
+        EFG.
         IJKL
         MNO.
         """,
@@ -1765,30 +1770,6 @@ def plot_plasticity_coactivity_rates(
         save=False,
         save_path=None,
     )
-    # Fraction coactive spines
-    plot_swarm_bar_plot(
-        fraction_coactive,
-        mean_type=mean_type,
-        err_type="std",
-        figsize=(5, 5),
-        title="Coactive spines",
-        xtitle=None,
-        ytitle=f"Fraction of spines",
-        ylim=(0, None),
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.9,
-        plot_ind=False,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["D"],
-        save=False,
-        save_path=None,
-    )
     # Fraction mvmt events
     plot_box_plot(
         fraction_mvmt,
@@ -1841,7 +1822,7 @@ def plot_plasticity_coactivity_rates(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["H"],
+        ax=axes["D"],
         save=False,
         save_path=None,
     )
@@ -2007,16 +1988,20 @@ def plot_plasticity_coactivity_rates(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if norm == False:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_4")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_{mrs_name}Figure")
             else:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_5")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_RWD_{mrs_name}Figure")
         else:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_6")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_{mrs_name}Figure")
             else:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_7")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_RWD_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     #################### Statistics Section ##################3
@@ -2221,16 +2206,20 @@ def plot_plasticity_coactivity_rates(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if norm == False:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_4_Stats")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_{mrs_name}Stats")
             else:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_5_Stats")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_RWD_{mrs_name}Stats")
         else:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_6_Stats")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_{mrs_name}Stats")
             else:
-                fname = os.path.join(save_path, "Local_Coactivity_Figure_7_Stats")
+                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_RWD_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -2240,6 +2229,7 @@ def plot_coactive_event_properties(
     nonmvmt_dataset,
     followup_dataset=None,
     rwd_mvmt=False,
+    MRSs=None,
     exclude="Shaft Spine",
     threshold=0.3,
     figsize=(10, 8),
@@ -2265,6 +2255,9 @@ def plot_coactive_event_properties(
                                 to use the followup volumes in the dataset
 
             rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
+
+            MRSs - str specifying if you wish to examine only MRSs or nMRSs. Accepts 
+                    "MRS" and "nMRS". Default is None to examine all spines.
 
             exclude - str specifying spine type to exclude from analysis
 
@@ -2430,6 +2423,8 @@ def plot_coactive_event_properties(
     nonmvmt_coactive_spine_num = d_utils.subselect_data_by_idxs(
         nonmvmt_coactive_spine_num, spine_idxs
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Seperate into dicts for plotting
     plastic_trace_means = {}
@@ -2462,6 +2457,10 @@ def plot_coactive_event_properties(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         trace_means = compress(spine_coactive_traces, spines)
         trace_means = [
             np.nanmean(x, axis=1) for x in trace_means if type(x) == np.ndarray
@@ -3086,10 +3085,14 @@ def plot_coactive_event_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        if not rwd_mvmt:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_8")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_9")
+            mrs_name = ""
+        if not rwd_mvmt:
+            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Figure")
+        else:
+            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     ####################### Statistics Section ###########################
@@ -3436,16 +3439,21 @@ def plot_coactive_event_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        if not rwd_mvmt:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_8_Stats")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_9_Stats")
+            mrs_name = ""
+        if not rwd_mvmt:
+            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Stats")
+        else:
+            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
 
 def plot_nearby_spine_properties(
     dataset,
     followup_dataset=None,
+    MRSs=None,
     exclude="Shaft",
     threshold=0.3,
     figsize=(10, 12),
@@ -3469,6 +3477,9 @@ def plot_nearby_spine_properties(
                                 subsequent session to be used for volume comparision.
                                 Default is None to use the followup volumes in the
                                 dataset.
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Default is None to examine all spines
                     
             exclude - str specifying spine type to exclude from analysis
 
@@ -3616,6 +3627,8 @@ def plot_nearby_spine_properties(
     near_vs_dist_relative_volume = d_utils.subselect_data_by_idxs(
         near_vs_dist_relative_volume, spine_idxs,
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Seperate into groups
     plastic_rate_dist = {}
@@ -3654,6 +3667,10 @@ def plot_nearby_spine_properties(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         plastic_rate_dist[key] = spine_activity_rate_distribution[:, spines]
         plastic_avg_rates[key] = avg_nearby_spine_rate[spines]
         shuff_rates = shuff_nearby_spine_rate[:, spines]
@@ -5447,7 +5464,11 @@ def plot_nearby_spine_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_10")
+        if MRSs is not None:
+            mrs_name = f"MRSs_"
+        else:
+            mrs_name = ""
+        fname = os.path.join(save_path, f"Nearby_Spine_Properties_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     ###################### Statistics Section ##########################
@@ -6003,12 +6024,17 @@ def plot_nearby_spine_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_10_Stats")
-        fig2.savefig(fname, ".pdf")
+        if MRSs is not None:
+            mrs_name = f"MRSs_"
+        else:
+            mrs_name = ""
+        fname = os.path.join(save_path, f"Nearby_Spine_Properties_{mrs_name}Stats")
+        fig2.savefig(fname + ".pdf")
 
 def plot_stable_nearby_spine_properties(
     dataset,
     followup_data=None,
+    MRSs=None,
     exclude="Shaft",
     threshold=0.3,
     figsize=(10,12),
@@ -6031,7 +6057,11 @@ def plot_stable_nearby_spine_properties(
                                 subsequent session to be used for volume comparision.
                                 Default is None to use the followup volumes in the
                                 dataset.
-        exclude - str specifying spine type to exclude from analysis
+            
+        `   MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Default is None to examine all spines
+
+            exclude - str specifying spine type to exclude from analysis
 
             threshold - float or tuple of floats specifying the threshold cutoff for
                         classifying plasticity
@@ -6152,6 +6182,8 @@ def plot_stable_nearby_spine_properties(
     near_vs_dist_shrunken_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
         near_vs_dist_shrunken_nearby_coactivity_rate, spine_idxs,
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Seperate into plastic groups
     plastic_e_rate_dist = {}
@@ -6179,6 +6211,10 @@ def plot_stable_nearby_spine_properties(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         plastic_e_rate_dist[key] = enlarged_spine_activity_rate_dist[:, spines]
         plastic_s_rate_dist[key] = shrunken_spine_activity_rate_dist[:, spines]
         plastic_e_coactivity_dist[key] = enlarged_local_coactivity_rate_dist[:, spines]
@@ -7157,7 +7193,11 @@ def plot_stable_nearby_spine_properties(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_11")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
+        fname = os.path.join(save_path, f"Nearby_Stable_Spine_Properties_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
     
     ##################### Statistics Section ########################
@@ -7175,6 +7215,7 @@ def plot_nearby_spine_coactivity(
     followup_dataset=None,
     mvmt_type="All periods",
     exclude="Shaft",
+    MRSs=None,
     threshold=0.3,
     figsize=(10, 6),
     hist_bins=30,
@@ -7201,6 +7242,10 @@ def plot_nearby_spine_coactivity(
                         Accepts "All periods", "movement", "nonmovement", "rewarded movement"
 
             exclude - str specifying the types of spines to exclude from volume assessment
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Default is None to examine all spines
+
 
             threshold - float or tuple of floats specifying the threshold cutoff for 
                         classifying plasticity
@@ -7285,6 +7330,8 @@ def plot_nearby_spine_coactivity(
     nearby_coactive_calcium_means = d_utils.subselect_data_by_idxs(
         nearby_coactive_calcium_traces, spine_idxs
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -7299,6 +7346,10 @@ def plot_nearby_spine_coactivity(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         traces = compress(nearby_coactive_means, spines)
         traces = [np.nanmean(x, axis=1) for x in traces if type(x) == np.ndarray]
         traces = np.vstack(traces)
@@ -7566,12 +7617,16 @@ def plot_nearby_spine_coactivity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if mvmt_type == "All periods":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_12")
+            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Session_{mrs_name}Figure")
         if mvmt_type == "movement":
-            fname = os.path.jion(save_path, "Local_Coactivity_Figure_13")
+            fname = os.path.jion(save_path, f"Nearby_Spine_Coactivity_Mvmt_{mrs_name}Figure")
         if mvmt_type == "nonmovement":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_14")
+            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Nonmvmt_{mrs_name}Figure")
 
         fig.savefig(fname + ".pdf")
 
@@ -7677,12 +7732,16 @@ def plot_nearby_spine_coactivity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
         if mvmt_type == "All periods":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_12_Stats")
+            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Session_{mrs_name}Stats")
         if mvmt_type == "movement":
-            fname = os.path.jion(save_path, "Local_Coactivity_Figure_13_Stats")
+            fname = os.path.jion(save_path, f"Nearby_Spine_Coactivity_Mvmt_{mrs_name}Stats")
         if mvmt_type == "nonmovement":
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_14_Stats")
+            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Nonmvmt_{mrs_name}Stats")
 
         fig2.savefig(fname + ".pdf")
 
@@ -8061,7 +8120,7 @@ def plot_nearby_spine_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_15")
+        fname = os.path.join(save_path, "Nearby_Spine_Mvmt_Encoding_Figure")
         fig.savefig(fname + ".pdf")
 
     ########################## Statistics Section #############################
@@ -8244,7 +8303,7 @@ def plot_nearby_spine_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_15_Stats")
+        fname = os.path.join(save_path, "Nearby_Spine_Mvmt_Encoding_Stats")
         fig.savefig(fname + ".pdf")
 
 
@@ -8656,7 +8715,7 @@ def plot_local_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_16")
+        fname = os.path.join(save_path, "Local_Coactivity_Mvmt_Encoding_Figure")
         fig.savefig(fname + ".pdf")
 
     ########################## Statistics Section ##############################
@@ -8861,7 +8920,7 @@ def plot_local_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Local_Coactivity_Figure_16_Stats")
+        fname = os.path.join(save_path, "Local_Coactivity_Mvmt_Encoding_Stats")
         fig.savefig(fname + ".pdf")
 
 
@@ -8872,6 +8931,7 @@ def plot_local_dendrite_activity(
     followup_dataset=None,
     rwd_mvmt=False,
     exclude="Shaft Spine",
+    MRSs=None,
     threshold=0.3,
     figsize=(12, 12),
     showmeans=False,
@@ -8898,6 +8958,10 @@ def plot_local_dendrite_activity(
             rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
 
             exclude - str specifying spine type to exclude from analysis
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Default is None to examine all spines
+
 
             threshold - float of tuple of floats specifying the threshold cutoff for 
                         classifying plasticity
@@ -9026,6 +9090,8 @@ def plot_local_dendrite_activity(
     nonmvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
         nonmvmt_noncoactive_local_dend_amplitude, spine_idxs,
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
     
 
     ## Seperate into dicts for plotting
@@ -9053,6 +9119,10 @@ def plot_local_dendrite_activity(
 
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         ### All periods
         coactive_traces = compress(coactive_local_dend_traces, spines)
         coactive_means = [
@@ -9449,10 +9519,14 @@ def plot_local_dendrite_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        if not rwd_mvmt:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_17")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_18")
+            mrs_name = ""
+        if not rwd_mvmt:
+            fname = os.path.join(save_path, f"Plastic_Local_Dend_{mrs_name}Figure")
+        else:
+            fname = os.path.join(save_path, f"Plastic_Local_Dend_Rwd_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     ######################## Statistics Section #############################
@@ -9620,9 +9694,13 @@ def plot_local_dendrite_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        if not rwd_mvmt:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_17_Stats")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
         else:
-            fname = os.path.join(save_path, "Local_Coactivity_Figure_18_Stats")
+            mrs_name = ""
+        if not rwd_mvmt:
+            fname = os.path.join(save_path, f"Plastic_Local_Dend_{mrs_name}Stats")
+        else:
+            fname = os.path.join(save_path, f"Plastic_Local_Dend_Rwd_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
