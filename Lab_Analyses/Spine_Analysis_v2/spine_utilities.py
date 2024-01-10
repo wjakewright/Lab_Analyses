@@ -319,7 +319,7 @@ def load_analyzed_datasets(
         if mouse == None:
             return "Must specify mouse ID if loading individual dataset"
         load_path = os.path.join(
-            initial_path, mouse, "coactivity_data", f"{fov}_{fov_type}", session
+            initial_path, "individual", mouse, "coactivity_data", f"{fov}_{fov_type}", session
         )
 
     # Construct the file name to load
@@ -346,9 +346,49 @@ def load_analyzed_datasets(
         load_name = os.path.join(load_path, fname)
         loaded_data = load_pickle([load_name])[0]
     except FileNotFoundError:
-        return "File matching input parameters does not exist"
+        print(load_name)
+
+        print("File matching input parameters does not exist")
 
     return loaded_data
+
+
+def batch_load_individual_analyzed_datasets(
+    type,
+    session="Early",
+    norm=True,
+    activity_type="dFoF",
+    extended=None,
+    mice_list=None,
+    fov_type="apical",
+    period=None,
+    partner=None,
+):
+    """Heler function to load all the individual datasets for a group of mice"""
+    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    all_data = []
+    for mouse in mice_list:
+        # Check and get all the FOVs
+        check_path = os.path.join(initial_path, mouse, "coactivity_data")
+        FOVs = next(os.walk(check_path))[1]
+        FOVs = [x for x in FOVs if fov_type in x]
+        FOVs = [x.split("_")[0] for x in FOVs]
+        for fov in FOVs:
+            loaded_data = load_analyzed_datasets(
+                type,
+                grouped=False,
+                session=session,
+                norm=norm,
+                activity_type=activity_type,
+                extended=extended,
+                mouse=mouse,
+                fov=fov,
+                fov_type=fov_type,
+                period=period,
+                partner=partner
+            )
+            all_data.append(loaded_data)
+    return all_data
 
 
 def calculate_nearby_vs_distance_variable(variable_mat, position_bins, cluster_dist):
