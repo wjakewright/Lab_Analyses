@@ -96,7 +96,7 @@ class Spine_Activity_Data:
 
     def save(self):
         """method to save the dataclass"""
-        initial_path = r"C:\Users\Desktop\Analyzed_data\individual"
+        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "coactivity_data", self.FOV, self.session
         )
