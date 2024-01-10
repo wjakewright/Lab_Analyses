@@ -7,13 +7,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from Lab_Analyses.Behavior.dispatcher_to_frames_continuous import (
-    dispatcher_to_frames_continuous,
-)
+from Lab_Analyses.Behavior.dispatcher_to_frames_continuous import \
+    dispatcher_to_frames_continuous
 from Lab_Analyses.Behavior.load_xsg_continuous import load_xsg_continuous
-from Lab_Analyses.Behavior.parse_lever_movement_continuous import (
-    parse_lever_movement_continuous,
-)
+from Lab_Analyses.Behavior.parse_lever_movement_continuous import \
+    parse_lever_movement_continuous
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
