@@ -4,14 +4,17 @@ from itertools import compress
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import \
+    plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
+from Lab_Analyses.Utilities import test_utilities as t_utils
 
 sns.set()
 sns.set_style("ticks")
@@ -413,6 +416,93 @@ def plot_kir_population_data(
             os.makedirs(save_path)
         fname = os.path.join(save_path, "Kir_Population_Activity_Figure")
         fig.savefig(fname + ".pdf")
+
+    if display_stats == False:
+        return
+
+    # Perform the stats
+    pos_event_rate = event_rates[kir_ids]
+    neg_event_rate = event_rates[[not x for x in kir_ids]]
+    pos_amplitudes = amplitudes[kir_ids]
+    neg_amplitudes = amplitudes[[not x for x in kir_ids]]
+    if test_type == "parametric":
+        rate_t, rate_p = stats.ttest_ind(
+            neg_event_rate, pos_event_rate, nan_policy="omit"
+        )
+        amp_t, amp_p = stats.ttest_ind(
+            neg_amplitudes, pos_amplitudes, nan_policy="omit"
+        )
+        test_title = "T-Test"
+    elif test_type == "nonparametric":
+        rate_t, rate_p = stats.mannwhitneyu(
+            neg_event_rate[~np.isnan(neg_event_rate)],
+            pos_event_rate[~np.isnan(pos_event_rate)]
+        )
+        amp_t, amp_p = stats.mannwhitneyu(
+            neg_amplitudes[~np.isnan(neg_amplitudes)],
+            pos_amplitudes[~np.isnan(pos_amplitudes)]
+        )
+        test_title = "Mann-Whitney U"
+
+    # Comparisons against chance
+    rate_above, rate_below = t_utils.test_against_chance(
+        pos_event_rate, shuff_event_rates[:, kir_ids]
+    )
+    amp_above, amp_below = t_utils.test_against_chance(
+        pos_amplitudes, shuff_amplitudes[:, kir_ids]
+    )
+
+    results_dict = {
+        "Comparison": ["event rates", "event amp"],
+        "stat": [rate_t, amp_t],
+        "p-val": [rate_p, amp_p]
+    }
+    results_df = pd.DataFrame.from_dict(results_dict)
+    chance_dict = {
+        "Comparision": ["event rate", "event amp"],
+        "pval above": [rate_above, amp_above],
+        "pval below": [rate_below, amp_below],
+    }
+    chance_df = pd.DataFrame.from_dict(chance_dict)
+
+    fig2, axes2 = plt.subplot_mosaic(
+        """AB""", figsize=(5,5),
+    )
+
+    axes2["A"].axis("off")
+    axes2["A"].axis("tight")
+    axes2["A"].set_title(f"{test_title} result")
+    A_table = axes2["A"].table(
+        cellText=results_df.values,
+        colLabels=results_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5]
+    )
+    A_table.auto_set_font_size(False)
+    A_table.set_fontsize(8)
+
+    axes2["B"].axis("off")
+    axes2["B"].axis("tight")
+    axes2["B"].set_title(f"Chance result")
+    B_table = axes2["B"].table(
+        cellText=chance_df.values,
+        colLabels=chance_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    B_table.auto_set_font_size(False)
+    B_table.set_fontsize(8)
+
+    fig2.tight_layout()
+
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
+        fname = os.path.join(save_path, "Kir_Population_Activity_Stats")
+        fig2.savefig(fname + ".pdf")
+
 
 
 ############### HELPER FUNCTIONS ################
