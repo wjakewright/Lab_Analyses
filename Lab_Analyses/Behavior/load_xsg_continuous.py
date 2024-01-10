@@ -52,6 +52,7 @@ def load_xsg_continuous(dirname):
             xsg_data.txt = fid.read()
     except FileNotFoundError:
         print(f"Could not open {os.path.join(dirname, fn)}")
+        xsg_data.txt = None
 
     for file in files:
         fn = file
