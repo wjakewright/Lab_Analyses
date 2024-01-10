@@ -29,8 +29,6 @@ class Local_Coactivity_Data:
     nonmovement_dendrites: np.ndarray
     rwd_movement_dendrites: np.ndarray
     nonrwd_movement_dendrites: np.ndarray
-    coactive_spines: np.ndarray
-    coactive_norm_spines: np.ndarray
     # Local coactivity rates
     distance_coactivity_rate: np.ndarray
     distance_coactivity_rate_norm: np.ndarray
@@ -38,8 +36,6 @@ class Local_Coactivity_Data:
     avg_local_coactivity_rate_norm: np.ndarray
     shuff_local_coactivity_rate: np.ndarray
     shuff_local_coactivity_rate_norm: np.ndarray
-    real_vs_shuff_coactivity_diff: np.ndarray
-    real_vs_shuff_coactivity_diff_norm: np.ndarray
     near_vs_dist_coactivity: np.ndarray
     near_vs_dist_coactivity_norm: np.ndarray
     # Nearby spine properties
@@ -148,7 +144,7 @@ class Local_Coactivity_Data:
 
     def save(self):
         """method to save the dataclass"""
-        initial_path = r"C:\Users\Desktop\Analyzed_data\individual"
+        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "coactivity_data", self.FOV, self.session
         )
