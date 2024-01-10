@@ -1498,7 +1498,7 @@ def plot_local_coactivity(
         title="Raw",
         xtitle=None,
         ytitle=f"Relative coactivity\n (near - dist.)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -1529,7 +1529,7 @@ def plot_local_coactivity(
         title="Norm.",
         xtitle=None,
         ytitle=f"Relative norm. coactivity\n (near - dist.)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -2055,9 +2055,7 @@ def plot_dendrite_coactivity(
     basal_dend_amp = d_utils.subselect_data_by_idxs(basal_dataset.all_dendrite_coactive_amplitude, basal_present)
     apical_onset = d_utils.subselect_data_by_idxs(apical_dataset.all_relative_onsets, apical_present)
     basal_onset = d_utils.subselect_data_by_idxs(basal_dataset.all_relative_onsets, basal_present)
-    apical_jitter = d_utils.subselect_data_by_idxs(apical_dataset.all_onset_jitter, apical_present)
-    basal_jitter = d_utils.subselect_data_by_idxs(basal_dataset.all_onset_jitter, basal_present)
-
+    
     # Process traces for plotting
     a_glu_means = [
         np.nanmean(x, axis=1) for x in apical_glu_traces if type(x) == np.ndarray
@@ -2099,9 +2097,9 @@ def plot_dendrite_coactivity(
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        ABCD.
-        EFGHI
-        JKLM.
+        ABCD
+        EFGH
+        JKLM
         """, 
         figsize=figsize
     )
@@ -2358,37 +2356,7 @@ def plot_dendrite_coactivity(
         save=False,
         save_path=None,
     )
-    # Jitter
-    plot_box_plot(
-        data_dict={
-            "Apical": apical_jitter,
-            "Basal": basal_jitter
-        },
-        figsize=(5, 5),
-        title="Jitter",
-        xtitle=None,
-        ytitle="Realtive onset jitter (s)",
-        ylim=(0, None),
-        b_colors=COLORS,
-        b_edgecolors="black",
-        b_err_colors="black",
-        m_color="black",
-        m_width=1.5,
-        b_width=0.5,
-        b_linewidth=1.5,
-        b_alpha=0.9,
-        b_err_alpha=1,
-        whisker_lim=None,
-        whisk_width=1.5,
-        outliers=False,
-        showmeans=showmeans,
-        axis_width=1.5,
-        minor_ticks="y",
-        tick_len=3,
-        ax=axes["I"],
-        save=False,
-        save_path=None,
-    )
+  
     # GluSnFr traces
     plot_mean_activity_traces(
         means=list((apical_glu_means, basal_glu_means)),
@@ -2483,6 +2451,98 @@ def plot_dendrite_coactivity(
     if display_stats == False:
         return
     
+    # Perform tests
+    if test_type == "parametric":
+        coactivity_t, coactivity_p = stats.ttest_ind(
+            apical_coactivity_rate, basal_coactivity_rate, nan_policy="omit"
+        )
+        conj_t, conj_p = stats.ttest_ind(
+            apical_conj_coactivity_rate, basal_conj_coactivity_rate, nan_policy="omit",
+        )
+        nonconj_t, nonconj_p = stats.ttest_ind(
+            apical_nonconj_coactivity_rate, basal_nonconj_coactivity_rate, nan_policy="omit"
+        )
+        frac_t, frac_p = stats.ttest_ind(
+            apical_frac_conj, basal_frac_conj, nan_policy="omit"
+        )
+        glu_t, glu_p = stats.ttest_ind(
+            apical_glu_amp, basal_glu_amp, nan_policy="omit"
+        )
+        ca_t, ca_p = stats.ttest_ind(
+            apical_ca_amp, basal_ca_amp, nan_policy="omit"
+        )
+        dend_t, dend_p = stats.ttest_ind(
+            apical_dend_amp, basal_dend_amp, nan_policy="omit",
+        )
+        onset_t, onset_p = stats.ttest_ind(
+            apical_onset, basal_onset, nan_policy="omit"
+        )
+        test_title = "T-Test"
+    elif test_type == "nonparametric":
+        coactivity_t, coactivity_p = stats.mannwhitneyu(
+            apical_coactivity_rate[~np.isnan(apical_coactivity_rate)],
+            basal_coactivity_rate[~np.isnan(basal_coactivity_rate)]
+        )
+        conj_t, conj_p = stats.mannwhitneyu(
+            apical_conj_coactivity_rate[~np.isnan(apical_conj_coactivity_rate)],
+            basal_conj_coactivity_rate[~np.isnan(basal_conj_coactivity_rate)]
+        )
+        nonconj_t, nonconj_p = stats.mannwhitneyu(
+            apical_nonconj_coactivity_rate[~np.isnan(apical_nonconj_coactivity_rate)],
+            basal_nonconj_coactivity_rate[~np.isnan(basal_nonconj_coactivity_rate)]
+        )
+        frac_t, frac_p = stats.mannwhitneyu(
+            apical_frac_conj[~np.isnan(apical_frac_conj)],
+            basal_frac_conj[~np.isnan(basal_frac_conj)]
+        )
+        glu_t, glu_p = stats.mannwhitneyu(
+            apical_glu_amp[~np.isnan(apical_glu_amp)],
+            basal_glu_amp[~np.isnan(basal_glu_amp)]
+        )
+        ca_t, ca_p = stats.mannwhitneyu(
+            apical_ca_amp[~np.isnan(apical_ca_amp)],
+            basal_ca_amp[~np.isnan(basal_ca_amp)],
+        )
+        dend_t, dend_p = stats.mannwhitneyu(
+            apical_dend_amp[~np.isnan(apical_dend_amp)],
+            basal_dend_amp[~np.isnan(basal_dend_amp)]
+        )
+        onset_t, onset_p = stats.mannwhitneyu(
+            apical_onset[~np.isnan(apical_onset)],
+            basal_onset[~np.isnan(basal_onset)]
+        )
+        test_title = "Mann-Whitney U"
+
+        # Organize the results
+        results_dict = {
+            "Comparison": ["Coactivity rate", "Conj rate", "Nonconj rate", "Frac Coactive", "Glu amp", "Ca amp", "Dend amp", "Onset"],
+            "Stat": [coactivity_t, conj_t, nonconj_t, frac_t, glu_t, ca_t, dend_t, onset_t],
+            "P-Val": [coactivity_p, conj_p, nonconj_p, frac_p, glu_p, ca_p, dend_p, onset_p],
+        }
+        results_df = pd.DataFrame.from_dict(results_dict)
+
+        fig2, axes2 = plt.subplot_mosaic("""A""", figsize=(5,4))
+        
+        axes2["A"].axis("off")
+        axes2["A"].axis("tight")
+        axes2["A"].set_title(f"{test_title} result")
+        A_table = axes2["A"].table(
+            cellText=results_df.values,
+            colLabels=results_df.columns,
+            loc="center",
+            bbox=[0, 0.2, 0.9, 0.5],
+        )
+        A_table.auto_set_font_size(False)
+        A_table.set_fontsize(8)
+
+        fig2.tight_layout()
+
+        # Save section
+        if save:
+            if save_path is None:
+                save_path = r"C:\Users\Jake\Desktop\Figures"
+            fname = os.path.join(save_path, "Apical_vs_Basal_Figure_5_Stats")
+            fig2.savefig(fname + ".pdf")
 
 
 
