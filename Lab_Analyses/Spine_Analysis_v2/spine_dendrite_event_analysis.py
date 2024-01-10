@@ -1,17 +1,13 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis_v2.calculate_dendrite_coactivity_rate import (
-    calculate_dendrite_coactivity_rate,
-)
+from Lab_Analyses.Spine_Analysis_v2.calculate_dendrite_coactivity_rate import \
+    calculate_dendrite_coactivity_rate
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    find_nearby_spines,
-    find_present_spines,
-)
+    find_nearby_spines, find_present_spines)
 from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities.coactivity_functions import (
-    calculate_coactivity,
-    calculate_relative_onset,
-)
+    calculate_coactivity, calculate_relative_onset,
+    get_conservative_coactive_binary)
 from Lab_Analyses.Utilities.mean_trace_functions import analyze_event_activity
 
 
@@ -157,7 +153,7 @@ def spine_dendrite_event_analysis(
     # Extend dendrite activity if specified
     if extend is not None:
         ref_dend_activity = extend_dendrite_activity(
-            dendrite_activity, extend, sampling_rate
+            np.copy(dendrite_activity), extend, sampling_rate
         )
     else:
         ref_dend_activity = dendrite_activity
@@ -184,7 +180,6 @@ def spine_dendrite_event_analysis(
     fraction_dend_coactive = np.zeros(spine_activity.shape[1])
     fraction_spine_coactive = np.zeros(spine_activity.shape[1])
     relative_onsets = np.zeros(spine_activity.shape[1]) * np.nan
-    onset_jitter = np.zeros(spine_activity.shape[1]) * np.nan
 
     coactive_onsets = [[] for i in range(spine_activity.shape[1])]
 
@@ -199,18 +194,23 @@ def spine_dendrite_event_analysis(
             combined_activity = np.nansum(n_activity, axis=1)
             combined_activity[combined_activity > 1] = 1
             if activity_type == "local":
+                # Old method
                 _, _, _, _, s_activity = calculate_coactivity(
                     spine_activity[:, spine],
                     combined_activity,
                     sampling_rate=sampling_rate,
                 )
+                #s_activity, _ = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
             elif activity_type == "no local":
+                # Old method
                 combined_inactivity = 1 - combined_activity
                 _, _, _, _, s_activity = calculate_coactivity(
                     spine_activity[:, spine],
                     combined_inactivity,
                     sampling_rate=sampling_rate,
                 )
+                #_, s_activity = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
+                
         else:
             s_activity = spine_activity[:, spine]
 
@@ -228,8 +228,8 @@ def spine_dendrite_event_analysis(
             relative_diff_norm,
             fraction_dend,
             fraction_spine,
-            rel_spine_onsets,
-            spine_jitter,
+            _,
+            _,
         ) = calculate_dendrite_coactivity_rate(
             s_activity,
             d_activity,
@@ -250,8 +250,6 @@ def spine_dendrite_event_analysis(
         above_chance_coactivity_norm[spine] = relative_diff_norm
         fraction_dend_coactive[spine] = fraction_dend
         fraction_spine_coactive[spine] = fraction_spine
-        relative_onsets[spine] = rel_spine_onsets
-        onset_jitter[spine] = spine_jitter
 
         # Get timestamps of coactivity
         coactive_stamps = t_stamps.get_activity_timestamps(coactive_trace)
@@ -298,7 +296,7 @@ def spine_dendrite_event_analysis(
         corrected_onsets.append(c_onset)
 
     ## Spine GluSnFr
-    (spine_coactive_traces, spine_coactive_amplitude, _,) = analyze_event_activity(
+    (spine_coactive_traces, spine_coactive_amplitude, spine_onsets) = analyze_event_activity(
         spine_dFoF,
         corrected_onsets,
         activity_window=activity_window,
@@ -324,6 +322,16 @@ def spine_dendrite_event_analysis(
         sampling_rate=sampling_rate,
     )
 
+    # Get avg relative onset
+    center_point = int(np.absolute(activity_window[0] * sampling_rate))
+    for i, onset in enumerate(spine_onsets):
+        try:
+            rel_onset = (int(onset) - center_point) / sampling_rate
+        except ValueError:
+            rel_onset = np.nan
+        relative_onsets[i] = rel_onset
+
+
     return (
         nearby_spine_idxs,
         coactive_binary,
@@ -340,7 +348,6 @@ def spine_dendrite_event_analysis(
         spine_coactive_calcium_amplitude,
         dendrite_coactive_amplitude,
         relative_onsets,
-        onset_jitter,
         spine_coactive_traces,
         spine_coactive_calcium_traces,
         dendrite_coactive_traces,
@@ -358,6 +365,7 @@ def extend_dendrite_activity(dend_activity, duration, sampling_rate):
         # Skip all nan traces
         if not np.nansum(dend_activity[:, i]):
             extended_activity[:, i] = dend_activity[:, i]
+            continue
         d_pad = np.pad(
             dend_activity[:, i], (npad // 2, npad - npad // 2), mode="constant",
         )
