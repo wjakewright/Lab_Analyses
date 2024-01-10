@@ -28,6 +28,7 @@ def plot_basic_features(
     dataset,
     followup_dataset=None,
     exclude="Shaft Spine",
+    MRSs=None,
     threshold=0.3,
     figsize=(10, 4),
     hist_bins=25,
@@ -49,6 +50,9 @@ def plot_basic_features(
                                 to use the followup volumes in the dataset
 
             exclude - str specifying a type of spine to exclude from analysis
+
+            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                    "MRS" and "nMRS". Default is None to examine all spines
 
             threshold - float or tuple of floats specifying the threshold cuttoffs 
                         for classifying plasticity
@@ -116,6 +120,8 @@ def plot_basic_features(
     spine_activity_rate = d_utils.subselect_data_by_idxs(
         spine_activity_rate, spine_idxs
     )
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
 
     # Organize datad dictionaries
     initial_vol_dict = {}
@@ -123,6 +129,10 @@ def plot_basic_features(
     count_dict = {}
     for key, value in spine_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
         vol = initial_volumes[spines]
         activity = spine_activity_rate[spines]
         initial_vol_dict[key] = vol[~np.isnan(vol)]
@@ -290,7 +300,11 @@ def plot_basic_features(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_1")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
+        fname = os.path.join(save_path, f"Spine_Basic_Properties_{mrs_name}Figure")
         fig.savefig(fname + ".pdf")
 
     ########################### Statistics Section ###########################
@@ -351,7 +365,11 @@ def plot_basic_features(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_1_Stats")
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
+        fname = os.path.join(save_path, f"Spine_Basic_Properties_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -965,7 +983,7 @@ def plot_movement_related_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_2")
+        fname = os.path.join(save_path, "Spine_Movement_Related_Activity_Figure")
         fig.savefig(fname + ".pdf")
 
     ######################### Statistics Section ############################
@@ -1069,7 +1087,7 @@ def plot_movement_related_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_2_Stats")
+        fname = os.path.join(save_path, "Spine_Movement_Related_Activity_Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -1771,7 +1789,7 @@ def plot_rewarded_movement_related_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_3")
+        fname = os.path.join(save_path, "Spine_RWD_Mvmt_Activity_Figure")
         fig.savefig(fname + ".pdf")
 
     ################################# Statistics Section ##################################
@@ -1991,7 +2009,7 @@ def plot_rewarded_movement_related_activity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_3_Stats")
+        fname = os.path.join(save_path, "Spine_RWD_Mvmt_Activity_Stats")
         fig2.savefig(fname + ".pdf")
 
 
@@ -2474,7 +2492,7 @@ def plot_spine_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_4")
+        fname = os.path.join(save_path, "Spine_Mvmt_Encoding_Figure")
         fig.savefig(fname + ".pdf")
 
     ######################### Statistics Section ################################
@@ -2716,6 +2734,6 @@ def plot_spine_movement_encoding(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        fname = os.path.join(save_path, "Spine_Activity_Figure_4_Stats")
+        fname = os.path.join(save_path, "Spine_Mvmt_Encoding_Stats")
         fig2.savefig(fname + ".pdf")
 
