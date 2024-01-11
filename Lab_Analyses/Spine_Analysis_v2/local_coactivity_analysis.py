@@ -213,7 +213,7 @@ def local_coactivity_analysis(
                 sampling_rate=sampling_rate,
                 norm_method="mean",
                 alpha=0.05,
-                iterations=500,
+                iterations=1,
             )
 
             # Assess activity and coactivity of nearby spines
@@ -232,7 +232,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
             ## All local coactivity
             (
@@ -248,7 +248,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
             (
                 avg_nearby_coactivity_rate_norm,
@@ -263,7 +263,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
 
             # Assess local MRS density and spine volume
@@ -281,7 +281,7 @@ def local_coactivity_analysis(
                 spine_groupings,
                 bin_size=5,
                 cluster_dist=cluster_dist,
-                iterations=1000,
+                iterations=10000,
             )
             ## rMRS density
             (
@@ -297,7 +297,7 @@ def local_coactivity_analysis(
                 spine_groupings,
                 bin_size=5,
                 cluster_dist=cluster_dist,
-                iterations=1000,
+                iterations=10000,
             )
             ## Spine volume
             (
@@ -313,7 +313,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
             ## Plasticity
             relative_volumes = np.zeros(spine_activity.shape[1]) * np.nan
@@ -325,7 +325,7 @@ def local_coactivity_analysis(
             )
             relative_volumes[stable_idxs] = rel_vols[-1]
             enlarged, shrunken, _ = classify_plasticity(
-                relative_volumes, threshold=(0.25, 0.3), norm=False,
+                relative_volumes, threshold=(0.25, 0.5), norm=False,
             )
             enlarged = np.array(enlarged)
             shrunken = np.array(shrunken)
@@ -343,7 +343,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
 
             ### Enlarged spines
@@ -360,7 +360,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="nearest",
-                iterations=1000,
+                iterations=10000,
             )
             ### Enlarged spines
             (
@@ -376,7 +376,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="nearest",
-                iterations=1000,
+                iterations=10000,
             )
 
             # Repeat local activity analysis, but for specific spine types
@@ -396,7 +396,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
             ## All local coactivity
             (
@@ -413,7 +413,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
             # Shrunken Spine partners
             ## Activity
@@ -431,7 +431,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
             ## All local coactivity
             (
@@ -448,7 +448,7 @@ def local_coactivity_analysis(
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
-                iterations=1000,
+                iterations=10000,
             )
 
 
