@@ -17,37 +17,37 @@ def analyze_event_activity(
     peak_required=True,
 ):
     """Function to analyze the mean activity trace around specified events
-    
-        INPUT PARAMETERS
-            dFoF - 2d np.array of the dFoF traces for each roi (columns)
-            
-            timestamps - list of the event timestamps for each roi
-            
-            activity_window - tuple specifying the window around each event to analyze
-            
-            center_onset - boolean of whether or not you wish to center traces on the
-                            mean onset of the trace
 
-            smooth - boolean specifying whether to smooth trace or not
+    INPUT PARAMETERS
+        dFoF - 2d np.array of the dFoF traces for each roi (columns)
 
-            avg_window - float specifying the window you wish to average the peak over.
-                         If None, it will use only the max peak amplitude
-            
-            norm_constants - np.array of the constants to normalize the activity by volume
-            
-            sampling_rates - int specifying the sampling rate
+        timestamps - list of the event timestamps for each roi
 
-            peak_required - boolean specifying if there a defined peak must exist to get
-                            amplitude
-        
-        OUTPUT PARAMETERS
-            activity_traces - list of 2d np.array of the activity around each event.
-                            columns = events, rolws=time, list items=each roi
-            
-            activity_amplitude - np.array of the peak amplitude for each spine
-            
-            activity_onset - int specifying the activity onset within the activity
-                            window
+        activity_window - tuple specifying the window around each event to analyze
+
+        center_onset - boolean of whether or not you wish to center traces on the
+                        mean onset of the trace
+
+        smooth - boolean specifying whether to smooth trace or not
+
+        avg_window - float specifying the window you wish to average the peak over.
+                     If None, it will use only the max peak amplitude
+
+        norm_constants - np.array of the constants to normalize the activity by volume
+
+        sampling_rates - int specifying the sampling rate
+
+        peak_required - boolean specifying if there a defined peak must exist to get
+                        amplitude
+
+    OUTPUT PARAMETERS
+        activity_traces - list of 2d np.array of the activity around each event.
+                        columns = events, rolws=time, list items=each roi
+
+        activity_amplitude - np.array of the peak amplitude for each spine
+
+        activity_onset - int specifying the activity onset within the activity
+                        window
     """
     # Get the traces for each spine
     activity_traces = []
@@ -115,25 +115,25 @@ def find_peak_amplitude(
     mean_traces, smooth=False, window=None, sampling_rate=60, peak_required=True
 ):
     """Function to find the peak amplitude of mean traces
-    
-        INPUT PARAMETERS
-            mean_traces - list of the mean activity traces
 
-            smooth - boolean specifying whether to smooth trace or not
+    INPUT PARAMETERS
+        mean_traces - list of the mean activity traces
 
-            window - float specifying the window you wish to average the peak over.
-                    If None, it will use only the max peak amplitude
-            
-            sampling_rate - int specifying the imaging sampling rate
+        smooth - boolean specifying whether to smooth trace or not
 
-            peak_required - boolean specifying whether a defined peak is required
-                            for finding the amplitude
-        
-        OUTPUT PARAMETERS
-            trace_amplitudes - np.array of the peak amplitudes of the traces
+        window - float specifying the window you wish to average the peak over.
+                If None, it will use only the max peak amplitude
 
-            trace_amplitudes_idx - np.array of the idx where the peak is
-            
+        sampling_rate - int specifying the imaging sampling rate
+
+        peak_required - boolean specifying whether a defined peak is required
+                        for finding the amplitude
+
+    OUTPUT PARAMETERS
+        trace_amplitudes - np.array of the peak amplitudes of the traces
+
+        trace_amplitudes_idx - np.array of the idx where the peak is
+
     """
     DISTANCE = 0.5 * sampling_rate  ## minimum distance of 0.5 seconds
 
@@ -151,7 +151,9 @@ def find_peak_amplitude(
         trace_std = np.nanstd(trace)
         trace_h = trace_med + trace_std
         trace_peaks, trace_props = sysignal.find_peaks(
-            trace, height=trace_h, distance=DISTANCE,
+            trace,
+            height=trace_h,
+            distance=DISTANCE,
         )
         trace_amps = trace_props["peak_heights"]
         # Find where the max amplitude is
@@ -179,14 +181,14 @@ def find_peak_amplitude(
 
 def find_activity_onset(mean_traces, sampling_rate=60):
     """Function to find the onset of mean activity traces
-    
-        INPUT PARAMETERS
-            mean_traces - list of the mean activity traces
-            
-            sampling_rate - int specifying the imaging sampling rate
-        
-        OUTPUT PARAMETERS
-            activity_onsets - np.array of the activity onsets
+
+    INPUT PARAMETERS
+        mean_traces - list of the mean activity traces
+
+        sampling_rate - int specifying the imaging sampling rate
+
+    OUTPUT PARAMETERS
+        activity_onsets - np.array of the activity onsets
     """
     # Set up output
     activity_onsets = np.zeros(len(mean_traces))
