@@ -6,6 +6,7 @@ from Lab_Analyses.Utilities.activity_timestamps import (
     refine_activity_timestamps,
     timestamp_onset_correction,
 )
+from Lab_Analyses.Utilities.coactivity_functions import find_individual_onsets
 from Lab_Analyses.Utilities.mean_trace_functions import find_peak_amplitude
 
 
@@ -22,55 +23,55 @@ def nearby_coactive_spine_activity(
     sampling_rate=60,
 ):
     """Function to analyze the activity of nearby spines during coactive
-        events
+    events
 
-        INPUT PARAMETERS
-            nearby_spine_idxs - list of arrays containing the idxs of nearby spines for each
-                                spine
+    INPUT PARAMETERS
+        nearby_spine_idxs - list of arrays containing the idxs of nearby spines for each
+                            spine
 
-            coactivity_matrix - 2d np.array of the binarized coactivity trace for each 
-                                 neuron (columns)
+        coactivity_matrix - 2d np.array of the binarized coactivity trace for each
+                             neuron (columns)
 
-            spine_flags - list of the spine flags
+        spine_flags - list of the spine flags
 
-            spine_activity - 2d np.array of the binarized activity for each spine (column)
+        spine_activity - 2d np.array of the binarized activity for each spine (column)
 
-            spine_dFoF - 2d np.array of the dFoF traces for each spine (column)
+        spine_dFoF - 2d np.array of the dFoF traces for each spine (column)
 
-            spine_calcium - 2d np.array of the calcium_dFoF traces for each spine (column)
+        spine_calcium - 2d np.array of the calcium_dFoF traces for each spine (column)
 
-            offsets - np.array of values to offset coactive timestamps by for aligning the
-                     nearby activity to (e.g., target spine onsets)
+        offsets - np.array of values to offset coactive timestamps by for aligning the
+                 nearby activity to (e.g., target spine onsets)
 
-            norm_constants - tuple of arrays containing the norm constants for GluSnFr and Calcium
+        norm_constants - tuple of arrays containing the norm constants for GluSnFr and Calcium
 
-            activity_window - tuple specifying the window around which you want the activity
-                              from (e.g., (-2, 4) for 2 sec before and 4 sec after)
-            
-            sampling_rate - int specifying the sampling rate
-        
-        OUTPUT PARAMETERS
-            avg_coactive_spine_num -  np.array of the num of spines coactive with each spine
+        activity_window - tuple specifying the window around which you want the activity
+                          from (e.g., (-2, 4) for 2 sec before and 4 sec after)
 
-            sum_nearby_coactive_amplitude - np.array of the max amplitude of average
-                                            summed activity of nearby spines during coactivity
-            
-            sum_nearby_coactive_calcium - np.array of the max amplitude of the average summed
-                                          calcium of nearby spines during coactivity
-            
-            nearby_spine_onset - np.array of the average onset of nearby spines relative to the
-                                 target spine
-            
-            nearby_spine_onset_jitter - np.array of the average onset std of nearby spines
-                                        relative to the target spine
-            
-            sum_nearby_coactive_traces - list of 2d arrays of the summed coactive traces for
-                                         each coactive event (column) for each spine (list items)
+        sampling_rate - int specifying the sampling rate
 
-            sum_nearby_coactive_calcium_traces - list od 2d arrays of the summmed coactive calcium
-                                                 traces for each coactive event for each spine
+    OUTPUT PARAMETERS
+        avg_coactive_spine_num -  np.array of the num of spines coactive with each spine
 
-           
+        sum_nearby_coactive_amplitude - np.array of the max amplitude of average
+                                        summed activity of nearby spines during coactivity
+
+        sum_nearby_coactive_calcium - np.array of the max amplitude of the average summed
+                                      calcium of nearby spines during coactivity
+
+        nearby_spine_onset - np.array of the average onset of nearby spines relative to the
+                             target spine
+
+        nearby_spine_onset_jitter - np.array of the average onset std of nearby spines
+                                    relative to the target spine
+
+        sum_nearby_coactive_traces - list of 2d arrays of the summed coactive traces for
+                                     each coactive event (column) for each spine (list items)
+
+        sum_nearby_coactive_calcium_traces - list od 2d arrays of the summmed coactive calcium
+                                             traces for each coactive event for each spine
+
+
     """
     # Get window in frames
     before_f = int(activity_window[0] * sampling_rate)
@@ -124,21 +125,36 @@ def nearby_coactive_spine_activity(
         # Get coactivity timestamps
         if not np.nansum(coactivity):
             continue
-        timestamps = get_activity_timestamps(coactivity)
+        # Old method
+        # timestamps = get_activity_timestamps(coactivity)
+        # timestamps = refine_activity_timestamps(
+        #    timestamps,
+        #    window=activity_window,
+        #    max_len=len(coactivity),
+        #    sampling_rate=sampling_rate,
+        # )
+        # if offsets is not None:
+        #    timestamps = timestamp_onset_correction(
+        #        timestamps, activity_window, offsets[spine], sampling_rate
+        #    )
+
+        ## Get timestamps of the target spine for each coactivity event
+        _, timestamps = find_individual_onsets(
+            target_activity,
+            target_activity,
+            coactivity=coactivity,
+            sampling_rate=sampling_rate,
+            activity_window=activity_window,
+        )
+        if len(timestamps) == 0:
+            continue
+
         timestamps = refine_activity_timestamps(
             timestamps,
             window=activity_window,
             max_len=len(coactivity),
             sampling_rate=sampling_rate,
         )
-        if offsets is not None:
-            timestamps = timestamp_onset_correction(
-                timestamps, activity_window, offsets[spine], sampling_rate
-            )
-        if len(timestamps) == 0:
-            continue
-
-        timestamps = [x[0] for x in timestamps]
 
         # Iterate through each coactivity event
         spine_wise_onsets = [[] for i in range(nearby_activity.shape[1])]
@@ -253,4 +269,3 @@ def nearby_coactive_spine_activity(
         sum_nearby_coactive_traces,
         sum_nearby_coactive_calcium_traces,
     )
-
