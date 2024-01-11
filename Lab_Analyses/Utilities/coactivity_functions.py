@@ -2,41 +2,43 @@ import numpy as np
 from scipy import stats
 
 from Lab_Analyses.Utilities.activity_timestamps import (
-    get_activity_timestamps, refine_activity_timestamps)
+    get_activity_timestamps,
+    refine_activity_timestamps,
+)
 
 
 def calculate_coactivity(
     trace_1, trace_2, norm_method="mean", duration=None, sampling_rate=60
 ):
     """Function to calculate the coactivity between two traces
-        
-        INPUT PARAMETERS
-            trace_1 - np.array of binary activity of the first ROI,
-            
-            trace_2 - np.array of the binary activity of the second ROI
 
-            norm_method - str specifying how to normalize coactivity. Accepts "mean"
-                         which normalizes by geometric mean of both traces or "freq"
-                         which normalizes only by the activity of the target trace
-            
-            duration - int specifying the duration of the traces. To be used
-                        if traces have previously been constrained and length doesn't
-                        represent the duration of the constraint. Default is None
+    INPUT PARAMETERS
+        trace_1 - np.array of binary activity of the first ROI,
 
-            sampling_rate - int specifying the imaging rate
-        
-        OUTPUT PARAMETERS
-            coactivity_rate - float of the raw coactivity rate 
+        trace_2 - np.array of the binary activity of the second ROI
 
-            coactivity_rate_norm - float of the normalized coactivity rate
+        norm_method - str specifying how to normalize coactivity. Accepts "mean"
+                     which normalizes by geometric mean of both traces or "freq"
+                     which normalizes only by the activity of the target trace
 
-            fraction_active_1 - float of the fraction of trace 1's activity 
-                                 is coactive
-            
-            fraction_active_2 - float of the fractoin of trace 2's activity is
-                                coactive
-            
-            coactivity_trace - np.array of the binary coactivity trace
+        duration - int specifying the duration of the traces. To be used
+                    if traces have previously been constrained and length doesn't
+                    represent the duration of the constraint. Default is None
+
+        sampling_rate - int specifying the imaging rate
+
+    OUTPUT PARAMETERS
+        coactivity_rate - float of the raw coactivity rate
+
+        coactivity_rate_norm - float of the normalized coactivity rate
+
+        fraction_active_1 - float of the fraction of trace 1's activity
+                             is coactive
+
+        fraction_active_2 - float of the fractoin of trace 2's activity is
+                            coactive
+
+        coactivity_trace - np.array of the binary coactivity trace
     """
     if duration is None:
         duration = len(trace_1)
@@ -109,10 +111,11 @@ def calculate_coactivity(
         coactivity_trace,
     )
 
+
 def get_conservative_coactive_binary(trace_1, trace_2):
     """Helper function to get a conservative binary coactivity trace
-        by looking for periods where there is no overlap for each event"""
-    
+    by looking for periods where there is no overlap for each event"""
+
     timestamps = get_activity_timestamps(trace_1)
     # Get non overlapping idxs
     coactive_idxs = []
@@ -138,23 +141,23 @@ def calculate_relative_onset(
     trace_1, trace_2, coactivity=None, sampling_rate=60, activity_window=(-2, 4)
 ):
     """Function to calculate the relative onset of activity during coactive events
-        
-        INPUT PARAMETERS
-            trace_1 - np.array of first rois binary activity
-            
-            trace_2 - np.array of the second rois binary activity
-            
-            coactivity - np.array of the binary coactivity trace. If none a trace will 
-                        be generated
-            
-            sampling_rate - int specifying the imaging rate
 
-            activity_window - tuple specifying the window to analyze
-            
-        OUTPUT PARAMETERS
-            avg_relative_onset - float of the avg relative onset of roi 1 to roi 2
-            
-            onset_jitter - float of the deviation of the relative onset
+    INPUT PARAMETERS
+        trace_1 - np.array of first rois binary activity
+
+        trace_2 - np.array of the second rois binary activity
+
+        coactivity - np.array of the binary coactivity trace. If none a trace will
+                    be generated
+
+        sampling_rate - int specifying the imaging rate
+
+        activity_window - tuple specifying the window to analyze
+
+    OUTPUT PARAMETERS
+        avg_relative_onset - float of the avg relative onset of roi 1 to roi 2
+
+        onset_jitter - float of the deviation of the relative onset
     """
     # Set up window in frames
     before_f = int(activity_window[0] * sampling_rate)
@@ -207,3 +210,81 @@ def calculate_relative_onset(
 
     return avg_relative_onset, onset_jitter
 
+
+def find_individual_onsets(
+    trace_1, trace_2, coactivity=None, sampling_rate=60, activity_window=(-2, 4)
+):
+    """Function to find the timestamps of individual traces for each coactivity event
+    INPUT PARAMETERS
+        trace_1 - np.array of first rois binary activity
+
+        trace_2 - np.array of the second rois binary activity
+
+        coactivity - np.array of the binary coactivity trace. If none a trace will
+                    be generated
+
+        sampling_rate - int specifying the imaging rate
+
+        activity_window - tuple specifying the window to analyze
+
+    OUTPUT PARAMETERS
+        trace_1_onsets - np.array of the individual onset timestamps
+
+        trace_2_onsets - np.array of the individual onset timestamps
+
+    """
+    # Set up window in frames
+    before_f = int(activity_window[0] * sampling_rate)
+    after_f = int(activity_window[1] * sampling_rate)
+    if coactivity is None:
+        coactivity = trace_1 * trace_2
+
+    # Get timestamps
+    timestamps = get_activity_timestamps(coactivity)
+    timestamps = refine_activity_timestamps(
+        timestamps,
+        window=activity_window,
+        max_len=len(coactivity),
+        sampling_rate=sampling_rate,
+    )
+    # Skip if no coactivity
+    if len(timestamps) == 0:
+        return np.array([]), np.array([])
+    # Refine to only onsets
+    timestamps = [x[0] for x in timestamps]
+
+    # Initialize outputs
+    trace_1_onsets = np.zeros(len(timestamps)) * np.nan
+    trace_2_onsets = np.zeros(len(timestamps)) * np.nan
+
+    # Iterate through each event
+    for i, event in enumerate(timestamps):
+        # Get coactivity around the event
+        event_activity = coactivity[event + before_f : event + after_f]
+        # Skip if no activity for some reason
+        if not np.nansum(event_activity):
+            continue
+        # Get trace one activity around event
+        activity_1 = trace_1[event + before_f : event + after_f]
+        # Find the onset
+        boundaries_1 = np.insert(np.diff(activity_1), 0, 0, axis=0)
+        try:
+            onset_1 = np.nonzero(boundaries_1 == 1)[0][0]
+        except IndexError:
+            onset_1 = 0
+        # Get trace two activity around event
+        activity_2 = trace_2[event + before_f : event + after_f]
+        # Find the onset
+        boundaries_2 = np.insert(np.diff(activity_2), 0, 0, axis=0)
+        try:
+            onset_2 = np.nonzero(boundaries_2 == 1)[0][0]
+        except IndexError:
+            onset_2 = 0
+        # Calculate offset of each onset relative to the event
+        offset_1 = np.absolute(before_f) - onset_1
+        offset_2 = np.absolute(before_f) - onset_2
+        # Calculate the onset time throughout the entire trace
+        trace_1_onsets[i] = int(event - offset_1)
+        trace_2_onsets[i] = int(event - offset_2)
+
+    return trace_1_onsets.astype(int), trace_2_onsets.astype(int)
