@@ -1,13 +1,19 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis_v2.calculate_dendrite_coactivity_rate import \
-    calculate_dendrite_coactivity_rate
+from Lab_Analyses.Spine_Analysis_v2.calculate_dendrite_coactivity_rate import (
+    calculate_dendrite_coactivity_rate,
+)
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    find_nearby_spines, find_present_spines)
+    find_nearby_spines,
+    find_present_spines,
+)
 from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities.coactivity_functions import (
-    calculate_coactivity, calculate_relative_onset,
-    get_conservative_coactive_binary)
+    calculate_coactivity,
+    calculate_relative_onset,
+    find_individual_onsets,
+    get_conservative_coactive_binary,
+)
 from Lab_Analyses.Utilities.mean_trace_functions import analyze_event_activity
 
 
@@ -29,102 +35,102 @@ def spine_dendrite_event_analysis(
     activity_type="all",
     iterations=1000,
 ):
-    """Function to analyze spine-dendrite coactivity and assess how their activity 
-        during these events
-        
-        INPUT PARAMETERS
-            spine_activity - 2d np.array of the binarized spine activity traces.
-                             Each column represents a spine
-            
-            spine_dFoF - 2d np.array of the GluSnFr dFoF traces for each spine
-            
-            spine_calcium - 2d np.array of the Calcium dFoF traces for each spine
-            
-            dendrite_activity - 2d np.array of the binarized dendrite activity trac3es
-                                Each column is the activity of the partent dendrite
-                                for each spine
-            
-            dendrite_dFoF - 2d np.array of the dendrite calcium dFoF
-            
-            spine_flags - list of the spine flags
-            
-            spine_positions - np.array of the corresponding spine positions
-            
-            spine_groupings - list of the groupings of spines on the same dendrite
-            
-            activity_window - tuple specifying the activity window in sec to analyze
-            
-            cluster_dist - int or float specifying distance (um) that is considered local
-            
-            constrain_matrix - np.array of binarized events to constrain the coactivity to
-                                (e.g., movement periods)
-            
-            sampling_rate - int specifying the imaging sampling rate
-            
-            volume_norm - tuple of lists constaining the constants to normalize GluSnFr
-                          and calcium by
-                          
-            extend - float specifying the duration in seconds to extend the window for 
-                     considering coactivity. Default is none for no extension
-            
-            activity_type - str specifying whether to consider 'all' events or events with
-                            'no local' coactivity or with 'local' coactivity
+    """Function to analyze spine-dendrite coactivity and assess how their activity
+    during these events
 
-            iterations - int specifying how many iterations to perform when testing against
-                          chance
-        
-        OUTPUT PARAMETERS
-            nearby_spine_idxs - list containing the idxs of nearby spines for each spine
-        
-            coactive_binary - 2d np.array of the when each spine is coactive with dendrite
+    INPUT PARAMETERS
+        spine_activity - 2d np.array of the binarized spine activity traces.
+                         Each column represents a spine
 
-            dendrite_coactive_event_num - np.array of the number of events each spine is
-                                          coactive with the dendrite
+        spine_dFoF - 2d np.array of the GluSnFr dFoF traces for each spine
 
-            dendrite_coactivity_rate - np.array of the coactivity rate of each spine with 
-                                        the dendrite
+        spine_calcium - 2d np.array of the Calcium dFoF traces for each spine
 
-            dendrite_coactivity_rate_norm - np.array of the coactivity rate of each spine
-                                            with the dendrite normalized
+        dendrite_activity - 2d np.array of the binarized dendrite activity trac3es
+                            Each column is the activity of the partent dendrite
+                            for each spine
 
-            shuff_dendrite_coactivity_rate - 2d np.array of the shuffled coactivity rates
-                                            Each row represents a shuffle and each col a spine
-            
-            shuff_dendrite_coactivity_rate_norm - 2d np.array of the shuffled normalized
-                                                  coactivity rates
-            
-            above_chance_caoctivity - np.array of the relative difference between real and
-                                      shuffled coactivity rates for each spine
-            
-            above_chance_coactivity_norm - np.array of the relative difference between
-                                            real and shuffled norm coactivity rates
-            
-            fraction_dend_coactive - np.array of the fraction of dendritic events that are
+        dendrite_dFoF - 2d np.array of the dendrite calcium dFoF
+
+        spine_flags - list of the spine flags
+
+        spine_positions - np.array of the corresponding spine positions
+
+        spine_groupings - list of the groupings of spines on the same dendrite
+
+        activity_window - tuple specifying the activity window in sec to analyze
+
+        cluster_dist - int or float specifying distance (um) that is considered local
+
+        constrain_matrix - np.array of binarized events to constrain the coactivity to
+                            (e.g., movement periods)
+
+        sampling_rate - int specifying the imaging sampling rate
+
+        volume_norm - tuple of lists constaining the constants to normalize GluSnFr
+                      and calcium by
+
+        extend - float specifying the duration in seconds to extend the window for
+                 considering coactivity. Default is none for no extension
+
+        activity_type - str specifying whether to consider 'all' events or events with
+                        'no local' coactivity or with 'local' coactivity
+
+        iterations - int specifying how many iterations to perform when testing against
+                      chance
+
+    OUTPUT PARAMETERS
+        nearby_spine_idxs - list containing the idxs of nearby spines for each spine
+
+        coactive_binary - 2d np.array of the when each spine is coactive with dendrite
+
+        dendrite_coactive_event_num - np.array of the number of events each spine is
+                                      coactive with the dendrite
+
+        dendrite_coactivity_rate - np.array of the coactivity rate of each spine with
+                                    the dendrite
+
+        dendrite_coactivity_rate_norm - np.array of the coactivity rate of each spine
+                                        with the dendrite normalized
+
+        shuff_dendrite_coactivity_rate - 2d np.array of the shuffled coactivity rates
+                                        Each row represents a shuffle and each col a spine
+
+        shuff_dendrite_coactivity_rate_norm - 2d np.array of the shuffled normalized
+                                              coactivity rates
+
+        above_chance_caoctivity - np.array of the relative difference between real and
+                                  shuffled coactivity rates for each spine
+
+        above_chance_coactivity_norm - np.array of the relative difference between
+                                        real and shuffled norm coactivity rates
+
+        fraction_dend_coactive - np.array of the fraction of dendritic events that are
+                                coactive with each spine
+
+        fraction_spine_coactive - np.array of the fraction of spine activity that is
+                                  coactive with the dendrite for each spine
+
+        spine_coactive_amplitude - np.array of each spines' mean peak amplitude when
+                                    coactive with dendrite
+
+        spine_coactive_calcium_amplitude - np.array of each spines' mean peak calcium
+                                            when coactive with dendrite
+
+        dendrite_coactive_amplitude - np.array of the dendrites' mean peak amplitude
+                                      when coactive with each spine
+
+        relative_onset - np.array of spine GluSnFr onsets relative to dendrite onset
+                        during coactive events
+
+        spine_coactive_traces - list of 2d np.array of each spines' GluSnFr traces
+                                during coactivity events
+
+        spine_coactive_calcium_traces - list of 2d np.array of each spines' calcium
+                                        traces during coactivity events
+
+        dendrite_coactive_traces - list of 2d np.array of the dendrites activity when
                                     coactive with each spine
-            
-            fraction_spine_coactive - np.array of the fraction of spine activity that is
-                                      coactive with the dendrite for each spine
-            
-            spine_coactive_amplitude - np.array of each spines' mean peak amplitude when
-                                        coactive with dendrite
-            
-            spine_coactive_calcium_amplitude - np.array of each spines' mean peak calcium
-                                                when coactive with dendrite
-                
-            dendrite_coactive_amplitude - np.array of the dendrites' mean peak amplitude
-                                          when coactive with each spine
-                
-            relative_onset - np.array of spine GluSnFr onsets relative to dendrite onset 
-                            during coactive events
-
-            spine_coactive_traces - list of 2d np.array of each spines' GluSnFr traces
-                                    during coactivity events
-                
-            spine_coactive_calcium_traces - list of 2d np.array of each spines' calcium
-                                            traces during coactivity events
-            
-            dendrite_coactive_traces - list of 2d np.array of the dendrites activity when
-                                        coactive with each spine
     """
     # Sort out the spine groupings
     if type(spine_groupings[0]) != list:
@@ -181,7 +187,8 @@ def spine_dendrite_event_analysis(
     fraction_spine_coactive = np.zeros(spine_activity.shape[1])
     relative_onsets = np.zeros(spine_activity.shape[1]) * np.nan
 
-    coactive_onsets = [[] for i in range(spine_activity.shape[1])]
+    # coactive_onsets = [[] for i in range(spine_activity.shape[1])]
+    dend_onsets = [[] for i in range(spine_activity.shape[1])]
 
     # Iterate through each spine
     for spine in range(spine_activity.shape[1]):
@@ -200,7 +207,7 @@ def spine_dendrite_event_analysis(
                     combined_activity,
                     sampling_rate=sampling_rate,
                 )
-                #s_activity, _ = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
+                # s_activity, _ = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
             elif activity_type == "no local":
                 # Old method
                 combined_inactivity = 1 - combined_activity
@@ -209,8 +216,8 @@ def spine_dendrite_event_analysis(
                     combined_inactivity,
                     sampling_rate=sampling_rate,
                 )
-                #_, s_activity = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
-                
+                # _, s_activity = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
+
         else:
             s_activity = spine_activity[:, spine]
 
@@ -236,7 +243,7 @@ def spine_dendrite_event_analysis(
             duration,
             sampling_rate,
             norm_method="mean",
-            iterations=iterations,
+            iterations=1,
         )
 
         # Store values
@@ -252,28 +259,47 @@ def spine_dendrite_event_analysis(
         fraction_spine_coactive[spine] = fraction_spine
 
         # Get timestamps of coactivity
-        coactive_stamps = t_stamps.get_activity_timestamps(coactive_trace)
-        if len(coactive_stamps) == 0:
-            coactive_onsets[spine] = coactive_stamps
+        # coactive_stamps = t_stamps.get_activity_timestamps(coactive_trace)
+        # if len(coactive_stamps) == 0:
+        #    coactive_onsets[spine] = coactive_stamps
+        # else:
+        #    coactive_stamps = [x[0] for x in coactive_stamps]
+        #    refine_coactive_stamps = t_stamps.refine_activity_timestamps(
+        #        coactive_stamps,
+        #        window=activity_window,
+        #        max_len=len(d_activity),
+        #        sampling_rate=sampling_rate,
+        #    )
+        #    coactive_onsets[spine] = refine_coactive_stamps
+
+        # Find dendrite onsets for each coactivity event
+        _, d_onsets = find_individual_onsets(
+            s_activity,
+            d_activity,
+            coactivity=coactive_trace,
+            sampling_rate=sampling_rate,
+            activity_window=activity_window,
+        )
+        if len(d_onsets) == 0:
+            dend_onsets[spine] = d_onsets
         else:
-            coactive_stamps = [x[0] for x in coactive_stamps]
-            refine_coactive_stamps = t_stamps.refine_activity_timestamps(
-                coactive_stamps,
+            refine_d_onsets = t_stamps.refine_activity_timestamps(
+                d_onsets,
                 window=activity_window,
                 max_len=len(d_activity),
                 sampling_rate=sampling_rate,
             )
-            coactive_onsets[spine] = refine_coactive_stamps
+            dend_onsets[spine] = refine_d_onsets
 
     # Analyze the activity during events
     ## Dendrite
     (
         dendrite_coactive_traces,
         dendrite_coactive_amplitude,
-        dendrite_onset,
+        _,
     ) = analyze_event_activity(
         dendrite_dFoF,
-        coactive_onsets,
+        dend_onsets,
         activity_window=activity_window,
         center_onset=True,
         smooth=True,
@@ -281,24 +307,15 @@ def spine_dendrite_event_analysis(
         norm_constant=None,
         sampling_rate=sampling_rate,
     )
-    ## Refine the coactive onsets to align with dendrite events
-    corrected_onsets = []
-    for coactive, dend in zip(coactive_onsets, dendrite_onset):
-        c_onset = t_stamps.timestamp_onset_correction(
-            coactive, activity_window, dend, sampling_rate
-        )
-        c_onset = t_stamps.refine_activity_timestamps(
-            coactive,
-            window=activity_window,
-            max_len=ref_dend_activity.shape[0],
-            sampling_rate=sampling_rate,
-        )
-        corrected_onsets.append(c_onset)
 
     ## Spine GluSnFr
-    (spine_coactive_traces, spine_coactive_amplitude, spine_onsets) = analyze_event_activity(
+    (
+        spine_coactive_traces,
+        spine_coactive_amplitude,
+        spine_onsets,
+    ) = analyze_event_activity(
         spine_dFoF,
-        corrected_onsets,
+        dend_onsets,
         activity_window=activity_window,
         center_onset=False,
         smooth=True,
@@ -313,7 +330,7 @@ def spine_dendrite_event_analysis(
         _,
     ) = analyze_event_activity(
         spine_calcium,
-        corrected_onsets,
+        dend_onsets,
         activity_window=activity_window,
         center_onset=False,
         smooth=True,
@@ -330,7 +347,6 @@ def spine_dendrite_event_analysis(
         except ValueError:
             rel_onset = np.nan
         relative_onsets[i] = rel_onset
-
 
     return (
         nearby_spine_idxs,
@@ -367,10 +383,11 @@ def extend_dendrite_activity(dend_activity, duration, sampling_rate):
             extended_activity[:, i] = dend_activity[:, i]
             continue
         d_pad = np.pad(
-            dend_activity[:, i], (npad // 2, npad - npad // 2), mode="constant",
+            dend_activity[:, i],
+            (npad // 2, npad - npad // 2),
+            mode="constant",
         )
         d_extend = np.convolve(d_pad, exp_constant, "valid").astype(bool).astype(int)
         extended_activity[:, i] = d_extend
 
     return extended_activity
-
