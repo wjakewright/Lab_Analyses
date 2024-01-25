@@ -40,59 +40,59 @@ def plot_swarm_bar_plot(
     save_path=None,
 ):
     """General function for plotting a scatter bar plots
-        
-        INPUT PARAMETERS
-            data_dict - dictionary of data to be plotted. Keys will serve as x values for
-                        the different groups
-            
-            mean_type - str specifying what central point to plot. Accepts 'mean' and 
-                        'median'.
-                        
-            err_type - str specifying what type of error bars with. Accepts 'sem', 
-                        'std', and 'CI', which plots bootstraped 95% confidence interval
-            
-            figsize - tuple of the size of the figure to set. Only used if independent figure
 
-            title - str specifying the title of the plot
+    INPUT PARAMETERS
+        data_dict - dictionary of data to be plotted. Keys will serve as x values for
+                    the different groups
 
-            xtitle - str specifying the title of the x axis
+        mean_type - str specifying what central point to plot. Accepts 'mean' and
+                    'median'.
 
-            ytitle - str specifying the title of the y axis
+        err_type - str specifying what type of error bars with. Accepts 'sem',
+                    'std', and 'CI', which plots bootstraped 95% confidence interval
 
-            ylim - tuple specifying the limits of the y axis
+        figsize - tuple of the size of the figure to set. Only used if independent figure
 
-            b_colors - str or list of str specifying the colors of the bar plots
+        title - str specifying the title of the plot
 
-            b_edgecolor - str specifying the edge color of the bar plots
+        xtitle - str specifying the title of the x axis
 
-            b_err_color - str specifying the color of the bar plot error bars
+        ytitle - str specifying the title of the y axis
 
-            b_width - float specifying the width of the individual bar plots
+        ylim - tuple specifying the limits of the y axis
 
-            b_linewidth - float specifying the bar plot edge widths
+        b_colors - str or list of str specifying the colors of the bar plots
 
-            b_alpha - float specifying the alpha of the bar plots
+        b_edgecolor - str specifying the edge color of the bar plots
 
-            s_colors - str or list of str specifying the color of the scatter points
+        b_err_color - str specifying the color of the bar plot error bars
 
-            s_size - int specifying the size of the scatter points
+        b_width - float specifying the width of the individual bar plots
 
-            s_alpha - float specifying the alpha of the scatter points
+        b_linewidth - float specifying the bar plot edge widths
 
-            plot_ind - boolean of whether or not to plot the individual data points
+        b_alpha - float specifying the alpha of the bar plots
 
-            axis_width - int or float specifying how thick the axis lines should be
+        s_colors - str or list of str specifying the color of the scatter points
 
-            minor_ticks - str specifying if minor ticks should be add to the x and/or y 
-                          axes. Takes "both", "x", and "y" as inputs.
+        s_size - int specifying the size of the scatter points
 
-            tick_len - int or float specifying how long the tick marks should be
+        s_alpha - float specifying the alpha of the scatter points
 
-            ax - axis object you wish the data to be plotted on. Useful for subplotting
+        plot_ind - boolean of whether or not to plot the individual data points
 
-            save - boolean specifying if you wish to save the figure or not
+        axis_width - int or float specifying how thick the axis lines should be
 
-            save_path - str specifying the path of where to save the figure
+        minor_ticks - str specifying if minor ticks should be add to the x and/or y
+                      axes. Takes "both", "x", and "y" as inputs.
+
+        tick_len - int or float specifying how long the tick marks should be
+
+        ax - axis object you wish the data to be plotted on. Useful for subplotting
+
+        save - boolean specifying if you wish to save the figure or not
+
+        save_path - str specifying the path of where to save the figure
     """
     # make list of colors if only one is provided
     if type(b_colors) == str:
@@ -136,8 +136,8 @@ def plot_swarm_bar_plot(
                 d,
                 np.nanmedian,
                 confidence_level=0.95,
-                method="percentile",
-                n_resamples=1000,
+                method="basic",
+                n_resamples=100,
             )
             low = data_mean[i] - bootstrap.confidence_interval.low
             high = bootstrap.confidence_interval.high - data_mean[i]
@@ -177,7 +177,12 @@ def plot_swarm_bar_plot(
 
     # Format the axes
     adjust_axes(
-        ax, minor_ticks, xtitle, ytitle, tick_len, axis_width,
+        ax,
+        minor_ticks,
+        xtitle,
+        ytitle,
+        tick_len,
+        axis_width,
     )
     for tick in ax.get_xticklabels():
         tick.set_rotation(45)
