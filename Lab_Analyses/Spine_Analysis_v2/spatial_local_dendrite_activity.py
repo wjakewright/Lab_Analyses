@@ -1,12 +1,19 @@
 import numpy as np
 import scipy.signal as sysignal
 
+from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import (
+    extend_dendrite_activity,
+)
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    bin_by_position, find_present_spines)
+    bin_by_position,
+    find_present_spines,
+)
 from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.coactivity_functions import (
-    calculate_coactivity, get_conservative_coactive_binary)
+    calculate_coactivity,
+    get_conservative_coactive_binary,
+)
 
 
 def spatial_local_dendrite_activity(
@@ -18,89 +25,94 @@ def spatial_local_dendrite_activity(
     nearby_spine_idxs,
     poly_dend_dFoF,
     poly_dend_positions,
-    activity_window=(-2,4),
+    activity_window=(-2, 4),
     constrain_matrix=None,
     sampling_rate=60,
 ):
-    """Function to analyze the activity of spatial domains of local dendritic segments 
-        when spines are active, coactive, or their neighbors are coactive
+    """Function to analyze the activity of spatial domains of local dendritic segments
+    when spines are active, coactive, or their neighbors are coactive
 
-        INPUT PARAMETERS    
-            spine_activity - 2d np.array of the binarized spine activity
+    INPUT PARAMETERS
+        spine_activity - 2d np.array of the binarized spine activity
 
-            dendrite_activity - 2d np.array of the binarized global dendrite activity
+        dendrite_activity - 2d np.array of the binarized global dendrite activity
 
-            spine_positions - np.array of the spine positions along the dendrite
+        spine_positions - np.array of the spine positions along the dendrite
 
-            spine_flags - list of the spine flags
+        spine_flags - list of the spine flags
 
-            spine_groupings - list of the spine groupings on the different dendrites
+        spine_groupings - list of the spine groupings on the different dendrites
 
-            nearby_spine_idxs - list of the nearby spine idxs for each spine
+        nearby_spine_idxs - list of the nearby spine idxs for each spine
 
-            poly_dend_dFoF - list of 2d arrays containing the dFoF traces for each
-                            dendrite poly roi (columns) on each dendrite 
-                            (list items)
+        poly_dend_dFoF - list of 2d arrays containing the dFoF traces for each
+                        dendrite poly roi (columns) on each dendrite
+                        (list items)
 
-            poly_dend_positions - list of arrays of the positions of each poly roi
-                                    along the dendrite
+        poly_dend_positions - list of arrays of the positions of each poly roi
+                                along the dendrite
 
-            activity_window - tuple specifying the activity window in sec to analyze
+        activity_window - tuple specifying the activity window in sec to analyze
 
-            constrain matrix - np.array of binarized events to constrain the 
-                                activity to (e.g. movements)
+        constrain matrix - np.array of binarized events to constrain the
+                            activity to (e.g. movements)
 
-            sampling_rate - int specifying the imaging sampling_rate
+        sampling_rate - int specifying the imaging sampling_rate
 
-        OUTPUT PARAMETERS
-             cocactive_local_dend_traces - list of 2d np.array of nearest local
-                                            dends activity during each coactive event
-            
-            coactive_local_dend_amplitude - np.array of the peak amplitude of local
-                                            dendritic activity during coactive events
+    OUTPUT PARAMETERS
+         cocactive_local_dend_traces - list of 2d np.array of nearest local
+                                        dends activity during each coactive event
 
-            coactive_local_dend_amplitude_dist - 2d np.array of local dendrite amplitude
-                                                binned over different distances (row) for 
-                                                each spine when coactive
+        coactive_local_dend_amplitude - np.array of the peak amplitude of local
+                                        dendritic activity during coactive events
 
-            noncoactive_local_dend_traces - list of 2d np.array of nearest local dends activity
-                                            during noncoactive events
-                                
-            noncoactive_local_dend_amplitude - np.array of the peak amplitude of local
-                                                dend events during noncoactive events
+        coactive_local_dend_amplitude_dist - 2d np.array of local dendrite amplitude
+                                            binned over different distances (row) for
+                                            each spine when coactive
 
-            noncoactive_local_dend_amplitude_dist - 2d np.array of local dendrite amplitude
-                                                    binned over different distances (row) for
-                                                    each spine when noncoactive
+        noncoactive_local_dend_traces - list of 2d np.array of nearest local dends activity
+                                        during noncoactive events
+
+        noncoactive_local_dend_amplitude - np.array of the peak amplitude of local
+                                            dend events during noncoactive events
+
+        noncoactive_local_dend_amplitude_dist - 2d np.array of local dendrite amplitude
+                                                binned over different distances (row) for
+                                                each spine when noncoactive
 
     """
     # Setup position bins
-    MAX_DIST = 20
-    bin_num = 20
-    position_bins = np.linspace(0, MAX_DIST, 21)
+    MAX_DIST = 15
+    bin_num = 15
+    position_bins = np.linspace(0, MAX_DIST, 16)
 
     # Sort out the spine groupings
     if type(spine_groupings[0]) != list:
         spine_groupings = [spine_groupings]
-    
+
     # Constrain activity if specified
     if constrain_matrix is not None:
         if len(constrain_matrix.shape) == 1:
-            constrain_matrix = constrain_matrix.reshape(-1,1)
+            constrain_matrix = constrain_matrix.reshape(-1, 1)
         matrix = spine_activity * constrain_matrix
     else:
         matrix = spine_activity
+
+    # Extend dendrite activity to remove potentially decaying events
+    ext_dend_activity = extend_dendrite_activity(dendrite_activity, 0.5, sampling_rate)
 
     # Remove events that overlap with global dendritic events
     ## Create the variable
     activity_matrix = np.zeros(matrix.shape)
     for c in range(matrix.shape[1]):
-        _, dend_inactive = get_conservative_coactive_binary(matrix[:, c], dendrite_activity[:, c])
+        _, dend_inactive = get_conservative_coactive_binary(
+            matrix[:, c], dendrite_activity[:, c]
+        )
         activity_matrix[:, c] = dend_inactive
 
     # Old method
-    #dendrite_inactivity = 1 - dendrite_activity
-    #activity_matrix = activity_matrix * dendrite_inactivity
+    # dendrite_inactivity = 1 - dendrite_activity
+    # activity_matrix = activity_matrix * dendrite_inactivity
 
     # Get present spines
     present_spines = find_present_spines(spine_flags)
@@ -108,10 +120,14 @@ def spatial_local_dendrite_activity(
     # Set up output variables
     coactive_local_dend_traces = [None for x in range(activity_matrix.shape[1])]
     coactive_local_dend_amplitude = np.zeros(activity_matrix.shape[1]) * np.nan
-    coactive_local_dend_amplitude_dist = np.zeros((bin_num, activity_matrix.shape[1])) * np.nan
+    coactive_local_dend_amplitude_dist = (
+        np.zeros((bin_num, activity_matrix.shape[1])) * np.nan
+    )
     noncoactive_local_dend_traces = [None for x in range(activity_matrix.shape[1])]
     noncoactive_local_dend_amplitude = np.zeros(activity_matrix.shape[1]) * np.nan
-    noncoactive_local_dend_amplitude_dist = np.zeros((bin_num, activity_matrix.shape[1])) * np.nan
+    noncoactive_local_dend_amplitude_dist = (
+        np.zeros((bin_num, activity_matrix.shape[1])) * np.nan
+    )
 
     # Iterate through each dendrite
     for i, spines in enumerate(spine_groupings):
@@ -136,7 +152,9 @@ def spatial_local_dendrite_activity(
 
             # Define spine coactive and noncoactive periods
             ## combine nearby spine activity
-            if (curr_nearby_spines[spine] is None) or (len(curr_nearby_spines[spine]) == 0):
+            if (curr_nearby_spines[spine] is None) or (
+                len(curr_nearby_spines[spine]) == 0
+            ):
                 combined_nearby_activity = np.zeros(curr_s_activity.shape[0])
             else:
                 combined_nearby_activity = np.nansum(
@@ -190,10 +208,16 @@ def spatial_local_dendrite_activity(
             temp_noncoactive_amps = []
             for i in range(curr_dend_dFoF.shape[1]):
                 coactive_traces, coactive_amp = get_dend_traces(
-                    coactive_stamps, curr_dend_dFoF[:, i], activity_window, sampling_rate,
+                    coactive_stamps,
+                    curr_dend_dFoF[:, i],
+                    activity_window,
+                    sampling_rate,
                 )
                 noncoactive_traces, noncoactive_amp = get_dend_traces(
-                    noncoactive_stamps, curr_dend_dFoF[:, i], activity_window, sampling_rate,
+                    noncoactive_stamps,
+                    curr_dend_dFoF[:, i],
+                    activity_window,
+                    sampling_rate,
                 )
                 temp_coactive_traces.append(coactive_traces)
                 temp_coactive_amps.append(coactive_amp)
@@ -201,15 +225,29 @@ def spatial_local_dendrite_activity(
                 temp_noncoactive_amps.append(noncoactive_amp)
 
             # Sort dendrite variables by relative position
-            sorted_coactive_traces = [x for _, x in sorted(zip(dend_pos, temp_coactive_traces))]
-            sorted_coactive_amps = np.array([x for _, x in sorted(zip(dend_pos, temp_coactive_amps))])
-            sorted_noncoactive_traces = [x for _, x in sorted(zip(dend_pos, temp_noncoactive_traces))]
-            sorted_noncoactive_amps = np.array([x for _, x in sorted(zip(dend_pos, temp_noncoactive_amps))])
-            sorted_positions = np.array([y for y, _ in sorted(zip(dend_pos, temp_coactive_amps))])
+            sorted_coactive_traces = [
+                x for _, x in sorted(zip(dend_pos, temp_coactive_traces))
+            ]
+            sorted_coactive_amps = np.array(
+                [x for _, x in sorted(zip(dend_pos, temp_coactive_amps))]
+            )
+            sorted_noncoactive_traces = [
+                x for _, x in sorted(zip(dend_pos, temp_noncoactive_traces))
+            ]
+            sorted_noncoactive_amps = np.array(
+                [x for _, x in sorted(zip(dend_pos, temp_noncoactive_amps))]
+            )
+            sorted_positions = np.array(
+                [y for y, _ in sorted(zip(dend_pos, temp_coactive_amps))]
+            )
 
             # bin amplitudes by position
-            binned_coactive_amps = bin_by_position(sorted_coactive_amps, sorted_positions, position_bins)
-            binned_noncoactive_amps = bin_by_position(sorted_noncoactive_amps, sorted_positions, position_bins)
+            binned_coactive_amps = bin_by_position(
+                sorted_coactive_amps, sorted_positions, position_bins
+            )
+            binned_noncoactive_amps = bin_by_position(
+                sorted_noncoactive_amps, sorted_positions, position_bins
+            )
 
             # Store values
             ## Take on the closes traces
@@ -220,7 +258,9 @@ def spatial_local_dendrite_activity(
             noncoactive_local_dend_amplitude[spines[spine]] = sorted_noncoactive_amps[0]
             ## Binned amplitudes
             coactive_local_dend_amplitude_dist[:, spines[spine]] = binned_coactive_amps
-            noncoactive_local_dend_amplitude_dist[:, spines[spine]] = binned_noncoactive_amps
+            noncoactive_local_dend_amplitude_dist[
+                :, spines[spine]
+            ] = binned_noncoactive_amps
 
     return (
         coactive_local_dend_traces,
@@ -232,14 +272,11 @@ def spatial_local_dendrite_activity(
         position_bins,
     )
 
-            
-
-
 
 def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
-    """Helper function to get teh timelocked traces and amplitudes of local 
-       dendrite traces. Works with only ons set of timestamps and a single
-       local dendrite dFoF trace
+    """Helper function to get teh timelocked traces and amplitudes of local
+    dendrite traces. Works with only ons set of timestamps and a single
+    local dendrite dFoF trace
     """
 
     # Return null values if there are no timestamps
@@ -253,7 +290,7 @@ def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
 
     # Get the traces
     traces, mean = d_utils.get_trace_mean_sem(
-        dend_dFoF.reshape(-1,1),
+        dend_dFoF.reshape(-1, 1),
         ["Activity"],
         timestamps,
         activity_window,
@@ -270,6 +307,6 @@ def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
 
     # Average amplitude around the max
     win = int((0.5 * sampling_rate) / 2)
-    amplitude = np.nanmean(mean[max_idx-win:max_idx+win])
+    amplitude = np.nanmean(mean[max_idx - win : max_idx + win])
 
     return traces, amplitude
