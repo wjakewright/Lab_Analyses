@@ -1,12 +1,16 @@
 """Module containing commonly used tests"""
 import itertools
+import os
 import random
+
+os.environ["R_HOME"] = r"C:\Users\Jake\Documents\Anaconda3\envs\analysis_env\Lib\R"
 
 import numpy as np
 import pandas as pd
 import pingouin as pg
 import scikit_posthocs as sp
 import statsmodels.api as sm
+from pymer4.models import Lmer
 from scipy import stats
 from statsmodels.formula.api import ols
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
@@ -18,26 +22,26 @@ from Lab_Analyses.Utilities.data_utilities import get_before_after_means
 
 def ANOVA_1way_posthoc(data_dict, method):
     """Function to perform a one way ANOVA with different posthoc
-        tets
-        
-        INPUT PARAMETERS
-            data_dict - dict of data to be analyzed. Each item is a different
-                        group. Keys are group names, and values represent
-                        the datapoints of each sample within the group
-            
-            method - str indicating the posthoc test to be performed. See
-                    statsmodels.stats.multitest for available methods,
-                    in additoin to TukeyHSD
-        
-        OUTPUT PARAMETERS
-            f_stat - the f statistic from the one way ANOVA
-            
-            anova_p - the p-value of the one way ANOVA
-            
-            results_table - table of the results of the posttest
+    tets
 
-            results_df - dataframe of the results of the posttest
-            
+    INPUT PARAMETERS
+        data_dict - dict of data to be analyzed. Each item is a different
+                    group. Keys are group names, and values represent
+                    the datapoints of each sample within the group
+
+        method - str indicating the posthoc test to be performed. See
+                statsmodels.stats.multitest for available methods,
+                in additoin to TukeyHSD
+
+    OUTPUT PARAMETERS
+        f_stat - the f statistic from the one way ANOVA
+
+        anova_p - the p-value of the one way ANOVA
+
+        results_table - table of the results of the posttest
+
+        results_df - dataframe of the results of the posttest
+
     """
 
     # Perform the one-way ANOVA
@@ -63,7 +67,11 @@ def ANOVA_1way_posthoc(data_dict, method):
             raw_pvals.append(p)
         # Perform corrections
         _, adj_pvals, _, alpha_corrected = multipletests(
-            raw_pvals, alpha=0.05, method=method, is_sorted=False, returnsorted=False,
+            raw_pvals,
+            alpha=0.05,
+            method=method,
+            is_sorted=False,
+            returnsorted=False,
         )
         results_dict = {
             "comparison": test_performed,
@@ -100,20 +108,20 @@ def ANOVA_1way_posthoc(data_dict, method):
 
 def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
     """Function to perform a two way anova with a specified posthoc test
-    
-        INPUT PARAMETERS 
-            data_dict - nested dictionaries of data to be plotted. Outer keys represent
-                        the subgroups, while the inner keys represent the main groups
-            
-            groups_list - list of str specifying the groups. Main group will be first
-                         and sub groups second
-            
-            variable - str specifying what the variable being tested is
-            
-            method - str specifying the str indicating the posthoc test to be performed. See
-                    statsmodels.stats.multitest for available methods in addition to TukeyHSD
-            
-            exclude - list of str specifying posthoc tests to ignore
+
+    INPUT PARAMETERS
+        data_dict - nested dictionaries of data to be plotted. Outer keys represent
+                    the subgroups, while the inner keys represent the main groups
+
+        groups_list - list of str specifying the groups. Main group will be first
+                     and sub groups second
+
+        variable - str specifying what the variable being tested is
+
+        method - str specifying the str indicating the posthoc test to be performed. See
+                statsmodels.stats.multitest for available methods in addition to TukeyHSD
+
+        exclude - list of str specifying posthoc tests to ignore
     """
     # First organize the data in order to perform the testing
     dfs = []
@@ -169,7 +177,11 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             t_vals.append(t)
             raw_pvals.append(p)
         _, adj_pvals, _, alpha_corrected = multipletests(
-            raw_pvals, alpha=0.5, method=method, is_sorted=False, returnsorted=False,
+            raw_pvals,
+            alpha=0.5,
+            method=method,
+            is_sorted=False,
+            returnsorted=False,
         )
         posthoc_dict = {
             "posthoc comparision": test_performed,
@@ -218,13 +230,13 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
 
 def kruskal_wallis_test(data_dict, post_method, adj_method):
     """Function to perform a Kruskal-Wallis test with different posthoc tests
-    
-        INPUT PARAMETERS
-            data_dict - dict of data to be analyzed. Each item is a different group.
-                        Keys are group names, and values represent the data points
-            
-            method - str indicating the posthoc test to be performed. See
-                    statsmodels.stats.multitests for available methods
+
+    INPUT PARAMETERS
+        data_dict - dict of data to be analyzed. Each item is a different group.
+                    Keys are group names, and values represent the data points
+
+        method - str indicating the posthoc test to be performed. See
+                statsmodels.stats.multitests for available methods
 
     """
     # Perform the Kruskal-Wallis Test
@@ -259,22 +271,22 @@ def kruskal_wallis_test(data_dict, post_method, adj_method):
 
 def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="between"):
     """Function to perform a repeated measures two-way anova with specified posthoc
-        tests
-        
-        INPUT PARAMETERS
-            data_dict - dictionary with each key representing a group that contains a
-                        2d array with the data. Each column represents the roi, while 
-                        rows represent the repeated measures
+    tests
 
-            method - str specifying the posthoc test to be performed
-            
-            rm_vals - list or array containing the values for the repeated measure
-                      values. (e.g, 5,10, 15 um). If none, index will be used as the labels
-            
-            compare_type - what type of comparisons you wish to perform posthoc. Options
-                            are 'between' to compare between groups at each rm, 'within'
-                            to compare within groups across rm values, and 'both' which
-                            makes all possible comparisons
+    INPUT PARAMETERS
+        data_dict - dictionary with each key representing a group that contains a
+                    2d array with the data. Each column represents the roi, while
+                    rows represent the repeated measures
+
+        method - str specifying the posthoc test to be performed
+
+        rm_vals - list or array containing the values for the repeated measure
+                  values. (e.g, 5,10, 15 um). If none, index will be used as the labels
+
+        compare_type - what type of comparisons you wish to perform posthoc. Options
+                        are 'between' to compare between groups at each rm, 'within'
+                        to compare within groups across rm values, and 'both' which
+                        makes all possible comparisons
 
     """
     groups = list(data_dict.keys())
@@ -339,7 +351,11 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
 
         ## Correct multiple comparisons
         _, adj_pvals, _, alpha_corrected = multipletests(
-            raw_pvals, alpha=0.5, method=method, is_sorted=False, returnsorted=False,
+            raw_pvals,
+            alpha=0.5,
+            method=method,
+            is_sorted=False,
+            returnsorted=False,
         )
         posthoc_dict = {
             "posthoc comparison": test_performed,
@@ -356,23 +372,23 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
 
 def significant_vs_shuffle(real_values, shuffle_values, alpha, nan_policy="omit"):
     """Function to test if real data is significantly different vs shuffled data
-    
-        INPUT PARAMETERS
-            real_values - np.array of the the real data
-            
-            shuffle_values - 2d np.array of the shuffle data. Each row represents a shuffle
-            
-            alpha - float speicfying the significance level
 
-            nan_policy - str specifying how to deal with nan values in shuffled data
-                        Accepts "omit" to omit values before determining rank and "zero"
-                        to zero the values before determining rank
+    INPUT PARAMETERS
+        real_values - np.array of the the real data
 
-        OUTPUT PARAMETERS
-            ranks - np.array of the ranks of the real values vs the shuffles
+        shuffle_values - 2d np.array of the shuffle data. Each row represents a shuffle
 
-            significance - np.array of whether each value is sig greater or smaller
-                            vs the shuffles (-1 = smaller, 1 = greater, 0 = no diff)
+        alpha - float speicfying the significance level
+
+        nan_policy - str specifying how to deal with nan values in shuffled data
+                    Accepts "omit" to omit values before determining rank and "zero"
+                    to zero the values before determining rank
+
+    OUTPUT PARAMETERS
+        ranks - np.array of the ranks of the real values vs the shuffles
+
+        significance - np.array of whether each value is sig greater or smaller
+                        vs the shuffles (-1 = smaller, 1 = greater, 0 = no diff)
 
     """
     UPPER = 100 - (alpha * 10)
@@ -415,13 +431,13 @@ def significant_vs_shuffle(real_values, shuffle_values, alpha, nan_policy="omit"
 
 def correlate_grouped_data(data_dict, x_vals):
     """Function to correlate multiple groups of data
-    
-        INPUT PARAMETERS
-            data_dict - dictionary of 2d arrays with each row corresponding to a 
-                        time point / measurement while each col corresponds to 
-                        different rois / subjects
-        
-            x_vals - np.array of the x values corresponding to each row of the 2d arrays
+
+    INPUT PARAMETERS
+        data_dict - dictionary of 2d arrays with each row corresponding to a
+                    time point / measurement while each col corresponds to
+                    different rois / subjects
+
+        x_vals - np.array of the x values corresponding to each row of the 2d arrays
     """
     corr_dict = {
         "Group": [],
@@ -454,12 +470,12 @@ def correlate_grouped_data(data_dict, x_vals):
 def test_against_chance(real_array, shuff_matrix):
     """Function to test statistical significance against chance distributions
 
-        INPUT PARAMETERS
-            real_array - 1d np.array of the real values
+    INPUT PARAMETERS
+        real_array - 1d np.array of the real values
 
-            shuff_matrix - 2d np.array of the shuff values. Each row represents 
-                            a shuff and each column represents each data point
-    
+        shuff_matrix - 2d np.array of the shuff values. Each row represents
+                        a shuff and each column represents each data point
+
     """
     real_median = np.nanmedian(real_array)
     shuff_medians = np.nanmedian(shuff_matrix, axis=1)
@@ -472,29 +488,29 @@ def test_against_chance(real_array, shuff_matrix):
 
 def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method):
     """Function to determine if each ROI displays significant responses during
-        a specifid event
-        
-        INPUT PARAMETERSS
-            imaging - array of the imaging data, with each column representing an ROI
+    a specifid event
 
-            ROI_ids - list of string for each ROI id
-            
-            timestamps - list or array of timestamps corresponding to the imaging frame 
-                         where the event occured
-                         
-            method - str specifying which method is to be used to determine significance.
-                    Currently accept the following:
-                        'test' - Perform Wilcoxon signed-rank test
-                        'shuffle' - Compares the real differences in activity against a 
-                                    shuffled distribution
-        
-        OUTPUT PARAMETERS
-            results_dict - dictionary containing the results for each ROI (keys)
-            
-            results_df - dataframe containing the results for each ROI (columns)
-            
-            shuff_diffs - ('shuffle' method only) list containing all the shuffled
-                          differences in activity for each ROI
+    INPUT PARAMETERSS
+        imaging - array of the imaging data, with each column representing an ROI
+
+        ROI_ids - list of string for each ROI id
+
+        timestamps - list or array of timestamps corresponding to the imaging frame
+                     where the event occured
+
+        method - str specifying which method is to be used to determine significance.
+                Currently accept the following:
+                    'test' - Perform Wilcoxon signed-rank test
+                    'shuffle' - Compares the real differences in activity against a
+                                shuffled distribution
+
+    OUTPUT PARAMETERS
+        results_dict - dictionary containing the results for each ROI (keys)
+
+        results_df - dataframe containing the results for each ROI (columns)
+
+        shuff_diffs - ('shuffle' method only) list containing all the shuffled
+                      differences in activity for each ROI
     """
 
     if method == "test":
@@ -590,3 +606,151 @@ def response_testing(imaging, ROI_ids, timestamps, window, sampling_rate, method
         results_df = results_df.drop(columns=["shuff_diffs"])
 
     return results_dict, results_df
+
+
+def one_way_mixed_effects_model(
+    data_dict, random_dict, post_method, slopes_intercept=False
+):
+    """Function to perform mixed effects model statistics for comparisons
+    across simple groups (e.g., t-test or one-way ANOVA-like). Takes
+    in additional random effect parameter to control for (e.g., animal id)
+
+    INPUT PARAMETERS
+        data_dict - dict of data to be analyuzed. Each item is a different group.
+                    Keys are group names, and values represent the data points
+
+        random_dict - dict of containing the random variable corresponding to
+                     each data sample. Keys are the same group names
+
+        post_method - str indicating the posthoc test to be performed.
+                      See statsmodels.stats.multitests for available methods
+
+        slopes_intercept - boolean specifying whether to include random effects
+                            for both the intercept and slope. Default is False for
+                            only intercept effects
+
+    OUTPUT PARAMETERS
+        t_stat - float of the t-stat from the mix effects model test
+
+        p_val - float of the p-val from the mixed effects model test
+
+        results_df - pd.DataFrame of the posthoc test results
+
+    """
+    # Organize the data into a DataFrame
+    ## Convert from dictionaries
+    data_df = pd.DataFrame.from_dict(data_dict)
+    rand_df = pd.DataFrame.from_dict(random_dict)
+    ## Linearize the data into columns
+    data_df = pd.melt(
+        data_df, value_vars=data_dict.keys(), var_name="Group", value_name="Data"
+    )
+    rand_df = pd.melt(
+        rand_df, value_vars=random_dict.keys(), var_name="Group", value_name="Rand_Var"
+    )
+    ## Merge the random variable into the dict
+    data_df["Rand_Var"] = rand_df["Rand_Var"]
+    ## Hot code group values
+    map_dict = {}
+    codes = list(range(len(data_dict.keys())))
+    for i, key in enumerate(data_dict.keys()):
+        map_dict[key] = codes[i]
+    data_df = data_df.assign(Group_Coded=data_df["Group"].map(map_dict))
+
+    # Perform the mix-effects model test
+    ## Define formula
+    if slopes_intercept is True:
+        formula = "Data ~ Group_Coded + (1|Rand_Var) + (Group_Coded-1|Rand_Var)"
+    else:
+        formula = "Data ~ Group_Coded + (1|Rand_Var)"
+    ## Construct and fit the model
+    model = Lmer(formula, data=data_df)
+    model.fit(summarize=False)
+    ## Get t and p values
+    t_stat = model.coefs["T-stat"]["Group_Coded"]
+    p_val = model.coefs["P-val"]["Group_Coded"]
+
+    # Perform the posthoc
+    if post_method != "Tukey":
+        # Perform t-tests across all groups
+        ## Get all possible combinations
+        combos = list(itertools.combinations(data_dict.keys()), 2)
+        test_performed = []
+        t_vals = []
+        raw_pvals = []
+        for combo in combos:
+            test_performed.append(f"{combo[0]} vs. {combo[1]}")
+            t, p = stats.ttest_ind(
+                data_dict[combo[0]],
+                data_dict[combo[1]],
+                nan_policy="omit",
+            )
+            t_vals.append(t)
+            raw_pvals.append(p)
+        ## Perform corrections
+        _, adj_pvals, _, _ = multipletests(
+            raw_pvals,
+            alpha=0.05,
+            method=post_method,
+            is_sorted=False,
+            returnsorted=False,
+        )
+        results_dict = {
+            "comparison": test_performed,
+            "t stat": t_vals,
+            "raw p-vals": raw_pvals,
+            "adjusted p-vals": adj_pvals,
+        }
+        results_df = pd.DataFrame.from_dict(results_dict)
+        results_df.update(results_df[["t stat"]].applymap("{:.3}".format))
+        results_df.update(results_df[["raw p-vals"]].applymap("{:.4E}".format))
+        results_df.update(results_df[["adjusted p-vals"]].applymap("{:.4E}".format))
+
+    elif post_method == "Tukey":
+        # Drop nan values
+        post_df = data_df.dropna(inplace=False)
+        # Perform the tukey result
+        tukey_result = pairwise_tukeyhsd(
+            endog=post_df["Data"], groups=post_df["Group"], alpha=0.05
+        )
+        results_df = pd.DataFrame(
+            data=tukey_result._results_table.data[1:],
+            columns=tukey_result._results_table.data[0],
+        )
+        results_df.update(results_df[["meandiff"]].applymap("{:.3}".format))
+        results_df.update(results_df[["p-adj"]].applymap("{:.4E}".format))
+        results_df.update(results_df[["lower"]].applymap("{:.3}".format))
+        results_df.update(results_df[["upper"]].appylmap("{:.3}".format))
+
+    return t_stat, p_val, results_df
+
+
+def two_way_RM_mixed_effects_model(
+    data_dict, random_dict, post_method, rm_vals=None, compare_type="between"
+):
+    """Function to perform a linear mixed effects model test between groups across
+    different time points (e.g., 2-way RM ANOVA like)
+
+    INPUT PARAMETERS
+        data_dict - dictionary with each key representing a group that contains
+                    a 2d array with the data. Each column represent each sample, while
+                    rows represent the repeated measures
+
+        random_dict - dictionary with a list or 1d array of random variable values for
+                      each sample in each group
+
+        post_method - str specifying the posthoc test to perform
+
+        rm_vals - list or array containing the values of the repeated measures.
+                (e.g., 5, 10, 15um). If none, index will be used as the labels
+
+        compare_type - what type of comparisons to be performed in posthoc testing.
+                        Currently only coded for "between" to compare between
+                        groups for each rm
+
+    OUTPUT PARAMETERS
+        model_df - DataFrame with the results of the model
+
+        posthoc_df - DataFrame with the results of the posthoc tests
+
+    """
