@@ -9,18 +9,19 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
-from Lab_Analyses.Plotting.plot_cummulative_distribution import \
-    plot_cummulative_distribution
+from Lab_Analyses.Plotting.plot_cummulative_distribution import (
+    plot_cummulative_distribution,
+)
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import \
-    plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
-from Lab_Analyses.Plotting.plot_scatter_correlation import \
-    plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_present_spines
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
+    calculate_volume_change,
+    classify_plasticity,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -30,6 +31,7 @@ sns.set_style("ticks")
 
 def plot_coactive_vs_noncoactive_events(
     dataset,
+    norm_dend=False,
     figsize=(8, 5),
     showmeans=False,
     test_type="nonparametric",
@@ -39,20 +41,20 @@ def plot_coactive_vs_noncoactive_events(
 ):
     """Function to compare basic properties of coactive and non coactive events
 
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object
 
-            figsize - tuple specifying the figure size
+        figsize - tuple specifying the figure size
 
-            showmeans - boolean specifying whether to show means on box plots
+        showmeans - boolean specifying whether to show means on box plots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            display_stats - boolean specifying whether to display the stat results
+        display_stats - boolean specifying whether to display the stat results
 
-            save - boolean specifying whether to save the data or not
+        save - boolean specifying whether to save the data or not
 
-            save_path - str specifying where to save the data
+        save_path - str specifying where to save the data
     """
     COLORS = ["forestgreen", "black"]
 
@@ -77,9 +79,38 @@ def plot_coactive_vs_noncoactive_events(
     coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
     noncoactive_local_dend_traces = dataset.noncoactive_local_dend_traces
     noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
-    coactive_local_dend_amplitude_dist = dataset.coactive_local_dend_amplitude_dist
-    noncoactive_local_dend_amplitude_dist = dataset.noncoactive_local_dend_amplitude_dist
+    coactive_local_dend_amplitude_distribution = (
+        dataset.coactive_local_dend_amplitude_dist
+    )
+    noncoactive_local_dend_amplitude_distribution = (
+        dataset.noncoactive_local_dend_amplitude_dist
+    )
     distance_bins = dataset.parameters["dendrite position bins"][1:]
+
+    if norm_dend is True:
+        coactive_local_dend_amplitude_dist = np.zeros(
+            coactive_local_dend_amplitude_distribution.shape
+        )
+        for i in range(coactive_local_dend_amplitude_distribution.shape[1]):
+            co_norm_values = (
+                coactive_local_dend_amplitude_distribution[:, i]
+                - coactive_local_dend_amplitude_distribution[-1, i]
+            )
+            coactive_local_dend_amplitude_dist[:, i] = co_norm_values
+        noncoactive_local_dend_amplitude_dist = np.zeros(
+            noncoactive_local_dend_amplitude_distribution.shape
+        )
+        for j in range(noncoactive_local_dend_amplitude_distribution.shape[1]):
+            nonco_norm_values = (
+                noncoactive_local_dend_amplitude_distribution[:, j]
+                - noncoactive_local_dend_amplitude_distribution[-1, j]
+            )
+            noncoactive_local_dend_amplitude_dist[:, j] = nonco_norm_values
+    else:
+        coactive_local_dend_amplitude_dist = coactive_local_dend_amplitude_distribution
+        noncoactive_local_dend_amplitude_dist = (
+            noncoactive_local_dend_amplitude_distribution
+        )
 
     # Organize the traces for plotting
     coactive_traces = [
@@ -304,10 +335,10 @@ def plot_coactive_vs_noncoactive_events(
             "Noncoactive": noncoactive_local_dend_amplitude_dist,
         },
         x_vals=distance_bins,
-        figsize=(5,5),
+        figsize=(5, 5),
         title="Distance Dependence Local Dendrite",
         ytitle=f"Event amplitude ({activity_type})",
-        xtitle = "Distance (\u03BCm)",
+        xtitle="Distance (\u03BCm)",
         ylim=None,
         line_color=COLORS,
         face_color="white",
@@ -320,7 +351,7 @@ def plot_coactive_vs_noncoactive_events(
         ax=axes["G"],
         legend=True,
         save=False,
-        save_path=None
+        save_path=None,
     )
 
     fig.tight_layout()
@@ -422,25 +453,25 @@ def plot_comparative_mvmt_coactivity(
 ):
     """Function to compare coactivity during movement and non movement periods
 
-        INPUT PARAMETERS
-            mvmt_dataset - Local_Coactivity_Data that was constrained to only mvmt periods
+    INPUT PARAMETERS
+        mvmt_dataset - Local_Coactivity_Data that was constrained to only mvmt periods
 
-            nonmvmt_dataset - Local_Coactivity_Data that was constrained to nonmvmt periods
+        nonmvmt_dataset - Local_Coactivity_Data that was constrained to nonmvmt periods
 
-            rwd_mvmts - boolean of whether or not the datasets are rwd mvmts
+        rwd_mvmts - boolean of whether or not the datasets are rwd mvmts
 
-            figsize - tuple specifying the size of the figure
+        figsize - tuple specifying the size of the figure
 
-            showmeans - boolean specifying whether to plot means on box plots
+        showmeans - boolean specifying whether to plot means on box plots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            display_stats - boolean specifying whether to display stat results
+        display_stats - boolean specifying whether to display stat results
 
-            save - boolean specifying whether to save the figure or not
+        save - boolean specifying whether to save the figure or not
 
-            save_path - str specifying where to save the figure
-    
+        save_path - str specifying where to save the figure
+
     """
     COLORS = ["darkorange", "darkviolet"]
     if rwd_mvmts:
@@ -1170,8 +1201,12 @@ def plot_comparative_mvmt_coactivity(
             ],
         )
         rel_diff_t, rel_diff_p = stats.mannwhitneyu(
-            near_vs_dist_coactivity[mvmt_key][~np.isnan(near_vs_dist_coactivity[mvmt_key])],
-            near_vs_dist_coactivity[nonmvmt_key][~np.isnan(near_vs_dist_coactivity[nonmvmt_key])],
+            near_vs_dist_coactivity[mvmt_key][
+                ~np.isnan(near_vs_dist_coactivity[mvmt_key])
+            ],
+            near_vs_dist_coactivity[nonmvmt_key][
+                ~np.isnan(near_vs_dist_coactivity[nonmvmt_key])
+            ],
         )
         rel_diff_norm_t, rel_diff_norm_p = stats.mannwhitneyu(
             near_vs_dist_coactivity_norm[mvmt_key][
@@ -1351,50 +1386,50 @@ def plot_plasticity_coactivity_rates(
     save=False,
     save_path=None,
 ):
-    """ Function to compare coactivity rates across plasticity groups
+    """Function to compare coactivity rates across plasticity groups
 
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object analyzed over all periods
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object analyzed over all periods
 
-            mvmt_dataset - Local_Coactivity_Data object constrained to mvmt periods
+        mvmt_dataset - Local_Coactivity_Data object constrained to mvmt periods
 
-            nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
+        nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
 
-            followup_dataset - optional Local_Coactivity_Data object of the subsequent
-                                session to used for volume comparision. Default is None
-                                to use the followup_volumes in the dataset
+        followup_dataset - optional Local_Coactivity_Data object of the subsequent
+                            session to used for volume comparision. Default is None
+                            to use the followup_volumes in the dataset
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Defualt is None to examine all spines
-                
-            norm - boolean term specifying whether to use the normalized coactivity rate
-                    or not
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Defualt is None to examine all spines
 
-            rwd_mvmt - boolean term of whether or not we are comparing rwd mvmts
-            
-        `   exclude - str specifying spine type to exclude from analysis
+        norm - boolean term specifying whether to use the normalized coactivity rate
+                or not
 
-            threshold - float or tuple of floats specifying the threshold cutoff for 
-                        classifying plasticity
-                
-            figsize - tuple specifying the size of the figure
+        rwd_mvmt - boolean term of whether or not we are comparing rwd mvmts
 
-            showmeans - boolean specifying whether to plot means on box plots
+    `   exclude - str specifying spine type to exclude from analysis
 
-            mean_type - str specifying the mean type for bar plots
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            err_type - str specifying the error type for the bar plots
+        figsize - tuple specifying the size of the figure
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        showmeans - boolean specifying whether to plot means on box plots
 
-            test_method - str specifying the typ of posthoc test to perform
+        mean_type - str specifying the mean type for bar plots
 
-            display_stats - boolean specifying whether to display stats
+        err_type - str specifying the error type for the bar plots
 
-            save - boolean specifying whether to save the figures or not
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            save_path - str specifying where to save the figures
-    
+        test_method - str specifying the typ of posthoc test to perform
+
+        display_stats - boolean specifying whether to display stats
+
+        save - boolean specifying whether to save the figures or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -1490,7 +1525,9 @@ def plot_plasticity_coactivity_rates(
     )
 
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into groups
     plastic_distance_rates = {}
@@ -1529,7 +1566,6 @@ def plot_plasticity_coactivity_rates(
         event_num = coactive_event_num[spines]
         mvmt_event_num = mvmt_coactive_event_num[spines]
         fraction_mvmt[key] = mvmt_event_num / event_num
-
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -1829,7 +1865,12 @@ def plot_plasticity_coactivity_rates(
     # Enlarged local vs chance
     ## histogram
     plot_cummulative_distribution(
-        data=list((plastic_local_rates["sLTP"], plastic_shuff_rates["sLTP"],)),
+        data=list(
+            (
+                plastic_local_rates["sLTP"],
+                plastic_shuff_rates["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle=f"Local {coactivity_title}",
@@ -1881,7 +1922,12 @@ def plot_plasticity_coactivity_rates(
     # Shrunken local vs chance
     ## histogram
     plot_cummulative_distribution(
-        data=list((plastic_local_rates["sLTD"], plastic_shuff_rates["sLTD"],)),
+        data=list(
+            (
+                plastic_local_rates["sLTD"],
+                plastic_shuff_rates["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle=f"Local {coactivity_title}",
@@ -1933,7 +1979,12 @@ def plot_plasticity_coactivity_rates(
     # Stable local vs chance
     ## histogram
     plot_cummulative_distribution(
-        data=list((plastic_local_rates["Stable"], plastic_shuff_rates["Stable"],)),
+        data=list(
+            (
+                plastic_local_rates["Stable"],
+                plastic_shuff_rates["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle=f"Local {coactivity_title}",
@@ -1994,14 +2045,22 @@ def plot_plasticity_coactivity_rates(
             mrs_name = ""
         if norm == False:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_{mrs_name}Figure"
+                )
             else:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_RWD_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_RWD_{mrs_name}Figure"
+                )
         else:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_Norm_{mrs_name}Figure"
+                )
             else:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_RWD_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_Norm_RWD_{mrs_name}Figure"
+                )
         fig.savefig(fname + ".pdf")
 
     #################### Statistics Section ##################3
@@ -2011,58 +2070,84 @@ def plot_plasticity_coactivity_rates(
     # Perform f-tests
     if test_type == "parametric":
         coactivity_f, coactivity_p, _, coactivity_df = t_utils.ANOVA_1way_posthoc(
-            plastic_local_rates, method=test_method,
+            plastic_local_rates,
+            method=test_method,
         )
         diff_f, diff_p, _, diff_df = t_utils.ANOVA_1way_posthoc(
-            plastic_diffs, test_method,
+            plastic_diffs,
+            test_method,
         )
         (
             mvmt_coactivity_f,
             mvmt_coactivity_p,
             _,
             mvmt_coactivity_df,
-        ) = t_utils.ANOVA_1way_posthoc(mvmt_local_rates, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            mvmt_local_rates,
+            test_method,
+        )
         (
             non_coactivity_f,
             non_coactivity_p,
             _,
             non_coactivity_df,
-        ) = t_utils.ANOVA_1way_posthoc(nonmvmt_local_rates, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            nonmvmt_local_rates,
+            test_method,
+        )
         frac_mvmt_f, frac_mvmt_p, _, frac_mvmt_df = t_utils.ANOVA_1way_posthoc(
-            fraction_mvmt, test_method,
+            fraction_mvmt,
+            test_method,
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         coactivity_f, coactivity_p, coactivity_df = t_utils.kruskal_wallis_test(
-            plastic_local_rates, "Conover", test_method,
+            plastic_local_rates,
+            "Conover",
+            test_method,
         )
         diff_f, diff_p, diff_df = t_utils.kruskal_wallis_test(
-            plastic_diffs, "Conover", test_method,
+            plastic_diffs,
+            "Conover",
+            test_method,
         )
         (
             mvmt_coactivity_f,
             mvmt_coactivity_p,
             mvmt_coactivity_df,
-        ) = t_utils.kruskal_wallis_test(mvmt_local_rates, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            mvmt_local_rates,
+            "Conover",
+            test_method,
+        )
         (
             non_coactivity_f,
             non_coactivity_p,
             non_coactivity_df,
-        ) = t_utils.kruskal_wallis_test(nonmvmt_local_rates, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            nonmvmt_local_rates,
+            "Conover",
+            test_method,
+        )
         frac_mvmt_f, frac_mvmt_p, frac_mvmt_df = t_utils.kruskal_wallis_test(
-            fraction_mvmt, "Conover", test_method,
+            fraction_mvmt,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
     # Perform correlations
     _, distance_corr_df = t_utils.correlate_grouped_data(
-        plastic_distance_rates, distance_bins,
+        plastic_distance_rates,
+        distance_bins,
     )
     _, mvmt_distance_corr_df = t_utils.correlate_grouped_data(
-        mvmt_distance_rates, distance_bins,
+        mvmt_distance_rates,
+        distance_bins,
     )
     _, nonmvmt_distance_corr_df = t_utils.correlate_grouped_data(
-        nonmvmt_distance_rates, distance_bins,
+        nonmvmt_distance_rates,
+        distance_bins,
     )
 
     # Comparisons to chance
@@ -2212,14 +2297,22 @@ def plot_plasticity_coactivity_rates(
             mrs_name = ""
         if norm == False:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_{mrs_name}Stats"
+                )
             else:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_RWD_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_RWD_{mrs_name}Stats"
+                )
         else:
             if not rwd_mvmt:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_Norm_{mrs_name}Stats"
+                )
             else:
-                fname = os.path.join(save_path, f"Local_Coactivity_Rate_Norm_RWD_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Local_Coactivity_Rate_Norm_RWD_{mrs_name}Stats"
+                )
         fig2.savefig(fname + ".pdf")
 
 
@@ -2242,42 +2335,42 @@ def plot_coactive_event_properties(
     save_path=None,
 ):
     """Function to compare the properties of coactive events across plastic spines
-    
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object analyzed over all periods
 
-            mvmt_dataset - Local_Coactivity_Data object constrained to mvmt periods
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object analyzed over all periods
 
-            nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
+        mvmt_dataset - Local_Coactivity_Data object constrained to mvmt periods
 
-            followup_dataset - optional Local_Coactivity_Data object of the subsequent
-                                session to be used for volume comparison. Default is None
-                                to use the followup volumes in the dataset
+        nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
 
-            rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
+        followup_dataset - optional Local_Coactivity_Data object of the subsequent
+                            session to be used for volume comparison. Default is None
+                            to use the followup volumes in the dataset
 
-            MRSs - str specifying if you wish to examine only MRSs or nMRSs. Accepts 
-                    "MRS" and "nMRS". Default is None to examine all spines.
+        rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
 
-            exclude - str specifying spine type to exclude from analysis
+        MRSs - str specifying if you wish to examine only MRSs or nMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines.
 
-            threshold - float or tuple of floats specifying the threshold cutoff for 
-                        classifying plasticity
-            
-            figsize - tuple specifying the size of the figures
+        exclude - str specifying spine type to exclude from analysis
 
-            showmeans - boolean specifying whether to plot means on boxplots
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        figsize - tuple specifying the size of the figures
 
-            test_method - str specifying the typ of posthoc test to perform
+        showmeans - boolean specifying whether to plot means on boxplots
 
-            display_stats - boolean specifying whether to display stats
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            save - boolean specifying whether to save the figures or not
+        test_method - str specifying the typ of posthoc test to perform
 
-            save_path - str specifying where to save the figures
-            
+        display_stats - boolean specifying whether to display stats
+
+        save - boolean specifying whether to save the figures or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -2352,11 +2445,16 @@ def plot_coactive_event_properties(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Subselect present spines
@@ -2424,7 +2522,9 @@ def plot_coactive_event_properties(
         nonmvmt_coactive_spine_num, spine_idxs
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into dicts for plotting
     plastic_trace_means = {}
@@ -3090,9 +3190,13 @@ def plot_coactive_event_properties(
         else:
             mrs_name = ""
         if not rwd_mvmt:
-            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Local_Coactivity_Properties_{mrs_name}Figure"
+            )
         else:
-            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Local_Coactivity_Properties_{mrs_name}Figure"
+            )
         fig.savefig(fname + ".pdf")
 
     ####################### Statistics Section ###########################
@@ -3102,19 +3206,24 @@ def plot_coactive_event_properties(
     # Perform the f-tests
     if test_type == "parametric":
         amp_f, amp_p, _, amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_amps, method=test_method,
+            plastic_amps,
+            method=test_method,
         )
         mvmt_amp_f, mvmt_amp_p, _, mvmt_amp_df = t_utils.ANOVA_1way_posthoc(
-            mvmt_plastic_amps, test_method=test_method,
+            mvmt_plastic_amps,
+            test_method=test_method,
         )
         nonmvmt_amp_f, nonmvmt_amp_p, _, nonmvmt_amp_df = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_amps, test_method=test_method,
+            nonmvmt_plastic_amps,
+            test_method=test_method,
         )
         ca_amp_f, ca_amp_p, _, ca_amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_ca_amps, method=test_method,
+            plastic_ca_amps,
+            method=test_method,
         )
         mvmt_ca_amp_f, mvmt_ca_amp_p, _, mvmt_ca_amp_df = t_utils.ANOVA_1way_posthoc(
-            mvmt_plastic_ca_amps, test_method=test_method,
+            mvmt_plastic_ca_amps,
+            test_method=test_method,
         )
         (
             nonmvmt_ca_amp_f,
@@ -3122,13 +3231,16 @@ def plot_coactive_event_properties(
             _,
             nonmvmt_ca_amp_df,
         ) = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_ca_amps, test_method=test_method,
+            nonmvmt_plastic_ca_amps,
+            test_method=test_method,
         )
         frac_co_f, frac_co_p, _, frac_co_df = t_utils.ANOVA_1way_posthoc(
-            plastic_frac_coactive, test_method=test_method,
+            plastic_frac_coactive,
+            test_method=test_method,
         )
         mvmt_frac_co_f, mvmt_frac_co_p, _, mvmt_frac_co_df = t_utils.ANOVA_1way_posthoc(
-            mvmt_plastic_frac_coactive, test_method=test_method,
+            mvmt_plastic_frac_coactive,
+            test_method=test_method,
         )
         (
             nonmvmt_frac_co_f,
@@ -3136,14 +3248,17 @@ def plot_coactive_event_properties(
             _,
             nonmvmt_frac_co_df,
         ) = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_frac_coactive, test_method=test_method,
+            nonmvmt_plastic_frac_coactive,
+            test_method=test_method,
         )
 
         frac_pa_f, frac_pa_p, _, frac_pa_df = t_utils.ANOVA_1way_posthoc(
-            plastic_frac_participating, test_method=test_method,
+            plastic_frac_participating,
+            test_method=test_method,
         )
         mvmt_frac_pa_f, mvmt_frac_pa_p, _, mvmt_frac_pa_df = t_utils.ANOVA_1way_posthoc(
-            mvmt_plastic_frac_participating, test_method=test_method,
+            mvmt_plastic_frac_participating,
+            test_method=test_method,
         )
         (
             nonmvmt_frac_pa_f,
@@ -3151,76 +3266,110 @@ def plot_coactive_event_properties(
             _,
             nonmvmt_frac_pa_df,
         ) = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_frac_participating, test_method=test_method,
+            nonmvmt_plastic_frac_participating,
+            test_method=test_method,
         )
         num_f, num_p, _, num_df = t_utils.ANOVA_1way_posthoc(
-            plastic_coactive_num, test_method=test_method,
+            plastic_coactive_num,
+            test_method=test_method,
         )
         mvmt_num_f, mvmt_num_p, _, mvmt_num_df = t_utils.ANOVA_1way_posthoc(
-            mvmt_plastic_coactive_num, test_method=test_method,
+            mvmt_plastic_coactive_num,
+            test_method=test_method,
         )
         nonmvmt_num_f, nonmvmt_num_p, _, nonmvmt_num_df = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_coactive_num, test_method=test_method,
+            nonmvmt_plastic_coactive_num,
+            test_method=test_method,
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         amp_f, amp_p, amp_df = t_utils.kruskal_wallis_test(
-            plastic_amps, "Conover", test_method,
+            plastic_amps,
+            "Conover",
+            test_method,
         )
         mvmt_amp_f, mvmt_amp_p, mvmt_amp_df = t_utils.kruskal_wallis_test(
-            mvmt_plastic_amps, "Conover", test_method,
+            mvmt_plastic_amps,
+            "Conover",
+            test_method,
         )
         nonmvmt_amp_f, nonmvmt_amp_p, nonmvmt_amp_df = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_amps, "Conover", test_method,
+            nonmvmt_plastic_amps,
+            "Conover",
+            test_method,
         )
         ca_amp_f, ca_amp_p, ca_amp_df = t_utils.kruskal_wallis_test(
-            plastic_ca_amps, "Conover", test_method,
+            plastic_ca_amps,
+            "Conover",
+            test_method,
         )
         mvmt_ca_amp_f, mvmt_ca_amp_p, mvmt_ca_amp_df = t_utils.kruskal_wallis_test(
-            mvmt_plastic_ca_amps, "Conover", test_method,
+            mvmt_plastic_ca_amps,
+            "Conover",
+            test_method,
         )
         (
             nonmvmt_ca_amp_f,
             nonmvmt_ca_amp_p,
             nonmvmt_ca_amp_df,
         ) = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_ca_amps, "Conover", test_method,
+            nonmvmt_plastic_ca_amps,
+            "Conover",
+            test_method,
         )
         frac_co_f, frac_co_p, frac_co_df = t_utils.kruskal_wallis_test(
-            plastic_frac_coactive, "Conover", test_method,
+            plastic_frac_coactive,
+            "Conover",
+            test_method,
         )
         mvmt_frac_co_f, mvmt_frac_co_p, mvmt_frac_co_df = t_utils.kruskal_wallis_test(
-            mvmt_plastic_frac_coactive, "Conover", test_method,
+            mvmt_plastic_frac_coactive,
+            "Conover",
+            test_method,
         )
         (
             nonmvmt_frac_co_f,
             nonmvmt_frac_co_p,
             nonmvmt_frac_co_df,
         ) = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_frac_coactive, "Conover", test_method,
+            nonmvmt_plastic_frac_coactive,
+            "Conover",
+            test_method,
         )
 
         frac_pa_f, frac_pa_p, frac_pa_df = t_utils.kruskal_wallis_test(
-            plastic_frac_participating, "Conover", test_method,
+            plastic_frac_participating,
+            "Conover",
+            test_method,
         )
         mvmt_frac_pa_f, mvmt_frac_pa_p, mvmt_frac_pa_df = t_utils.kruskal_wallis_test(
-            mvmt_plastic_frac_participating, "Conover", test_method,
+            mvmt_plastic_frac_participating,
+            "Conover",
+            test_method,
         )
         (
             nonmvmt_frac_pa_f,
             nonmvmt_frac_pa_p,
             nonmvmt_frac_pa_df,
         ) = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_frac_participating, "Conover", test_method,
+            nonmvmt_plastic_frac_participating,
+            "Conover",
+            test_method,
         )
         num_f, num_p, num_df = t_utils.kruskal_wallis_test(
-            plastic_coactive_num, "Conover", test_method,
+            plastic_coactive_num,
+            "Conover",
+            test_method,
         )
         mvmt_num_f, mvmt_num_p, mvmt_num_df = t_utils.kruskal_wallis_test(
-            mvmt_plastic_coactive_num, "Conover", test_method,
+            mvmt_plastic_coactive_num,
+            "Conover",
+            test_method,
         )
         nonmvmt_num_f, nonmvmt_num_p, nonmvmt_num_df = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_coactive_num, "Conover", test_method,
+            nonmvmt_plastic_coactive_num,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -3444,9 +3593,13 @@ def plot_coactive_event_properties(
         else:
             mrs_name = ""
         if not rwd_mvmt:
-            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Local_Coactivity_Properties_{mrs_name}Stats"
+            )
         else:
-            fname = os.path.join(save_path, f"Local_Coactivity_Properties_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Local_Coactivity_Properties_{mrs_name}Stats"
+            )
         fig2.savefig(fname + ".pdf")
 
 
@@ -3470,40 +3623,40 @@ def plot_nearby_spine_properties(
 ):
     """Function to plot nearby spine properties
 
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object to be analyzed
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object to be analyzed
 
-            followup_dataset - optional Local_Coactivity_Data object of the 
-                                subsequent session to be used for volume comparision.
-                                Default is None to use the followup volumes in the
-                                dataset.
+        followup_dataset - optional Local_Coactivity_Data object of the
+                            subsequent session to be used for volume comparision.
+                            Default is None to use the followup volumes in the
+                            dataset.
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Default is None to examine all spines
-                    
-            exclude - str specifying spine type to exclude from analysis
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines
 
-            threshold - float or tuple of floats specifying the threshold cutoff for
-                        classifying plasticity
+        exclude - str specifying spine type to exclude from analysis
 
-            figsize - tuple specifying the size of the figure
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            mean_type - str specifying the mean type for the bar plots
+        figsize - tuple specifying the size of the figure
 
-            err_type - str specifyiung the error type for the bar plots
+        mean_type - str specifying the mean type for the bar plots
 
-            showmeans - boolean specifying whether to show means on boxplots
+        err_type - str specifyiung the error type for the bar plots
 
-            test_type - str specifying whether to perform parametric or nonparametric stats
+        showmeans - boolean specifying whether to show means on boxplots
 
-            test_method - str specifying the type of posthoc test to perform
+        test_type - str specifying whether to perform parametric or nonparametric stats
 
-            display_stats - boolean specifying whether to display stats
+        test_method - str specifying the type of posthoc test to perform
 
-            save - boolean specifying whetehr to save the figures or not
+        display_stats - boolean specifying whether to display stats
 
-            save_path - str specifying where to save the figures
-    
+        save - boolean specifying whetehr to save the figures or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -3557,7 +3710,9 @@ def plot_nearby_spine_properties(
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Subselect for stable spines
@@ -3565,7 +3720,8 @@ def plot_nearby_spine_properties(
         spine_activity_rate_distribution, spine_idxs
     )
     avg_nearby_spine_rate = d_utils.subselect_data_by_idxs(
-        avg_nearby_spine_rate, spine_idxs,
+        avg_nearby_spine_rate,
+        spine_idxs,
     )
     shuff_nearby_spine_rate = d_utils.subselect_data_by_idxs(
         shuff_nearby_spine_rate, spine_idxs
@@ -3574,16 +3730,19 @@ def plot_nearby_spine_properties(
         near_vs_dist_activity_rate, spine_idxs
     )
     local_coactivity_rate_distribution = d_utils.subselect_data_by_idxs(
-        local_coactivity_rate_distribution, spine_idxs,
+        local_coactivity_rate_distribution,
+        spine_idxs,
     )
     avg_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
-        avg_nearby_coactivity_rate, spine_idxs,
+        avg_nearby_coactivity_rate,
+        spine_idxs,
     )
     shuff_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
         shuff_nearby_coactivity_rate, spine_idxs
     )
     near_vs_dist_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
-        near_vs_dist_nearby_coactivity_rate, spine_idxs,
+        near_vs_dist_nearby_coactivity_rate,
+        spine_idxs,
     )
     MRS_density_distribution = d_utils.subselect_data_by_idxs(
         MRS_density_distribution, spine_idxs
@@ -3603,10 +3762,22 @@ def plot_nearby_spine_properties(
     shuff_local_rMRS_density = d_utils.subselect_data_by_idxs(
         shuff_local_rMRS_density, spine_idxs
     )
-    local_nn_enlarged = d_utils.subselect_data_by_idxs(local_nn_enlarged, spine_idxs,)
-    shuff_nn_enlarged = d_utils.subselect_data_by_idxs(shuff_nn_enlarged, spine_idxs,)
-    local_nn_shrunken = d_utils.subselect_data_by_idxs(local_nn_shrunken, spine_idxs,)
-    shuff_nn_shrunken = d_utils.subselect_data_by_idxs(shuff_nn_shrunken, spine_idxs,)
+    local_nn_enlarged = d_utils.subselect_data_by_idxs(
+        local_nn_enlarged,
+        spine_idxs,
+    )
+    shuff_nn_enlarged = d_utils.subselect_data_by_idxs(
+        shuff_nn_enlarged,
+        spine_idxs,
+    )
+    local_nn_shrunken = d_utils.subselect_data_by_idxs(
+        local_nn_shrunken,
+        spine_idxs,
+    )
+    shuff_nn_shrunken = d_utils.subselect_data_by_idxs(
+        shuff_nn_shrunken,
+        spine_idxs,
+    )
     avg_nearby_spine_volume = d_utils.subselect_data_by_idxs(
         avg_nearby_spine_volume, spine_idxs
     )
@@ -3617,18 +3788,29 @@ def plot_nearby_spine_properties(
         nearby_spine_volume_distribution, spine_idxs
     )
     near_vs_dist_volume = d_utils.subselect_data_by_idxs(
-        near_vs_dist_volume, spine_idxs,
+        near_vs_dist_volume,
+        spine_idxs,
     )
-    local_relative_vol = d_utils.subselect_data_by_idxs(local_relative_vol, spine_idxs,)
-    shuff_relative_vol = d_utils.subselect_data_by_idxs(shuff_relative_vol, spine_idxs,)
+    local_relative_vol = d_utils.subselect_data_by_idxs(
+        local_relative_vol,
+        spine_idxs,
+    )
+    shuff_relative_vol = d_utils.subselect_data_by_idxs(
+        shuff_relative_vol,
+        spine_idxs,
+    )
     relative_vol_distribution = d_utils.subselect_data_by_idxs(
-        relative_vol_distribution, spine_idxs,
+        relative_vol_distribution,
+        spine_idxs,
     )
     near_vs_dist_relative_volume = d_utils.subselect_data_by_idxs(
-        near_vs_dist_relative_volume, spine_idxs,
+        near_vs_dist_relative_volume,
+        spine_idxs,
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into groups
     plastic_rate_dist = {}
@@ -3898,7 +4080,12 @@ def plot_nearby_spine_properties(
     )
     # Enlarged rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_rates["sLTP"], plastic_shuff_rates["sLTP"],)),
+        data=list(
+            (
+                plastic_avg_rates["sLTP"],
+                plastic_shuff_rates["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby activity rate",
@@ -3949,7 +4136,12 @@ def plot_nearby_spine_properties(
     )
     # Shrunken rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_rates["sLTD"], plastic_shuff_rates["sLTD"],)),
+        data=list(
+            (
+                plastic_avg_rates["sLTD"],
+                plastic_shuff_rates["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby activity rate",
@@ -4000,7 +4192,12 @@ def plot_nearby_spine_properties(
     )
     # Stable rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_rates["Stable"], plastic_shuff_rates["Stable"],)),
+        data=list(
+            (
+                plastic_avg_rates["Stable"],
+                plastic_shuff_rates["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Nearby activity rate",
@@ -4079,7 +4276,12 @@ def plot_nearby_spine_properties(
     )
     # Enlarged coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_coactivity["sLTP"], plastic_shuff_coactivity["sLTP"],)),
+        data=list(
+            (
+                plastic_avg_coactivity["sLTP"],
+                plastic_shuff_coactivity["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Avg local coactivity rate",
@@ -4130,7 +4332,12 @@ def plot_nearby_spine_properties(
     )
     # Shrunken coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_avg_coactivity["sLTD"], plastic_shuff_coactivity["sLTD"],)),
+        data=list(
+            (
+                plastic_avg_coactivity["sLTD"],
+                plastic_shuff_coactivity["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Avg local coactivity rate",
@@ -4182,7 +4389,10 @@ def plot_nearby_spine_properties(
     # Stable coactivity rate vs chance
     plot_cummulative_distribution(
         data=list(
-            (plastic_avg_coactivity["Stable"], plastic_shuff_coactivity["Stable"],)
+            (
+                plastic_avg_coactivity["Stable"],
+                plastic_shuff_coactivity["Stable"],
+            )
         ),
         plot_ind=True,
         title="Stable",
@@ -4262,7 +4472,12 @@ def plot_nearby_spine_properties(
     )
     # Enlarged MRS density vs chance
     plot_cummulative_distribution(
-        data=list((plastic_MRS_density["sLTP"], plastic_MRS_shuff_density["sLTP"],)),
+        data=list(
+            (
+                plastic_MRS_density["sLTP"],
+                plastic_MRS_shuff_density["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="MRS density (spines/\u03BCm)",
@@ -4313,7 +4528,12 @@ def plot_nearby_spine_properties(
     )
     # Shrunken MRS density vs chance
     plot_cummulative_distribution(
-        data=list((plastic_MRS_density["sLTD"], plastic_MRS_shuff_density["sLTD"],)),
+        data=list(
+            (
+                plastic_MRS_density["sLTD"],
+                plastic_MRS_shuff_density["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="MRS density (spines/\u03BCm)",
@@ -4365,7 +4585,10 @@ def plot_nearby_spine_properties(
     # Enlarged MRS density vs chance
     plot_cummulative_distribution(
         data=list(
-            (plastic_MRS_density["Stable"], plastic_MRS_shuff_density["Stable"],)
+            (
+                plastic_MRS_density["Stable"],
+                plastic_MRS_shuff_density["Stable"],
+            )
         ),
         plot_ind=True,
         title="Stable",
@@ -4445,7 +4668,12 @@ def plot_nearby_spine_properties(
     )
     # Enlarged rMRS density vs chance
     plot_cummulative_distribution(
-        data=list((plastic_rMRS_density["sLTP"], plastic_rMRS_shuff_density["sLTP"],)),
+        data=list(
+            (
+                plastic_rMRS_density["sLTP"],
+                plastic_rMRS_shuff_density["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="rMRS density (spines/\u03BCm)",
@@ -4496,7 +4724,12 @@ def plot_nearby_spine_properties(
     )
     # Shrunken rMRS density vs chance
     plot_cummulative_distribution(
-        data=list((plastic_rMRS_density["sLTD"], plastic_rMRS_shuff_density["sLTD"],)),
+        data=list(
+            (
+                plastic_rMRS_density["sLTD"],
+                plastic_rMRS_shuff_density["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="rMRS density (spines/\u03BCm)",
@@ -4548,7 +4781,10 @@ def plot_nearby_spine_properties(
     # Enlarged rMRS density vs chance
     plot_cummulative_distribution(
         data=list(
-            (plastic_rMRS_density["Stable"], plastic_rMRS_shuff_density["Stable"],)
+            (
+                plastic_rMRS_density["Stable"],
+                plastic_rMRS_shuff_density["Stable"],
+            )
         ),
         plot_ind=True,
         title="Stable",
@@ -4628,7 +4864,12 @@ def plot_nearby_spine_properties(
     )
     # Enlarged spine vol vs chance
     plot_cummulative_distribution(
-        data=list((plastic_nearby_volumes["sLTP"], plastic_shuff_volumes["sLTP"],)),
+        data=list(
+            (
+                plastic_nearby_volumes["sLTP"],
+                plastic_shuff_volumes["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Volume (\u03BCm)",
@@ -4679,7 +4920,12 @@ def plot_nearby_spine_properties(
     )
     # Shrunken spine vol vs chance
     plot_cummulative_distribution(
-        data=list((plastic_nearby_volumes["sLTD"], plastic_shuff_volumes["sLTD"],)),
+        data=list(
+            (
+                plastic_nearby_volumes["sLTD"],
+                plastic_shuff_volumes["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Volume (\u03BCm)",
@@ -4730,7 +4976,12 @@ def plot_nearby_spine_properties(
     )
     # Stable spine vol vs chance
     plot_cummulative_distribution(
-        data=list((plastic_nearby_volumes["Stable"], plastic_shuff_volumes["Stable"],)),
+        data=list(
+            (
+                plastic_nearby_volumes["Stable"],
+                plastic_shuff_volumes["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Volume (\u03BCm)",
@@ -5195,7 +5446,12 @@ def plot_nearby_spine_properties(
     )
     # Enlarged rel vol vs chance
     plot_cummulative_distribution(
-        data=list((plastic_rel_vols["sLTP"], plastic_shuff_rel_vols["sLTP"],)),
+        data=list(
+            (
+                plastic_rel_vols["sLTP"],
+                plastic_shuff_rel_vols["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby \u0394 Volume",
@@ -5246,7 +5502,12 @@ def plot_nearby_spine_properties(
     )
     # Shrunken rel vol vs chance
     plot_cummulative_distribution(
-        data=list((plastic_rel_vols["sLTD"], plastic_shuff_rel_vols["sLTD"],)),
+        data=list(
+            (
+                plastic_rel_vols["sLTD"],
+                plastic_shuff_rel_vols["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby \u0394 Volume",
@@ -5297,7 +5558,12 @@ def plot_nearby_spine_properties(
     )
     # Stable rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_rel_vols["Stable"], plastic_shuff_rel_vols["Stable"],)),
+        data=list(
+            (
+                plastic_rel_vols["Stable"],
+                plastic_shuff_rel_vols["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Nearby \u0394 Volume",
@@ -5478,60 +5744,88 @@ def plot_nearby_spine_properties(
     # Perform the F-tests
     if test_type == "parametric":
         activity_f, activity_p, _, activity_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_rates, method=test_method,
+            plastic_avg_rates,
+            method=test_method,
         )
         coactivity_f, coactivity_p, _, coactivity_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_coactivity, method=test_method,
+            plastic_avg_coactivity,
+            method=test_method,
         )
         MRS_f, MRS_p, _, MRS_df = t_utils.ANOVA_1way_posthoc(
-            plastic_MRS_density, method=test_method,
+            plastic_MRS_density,
+            method=test_method,
         )
         rMRS_f, rMRS_p, _, rMRS_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rMRS_density, method=test_method,
+            plastic_rMRS_density,
+            method=test_method,
         )
         enlarged_f, enlarged_p, _, enlarged_df = t_utils.ANOVA_1way_posthoc(
-            plastic_nn_enlarged, method=test_method,
+            plastic_nn_enlarged,
+            method=test_method,
         )
         shrunken_f, shrunken_p, _, shrunken_df = t_utils.ANOVA_1way_posthoc(
-            plastic_nn_shrunken, method=test_method,
+            plastic_nn_shrunken,
+            method=test_method,
         )
         volume_f, volume_p, _, volume_df = t_utils.ANOVA_1way_posthoc(
             plastic_nearby_volumes, test_method
         )
         relative_f, relative_p, _, relative_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rel_vols, test_method,
+            plastic_rel_vols,
+            test_method,
         )
         nd_activity_f, nd_activity_p, _, nd_activity_df = t_utils.ANOVA_1way_posthoc(
-            plastic_near_dist_rates, method=test_method,
+            plastic_near_dist_rates,
+            method=test_method,
         )
-        nd_coactivity_f, nd_coactivity_p, _, nd_coactivity_df = t_utils.ANOVA_1way_posthoc(
-            plastic_near_dist_coactivity, method=test_method,
+        (
+            nd_coactivity_f,
+            nd_coactivity_p,
+            _,
+            nd_coactivity_df,
+        ) = t_utils.ANOVA_1way_posthoc(
+            plastic_near_dist_coactivity,
+            method=test_method,
         )
         nd_volume_f, nd_volume_p, _, nd_volume_df = t_utils.ANOVA_1way_posthoc(
-            plastic_near_dist_vol, method=test_method,
+            plastic_near_dist_vol,
+            method=test_method,
         )
         nd_rel_vol_f, nd_rel_vol_p, _, nd_rel_vol_df = t_utils.ANOVA_1way_posthoc(
-            plastic_near_dist_rel_vol, method=test_method,
+            plastic_near_dist_rel_vol,
+            method=test_method,
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         activity_f, activity_p, activity_df = t_utils.kruskal_wallis_test(
-            plastic_avg_rates, "Conover", test_method,
+            plastic_avg_rates,
+            "Conover",
+            test_method,
         )
         coactivity_f, coactivity_p, coactivity_df = t_utils.kruskal_wallis_test(
-            plastic_avg_coactivity, "Conover", test_method,
+            plastic_avg_coactivity,
+            "Conover",
+            test_method,
         )
         MRS_f, MRS_p, MRS_df = t_utils.kruskal_wallis_test(
-            plastic_MRS_density, "Conover", test_method,
+            plastic_MRS_density,
+            "Conover",
+            test_method,
         )
         rMRS_f, rMRS_p, rMRS_df = t_utils.kruskal_wallis_test(
-            plastic_rMRS_density, "Conover", test_method,
+            plastic_rMRS_density,
+            "Conover",
+            test_method,
         )
         enlarged_f, enlarged_p, enlarged_df = t_utils.kruskal_wallis_test(
-            plastic_nn_enlarged, "Conover", test_method,
+            plastic_nn_enlarged,
+            "Conover",
+            test_method,
         )
         shrunken_f, shrunken_p, shrunken_df = t_utils.kruskal_wallis_test(
-            plastic_nn_shrunken, "Conover", test_method,
+            plastic_nn_shrunken,
+            "Conover",
+            test_method,
         )
         volume_f, volume_p, volume_df = t_utils.kruskal_wallis_test(
             plastic_nearby_volumes, "Conover", test_method
@@ -5540,28 +5834,48 @@ def plot_nearby_spine_properties(
             plastic_rel_vols, "Conover", test_method
         )
         nd_activity_f, nd_activity_p, nd_activity_df = t_utils.kruskal_wallis_test(
-            plastic_near_dist_rates, "Conover", test_method,
+            plastic_near_dist_rates,
+            "Conover",
+            test_method,
         )
-        nd_coactivity_f, nd_coactivity_p, nd_coactivity_df = t_utils.kruskal_wallis_test(
-            plastic_near_dist_coactivity, "Conover", test_method,
+        (
+            nd_coactivity_f,
+            nd_coactivity_p,
+            nd_coactivity_df,
+        ) = t_utils.kruskal_wallis_test(
+            plastic_near_dist_coactivity,
+            "Conover",
+            test_method,
         )
         nd_volume_f, nd_volume_p, nd_volume_df = t_utils.kruskal_wallis_test(
-            plastic_near_dist_vol, "Conover", test_method,
+            plastic_near_dist_vol,
+            "Conover",
+            test_method,
         )
         nd_rel_vol_f, nd_rel_vol_p, nd_rel_vol_df = t_utils.kruskal_wallis_test(
-            plastic_near_dist_rel_vol, "Conover", test_method,
+            plastic_near_dist_rel_vol,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
     # Perform correlations
     _, activity_corr_df = t_utils.correlate_grouped_data(
-        plastic_rate_dist, distance_bins,
+        plastic_rate_dist,
+        distance_bins,
     )
     _, coactivity_corr_df = t_utils.correlate_grouped_data(
-        plastic_coactivity_dist, distance_bins,
+        plastic_coactivity_dist,
+        distance_bins,
     )
-    _, MRS_corr_df = t_utils.correlate_grouped_data(plastic_MRS_dist, distance_bins,)
-    _, rMRS_corr_df = t_utils.correlate_grouped_data(plastic_rMRS_dist, distance_bins,)
+    _, MRS_corr_df = t_utils.correlate_grouped_data(
+        plastic_MRS_dist,
+        distance_bins,
+    )
+    _, rMRS_corr_df = t_utils.correlate_grouped_data(
+        plastic_rMRS_dist,
+        distance_bins,
+    )
     _, vol_corr_df = t_utils.correlate_grouped_data(plastic_volume_dist, distance_bins)
     _, rel_corr_df = t_utils.correlate_grouped_data(plastic_rel_vol_dist, distance_bins)
 
@@ -5975,7 +6289,9 @@ def plot_nearby_spine_properties(
     V_table.set_fontsize(8)
     axes2["W"].axis("off")
     axes2["W"].axis("tight")
-    axes2["W"].set_title(f"Near vs dist activity\n{test_title}\nF = {nd_activity_f:.4} p ={nd_activity_p:.3E}")
+    axes2["W"].set_title(
+        f"Near vs dist activity\n{test_title}\nF = {nd_activity_f:.4} p ={nd_activity_p:.3E}"
+    )
     W_table = axes2["W"].table(
         cellText=nd_activity_df.values,
         colLabels=nd_activity_df.columns,
@@ -5986,7 +6302,9 @@ def plot_nearby_spine_properties(
     W_table.set_fontsize(8)
     axes2["X"].axis("off")
     axes2["X"].axis("tight")
-    axes2["X"].set_title(f"Near vs dist coactivity\n{test_title}\nF = {nd_coactivity_f:.4} p ={nd_coactivity_p:.3E}")
+    axes2["X"].set_title(
+        f"Near vs dist coactivity\n{test_title}\nF = {nd_coactivity_f:.4} p ={nd_coactivity_p:.3E}"
+    )
     X_table = axes2["X"].table(
         cellText=nd_coactivity_df.values,
         colLabels=nd_coactivity_df.columns,
@@ -5997,7 +6315,9 @@ def plot_nearby_spine_properties(
     X_table.set_fontsize(8)
     axes2["Y"].axis("off")
     axes2["Y"].axis("tight")
-    axes2["Y"].set_title(f"Near vs dist volume\n{test_title}\nF = {nd_volume_f:.4} p ={nd_volume_p:.3E}")
+    axes2["Y"].set_title(
+        f"Near vs dist volume\n{test_title}\nF = {nd_volume_f:.4} p ={nd_volume_p:.3E}"
+    )
     Y_table = axes2["Y"].table(
         cellText=nd_volume_df.values,
         colLabels=nd_volume_df.columns,
@@ -6008,7 +6328,9 @@ def plot_nearby_spine_properties(
     Y_table.set_fontsize(8)
     axes2["Z"].axis("off")
     axes2["Z"].axis("tight")
-    axes2["Z"].set_title(f"Near vs dist relative volume\n{test_title}\nF = {nd_rel_vol_f:.4} p ={nd_rel_vol_p:.3E}")
+    axes2["Z"].set_title(
+        f"Near vs dist relative volume\n{test_title}\nF = {nd_rel_vol_f:.4} p ={nd_rel_vol_p:.3E}"
+    )
     Z_table = axes2["Z"].table(
         cellText=nd_rel_vol_df.values,
         colLabels=nd_rel_vol_df.columns,
@@ -6031,13 +6353,14 @@ def plot_nearby_spine_properties(
         fname = os.path.join(save_path, f"Nearby_Spine_Properties_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
 
+
 def plot_stable_nearby_spine_properties(
     dataset,
     followup_data=None,
     MRSs=None,
     exclude="Shaft",
     threshold=0.3,
-    figsize=(10,12),
+    figsize=(10, 12),
     mean_type="median",
     err_type="CI",
     showmeans=False,
@@ -6049,41 +6372,41 @@ def plot_stable_nearby_spine_properties(
     save_path=None,
 ):
     """Function to plot nearby spine properties, but for stable spines only
-    
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object to be analyzed
 
-            followup_data - optional Local_Coactivity_Data object of the 
-                                subsequent session to be used for volume comparision.
-                                Default is None to use the followup volumes in the
-                                dataset.
-            
-        `   MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Default is None to examine all spines
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object to be analyzed
 
-            exclude - str specifying spine type to exclude from analysis
+        followup_data - optional Local_Coactivity_Data object of the
+                            subsequent session to be used for volume comparision.
+                            Default is None to use the followup volumes in the
+                            dataset.
 
-            threshold - float or tuple of floats specifying the threshold cutoff for
-                        classifying plasticity
+    `   MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines
 
-            figsize - tuple specifying the size of the figure
+        exclude - str specifying spine type to exclude from analysis
 
-            mean_type - str specifying the mean type for the bar plots
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            err_type - str specifyiung the error type for the bar plots
+        figsize - tuple specifying the size of the figure
 
-            showmeans - boolean specifying whether to show means on boxplots
+        mean_type - str specifying the mean type for the bar plots
 
-            test_type - str specifying whether to perform parametric or nonparametric stats
+        err_type - str specifyiung the error type for the bar plots
 
-            test_method - str specifying the type of posthoc test to perform
+        showmeans - boolean specifying whether to show means on boxplots
 
-            display_stats - boolean specifying whether to display stats
+        test_type - str specifying whether to perform parametric or nonparametric stats
 
-            save - boolean specifying whetehr to save the figures or not
+        test_method - str specifying the type of posthoc test to perform
 
-            save_path - str specifying where to save the figures
-    
+        display_stats - boolean specifying whether to display stats
+
+        save - boolean specifying whetehr to save the figures or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -6105,28 +6428,47 @@ def plot_stable_nearby_spine_properties(
     # Activity rate data
     avg_nearby_enlarged_spine_rate = dataset.avg_nearby_enlarged_spine_rate
     shuff_nearby_enlarged_spine_rate = dataset.shuff_nearby_enlarged_spine_rate
-    enlarged_spine_activity_rate_dist = dataset.enlarged_spine_activity_rate_distribution
+    enlarged_spine_activity_rate_dist = (
+        dataset.enlarged_spine_activity_rate_distribution
+    )
     near_vs_dist_enlarged_activity_rate = dataset.near_vs_dist_enlarged_activity_rate
     avg_nearby_shrunken_spine_rate = dataset.avg_nearby_shrunken_spine_rate
     shuff_nearby_shrunken_spine_rate = dataset.shuff_nearby_shrunken_spine_rate
-    shrunken_spine_activity_rate_dist = dataset.shrunken_spine_activity_rate_distribution
+    shrunken_spine_activity_rate_dist = (
+        dataset.shrunken_spine_activity_rate_distribution
+    )
     near_vs_dist_shrunken_activity_rate = dataset.near_vs_dist_shrunken_activity_rate
 
     # Coactivity rate data
     avg_nearby_enlarged_coactivity_rate = dataset.avg_nearby_enlarged_coactivity_rate
-    shuff_nearby_enlarged_coactivity_rate = dataset.shuff_nearby_enlarged_coactivity_rate
-    enlarged_local_coactivity_rate_dist = dataset.enlarged_local_coactivity_rate_distribution
-    near_vs_dist_enlarged_nearby_coactivity_rate = dataset.near_vs_dist_enlarged_nearby_coactivity_rate
+    shuff_nearby_enlarged_coactivity_rate = (
+        dataset.shuff_nearby_enlarged_coactivity_rate
+    )
+    enlarged_local_coactivity_rate_dist = (
+        dataset.enlarged_local_coactivity_rate_distribution
+    )
+    near_vs_dist_enlarged_nearby_coactivity_rate = (
+        dataset.near_vs_dist_enlarged_nearby_coactivity_rate
+    )
     avg_nearby_shrunken_coactivity_rate = dataset.avg_nearby_shrunken_coactivity_rate
-    shuff_nearby_shrunken_coactivity_rate = dataset.shuff_nearby_shrunken_coactivity_rate
-    shrunken_local_coactivity_rate_dist = dataset.shrunken_local_coactivity_rate_distribution
-    near_vs_dist_shrunken_nearby_coactivity_rate = dataset.near_vs_dist_shrunken_nearby_coactivity_rate
-    
+    shuff_nearby_shrunken_coactivity_rate = (
+        dataset.shuff_nearby_shrunken_coactivity_rate
+    )
+    shrunken_local_coactivity_rate_dist = (
+        dataset.shrunken_local_coactivity_rate_distribution
+    )
+    near_vs_dist_shrunken_nearby_coactivity_rate = (
+        dataset.near_vs_dist_shrunken_nearby_coactivity_rate
+    )
+
     # Calculate spine volume
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
@@ -6138,52 +6480,62 @@ def plot_stable_nearby_spine_properties(
         avg_nearby_enlarged_spine_rate, spine_idxs
     )
     shuff_nearby_enlarged_spine_rate = d_utils.subselect_data_by_idxs(
-        shuff_nearby_enlarged_spine_rate, spine_idxs,
+        shuff_nearby_enlarged_spine_rate,
+        spine_idxs,
     )
     enlarged_spine_activity_rate_dist = d_utils.subselect_data_by_idxs(
         enlarged_spine_activity_rate_dist, spine_idxs
     )
     near_vs_dist_enlarged_activity_rate = d_utils.subselect_data_by_idxs(
-        near_vs_dist_enlarged_activity_rate, spine_idxs,
+        near_vs_dist_enlarged_activity_rate,
+        spine_idxs,
     )
     avg_nearby_enlarged_coactivity_rate = d_utils.subselect_data_by_idxs(
         avg_nearby_enlarged_coactivity_rate, spine_idxs
     )
     shuff_nearby_enlarged_coactivity_rate = d_utils.subselect_data_by_idxs(
-        shuff_nearby_enlarged_coactivity_rate, spine_idxs,
+        shuff_nearby_enlarged_coactivity_rate,
+        spine_idxs,
     )
     enlarged_local_coactivity_rate_dist = d_utils.subselect_data_by_idxs(
         enlarged_local_coactivity_rate_dist, spine_idxs
     )
     near_vs_dist_enlarged_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
-        near_vs_dist_enlarged_nearby_coactivity_rate, spine_idxs,
+        near_vs_dist_enlarged_nearby_coactivity_rate,
+        spine_idxs,
     )
     avg_nearby_shrunken_spine_rate = d_utils.subselect_data_by_idxs(
         avg_nearby_shrunken_spine_rate, spine_idxs
     )
     shuff_nearby_shrunken_spine_rate = d_utils.subselect_data_by_idxs(
-        shuff_nearby_shrunken_spine_rate, spine_idxs,
+        shuff_nearby_shrunken_spine_rate,
+        spine_idxs,
     )
     shrunken_spine_activity_rate_dist = d_utils.subselect_data_by_idxs(
         shrunken_spine_activity_rate_dist, spine_idxs
     )
     near_vs_dist_shrunken_activity_rate = d_utils.subselect_data_by_idxs(
-        near_vs_dist_shrunken_activity_rate, spine_idxs,
+        near_vs_dist_shrunken_activity_rate,
+        spine_idxs,
     )
     avg_nearby_shrunken_coactivity_rate = d_utils.subselect_data_by_idxs(
         avg_nearby_shrunken_coactivity_rate, spine_idxs
     )
     shuff_nearby_shrunken_coactivity_rate = d_utils.subselect_data_by_idxs(
-        shuff_nearby_shrunken_coactivity_rate, spine_idxs,
+        shuff_nearby_shrunken_coactivity_rate,
+        spine_idxs,
     )
     shrunken_local_coactivity_rate_dist = d_utils.subselect_data_by_idxs(
         shrunken_local_coactivity_rate_dist, spine_idxs
     )
     near_vs_dist_shrunken_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
-        near_vs_dist_shrunken_nearby_coactivity_rate, spine_idxs,
+        near_vs_dist_shrunken_nearby_coactivity_rate,
+        spine_idxs,
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into plastic groups
     plastic_e_rate_dist = {}
@@ -6231,15 +6583,22 @@ def plot_stable_nearby_spine_properties(
         plastic_s_shuff_rate_medians[key] = np.nanmedian(s_shuff_rates, axis=1)
         e_shuff_coactivity = shuff_nearby_enlarged_coactivity_rate[:, spines]
         plastic_e_shuff_coactivity[key] = e_shuff_coactivity
-        plastic_e_shuff_coactivity_medians[key] = np.nanmedian(e_shuff_coactivity, axis=1)
+        plastic_e_shuff_coactivity_medians[key] = np.nanmedian(
+            e_shuff_coactivity, axis=1
+        )
         s_shuff_coactivity = shuff_nearby_shrunken_coactivity_rate[:, spines]
         plastic_s_shuff_coactivity[key] = s_shuff_coactivity
-        plastic_s_shuff_coactivity_medians[key] = np.nanmedian(s_shuff_coactivity, axis=1)
+        plastic_s_shuff_coactivity_medians[key] = np.nanmedian(
+            s_shuff_coactivity, axis=1
+        )
         plastic_e_near_dist_rates[key] = near_vs_dist_enlarged_activity_rate[spines]
         plastic_s_near_dist_rates[key] = near_vs_dist_shrunken_activity_rate[spines]
-        plastic_e_near_dist_coactivity[key] = near_vs_dist_enlarged_nearby_coactivity_rate[spines]
-        plastic_s_near_dist_coactivity[key] = near_vs_dist_shrunken_nearby_coactivity_rate[spines]
-
+        plastic_e_near_dist_coactivity[
+            key
+        ] = near_vs_dist_enlarged_nearby_coactivity_rate[spines]
+        plastic_s_near_dist_coactivity[
+            key
+        ] = near_vs_dist_shrunken_nearby_coactivity_rate[spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -6261,7 +6620,7 @@ def plot_stable_nearby_spine_properties(
         data_dict=plastic_e_rate_dist,
         x_vals=distance_bins,
         plot_ind=False,
-        figsize=(5,5),
+        figsize=(5, 5),
         title="Activity Rate (w/out enlarged)",
         ytitle="Activity rate (events/min)",
         xtitle="Distance (\u03BCm)",
@@ -6284,7 +6643,7 @@ def plot_stable_nearby_spine_properties(
         data_dict=plastic_e_coactivity_dist,
         x_vals=distance_bins,
         plot_ind=False,
-        figsize=(5,5),
+        figsize=(5, 5),
         title="Coactivity Rate (w/out enlarged)",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
@@ -6307,7 +6666,7 @@ def plot_stable_nearby_spine_properties(
         data_dict=plastic_s_rate_dist,
         x_vals=distance_bins,
         plot_ind=False,
-        figsize=(5,5),
+        figsize=(5, 5),
         title="Activity Rate (w/out shrunken)",
         ytitle="Activity rate (events/min)",
         xtitle="Distance (\u03BCm)",
@@ -6330,7 +6689,7 @@ def plot_stable_nearby_spine_properties(
         data_dict=plastic_s_coactivity_dist,
         x_vals=distance_bins,
         plot_ind=False,
-        figsize=(5,5),
+        figsize=(5, 5),
         title="Coactivity Rate (w/out shrunken)",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
@@ -6574,7 +6933,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Enlarged  Enlarged rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_e_avg_rates["sLTP"], plastic_e_shuff_rates["sLTP"],)),
+        data=list(
+            (
+                plastic_e_avg_rates["sLTP"],
+                plastic_e_shuff_rates["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby activity rate",
@@ -6625,7 +6989,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Shrunken Enlarged rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_e_avg_rates["sLTD"], plastic_e_shuff_rates["sLTD"],)),
+        data=list(
+            (
+                plastic_e_avg_rates["sLTD"],
+                plastic_e_shuff_rates["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby activity rate",
@@ -6676,7 +7045,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Stable rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_e_avg_rates["Stable"], plastic_e_shuff_rates["Stable"],)),
+        data=list(
+            (
+                plastic_e_avg_rates["Stable"],
+                plastic_e_shuff_rates["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Nearby activity rate",
@@ -6728,7 +7102,12 @@ def plot_stable_nearby_spine_properties(
 
     # Enlarged  Enlarged coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_e_avg_coactivity["sLTP"], plastic_e_shuff_coactivity["sLTP"],)),
+        data=list(
+            (
+                plastic_e_avg_coactivity["sLTP"],
+                plastic_e_shuff_coactivity["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby coactivity rate",
@@ -6779,7 +7158,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Shrunken Enlarged coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_e_avg_coactivity["sLTD"], plastic_e_shuff_coactivity["sLTD"],)),
+        data=list(
+            (
+                plastic_e_avg_coactivity["sLTD"],
+                plastic_e_shuff_coactivity["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby coactivity rate",
@@ -6830,7 +7214,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Stable coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_e_avg_coactivity["Stable"], plastic_e_shuff_coactivity["Stable"],)),
+        data=list(
+            (
+                plastic_e_avg_coactivity["Stable"],
+                plastic_e_shuff_coactivity["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Nearby coactivity rate",
@@ -6882,7 +7271,12 @@ def plot_stable_nearby_spine_properties(
 
     # Enlarged Shrunken rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_s_avg_rates["sLTP"], plastic_s_shuff_rates["sLTP"],)),
+        data=list(
+            (
+                plastic_s_avg_rates["sLTP"],
+                plastic_s_shuff_rates["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby activity rate",
@@ -6933,7 +7327,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Shrunken Shrunken rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_s_avg_rates["sLTD"], plastic_s_shuff_rates["sLTD"],)),
+        data=list(
+            (
+                plastic_s_avg_rates["sLTD"],
+                plastic_s_shuff_rates["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby activity rate",
@@ -6984,7 +7383,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Stable rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_s_avg_rates["Stable"], plastic_s_shuff_rates["Stable"],)),
+        data=list(
+            (
+                plastic_s_avg_rates["Stable"],
+                plastic_s_shuff_rates["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Nearby activity rate",
@@ -7036,7 +7440,12 @@ def plot_stable_nearby_spine_properties(
 
     # Enlarged  Shrunken coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_s_avg_coactivity["sLTP"], plastic_s_shuff_coactivity["sLTP"],)),
+        data=list(
+            (
+                plastic_s_avg_coactivity["sLTP"],
+                plastic_s_shuff_coactivity["sLTP"],
+            )
+        ),
         plot_ind=True,
         title="Enlarged",
         xtitle="Nearby coactivity rate",
@@ -7087,7 +7496,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Shrunken Shrunken coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_s_avg_coactivity["sLTD"], plastic_s_shuff_coactivity["sLTD"],)),
+        data=list(
+            (
+                plastic_s_avg_coactivity["sLTD"],
+                plastic_s_shuff_coactivity["sLTD"],
+            )
+        ),
         plot_ind=True,
         title="Shrunken",
         xtitle="Nearby coactivity rate",
@@ -7138,7 +7552,12 @@ def plot_stable_nearby_spine_properties(
     )
     # Stable coactivity rate vs chance
     plot_cummulative_distribution(
-        data=list((plastic_s_avg_coactivity["Stable"], plastic_s_shuff_coactivity["Stable"],)),
+        data=list(
+            (
+                plastic_s_avg_coactivity["Stable"],
+                plastic_s_shuff_coactivity["Stable"],
+            )
+        ),
         plot_ind=True,
         title="Stable",
         xtitle="Nearby coactivity rate",
@@ -7197,17 +7616,16 @@ def plot_stable_nearby_spine_properties(
             mrs_name = f"{MRSs}_"
         else:
             mrs_name = ""
-        fname = os.path.join(save_path, f"Nearby_Stable_Spine_Properties_{mrs_name}Figure")
+        fname = os.path.join(
+            save_path, f"Nearby_Stable_Spine_Properties_{mrs_name}Figure"
+        )
         fig.savefig(fname + ".pdf")
-    
+
     ##################### Statistics Section ########################
     if display_stats == False:
         return
-    
+
     print("Need to code in the stats")
-
-
-
 
 
 def plot_nearby_spine_coactivity(
@@ -7228,45 +7646,45 @@ def plot_nearby_spine_coactivity(
     save_path=None,
 ):
     """Function to plot and compare the activity of nearby spines during coactivity
-        events
-        
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object analyzed over all periods
+    events
 
-            followup_dataset - optional Local_Coactivity_Data object of the 
-                                subsequent session to use for volume comparision.
-                                Default is None to use the followup_volumes in the
-                                dataset
-                        
-            mvmt_type - str specifying what mvmt period the data is constrained to.
-                        Accepts "All periods", "movement", "nonmovement", "rewarded movement"
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object analyzed over all periods
 
-            exclude - str specifying the types of spines to exclude from volume assessment
+        followup_dataset - optional Local_Coactivity_Data object of the
+                            subsequent session to use for volume comparision.
+                            Default is None to use the followup_volumes in the
+                            dataset
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Default is None to examine all spines
+        mvmt_type - str specifying what mvmt period the data is constrained to.
+                    Accepts "All periods", "movement", "nonmovement", "rewarded movement"
+
+        exclude - str specifying the types of spines to exclude from volume assessment
+
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines
 
 
-            threshold - float or tuple of floats specifying the threshold cutoff for 
-                        classifying plasticity
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            figsize - tuple specifying the size of the figure
+        figsize - tuple specifying the size of the figure
 
-            showmeans - boolean specifying whether to show means on box plots or not
+        showmeans - boolean specifying whether to show means on box plots or not
 
-            mean_type - str specifying thge mean type for bar plots
+        mean_type - str specifying thge mean type for bar plots
 
-            err_type - str specifying the err type for bar plots
+        err_type - str specifying the err type for bar plots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            test_method - str specifying the type of posthoc test to perform
+        test_method - str specifying the type of posthoc test to perform
 
-            display_stats - boolean specifying whetehr to display stats
+        display_stats - boolean specifying whetehr to display stats
 
-            save - boolean specifying whether to save the figures or not
+        save - boolean specifying whether to save the figures or not
 
-            save_path - str specifying where to save the figures
+        save_path - str specifying where to save the figures
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -7306,11 +7724,16 @@ def plot_nearby_spine_coactivity(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Subselect present spines
@@ -7331,7 +7754,9 @@ def plot_nearby_spine_coactivity(
         nearby_coactive_calcium_traces, spine_idxs
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -7622,11 +8047,17 @@ def plot_nearby_spine_coactivity(
         else:
             mrs_name = ""
         if mvmt_type == "All periods":
-            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Session_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Coactivity_Session_{mrs_name}Figure"
+            )
         if mvmt_type == "movement":
-            fname = os.path.jion(save_path, f"Nearby_Spine_Coactivity_Mvmt_{mrs_name}Figure")
+            fname = os.path.jion(
+                save_path, f"Nearby_Spine_Coactivity_Mvmt_{mrs_name}Figure"
+            )
         if mvmt_type == "nonmovement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Nonmvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Coactivity_Nonmvmt_{mrs_name}Figure"
+            )
 
         fig.savefig(fname + ".pdf")
 
@@ -7637,30 +8068,42 @@ def plot_nearby_spine_coactivity(
     # Perform the f-tests
     if test_type == "parametric":
         amp_f, amp_p, _, amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_amps, method=test_method,
+            plastic_amps,
+            method=test_method,
         )
         ca_amp_f, ca_amp_p, _, ca_amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_ca_amps, method=test_method,
+            plastic_ca_amps,
+            method=test_method,
         )
         onset_f, onset_p, _, onset_df = t_utils.ANOVA_1way_posthoc(
-            plastic_onsets, method=test_method,
+            plastic_onsets,
+            method=test_method,
         )
         jitter_f, jitter_p, _, jitter_df = t_utils.ANOVA_1way_posthoc(
-            plastic_onset_jitter, method=test_method,
+            plastic_onset_jitter,
+            method=test_method,
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         amp_f, amp_p, amp_df = t_utils.kruskal_wallis_test(
-            plastic_amps, "Conover", test_method,
+            plastic_amps,
+            "Conover",
+            test_method,
         )
         ca_amp_f, ca_amp_p, ca_amp_df = t_utils.kruskal_wallis_test(
-            plastic_ca_amps, "Conover", test_method,
+            plastic_ca_amps,
+            "Conover",
+            test_method,
         )
         onset_f, onset_p, onset_df = t_utils.kruskal_wallis_test(
-            plastic_onsets, "Conover", test_method,
+            plastic_onsets,
+            "Conover",
+            test_method,
         )
         jitter_f, jitter_p, jitter_df = t_utils.kruskal_wallis_test(
-            plastic_onset_jitter, "Conover", test_method,
+            plastic_onset_jitter,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -7737,11 +8180,17 @@ def plot_nearby_spine_coactivity(
         else:
             mrs_name = ""
         if mvmt_type == "All periods":
-            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Session_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Coactivity_Session_{mrs_name}Stats"
+            )
         if mvmt_type == "movement":
-            fname = os.path.jion(save_path, f"Nearby_Spine_Coactivity_Mvmt_{mrs_name}Stats")
+            fname = os.path.jion(
+                save_path, f"Nearby_Spine_Coactivity_Mvmt_{mrs_name}Stats"
+            )
         if mvmt_type == "nonmovement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Coactivity_Nonmvmt_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Coactivity_Nonmvmt_{mrs_name}Stats"
+            )
 
         fig2.savefig(fname + ".pdf")
 
@@ -7761,35 +8210,35 @@ def plot_nearby_spine_movement_encoding(
     save_path=None,
 ):
     """Function to plot the movement encoding related variables for nearby spines
-    
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object
-            
-            followup_dataset - optional Local_Coactivity_Data object of the subsequent
-                                session to use for volume comparision. Default is None,
-                                to use the followup volumes in the dataset
-                                
-            exclude - str specifying the type of spines to exlcude from analysis
-            
-            threshold - float or tuple of floats specifying the threshold cutoffs for
-                        classifying plasticity
-                        
-            figsize - tuple specifying the figure size
-            
-            showmeans - boolean specifying whether to display mean values on box plots
-            
-            test_type - str specifying whether to perform parameteric or nonparametric tests
-            
-            test_method - str specifying the type of posthoc test to perform
-            
-            display_stats - boolean specifying whether to display the statistics
-            
-            vol_norm - boolean specifying whether to use normalized relative volume
-            
-            save - boolean specifying whether to save the figure or not
-            
-            save_path - str specifying where to save the figures
-            
+
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object
+
+        followup_dataset - optional Local_Coactivity_Data object of the subsequent
+                            session to use for volume comparision. Default is None,
+                            to use the followup volumes in the dataset
+
+        exclude - str specifying the type of spines to exlcude from analysis
+
+        threshold - float or tuple of floats specifying the threshold cutoffs for
+                    classifying plasticity
+
+        figsize - tuple specifying the figure size
+
+        showmeans - boolean specifying whether to display mean values on box plots
+
+        test_type - str specifying whether to perform parameteric or nonparametric tests
+
+        test_method - str specifying the type of posthoc test to perform
+
+        display_stats - boolean specifying whether to display the statistics
+
+        vol_norm - boolean specifying whether to use normalized relative volume
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -7823,38 +8272,50 @@ def plot_nearby_spine_movement_encoding(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Organize data
     ## Subselect present spines
     nearby_movement_correlation = d_utils.subselect_data_by_idxs(
-        nearby_movement_correlation, spine_idxs,
+        nearby_movement_correlation,
+        spine_idxs,
     )
     nearby_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        nearby_movement_stereotypy, spine_idxs,
+        nearby_movement_stereotypy,
+        spine_idxs,
     )
     nearby_movement_reliability = d_utils.subselect_data_by_idxs(
-        nearby_movement_reliability, spine_idxs,
+        nearby_movement_reliability,
+        spine_idxs,
     )
     nearby_movement_specificity = d_utils.subselect_data_by_idxs(
-        nearby_movement_specificity, spine_idxs,
+        nearby_movement_specificity,
+        spine_idxs,
     )
     nearby_rwd_movement_correlation = d_utils.subselect_data_by_idxs(
         nearby_rwd_movement_correlation, spine_idxs
     )
     nearby_rwd_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        nearby_rwd_movement_stereotypy, spine_idxs,
+        nearby_rwd_movement_stereotypy,
+        spine_idxs,
     )
     nearby_rwd_movement_reliability = d_utils.subselect_data_by_idxs(
-        nearby_rwd_movement_reliability, spine_idxs,
+        nearby_rwd_movement_reliability,
+        spine_idxs,
     )
     nearby_rwd_movement_specificity = d_utils.subselect_data_by_idxs(
-        nearby_rwd_movement_specificity, spine_idxs,
+        nearby_rwd_movement_specificity,
+        spine_idxs,
     )
 
     ## Seperate into plasticity groups
@@ -8130,54 +8591,75 @@ def plot_nearby_spine_movement_encoding(
     # perform the f-tests
     if test_type == "parametric":
         corr_f, corr_p, _, corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_corr, test_method,
+            plastic_mvmt_corr,
+            test_method,
         )
         stereo_f, stereo_p, _, stereo_df = t_utils.ANOVA_1way_posthoc(
             plastic_mvmt_stereo, test_method
         )
         reli_f, reli_p, _, reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_reli, test_method,
+            plastic_mvmt_reli,
+            test_method,
         )
         speci_f, speci_p, _, speci_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_speci, test_method,
+            plastic_mvmt_speci,
+            test_method,
         )
         r_corr_f, r_corr_p, _, r_corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_corr, test_method,
+            plastic_rwd_corr,
+            test_method,
         )
         r_stereo_f, r_stereo_p, _, r_stereo_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_stereo, test_method,
+            plastic_rwd_stereo,
+            test_method,
         )
         r_reli_f, r_reli_p, _, r_reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_reli, test_method,
+            plastic_rwd_reli,
+            test_method,
         )
         r_speci_f, r_speci_p, _, r_speci_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_speci, test_method,
+            plastic_rwd_speci,
+            test_method,
         )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         corr_f, corr_p, corr_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_corr, "Conover", test_method,
+            plastic_mvmt_corr,
+            "Conover",
+            test_method,
         )
         stereo_f, stereo_p, stereo_df = t_utils.kruskal_wallis_test(
             plastic_mvmt_stereo, "Conover", test_method
         )
         reli_f, reli_p, reli_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_reli, "Conover", test_method,
+            plastic_mvmt_reli,
+            "Conover",
+            test_method,
         )
         speci_f, speci_p, speci_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_speci, "Conover", test_method,
+            plastic_mvmt_speci,
+            "Conover",
+            test_method,
         )
         r_corr_f, r_corr_p, r_corr_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_corr, "Conover", test_method,
+            plastic_rwd_corr,
+            "Conover",
+            test_method,
         )
         r_stereo_f, r_stereo_p, r_stereo_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_stereo, "Conover", test_method,
+            plastic_rwd_stereo,
+            "Conover",
+            test_method,
         )
         r_reli_f, r_reli_p, r_reli_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_reli, "Conover", test_method,
+            plastic_rwd_reli,
+            "Conover",
+            test_method,
         )
         r_speci_f, r_speci_p, r_speci_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_speci, "Conover", test_method,
+            plastic_rwd_speci,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -8323,34 +8805,34 @@ def plot_local_movement_encoding(
 ):
     """Function to plot the movement encoding when spines are locally coactive
 
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object
 
-            followup_dataset - optional Local_Coactivity_Data object of the subsequent
-                                session to use for volume comparision. Default is None,
-                                to use the followup volumes in the dataset
+        followup_dataset - optional Local_Coactivity_Data object of the subsequent
+                            session to use for volume comparision. Default is None,
+                            to use the followup volumes in the dataset
 
-            exclude - str specifying the type of spines to exclude from analysis
+        exclude - str specifying the type of spines to exclude from analysis
 
-            threshold - float or tuple of floats specifying the threshold cutoffs for
-                        classifying plasticity
+        threshold - float or tuple of floats specifying the threshold cutoffs for
+                    classifying plasticity
 
-            figsize - tuple specifying the figure size
+        figsize - tuple specifying the figure size
 
-            showmeans - boolean specifying whether to display mean values on box plots
+        showmeans - boolean specifying whether to display mean values on box plots
 
-            test_type - str specifying whether to perfor parametric or nonparametric tests
+        test_type - str specifying whether to perfor parametric or nonparametric tests
 
-            test_method - str specifying the type of posthoc test to perform
+        test_method - str specifying the type of posthoc test to perform
 
-            display_stats - boolean specifying whether to display the statistics
+        display_stats - boolean specifying whether to display the statistics
 
-            vol_norm - boolean specifying whether to use normalized relative volume values
+        vol_norm - boolean specifying whether to use normalized relative volume values
 
-            save - boolean specifyiung whether to save the figure or not
+        save - boolean specifyiung whether to save the figure or not
 
-            save_path - str specifying where to save the figures
-    
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -8384,41 +8866,55 @@ def plot_local_movement_encoding(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Organize data
     ## Subselect present spines
     coactive_movement_correlation = d_utils.subselect_data_by_idxs(
-        coactive_movement_correlation, spine_idxs,
+        coactive_movement_correlation,
+        spine_idxs,
     )
     coactive_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        coactive_movement_stereotypy, spine_idxs,
+        coactive_movement_stereotypy,
+        spine_idxs,
     )
     coactive_movement_reliability = d_utils.subselect_data_by_idxs(
-        coactive_movement_reliability, spine_idxs,
+        coactive_movement_reliability,
+        spine_idxs,
     )
     coactive_movement_specificity = d_utils.subselect_data_by_idxs(
-        coactive_movement_specificity, spine_idxs,
+        coactive_movement_specificity,
+        spine_idxs,
     )
     coactive_rwd_movement_correlation = d_utils.subselect_data_by_idxs(
-        coactive_rwd_movement_correlation, spine_idxs,
+        coactive_rwd_movement_correlation,
+        spine_idxs,
     )
     coactive_rwd_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        coactive_rwd_movement_stereotypy, spine_idxs,
+        coactive_rwd_movement_stereotypy,
+        spine_idxs,
     )
     coactive_rwd_movement_reliability = d_utils.subselect_data_by_idxs(
-        coactive_rwd_movement_reliability, spine_idxs,
+        coactive_rwd_movement_reliability,
+        spine_idxs,
     )
     coactive_rwd_movement_specificity = d_utils.subselect_data_by_idxs(
-        coactive_rwd_movement_specificity, spine_idxs,
+        coactive_rwd_movement_specificity,
+        spine_idxs,
     )
     coactive_fraction_rwd_mvmts = d_utils.subselect_data_by_idxs(
-        coactive_fraction_rwd_mvmts, spine_idxs,
+        coactive_fraction_rwd_mvmts,
+        spine_idxs,
     )
 
     ## Seperate into plasticity groups
@@ -8431,7 +8927,10 @@ def plot_local_movement_encoding(
     plastic_rwd_reli = {}
     plastic_rwd_speci = {}
     plastic_frac_rwd = {}
-    for key, value, in plastic_groups.items():
+    for (
+        key,
+        value,
+    ) in plastic_groups.items():
         spines = eval(value)
         plastic_mvmt_corr[key] = coactive_movement_correlation[spines]
         plastic_mvmt_stereo[key] = coactive_movement_stereotypy[spines]
@@ -8726,60 +9225,84 @@ def plot_local_movement_encoding(
     # perform the f-tests
     if test_type == "parametric":
         corr_f, corr_p, _, corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_corr, test_method,
+            plastic_mvmt_corr,
+            test_method,
         )
         stereo_f, stereo_p, _, stereo_df = t_utils.ANOVA_1way_posthoc(
             plastic_mvmt_stereo, test_method
         )
         reli_f, reli_p, _, reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_reli, test_method,
+            plastic_mvmt_reli,
+            test_method,
         )
         speci_f, speci_p, _, speci_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_speci, test_method,
+            plastic_mvmt_speci,
+            test_method,
         )
         r_corr_f, r_corr_p, _, r_corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_corr, test_method,
+            plastic_rwd_corr,
+            test_method,
         )
         r_stereo_f, r_stereo_p, _, r_stereo_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_stereo, test_method,
+            plastic_rwd_stereo,
+            test_method,
         )
         r_reli_f, r_reli_p, _, r_reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_reli, test_method,
+            plastic_rwd_reli,
+            test_method,
         )
         r_speci_f, r_speci_p, _, r_speci_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rwd_speci, test_method,
+            plastic_rwd_speci,
+            test_method,
         )
         frac_f, frac_p, _, frac_df = t_utils.ANOVA_1way_posthoc(
-            plastic_frac_rwd, test_method,
+            plastic_frac_rwd,
+            test_method,
         )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         corr_f, corr_p, corr_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_corr, "Conover", test_method,
+            plastic_mvmt_corr,
+            "Conover",
+            test_method,
         )
         stereo_f, stereo_p, stereo_df = t_utils.kruskal_wallis_test(
             plastic_mvmt_stereo, "Conover", test_method
         )
         reli_f, reli_p, reli_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_reli, "Conover", test_method,
+            plastic_mvmt_reli,
+            "Conover",
+            test_method,
         )
         speci_f, speci_p, speci_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_speci, "Conover", test_method,
+            plastic_mvmt_speci,
+            "Conover",
+            test_method,
         )
         r_corr_f, r_corr_p, r_corr_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_corr, "Conover", test_method,
+            plastic_rwd_corr,
+            "Conover",
+            test_method,
         )
         r_stereo_f, r_stereo_p, r_stereo_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_stereo, "Conover", test_method,
+            plastic_rwd_stereo,
+            "Conover",
+            test_method,
         )
         r_reli_f, r_reli_p, r_reli_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_reli, "Conover", test_method,
+            plastic_rwd_reli,
+            "Conover",
+            test_method,
         )
         r_speci_f, r_speci_p, r_speci_df = t_utils.kruskal_wallis_test(
-            plastic_rwd_speci, "Conover", test_method,
+            plastic_rwd_speci,
+            "Conover",
+            test_method,
         )
         frac_f, frac_p, frac_df = t_utils.kruskal_wallis_test(
-            plastic_frac_rwd, "Conover", test_method,
+            plastic_frac_rwd,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -8944,42 +9467,42 @@ def plot_local_dendrite_activity(
 ):
     """Function to examine local dendritic activity during different activity events
 
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object analyzed over all periods
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object analyzed over all periods
 
-            mvmt_dataset - Local_Coactivity_Data object constrined to mvmt periods
+        mvmt_dataset - Local_Coactivity_Data object constrined to mvmt periods
 
-            nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
+        nonmvmt_dataset - Local_Coactivity_Data object constrained to nonmvmt periods
 
-            followup_dataset - optional Local_Coactivity_Data object of the subsequent
-                                session to be used for volume comparision. Default is None
-                                to use the followup volumes in the dataset
-                        
-            rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
+        followup_dataset - optional Local_Coactivity_Data object of the subsequent
+                            session to be used for volume comparision. Default is None
+                            to use the followup volumes in the dataset
 
-            exclude - str specifying spine type to exclude from analysis
+        rwd_mvmt - boolean term of whetehr or not we are comparing rwd mvmts
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Default is None to examine all spines
+        exclude - str specifying spine type to exclude from analysis
+
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines
 
 
-            threshold - float of tuple of floats specifying the threshold cutoff for 
-                        classifying plasticity
+        threshold - float of tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            figsize - tuple specifying the size of the figures
+        figsize - tuple specifying the size of the figures
 
-            showmeans - boolean specifying whether to plot means on boxplots
+        showmeans - boolean specifying whether to plot means on boxplots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            test_method - str specifying the type of posthoc test to perform
+        test_method - str specifying the type of posthoc test to perform
 
-            display_stats - boolean specifying whether to display stats
+        display_stats - boolean specifying whether to display stats
 
-            save - boolean specifying whether to save the figures or not
+        save - boolean specifying whether to save the figures or not
 
-            save_path - str specifying where to save the figures
-    
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -9017,7 +9540,7 @@ def plot_local_dendrite_activity(
     coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
     noncoactive_local_dend_traces = dataset.noncoactive_local_dend_traces
     noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
-    
+
     ## movements
     mvmt_coactive_local_dend_traces = mvmt_dataset.coactive_local_dend_traces
     mvmt_coactive_local_dend_amplitude = mvmt_dataset.coactive_local_dend_amplitude
@@ -9025,7 +9548,7 @@ def plot_local_dendrite_activity(
     mvmt_noncoactive_local_dend_amplitude = (
         mvmt_dataset.noncoactive_local_dend_amplitude
     )
-    
+
     ## nonmovements
     nonmvmt_coactive_local_dend_traces = nonmvmt_dataset.coactive_local_dend_traces
     nonmvmt_coactive_local_dend_amplitude = (
@@ -9037,13 +9560,15 @@ def plot_local_dendrite_activity(
     nonmvmt_noncoactive_local_dend_amplitude = (
         nonmvmt_dataset.noncoactive_local_dend_amplitude
     )
-    
 
     # Calculate the relative volumes
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
@@ -9056,43 +9581,53 @@ def plot_local_dendrite_activity(
         coactive_local_dend_traces, spine_idxs
     )
     coactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        coactive_local_dend_amplitude, spine_idxs,
+        coactive_local_dend_amplitude,
+        spine_idxs,
     )
     noncoactive_local_dend_traces = d_utils.subselect_data_by_idxs(
-        noncoactive_local_dend_traces, spine_idxs,
+        noncoactive_local_dend_traces,
+        spine_idxs,
     )
     noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        noncoactive_local_dend_amplitude, spine_idxs,
+        noncoactive_local_dend_amplitude,
+        spine_idxs,
     )
-   
+
     mvmt_coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
         mvmt_coactive_local_dend_traces, spine_idxs
     )
     mvmt_coactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        mvmt_coactive_local_dend_amplitude, spine_idxs,
+        mvmt_coactive_local_dend_amplitude,
+        spine_idxs,
     )
     mvmt_noncoactive_local_dend_traces = d_utils.subselect_data_by_idxs(
-        mvmt_noncoactive_local_dend_traces, spine_idxs,
+        mvmt_noncoactive_local_dend_traces,
+        spine_idxs,
     )
     mvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        mvmt_noncoactive_local_dend_amplitude, spine_idxs,
+        mvmt_noncoactive_local_dend_amplitude,
+        spine_idxs,
     )
-    
+
     nonmvmt_coactive_local_dend_traces = d_utils.subselect_data_by_idxs(
         nonmvmt_coactive_local_dend_traces, spine_idxs
     )
     nonmvmt_coactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        nonmvmt_coactive_local_dend_amplitude, spine_idxs,
+        nonmvmt_coactive_local_dend_amplitude,
+        spine_idxs,
     )
     nonmvmt_noncoactive_local_dend_traces = d_utils.subselect_data_by_idxs(
-        nonmvmt_noncoactive_local_dend_traces, spine_idxs,
+        nonmvmt_noncoactive_local_dend_traces,
+        spine_idxs,
     )
     nonmvmt_noncoactive_local_dend_amplitude = d_utils.subselect_data_by_idxs(
-        nonmvmt_noncoactive_local_dend_amplitude, spine_idxs,
+        nonmvmt_noncoactive_local_dend_amplitude,
+        spine_idxs,
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
-    
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     ## Seperate into dicts for plotting
     plastic_coactive_means = {}
@@ -9101,21 +9636,20 @@ def plot_local_dendrite_activity(
     plastic_noncoactive_means = {}
     plastic_noncoactive_sems = {}
     plastic_noncoactive_amps = {}
-   
+
     mvmt_plastic_coactive_means = {}
     mvmt_plastic_coactive_sems = {}
     mvmt_plastic_coactive_amps = {}
     mvmt_plastic_noncoactive_means = {}
     mvmt_plastic_noncoactive_sems = {}
     mvmt_plastic_noncoactive_amps = {}
-    
+
     nonmvmt_plastic_coactive_means = {}
     nonmvmt_plastic_coactive_sems = {}
     nonmvmt_plastic_coactive_amps = {}
     nonmvmt_plastic_noncoactive_means = {}
     nonmvmt_plastic_noncoactive_sems = {}
     nonmvmt_plastic_noncoactive_amps = {}
-   
 
     for key, value in plastic_groups.items():
         spines = eval(value)
@@ -9144,7 +9678,7 @@ def plot_local_dendrite_activity(
             noncoactive_means, axis=0, nan_policy="omit"
         )
         plastic_noncoactive_amps[key] = noncoactive_local_dend_amplitude[spines]
-        
+
         ### Movement
         mvmt_coactive_traces = compress(mvmt_coactive_local_dend_traces, spines)
         mvmt_coactive_means = [
@@ -9170,7 +9704,7 @@ def plot_local_dendrite_activity(
         mvmt_plastic_noncoactive_amps[key] = mvmt_noncoactive_local_dend_amplitude[
             spines
         ]
-        
+
         ### Non-movement
         nonmvmt_coactive_traces = compress(nonmvmt_coactive_local_dend_traces, spines)
         nonmvmt_coactive_means = [
@@ -9204,7 +9738,6 @@ def plot_local_dendrite_activity(
         nonmvmt_plastic_noncoactive_amps[
             key
         ] = nonmvmt_noncoactive_local_dend_amplitude[spines]
-        
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -9260,7 +9793,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    
+
     # Movement periods coactive traces
     plot_mean_activity_traces(
         means=list(mvmt_plastic_coactive_means.values()),
@@ -9303,7 +9836,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    
+
     # Nonmovement periods coactive traces
     plot_mean_activity_traces(
         means=list(nonmvmt_plastic_coactive_means.values()),
@@ -9346,7 +9879,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    
+
     # All period coactive amplitude
     plot_box_plot(
         plastic_coactive_amps,
@@ -9401,7 +9934,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    
+
     # Movement coactive amplitude
     plot_box_plot(
         mvmt_plastic_coactive_amps,
@@ -9456,7 +9989,7 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    
+
     # Nonmovement coactive amplitude
     plot_box_plot(
         nonmvmt_plastic_coactive_amps,
@@ -9511,7 +10044,6 @@ def plot_local_dendrite_activity(
         save=False,
         save_path=None,
     )
-    
 
     fig.tight_layout()
 
@@ -9536,64 +10068,88 @@ def plot_local_dendrite_activity(
     # Perform the f-tests
     if test_type == "parametric":
         coactive_f, coactive_p, _, coactive_df = t_utils.ANOVA_1way_posthoc(
-            plastic_coactive_amps, test_method,
+            plastic_coactive_amps,
+            test_method,
         )
         noncoactive_f, noncoactive_p, _, noncoactive_df = t_utils.ANOVA_1way_posthoc(
-            plastic_noncoactive_amps, test_method,
+            plastic_noncoactive_amps,
+            test_method,
         )
         (
             mvmt_coactive_f,
             mvmt_coactive_p,
             _,
             mvmt_coactive_df,
-        ) = t_utils.ANOVA_1way_posthoc(mvmt_plastic_coactive_amps, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            mvmt_plastic_coactive_amps,
+            test_method,
+        )
         (
             mvmt_noncoactive_f,
             mvmt_noncoactive_p,
             _,
             mvmt_noncoactive_df,
-        ) = t_utils.ANOVA_1way_posthoc(mvmt_plastic_noncoactive_amps, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            mvmt_plastic_noncoactive_amps,
+            test_method,
+        )
         non_coactive_f, non_coactive_p, _, non_coactive_df = t_utils.ANOVA_1way_posthoc(
-            nonmvmt_plastic_coactive_amps, test_method,
+            nonmvmt_plastic_coactive_amps,
+            test_method,
         )
         (
             non_noncoactive_f,
             non_noncoactive_p,
             _,
             non_noncoactive_df,
-        ) = t_utils.ANOVA_1way_posthoc(nonmvmt_plastic_noncoactive_amps, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            nonmvmt_plastic_noncoactive_amps,
+            test_method,
+        )
         test_title = f"One-way ANOVA {test_method}"
 
     elif test_type == "nonparametric":
         coactive_f, coactive_p, coactive_df = t_utils.kruskal_wallis_test(
-            plastic_coactive_amps, "Conover", test_method,
+            plastic_coactive_amps,
+            "Conover",
+            test_method,
         )
         noncoactive_f, noncoactive_p, noncoactive_df = t_utils.kruskal_wallis_test(
-            plastic_noncoactive_amps, "Conover", test_method,
+            plastic_noncoactive_amps,
+            "Conover",
+            test_method,
         )
         (
             mvmt_coactive_f,
             mvmt_coactive_p,
             mvmt_coactive_df,
         ) = t_utils.kruskal_wallis_test(
-            mvmt_plastic_coactive_amps, "Conover", test_method,
+            mvmt_plastic_coactive_amps,
+            "Conover",
+            test_method,
         )
         (
             mvmt_noncoactive_f,
             mvmt_noncoactive_p,
             mvmt_noncoactive_df,
         ) = t_utils.kruskal_wallis_test(
-            mvmt_plastic_noncoactive_amps, "Conover", test_method,
+            mvmt_plastic_noncoactive_amps,
+            "Conover",
+            test_method,
         )
         non_coactive_f, non_coactive_p, non_coactive_df = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_coactive_amps, "Conover", test_method,
+            nonmvmt_plastic_coactive_amps,
+            "Conover",
+            test_method,
         )
         (
             non_noncoactive_f,
             non_noncoactive_p,
             non_noncoactive_df,
         ) = t_utils.kruskal_wallis_test(
-            nonmvmt_plastic_noncoactive_amps, "Conover", test_method,
+            nonmvmt_plastic_noncoactive_amps,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -9633,7 +10189,7 @@ def plot_local_dendrite_activity(
     )
     B_table.auto_set_font_size(False)
     B_table.set_fontsize(8)
-    
+
     axes2["D"].axis("off")
     axes2["D"].axis("tight")
     axes2["D"].set_title(
@@ -9660,7 +10216,7 @@ def plot_local_dendrite_activity(
     )
     E_table.auto_set_font_size(False)
     E_table.set_fontsize(8)
-    
+
     axes2["G"].axis("off")
     axes2["G"].axis("tight")
     axes2["G"].set_title(
@@ -9703,4 +10259,3 @@ def plot_local_dendrite_activity(
         else:
             fname = os.path.join(save_path, f"Plastic_Local_Dend_Rwd_{mrs_name}Stats")
         fig2.savefig(fname + ".pdf")
-
