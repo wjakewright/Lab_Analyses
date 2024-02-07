@@ -352,7 +352,7 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
         ## Correct multiple comparisons
         _, adj_pvals, _, alpha_corrected = multipletests(
             raw_pvals,
-            alpha=0.5,
+            alpha=0.05,
             method=method,
             is_sorted=False,
             returnsorted=False,
@@ -754,3 +754,85 @@ def two_way_RM_mixed_effects_model(
         posthoc_df - DataFrame with the results of the posthoc tests
 
     """
+    groups = list(data_dict.keys())
+    # Set up the rm_Vals
+    data_len = list(data_dict.values())[0].shape[0]
+    if rm_vals is None:
+        rm_vals = list(range(data_len))
+    elif len(rm_vals) != data_len:
+        print("Inputed RM Values do not match data!!")
+        rm_vals = list(range(data_len))
+
+    # Organize the data in the appropriate format
+    dfs = []
+    for key, value in data_dict.items():
+        for v in range(value.shape[1]):
+            data = value[:, v]
+            random_val = random_dict[key][v]
+            g = [key for x in range(len(data))]
+            rm = [random_val for x in range(len(data))]
+            temp_dict = {"Rand_Var": rm, "Data": data, "Group": g, "RM_Vals": rm_vals}
+            temp_df = pd.DataFrame(temp_dict)
+            dfs.append(temp_df)
+    test_df = pd.concat(dfs)
+
+    # Hot code group values
+    map_dict = {}
+    codes = list(range(len(data_dict.keys())))
+    for i, key in enumerate(data_dict.keys()):
+        map_dict[key] = codes[i]
+    test_df = test_df.assign(Group_Coded=test_df["Group"].map(map_dict))
+
+    # Perform the mixed-effects model test
+    ## Define the formula
+    formula = "Data ~ Group_Coded + RM_Vals + Group_Coded:RM_Vals + (1|Rand_Var) + (Group_Coded-1|Rand_Var) + (RM_Vals:Group_Coded|Rand_Var)"
+    # Construct the model and fit the model
+    model = Lmer(formula, data=test_df)
+    model.fit(summarize=False)
+    model_df = model.coefs
+
+    # Perform the posthoc tests
+    ## Between group comparisions
+    if compare_type == "between":
+        ## Get combinations of tests
+        combos = list(itertools.combinations(groups, 2))
+        test_performed = []
+        rm_point = []
+        t_vals = []
+        raw_pvals = []
+        for combo in combos:
+            for rm in rm_vals:
+                ## Keep track of the comparisions being made
+                test_performed.append(combo[0] + " vs. " + combo[1])
+                rm_point.append(rm)
+                ## Get the data for the groups
+                data1 = test_df[
+                    (test_df["Group"] == combo[0]) & (test_df["RM_Vals"] == rm)
+                ]
+                data2 = test_df[
+                    (test_df["Group"] == combo[1]) & (test_df["RM_Vals"] == rm)
+                ]
+                data1 = np.array(data1["Data"])
+                data2 = np.array(data2["Data"])
+                ## Perform the t-tests
+                t, p = stats.ttest_ind(data1, data2)
+                t_vals.append(t)
+                raw_pvals.append(p)
+        ## Correct for multiple comparisons
+        _, adj_pvals, _, _ = multipletests(
+            raw_pvals,
+            alpha=0.05,
+            method=post_method,
+            is_sorted=False,
+            returnsorted=False,
+        )
+        posthoc_dict = {
+            "Comparision": test_performed,
+            "RM Value": rm_point,
+            "t stat": t_vals,
+            "raw p-vals": np.array(raw_pvals),
+            "adjusted p-vals": adj_pvals,
+        }
+        posthoc_df = pd.DataFrame.from_dict(posthoc_dict)
+
+    return model_df, posthoc_df
