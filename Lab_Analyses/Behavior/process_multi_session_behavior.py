@@ -7,20 +7,23 @@ from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def process_multi_session_behavior(
-    mouse_id, base_path, days=None, save=False,
+    mouse_id,
+    base_path,
+    days=None,
+    save=False,
 ):
     """Function to process behavior data when there are multiple sessions
-        in a single day
-    
-        INPUT PARAMETERS
-            mouse_id - str specifying what the mouse's id is
-            
-            base_path - str of the base path containing directories with behavioral
-                        data in it
-                        
-            days - a list of strings specifying if only a subset of days contain opto sessions
-            
-            save - boolean specifying if the data is to be saved"""
+    in a single day
+
+    INPUT PARAMETERS
+        mouse_id - str specifying what the mouse's id is
+
+        base_path - str of the base path containing directories with behavioral
+                    data in it
+
+        days - a list of strings specifying if only a subset of days contain opto sessions
+
+        save - boolean specifying if the data is to be saved"""
 
     # Move to the base behavior directory
     mouse_path = os.path.join(base_path, mouse_id)
@@ -72,7 +75,8 @@ def process_multi_session_behavior(
             )
 
             # Save the output
-            if save is True:
+            if save:
+                print("Saving data")
                 # Set the save path
                 initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
                 save_path = os.path.join(initial_path, mouse_id, "behavior", day_name)
@@ -82,4 +86,3 @@ def process_multi_session_behavior(
                 save_name = f"{mouse_id}_{day_name}_{sess_name}_processed_lever_data"
                 # Save the data as a pickle file
                 save_pickle(save_name, p_file, save_path)
-
