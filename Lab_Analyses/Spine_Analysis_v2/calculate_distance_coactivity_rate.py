@@ -19,52 +19,52 @@ def calculate_distance_coactivity_rate(
     norm_method="mean",
 ):
     """Function to calculate pairwise spine coactivity rate between all spines along
-        the same dendrite. Spine rates are then binned across their distances from
-        the target spine
-        
-        INPUT PARAMETERS
-            spine_activity - np.array of the binarized spine activity traces
-                            Each column represents a spine
-            
-            spine_positions - np.array of t he corresponding spine positions 
-                              along the dendrite for each spine
-            
-            flags - list of the spine flags
-            
-            spine_groupings - list with the corresponding groupings of the spines
-                              on the same dendrite
-            
-            constrain_matrix - np.array of the binarized events to constrain
-                              the coactivity to. (e.g., dendritic events, movement
-                              periods)
-            
-            partner_list - boolean list specifying a subset of spines to anlyze coactivity
-                            rates for (e.g., movement spines)
-                            
-            bin_size - int or float specifying the distance to bin over
-            
-            sampling_rate - int specifying the imaging sampling rate
+    the same dendrite. Spine rates are then binned across their distances from
+    the target spine
 
-            norm_method - str specifying how you want to normalize the coactivity rate
-                            Accepts "mean" to normalize by the geo mean, or "freq" to 
-                            normalize by the target spine frequency
-        
-        OUTPUT PARAMETERS
-            binned_coactivity - 2d np.array of the coactivity for each spine (column)
-                                over the binned distances (rows)
-            
-            unbinned_coactivity - list of lists for each spine containing tuple pairs 
-                                  of (position, coactivity) for every other spine on the
-                                  dendrite
-            
-            binned_coactivity_norm - 2d np.array of the normalized coactivity for each spine
-                                    (column) over the binned distances (rows)
-            
-            unbinned_coactivity_norm - list of lists for each spine containing tuple paris
-                                        of (position, norm. coactivity) for every other spine
-                                        on the dendrite
-            
-            position_bins - np.array of the distances the data were binned over
+    INPUT PARAMETERS
+        spine_activity - np.array of the binarized spine activity traces
+                        Each column represents a spine
+
+        spine_positions - np.array of t he corresponding spine positions
+                          along the dendrite for each spine
+
+        flags - list of the spine flags
+
+        spine_groupings - list with the corresponding groupings of the spines
+                          on the same dendrite
+
+        constrain_matrix - np.array of the binarized events to constrain
+                          the coactivity to. (e.g., dendritic events, movement
+                          periods)
+
+        partner_list - boolean list specifying a subset of spines to anlyze coactivity
+                        rates for (e.g., movement spines)
+
+        bin_size - int or float specifying the distance to bin over
+
+        sampling_rate - int specifying the imaging sampling rate
+
+        norm_method - str specifying how you want to normalize the coactivity rate
+                        Accepts "mean" to normalize by the geo mean, or "freq" to
+                        normalize by the target spine frequency
+
+    OUTPUT PARAMETERS
+        binned_coactivity - 2d np.array of the coactivity for each spine (column)
+                            over the binned distances (rows)
+
+        unbinned_coactivity - list of lists for each spine containing tuple pairs
+                              of (position, coactivity) for every other spine on the
+                              dendrite
+
+        binned_coactivity_norm - 2d np.array of the normalized coactivity for each spine
+                                (column) over the binned distances (rows)
+
+        unbinned_coactivity_norm - list of lists for each spine containing tuple paris
+                                    of (position, norm. coactivity) for every other spine
+                                    on the dendrite
+
+        position_bins - np.array of the distances the data were binned over
     """
     # Set up the postion bins
     MAX_DIST = 40
