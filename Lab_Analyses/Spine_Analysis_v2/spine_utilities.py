@@ -8,12 +8,12 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
 def find_stable_spines(spine_flags):
     """Function to find stable spines from a single session
-    
-        INPUT PARAMETERS
-            spine_flags - list of the spine flags
-        
-        OUTPUT PARAMETERS
-            stable_spines - boolean np.array of whether each spine is stable
+
+    INPUT PARAMETERS
+        spine_flags - list of the spine flags
+
+    OUTPUT PARAMETERS
+        stable_spines - boolean np.array of whether each spine is stable
     """
     stable_spines = []
     for flag in spine_flags:
@@ -28,13 +28,13 @@ def find_stable_spines(spine_flags):
 
 def find_stable_spines_across_days(spine_flag_list):
     """Function to find stable spines across multiple sessions
-    
-        INPUT PARAMETERS
-            spine_flag_list - list of lists containing all the spine flags
-            
-        OUTPUT PARAMETERS
-            stable_spines - boolean array of whether or not each spine is stable
-                            across all sessions
+
+    INPUT PARAMETERS
+        spine_flag_list - list of lists containing all the spine flags
+
+    OUTPUT PARAMETERS
+        stable_spines - boolean array of whether or not each spine is stable
+                        across all sessions
     """
     # Find stable spines for each day
     daily_stable_spines = []
@@ -60,13 +60,13 @@ def find_stable_spines_across_days(spine_flag_list):
 
 def find_present_spines(spine_flags):
     """Function to find spines present during the imaging session. Excludes eliminated
-        and absent spines
-        
-        INPUT PARAMETERS
-            spine_flags - list of spine flags
-            
-        OUTPUT PARAMETERS
-            present_spines - boolean array of whether or not each spine is present
+    and absent spines
+
+    INPUT PARAMETERS
+        spine_flags - list of spine flags
+
+    OUTPUT PARAMETERS
+        present_spines - boolean array of whether or not each spine is present
     """
     # Initialize output
     present_spines = []
@@ -81,14 +81,14 @@ def find_present_spines(spine_flags):
 
 def find_spine_classes(spine_flags, spine_class):
     """Function to find specific types of spines based on their flags
-    
-        INPUT PARAMETERS
-            spine_flags - list of the spine flags
-            
-            spine_class - str specifying what type of spine you want to find
-        
-        OUTPUT PARAMETERS
-            classed_spines - boolean array of whether or not each spine is stable
+
+    INPUT PARAMETERS
+        spine_flags - list of the spine flags
+
+        spine_class - str specifying what type of spine you want to find
+
+    OUTPUT PARAMETERS
+        classed_spines - boolean array of whether or not each spine is stable
     """
     # Initialize output
     classed_spines = np.zeros(len(spine_flags)).astype(bool)
@@ -102,18 +102,18 @@ def find_spine_classes(spine_flags, spine_class):
 
 def load_spine_datasets(mouse_id, days, fov_type):
     """Function to handel loading all the spine datasets for a mouse
-    
-        INPUT PARAMETERS
-            mouse_id - str specifying which mouse to load
-            
-            days - list of str specifying which days to load. Used
-                    to search for filenames
-            
-            fov_type - str specifying whether to load apical or basal FOVs
 
-        OUTPUT PARAMETERS
-            mouse_data - dict of dict containing data for each FOV (upper dict) 
-                        for each imaged data (lower dict)
+    INPUT PARAMETERS
+        mouse_id - str specifying which mouse to load
+
+        days - list of str specifying which days to load. Used
+                to search for filenames
+
+        fov_type - str specifying whether to load apical or basal FOVs
+
+    OUTPUT PARAMETERS
+        mouse_data - dict of dict containing data for each FOV (upper dict)
+                    for each imaged data (lower dict)
     """
     initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
 
@@ -157,24 +157,24 @@ def find_nearby_spines(
     spine_positions, spine_flags, spine_groupings, partner_list=None, cluster_dist=5
 ):
     """Function to find the idxs of each spines neighbors
-    
-        INPUT PARAMETERS
-            spine_positions - np.array of the the position of each spine along the 
-                             dendrite
-            
-            spine_flags - list of the spine flags
-            
-            spine_groupings - list containing the spine groupings for each dendrite
 
-            partner_list - boolean list of spine identities you wish to constrain your 
-                            analysis to
-            
-            cluster_dist - int or float specifying the distance that is to be
-                            considered nearby
-        
-        OUTPUT PARAMETERS
-            nearby_spine_idxs - list containing an array of the nearby spine idxs
-                                for each spine
+    INPUT PARAMETERS
+        spine_positions - np.array of the the position of each spine along the
+                         dendrite
+
+        spine_flags - list of the spine flags
+
+        spine_groupings - list containing the spine groupings for each dendrite
+
+        partner_list - boolean list of spine identities you wish to constrain your
+                        analysis to
+
+        cluster_dist - int or float specifying the distance that is to be
+                        considered nearby
+
+    OUTPUT PARAMETERS
+        nearby_spine_idxs - list containing an array of the nearby spine idxs
+                            for each spine
     """
     # Sort out the spine groupings to ensure it is iterable
     if type(spine_groupings[0]) != list:
@@ -213,21 +213,21 @@ def find_nearby_spines(
 
 
 def parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines):
-    """Function to generate additonal arrays for nonmovement spines and 
-        movement non rewarded spines
-        
-        INPUT PARAMETERS
-            movement_spines - boolean list/array of whether each spine in movement or not
-            
-            rwd_movement_spines - boolean list/array  of whether each spine is
-                                  rewarded movement encoding or not
-        
-        OUTPUT PARAMETERS
-            nonmovement_spines - boolean list/array of whether each spine is nonmovement
-                                 or not
-            
-            movement_non_rwd_spines - boolean list/array of whether each spine is
-                                     non movement or not
+    """Function to generate additonal arrays for nonmovement spines and
+    movement non rewarded spines
+
+    INPUT PARAMETERS
+        movement_spines - boolean list/array of whether each spine in movement or not
+
+        rwd_movement_spines - boolean list/array  of whether each spine is
+                              rewarded movement encoding or not
+
+    OUTPUT PARAMETERS
+        nonmovement_spines - boolean list/array of whether each spine is nonmovement
+                             or not
+
+        movement_non_rwd_spines - boolean list/array of whether each spine is
+                                 non movement or not
     """
     # Find nonmovement spines
     nonmovement_spines = np.array([not x for x in movement_spines])
@@ -254,45 +254,45 @@ def load_analyzed_datasets(
     partner=None,
 ):
     """Function to handle loading of analyzed datasets
-    
-        INPUT PARAMETERS
-            type - str specifying the type of data to load. Will be used for 
-                    searching for files. Accepts 'Activity', 'Local', 'Global'
-                    
-            grouped - boolean specifying whether to load a grouped or individual
-                    dataset
 
-            session - str specifying what session to load
+    INPUT PARAMETERS
+        type - str specifying the type of data to load. Will be used for
+                searching for files. Accepts 'Activity', 'Local', 'Global'
 
-            norm - boolean specifying whether to load normalized dataset or not
+        grouped - boolean specifying whether to load a grouped or individual
+                dataset
 
-            activity_type - str specifying what type of activity the dataset
-                            used (dFoF or zscore)
+        session - str specifying what session to load
 
-            extended - boolean specifying whetehr or not the dataset to load
-                        used extended activity periods
-            
-            mouse - str specifying which mouse and fov to load. Used only if loading 
-                    individual dataset. 
-            
-            fov - str specifying the FOV to load. Only used if loading individual 
-                    dataset
+        norm - boolean specifying whether to load normalized dataset or not
 
-            fov_type - str specifying what type of fovs the data come from. eg.
-                        apical or basal
-                    
-            period - str specifying whether to load a dataset that was constrained
-                    to specific movement periods. Accepts 'movement', 'nonmovement'
-                    and 'rewarded movement'. Default is None to load unconstrained
-                    dataset
+        activity_type - str specifying what type of activity the dataset
+                        used (dFoF or zscore)
 
-            partner - str specifying whether to load a dataset that examined coactivity
-                    for only given partner types. Accepts 'MRS', 'nMRS' and 'rMRS'.
-                    Default is None to load unrestricted data set
-        
-        OUTPUT PARAMETERS
-            loaded_dataset - object containing the specified dataset
-            
+        extended - boolean specifying whetehr or not the dataset to load
+                    used extended activity periods
+
+        mouse - str specifying which mouse and fov to load. Used only if loading
+                individual dataset.
+
+        fov - str specifying the FOV to load. Only used if loading individual
+                dataset
+
+        fov_type - str specifying what type of fovs the data come from. eg.
+                    apical or basal
+
+        period - str specifying whether to load a dataset that was constrained
+                to specific movement periods. Accepts 'movement', 'nonmovement'
+                and 'rewarded movement'. Default is None to load unconstrained
+                dataset
+
+        partner - str specifying whether to load a dataset that examined coactivity
+                for only given partner types. Accepts 'MRS', 'nMRS' and 'rMRS'.
+                Default is None to load unrestricted data set
+
+    OUTPUT PARAMETERS
+        loaded_dataset - object containing the specified dataset
+
     """
     if norm:
         n_name = "_norm"
@@ -319,7 +319,12 @@ def load_analyzed_datasets(
         if mouse == None:
             return "Must specify mouse ID if loading individual dataset"
         load_path = os.path.join(
-            initial_path, "individual", mouse, "coactivity_data", f"{fov}_{fov_type}", session
+            initial_path,
+            "individual",
+            mouse,
+            "coactivity_data",
+            f"{fov}_{fov_type}",
+            session,
         )
 
     # Construct the file name to load
@@ -385,7 +390,7 @@ def batch_load_individual_analyzed_datasets(
                 fov=fov,
                 fov_type=fov_type,
                 period=period,
-                partner=partner
+                partner=partner,
             )
             all_data.append(loaded_data)
     return all_data
@@ -393,8 +398,9 @@ def batch_load_individual_analyzed_datasets(
 
 def calculate_nearby_vs_distance_variable(variable_mat, position_bins, cluster_dist):
     """Helper function to calculate the nearby coactivity rate vs
-        the distance coactivity rate for each spine"""
-    DISTANT_BIN = 30  # Distant is considered further than 30um
+    the distance coactivity rate for each spine"""
+    DISTANT_BIN = position_bins[-1] - cluster_dist
+    # Distant is considered further than 30um
 
     # Get idx for the nearby cluster bin cutoff
     near_bin_idx = np.nonzero(position_bins == cluster_dist)[0][0]
