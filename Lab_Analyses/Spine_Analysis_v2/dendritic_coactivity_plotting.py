@@ -9,18 +9,19 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
-from Lab_Analyses.Plotting.plot_cummulative_distribution import \
-    plot_cummulative_distribution
+from Lab_Analyses.Plotting.plot_cummulative_distribution import (
+    plot_cummulative_distribution,
+)
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import \
-    plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
-from Lab_Analyses.Plotting.plot_scatter_correlation import \
-    plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2 import spine_utilities as s_utils
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
+    calculate_volume_change,
+    classify_plasticity,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -39,21 +40,21 @@ def plot_conj_vs_nonconj_events(
 ):
     """Function to compare conj vs nonconj events
 
-        INPUT PARAMETERS
-            dataset - Dendritic_Coactivity_Data object
+    INPUT PARAMETERS
+        dataset - Dendritic_Coactivity_Data object
 
-            figsize - tuple specifying the figure size
+        figsize - tuple specifying the figure size
 
-            showmeans - boolean specifying whether to show means on box plots
+        showmeans - boolean specifying whether to show means on box plots
 
-            test_type - str specifying whether to perorm parametric or nonparametric tests
+        test_type - str specifying whether to perorm parametric or nonparametric tests
 
-            display_stats - boolean specifying whetehr to display the stat results
+        display_stats - boolean specifying whetehr to display the stat results
 
-            save - boolean specifying whether to save the data or not
+        save - boolean specifying whether to save the data or not
 
-            save_path - str specifying where to save the data
-    
+        save_path - str specifying where to save the data
+
     """
     COLORS = ["forestgreen", "black"]
 
@@ -425,29 +426,29 @@ def plot_comparative_mvmt_coactivity(
 ):
     """Function to compare coactivity during movement and nonmovement periods
 
-        INPUT PARAMETERS
-            mvmt_dataset - Dendritic_Coactivity_Data that was constrained to mvmt periods
+    INPUT PARAMETERS
+        mvmt_dataset - Dendritic_Coactivity_Data that was constrained to mvmt periods
 
-            nonmvmt_dataset - Dendritic_Coactivity_Data that was constrained to nonmvmt periods
+        nonmvmt_dataset - Dendritic_Coactivity_Data that was constrained to nonmvmt periods
 
-            period - str specifying what type of coactivity to look at. Accepts 
-                    "All", "nonconj", and "conj"
-            
-            figsize - tuple specifying the size of the figure
+        period - str specifying what type of coactivity to look at. Accepts
+                "All", "nonconj", and "conj"
 
-            showmeans - boolean specifying whether to show means on box plots
+        figsize - tuple specifying the size of the figure
 
-            mean_type - str specifying the type of central tendency for bar plots
+        showmeans - boolean specifying whether to show means on box plots
 
-            err_type - str specifying the type of error for bar plots
+        mean_type - str specifying the type of central tendency for bar plots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        err_type - str specifying the type of error for bar plots
 
-            display_stats - boolean specifying whether to display stats
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            save  -boolean specifying whether to save the figure
+        display_stats - boolean specifying whether to display stats
 
-            save_path - str specifying where to save the figure
+        save  -boolean specifying whether to save the figure
+
+        save_path - str specifying where to save the figure
     """
     COLORS = ["darkorange", "darkviolet"]
     if coactivity_type == "All":
@@ -683,7 +684,9 @@ def plot_comparative_mvmt_coactivity(
         for x in mvmt_spine_coactive_traces
         if type(x) == np.ndarray
     ]
-    mvmt_spine_coactive_traces = np.vstack(mvmt_spine_coactive_traces,)
+    mvmt_spine_coactive_traces = np.vstack(
+        mvmt_spine_coactive_traces,
+    )
     nonmvmt_spine_coactive_traces = [
         np.nanmean(x, axis=1)
         for x in nonmvmt_spine_coactive_traces
@@ -820,7 +823,12 @@ def plot_comparative_mvmt_coactivity(
     # Mvmt raw coactivity vs chance
     ## histogram
     plot_cummulative_distribution(
-        data=list((dendrite_coactivity_rate["Mvmt"], shuff_coactivity_rate["Mvmt"],)),
+        data=list(
+            (
+                dendrite_coactivity_rate["Mvmt"],
+                shuff_coactivity_rate["Mvmt"],
+            )
+        ),
         plot_ind=True,
         title="Mvmt",
         xtitle="Coactivity rate (events/min)",
@@ -873,7 +881,10 @@ def plot_comparative_mvmt_coactivity(
     ## histogram
     plot_cummulative_distribution(
         data=list(
-            (dendrite_coactivity_rate["Nonmvmt"], shuff_coactivity_rate["Nonmvmt"],)
+            (
+                dendrite_coactivity_rate["Nonmvmt"],
+                shuff_coactivity_rate["Nonmvmt"],
+            )
         ),
         plot_ind=True,
         title="Nonmvmt",
@@ -927,7 +938,10 @@ def plot_comparative_mvmt_coactivity(
     ## histogram
     plot_cummulative_distribution(
         data=list(
-            (dendrite_coactivity_rate_norm["Mvmt"], shuff_coactivity_rate_norm["Mvmt"],)
+            (
+                dendrite_coactivity_rate_norm["Mvmt"],
+                shuff_coactivity_rate_norm["Mvmt"],
+            )
         ),
         plot_ind=True,
         title="Mvmt",
@@ -1188,7 +1202,9 @@ def plot_comparative_mvmt_coactivity(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if coactivity_type == "All":
-            fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Coactivity_Figure")
+            fname = os.path.join(
+                save_path, "Mvmt_vs_Nonmvmt_Dendrite_Coactivity_Figure"
+            )
         elif coactivity_type == "conj":
             fname = os.path.join(save_path, "Mvmt_vs_Nonmvmt_Dendrite_Conj_Figure")
         elif coactivity_type == "nonconj":
@@ -1292,13 +1308,15 @@ def plot_comparative_mvmt_coactivity(
         dendrite_coactivity_rate["Mvmt"], shuff_coactivity_rate["Mvmt"]
     )
     nonmvmt_above, nonmvmt_below = t_utils.test_against_chance(
-        dendrite_coactivity_rate["Nonmvmt"], shuff_coactivity_rate["Nonmvmt"],
+        dendrite_coactivity_rate["Nonmvmt"],
+        shuff_coactivity_rate["Nonmvmt"],
     )
     mvmt_above_norm, mvmt_below_norm = t_utils.test_against_chance(
         dendrite_coactivity_rate_norm["Mvmt"], shuff_coactivity_rate_norm["Mvmt"]
     )
     nonmvmt_above_norm, nonmvmt_below_norm = t_utils.test_against_chance(
-        dendrite_coactivity_rate_norm["Nonmvmt"], shuff_coactivity_rate_norm["Nonmvmt"],
+        dendrite_coactivity_rate_norm["Nonmvmt"],
+        shuff_coactivity_rate_norm["Nonmvmt"],
     )
     chance_dict = {
         "Comparision": ["Mvmt", "Nonmvmt", "Mvmt norm.", "Nonmvmt norm."],
@@ -1376,42 +1394,42 @@ def plot_plasticity_coactivity_rates(
 ):
     """Function to compare coactivity rates across plasticity groups
 
-        INPUT PARAMETERS
-            dataset - Dendritic_Coactivity_Data object 
+    INPUT PARAMETERS
+        dataset - Dendritic_Coactivity_Data object
 
-            period - str specifying if the dataset analysis was constrained to a given
-                    period. Currently accepts "All periods", "movement", and "nonmovement"
+        period - str specifying if the dataset analysis was constrained to a given
+                period. Currently accepts "All periods", "movement", and "nonmovement"
 
-            norm - boolean specifying whether to look at normalized coactivity 
+        norm - boolean specifying whether to look at normalized coactivity
 
-            exclude - str specifying spine type to exclude form analysis
+        exclude - str specifying spine type to exclude form analysis
 
-             MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Defualt is None to examine all spines
+         MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Defualt is None to examine all spines
 
-            threshold - float or tuple of floats specifying the threshold cutoff for
-                        classifying plasticity
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            figsize - tuple specifying the size of the figure
+        figsize - tuple specifying the size of the figure
 
-            showmeans - boolean specifying whether to plot means on box plots
+        showmeans - boolean specifying whether to plot means on box plots
 
-            mean_type - str specifying the mean tyhpe for bar plots
+        mean_type - str specifying the mean tyhpe for bar plots
 
-            err_type - str specifying the error type for the bar plots
+        err_type - str specifying the error type for the bar plots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            test_method - str specifying the type of posthoc test to perform
+        test_method - str specifying the type of posthoc test to perform
 
-            display_stats - boolean specifying whether to display stats
+        display_stats - boolean specifying whether to display stats
 
-            vol_norm - boolean specifying whether to use normalized relative volumes
+        vol_norm - boolean specifying whether to use normalized relative volumes
 
-            save - boolean specifying whether to save the figure
+        save - boolean specifying whether to save the figure
 
-            save_path - str specifying where to save the figure
-    
+        save_path - str specifying where to save the figure
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -1484,7 +1502,10 @@ def plot_plasticity_coactivity_rates(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
@@ -1494,46 +1515,60 @@ def plot_plasticity_coactivity_rates(
     # Organize the data
     ## Subselect present spines
     all_dendrite_coactivity_rate = d_utils.subselect_data_by_idxs(
-        all_dendrite_coactivity_rate, spine_idxs,
+        all_dendrite_coactivity_rate,
+        spine_idxs,
     )
     all_shuff_dendrite_coactivity_rate = d_utils.subselect_data_by_idxs(
-        all_shuff_dendrite_coactivity_rate, spine_idxs,
+        all_shuff_dendrite_coactivity_rate,
+        spine_idxs,
     )
     all_fraction_dendrite_coactive = d_utils.subselect_data_by_idxs(
         all_fraction_dendrite_coactive, spine_idxs
     )
     all_fraction_spine_coactive = d_utils.subselect_data_by_idxs(
-        all_fraction_spine_coactive, spine_idxs,
+        all_fraction_spine_coactive,
+        spine_idxs,
     )
     nonconj_dendrite_coactivity_rate = d_utils.subselect_data_by_idxs(
-        nonconj_dendrite_coactivity_rate, spine_idxs,
+        nonconj_dendrite_coactivity_rate,
+        spine_idxs,
     )
     nonconj_shuff_dendrite_coactivity_rate = d_utils.subselect_data_by_idxs(
-        nonconj_shuff_dendrite_coactivity_rate, spine_idxs,
+        nonconj_shuff_dendrite_coactivity_rate,
+        spine_idxs,
     )
     nonconj_fraction_dendrite_coactive = d_utils.subselect_data_by_idxs(
-        nonconj_fraction_dendrite_coactive, spine_idxs,
+        nonconj_fraction_dendrite_coactive,
+        spine_idxs,
     )
     nonconj_fraction_spine_coactive = d_utils.subselect_data_by_idxs(
-        nonconj_fraction_spine_coactive, spine_idxs,
+        nonconj_fraction_spine_coactive,
+        spine_idxs,
     )
     conj_dendrite_coactivity_rate = d_utils.subselect_data_by_idxs(
-        conj_dendrite_coactivity_rate, spine_idxs,
+        conj_dendrite_coactivity_rate,
+        spine_idxs,
     )
     conj_shuff_dendrite_coactivity_rate = d_utils.subselect_data_by_idxs(
-        conj_shuff_dendrite_coactivity_rate, spine_idxs,
+        conj_shuff_dendrite_coactivity_rate,
+        spine_idxs,
     )
     conj_fraction_dendrite_coactive = d_utils.subselect_data_by_idxs(
-        conj_fraction_dendrite_coactive, spine_idxs,
+        conj_fraction_dendrite_coactive,
+        spine_idxs,
     )
     conj_fraction_spine_coactive = d_utils.subselect_data_by_idxs(
-        conj_fraction_spine_coactive, spine_idxs,
+        conj_fraction_spine_coactive,
+        spine_idxs,
     )
     fraction_conj_events = d_utils.subselect_data_by_idxs(
-        fraction_conj_events, spine_idxs,
+        fraction_conj_events,
+        spine_idxs,
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     ## Seperate into groups
     all_coactivity_rate = {}
@@ -2101,7 +2136,10 @@ def plot_plasticity_coactivity_rates(
     ## cum distribution
     plot_cummulative_distribution(
         data=list(
-            (nonconj_coactivity_rate["sLTP"], nonconj_shuff_coactivity_rate["sLTP"],)
+            (
+                nonconj_coactivity_rate["sLTP"],
+                nonconj_shuff_coactivity_rate["sLTP"],
+            )
         ),
         plot_ind=True,
         title="Enlarged",
@@ -2155,7 +2193,10 @@ def plot_plasticity_coactivity_rates(
     ## cum distribution
     plot_cummulative_distribution(
         data=list(
-            (nonconj_coactivity_rate["sLTD"], nonconj_shuff_coactivity_rate["sLTD"],)
+            (
+                nonconj_coactivity_rate["sLTD"],
+                nonconj_shuff_coactivity_rate["sLTD"],
+            )
         ),
         plot_ind=True,
         title="Shrunken",
@@ -2431,18 +2472,31 @@ def plot_plasticity_coactivity_rates(
             mrs_name = ""
         if norm == False:
             if period == "All periods":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Rate_{mrs_name}Figure"
+                )
             elif period == "movement":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Mvmt_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Rate_Mvmt_{mrs_name}Figure"
+                )
             elif period == "nonmovement":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Nonmvmt_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Rate_Nonmvmt_{mrs_name}Figure"
+                )
         else:
             if period == "All periods":
-                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Norm_Coactivity_Rate_{mrs_name}Figure"
+                )
             elif period == "movement":
-                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Mvmt_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Norm_Coactivity_Rate_Mvmt_{mrs_name}Figure"
+                )
             elif period == "nonmovement":
-                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Nonmvmt_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Norm_Coactivity_Rate_Nonmvmt_{mrs_name}Figure",
+                )
         fig.savefig(fname + ".pdf")
 
     ########################### Statistics Section ############################
@@ -2456,19 +2510,26 @@ def plot_plasticity_coactivity_rates(
             all_coactivity_p,
             _,
             all_coactivity_df,
-        ) = t_utils.ANOVA_1way_posthoc(all_coactivity_rate, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            all_coactivity_rate,
+            test_method,
+        )
         all_s_frac_f, all_s_frac_p, _, all_s_frac_df = t_utils.ANOVA_1way_posthoc(
             all_spine_fraction, test_method
         )
         all_d_frac_f, all_d_frac_p, _, all_d_frac_df = t_utils.ANOVA_1way_posthoc(
-            all_dend_fraction, test_method,
+            all_dend_fraction,
+            test_method,
         )
         (
             nonconj_coactivity_f,
             nonconj_coactivity_p,
             _,
             nonconj_coactivity_df,
-        ) = t_utils.ANOVA_1way_posthoc(nonconj_coactivity_rate, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            nonconj_coactivity_rate,
+            test_method,
+        )
         (
             nonconj_s_frac_f,
             nonconj_s_frac_p,
@@ -2480,21 +2541,29 @@ def plot_plasticity_coactivity_rates(
             nonconj_d_frac_p,
             _,
             nonconj_d_frac_df,
-        ) = t_utils.ANOVA_1way_posthoc(nonconj_dend_fraction, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            nonconj_dend_fraction,
+            test_method,
+        )
         (
             conj_coactivity_f,
             conj_coactivity_p,
             _,
             conj_coactivity_df,
-        ) = t_utils.ANOVA_1way_posthoc(conj_coactivity_rate, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            conj_coactivity_rate,
+            test_method,
+        )
         conj_s_frac_f, conj_s_frac_p, _, conj_s_frac_df = t_utils.ANOVA_1way_posthoc(
             conj_spine_fraction, test_method
         )
         conj_d_frac_f, conj_d_frac_p, _, conj_d_frac_df = t_utils.ANOVA_1way_posthoc(
-            conj_dend_fraction, test_method,
+            conj_dend_fraction,
+            test_method,
         )
         frac_conj_f, frac_conj_p, _, frac_conj_df = t_utils.ANOVA_1way_posthoc(
-            frac_conj_events, test_method,
+            frac_conj_events,
+            test_method,
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
@@ -2502,19 +2571,27 @@ def plot_plasticity_coactivity_rates(
             all_coactivity_f,
             all_coactivity_p,
             all_coactivity_df,
-        ) = t_utils.kruskal_wallis_test(all_coactivity_rate, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            all_coactivity_rate,
+            "Conover",
+            test_method,
+        )
         all_s_frac_f, all_s_frac_p, all_s_frac_df = t_utils.kruskal_wallis_test(
             all_spine_fraction, "Conover", test_method
         )
         all_d_frac_f, all_d_frac_p, all_d_frac_df = t_utils.kruskal_wallis_test(
-            all_dend_fraction, "Conover", test_method,
+            all_dend_fraction,
+            "Conover",
+            test_method,
         )
         (
             nonconj_coactivity_f,
             nonconj_coactivity_p,
             nonconj_coactivity_df,
         ) = t_utils.kruskal_wallis_test(
-            nonconj_coactivity_rate, "Conover", test_method,
+            nonconj_coactivity_rate,
+            "Conover",
+            test_method,
         )
         (
             nonconj_s_frac_f,
@@ -2525,20 +2602,32 @@ def plot_plasticity_coactivity_rates(
             nonconj_d_frac_f,
             nonconj_d_frac_p,
             nonconj_d_frac_df,
-        ) = t_utils.kruskal_wallis_test(nonconj_dend_fraction, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            nonconj_dend_fraction,
+            "Conover",
+            test_method,
+        )
         (
             conj_coactivity_f,
             conj_coactivity_p,
             conj_coactivity_df,
-        ) = t_utils.kruskal_wallis_test(conj_coactivity_rate, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            conj_coactivity_rate,
+            "Conover",
+            test_method,
+        )
         conj_s_frac_f, conj_s_frac_p, conj_s_frac_df = t_utils.kruskal_wallis_test(
             conj_spine_fraction, "Conover", test_method
         )
         conj_d_frac_f, conj_d_frac_p, conj_d_frac_df = t_utils.kruskal_wallis_test(
-            conj_dend_fraction, "Conover", test_method,
+            conj_dend_fraction,
+            "Conover",
+            test_method,
         )
         frac_conj_f, frac_conj_p, frac_conj_df = t_utils.kruskal_wallis_test(
-            frac_conj_events, "Conover", test_method,
+            frac_conj_events,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -2548,7 +2637,8 @@ def plot_plasticity_coactivity_rates(
         all_coactivity_rate["sLTP"], all_shuff_coactivity_rate["sLTP"]
     )
     all_shrunken_above, all_shrunken_below = t_utils.test_against_chance(
-        all_coactivity_rate["sLTD"], all_shuff_coactivity_rate["sLTD"],
+        all_coactivity_rate["sLTD"],
+        all_shuff_coactivity_rate["sLTD"],
     )
     all_stable_above, all_stable_below = t_utils.test_against_chance(
         all_coactivity_rate["Stable"], all_shuff_coactivity_rate["Stable"]
@@ -2564,7 +2654,8 @@ def plot_plasticity_coactivity_rates(
         nonconj_coactivity_rate["sLTP"], nonconj_shuff_coactivity_rate["sLTP"]
     )
     nonconj_shrunken_above, nonconj_shrunken_below = t_utils.test_against_chance(
-        nonconj_coactivity_rate["sLTD"], nonconj_shuff_coactivity_rate["sLTD"],
+        nonconj_coactivity_rate["sLTD"],
+        nonconj_shuff_coactivity_rate["sLTD"],
     )
     nonconj_stable_above, nonconj_stable_below = t_utils.test_against_chance(
         nonconj_coactivity_rate["Stable"], nonconj_shuff_coactivity_rate["Stable"]
@@ -2588,7 +2679,8 @@ def plot_plasticity_coactivity_rates(
         conj_coactivity_rate["sLTP"], conj_shuff_coactivity_rate["sLTP"]
     )
     conj_shrunken_above, conj_shrunken_below = t_utils.test_against_chance(
-        conj_coactivity_rate["sLTD"], conj_shuff_coactivity_rate["sLTD"],
+        conj_coactivity_rate["sLTD"],
+        conj_shuff_coactivity_rate["sLTD"],
     )
     conj_stable_above, conj_stable_below = t_utils.test_against_chance(
         conj_coactivity_rate["Stable"], conj_shuff_coactivity_rate["Stable"]
@@ -2787,18 +2879,30 @@ def plot_plasticity_coactivity_rates(
             mrs_name = ""
         if norm == False:
             if period == "All periods":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Rate_{mrs_name}Stats"
+                )
             elif period == "movement":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Mvmt_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Rate_Mvmt_{mrs_name}Stats"
+                )
             elif period == "nonmovement":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Rate_Nonmvmt_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Rate_Nonmvmt_{mrs_name}Stats"
+                )
         else:
             if period == "All periods":
-                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Norm_Coactivity_Rate_{mrs_name}Stats"
+                )
             elif period == "movement":
-                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Mvmt_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Norm_Coactivity_Rate_Mvmt_{mrs_name}Stats"
+                )
             elif period == "nonmovement":
-                fname = os.path.join(save_path, f"Dendritic_Norm_Coactivity_Rate_Nonmvmt_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Norm_Coactivity_Rate_Nonmvmt_{mrs_name}Stats"
+                )
         fig2.savefig(fname + ".pdf")
 
 
@@ -2820,39 +2924,39 @@ def plot_coactive_event_properties(
     save_path=None,
 ):
     """Function to compare the properties of coactive events across plastic spines
-    
-        INPUT PARAMETERS
-            dataset - Dendritic_Coactivity_Data object 
 
-            event_type - str specifying whether to analyze all events, conj, or nonconj
-                        events
+    INPUT PARAMETERS
+        dataset - Dendritic_Coactivity_Data object
 
-            period - str specifying whether the dataset in constrained to a particular
-                    movement period
+        event_type - str specifying whether to analyze all events, conj, or nonconj
+                    events
 
-            followup_data - optional Dendritic_Coactivity_Data object of the subsequent
-                            session to be used for volume comparision. Default is None
-                            to use the followup volumes in the dataset
+        period - str specifying whether the dataset in constrained to a particular
+                movement period
 
-            exclude - str specifying spine type to exclude form analysis
+        followup_data - optional Dendritic_Coactivity_Data object of the subsequent
+                        session to be used for volume comparision. Default is None
+                        to use the followup volumes in the dataset
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Defualt is None to examine all spines
+        exclude - str specifying spine type to exclude form analysis
 
-            threshold - float or tuple of floats specifying the threshold cutoff
-                        for classifying plasticity
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Defualt is None to examine all spines
 
-            showmeans - boolean specifying whether to plot means on boxplots
+        threshold - float or tuple of floats specifying the threshold cutoff
+                    for classifying plasticity
 
-            test_type - str specifying whetehr to perform parametric or nonparametric tests
+        showmeans - boolean specifying whether to plot means on boxplots
 
-            test_method - str specifying the type of posthoc test to perform
+        test_type - str specifying whetehr to perform parametric or nonparametric tests
 
-            display_stats - boolean specifying whehter to display stats
+        test_method - str specifying the type of posthoc test to perform
 
-            save - boolean specifying whether to save the figures or not
+        display_stats - boolean specifying whehter to display stats
 
-            save_path - str specifying where to save the figures
+        save - boolean specifying whether to save the figures or not
+
+        save_path - str specifying where to save the figures
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -2922,7 +3026,10 @@ def plot_coactive_event_properties(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
@@ -2931,26 +3038,37 @@ def plot_coactive_event_properties(
 
     # Subselect present spines
     spine_coactive_traces = d_utils.subselect_data_by_idxs(
-        spine_coactive_traces, spine_idxs,
+        spine_coactive_traces,
+        spine_idxs,
     )
     spine_coactive_calcium_traces = d_utils.subselect_data_by_idxs(
-        spine_coactive_calcium_traces, spine_idxs,
+        spine_coactive_calcium_traces,
+        spine_idxs,
     )
     dendrite_coactive_traces = d_utils.subselect_data_by_idxs(
-        dendrite_coactive_traces, spine_idxs,
+        dendrite_coactive_traces,
+        spine_idxs,
     )
     spine_coactive_amplitude = d_utils.subselect_data_by_idxs(
-        spine_coactive_amplitude, spine_idxs,
+        spine_coactive_amplitude,
+        spine_idxs,
     )
     spine_coactive_calcium_amplitude = d_utils.subselect_data_by_idxs(
-        spine_coactive_calcium_amplitude, spine_idxs,
+        spine_coactive_calcium_amplitude,
+        spine_idxs,
     )
     dendrite_coactive_amplitude = d_utils.subselect_data_by_idxs(
-        dendrite_coactive_amplitude, spine_idxs,
+        dendrite_coactive_amplitude,
+        spine_idxs,
     )
-    relative_onsets = d_utils.subselect_data_by_idxs(relative_onsets, spine_idxs,)
+    relative_onsets = d_utils.subselect_data_by_idxs(
+        relative_onsets,
+        spine_idxs,
+    )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -2995,7 +3113,6 @@ def plot_coactive_event_properties(
         plastic_ca_amps[key] = spine_coactive_calcium_amplitude[spines]
         plastic_dend_amps[key] = dendrite_coactive_amplitude[spines]
         plastic_onsets[key] = relative_onsets[spines]
-
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -3279,25 +3396,49 @@ def plot_coactive_event_properties(
             mrs_name = ""
         if period == "All periods":
             if event_type == "All":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Event_Props_{mrs_name}Figure"
+                )
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonconj_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonconj_{mrs_name}Figure",
+                )
             elif event_type == "conj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Conj_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Event_Props_Conj_{mrs_name}Figure"
+                )
         elif period == "movement":
             if event_type == "All":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_{mrs_name}Figure"
+                )
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Nonconj_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Mvmt_Nonconj_{mrs_name}Figure",
+                )
             elif event_type == "conj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Conj_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Mvmt_Conj_{mrs_name}Figure",
+                )
         elif period == "nonmovement":
             if event_type == "All":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonmvmt_{mrs_name}Figure",
+                )
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Nonconj_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonmvmt_Nonconj_{mrs_name}Figure",
+                )
             elif event_type == "conj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Conj_{mrs_name}Figure")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonmvmt_Conj_{mrs_name}Figure",
+                )
         fig.savefig(fname + ".pdf")
 
     ######################## Statistics Section #########################
@@ -3306,29 +3447,43 @@ def plot_coactive_event_properties(
 
     # Perform f-tests
     if test_type == "parametric":
-        amp_f, amp_p, _, amp_df = t_utils.ANOVA_1way_posthoc(plastic_amps, test_method,)
+        amp_f, amp_p, _, amp_df = t_utils.ANOVA_1way_posthoc(
+            plastic_amps,
+            test_method,
+        )
         ca_amp_f, ca_amp_p, _, ca_amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_ca_amps, test_method,
+            plastic_ca_amps,
+            test_method,
         )
         dend_amp_f, dend_amp_p, _, dend_amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_dend_amps, test_method,
+            plastic_dend_amps,
+            test_method,
         )
         onset_f, onset_p, _, onset_df = t_utils.ANOVA_1way_posthoc(
-            plastic_onsets, test_method,
+            plastic_onsets,
+            test_method,
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         amp_f, amp_p, amp_df = t_utils.kruskal_wallis_test(
-            plastic_amps, "Conover", test_method,
+            plastic_amps,
+            "Conover",
+            test_method,
         )
         ca_amp_f, ca_amp_p, ca_amp_df = t_utils.kruskal_wallis_test(
-            plastic_ca_amps, "Conover", test_method,
+            plastic_ca_amps,
+            "Conover",
+            test_method,
         )
         dend_amp_f, dend_amp_p, dend_amp_df = t_utils.kruskal_wallis_test(
-            plastic_dend_amps, "Conover", test_method,
+            plastic_dend_amps,
+            "Conover",
+            test_method,
         )
         onset_f, onset_p, onset_df = t_utils.kruskal_wallis_test(
-            plastic_onsets, "Conover", test_method,
+            plastic_onsets,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -3391,7 +3546,6 @@ def plot_coactive_event_properties(
     )
     D_table.auto_set_font_size(False)
     D_table.set_fontsize(8)
-    
 
     fig2.tight_layout()
 
@@ -3405,25 +3559,49 @@ def plot_coactive_event_properties(
             mrs_name = ""
         if period == "All periods":
             if event_type == "All":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Event_Props_{mrs_name}Stats"
+                )
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonconj_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonconj_{mrs_name}Stats",
+                )
             elif event_type == "conj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Conj_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Event_Props_Conj_{mrs_name}Stats"
+                )
         elif period == "movement":
             if event_type == "All":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_{mrs_name}Stats"
+                )
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Nonconj_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Mvmt_Nonconj_{mrs_name}Stats",
+                )
             elif event_type == "conj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Mvmt_Conj_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Mvmt_Conj_{mrs_name}Stats",
+                )
         elif period == "nonmovement":
             if event_type == "All":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonmvmt_{mrs_name}Stats",
+                )
             elif event_type == "nonconj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Nonconj_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonmvmt_Nonconj_{mrs_name}Stats",
+                )
             elif event_type == "conj":
-                fname = os.path.join(save_path, f"Dendritic_Coactivity_Event_Props_Nonmvmt_Conj_{mrs_name}Stats")
+                fname = os.path.join(
+                    save_path,
+                    f"Dendritic_Coactivity_Event_Props_Nonmvmt_Conj_{mrs_name}Stats",
+                )
         fig2.savefig(fname + ".pdf")
 
 
@@ -3445,43 +3623,43 @@ def plot_nearby_spine_conj_activity(
     save_path=None,
 ):
     """Function to plot the activity of nearby spines during conj events
-    
-        INPUT PARAMETERS
-            dataset - Local_Coactivity_Data object analyzed over all periods
 
-            followup_dataset - optional Local_Coactivity_Data object of the 
-                                subsequent session to use for volume comparision.
-                                Default is None to use the followup_volumes in the
-                                dataset
-                        
-            period - str specifying what mvmt period the data is constrained to.
-                    Accepts "All periods", "movement", "nonmovement", "rewarded movement"
+    INPUT PARAMETERS
+        dataset - Local_Coactivity_Data object analyzed over all periods
 
-            exclude - str specifying the types of spines to exclude from volume assessment
+        followup_dataset - optional Local_Coactivity_Data object of the
+                            subsequent session to use for volume comparision.
+                            Default is None to use the followup_volumes in the
+                            dataset
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Defualt is None to examine all spines
+        period - str specifying what mvmt period the data is constrained to.
+                Accepts "All periods", "movement", "nonmovement", "rewarded movement"
 
-            threshold - float or tuple of floats specifying the threshold cutoff for 
-                        classifying plasticity
+        exclude - str specifying the types of spines to exclude from volume assessment
 
-            figsize - tuple specifying the size of the figure
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Defualt is None to examine all spines
 
-            showmeans - boolean specifying whether to show means on box plots or not
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            mean_type - str specifying thge mean type for bar plots
+        figsize - tuple specifying the size of the figure
 
-            err_type - str specifying the err type for bar plots
+        showmeans - boolean specifying whether to show means on box plots or not
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        mean_type - str specifying thge mean type for bar plots
 
-            test_method - str specifying the type of posthoc test to perform
+        err_type - str specifying the err type for bar plots
 
-            display_stats - boolean specifying whetehr to display stats
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            save - boolean specifying whether to save the figures or not
+        test_method - str specifying the type of posthoc test to perform
 
-            save_path - str specifying where to save the figures
+        display_stats - boolean specifying whetehr to display stats
+
+        save - boolean specifying whether to save the figures or not
+
+        save_path - str specifying where to save the figures
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -3526,7 +3704,9 @@ def plot_nearby_spine_conj_activity(
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Subselect present spines
@@ -3534,25 +3714,33 @@ def plot_nearby_spine_conj_activity(
         conj_coactive_spine_num, spine_idxs
     )
     conj_nearby_coactive_spine_amplitude = d_utils.subselect_data_by_idxs(
-        conj_nearby_coactive_spine_amplitude, spine_idxs,
+        conj_nearby_coactive_spine_amplitude,
+        spine_idxs,
     )
     conj_nearby_coactive_spine_calcium = d_utils.subselect_data_by_idxs(
-        conj_nearby_coactive_spine_calcium, spine_idxs,
+        conj_nearby_coactive_spine_calcium,
+        spine_idxs,
     )
     conj_nearby_spine_onset = d_utils.subselect_data_by_idxs(
-        conj_nearby_spine_onset, spine_idxs,
+        conj_nearby_spine_onset,
+        spine_idxs,
     )
     conj_nearby_spine_onset_jitter = d_utils.subselect_data_by_idxs(
-        conj_nearby_spine_onset_jitter, spine_idxs,
+        conj_nearby_spine_onset_jitter,
+        spine_idxs,
     )
     conj_nearby_coactive_spine_traces = d_utils.subselect_data_by_idxs(
-        conj_nearby_coactive_spine_traces, spine_idxs,
+        conj_nearby_coactive_spine_traces,
+        spine_idxs,
     )
     conj_nearby_coactive_spine_calcium_traces = d_utils.subselect_data_by_idxs(
-        conj_nearby_coactive_spine_calcium_traces, spine_idxs,
+        conj_nearby_coactive_spine_calcium_traces,
+        spine_idxs,
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -3873,11 +4061,17 @@ def plot_nearby_spine_conj_activity(
         else:
             mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Conj_Activity_{mrs_name}Figure"
+            )
         elif period == "movement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Mvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Conj_Activity_Mvmt_{mrs_name}Figure"
+            )
         elif period == "nonmovement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Nonmvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Conj_Activity_Nonmvmt_{mrs_name}Figure"
+            )
 
         fig.savefig(fname + ".pdf")
 
@@ -3887,33 +4081,52 @@ def plot_nearby_spine_conj_activity(
 
     # Perform f-tests
     if test_type == "parametric":
-        amp_f, amp_p, _, amp_df = t_utils.ANOVA_1way_posthoc(plastic_amps, test_method,)
+        amp_f, amp_p, _, amp_df = t_utils.ANOVA_1way_posthoc(
+            plastic_amps,
+            test_method,
+        )
         ca_amp_f, ca_amp_p, _, ca_amp_df = t_utils.ANOVA_1way_posthoc(
-            plastic_ca_amps, test_method,
+            plastic_ca_amps,
+            test_method,
         )
         onset_f, onset_p, _, onset_df = t_utils.ANOVA_1way_posthoc(
-            plastic_onsets, test_method,
+            plastic_onsets,
+            test_method,
         )
         jitter_f, jitter_p, _, jitter_df = t_utils.ANOVA_1way_posthoc(
-            plastic_onset_jitter, test_method,
+            plastic_onset_jitter,
+            test_method,
         )
-        num_f, num_p, _, num_df = t_utils.ANOVA_1way_posthoc(plastic_num, test_method,)
+        num_f, num_p, _, num_df = t_utils.ANOVA_1way_posthoc(
+            plastic_num,
+            test_method,
+        )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         amp_f, amp_p, amp_df = t_utils.kruskal_wallis_test(
-            plastic_amps, "Conover", test_method,
+            plastic_amps,
+            "Conover",
+            test_method,
         )
         ca_amp_f, ca_amp_p, ca_amp_df = t_utils.kruskal_wallis_test(
-            plastic_ca_amps, "Conover", test_method,
+            plastic_ca_amps,
+            "Conover",
+            test_method,
         )
         onset_f, onset_p, onset_df = t_utils.kruskal_wallis_test(
-            plastic_onsets, "Conover", test_method,
+            plastic_onsets,
+            "Conover",
+            test_method,
         )
         jitter_f, jitter_p, jitter_df = t_utils.kruskal_wallis_test(
-            plastic_onset_jitter, "Conover", test_method,
+            plastic_onset_jitter,
+            "Conover",
+            test_method,
         )
         num_f, num_p, num_df = t_utils.kruskal_wallis_test(
-            plastic_num, "Conover", test_method,
+            plastic_num,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -4004,11 +4217,17 @@ def plot_nearby_spine_conj_activity(
         else:
             mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Conj_Activity_{mrs_name}Figure"
+            )
         elif period == "movement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Mvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Conj_Activity_Mvmt_{mrs_name}Figure"
+            )
         elif period == "nonmovement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Conj_Activity_Nonmvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Conj_Activity_Nonmvmt_{mrs_name}Figure"
+            )
 
         fig2.savefig(fname + ".pdf")
 
@@ -4031,45 +4250,45 @@ def plot_nearby_spine_properties(
     save=False,
     save_path=None,
 ):
-    """ Function to plot nearby spine coactivity properties
-    
-        INPUT PARAMETERS
-            dataset - Dendritic_Coactivity_Data object
+    """Function to plot nearby spine coactivity properties
 
-            followup_dataset - optional Dendritic_Coactivity_Data object of the
-                                following session to make volume comparisions
+    INPUT PARAMETERS
+        dataset - Dendritic_Coactivity_Data object
 
-            period - str specifying if the dataset analyzed was constrained to a given
-                    period. Currently accepts "All periods", "movement", and "nonmovement"
+        followup_dataset - optional Dendritic_Coactivity_Data object of the
+                            following session to make volume comparisions
 
-            exclude - str specifying spine type to exclude from analysis
+        period - str specifying if the dataset analyzed was constrained to a given
+                period. Currently accepts "All periods", "movement", and "nonmovement"
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Default is None to examine all spines
+        exclude - str specifying spine type to exclude from analysis
 
-            threshold - float or tuple of floats specifying the threshold cutoff for
-                        classifying plasticity
-            
-            figsize - tuple specifying the size of the figure
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines
 
-            mean_type - str specifying the central tendency to display on bar plots
+        threshold - float or tuple of floats specifying the threshold cutoff for
+                    classifying plasticity
 
-            err_type - str specifying the type of error to display on bar plots
+        figsize - tuple specifying the size of the figure
 
-            shomeans - boolean specifying whether to show the means on box plots
+        mean_type - str specifying the central tendency to display on bar plots
 
-            test_type - str specifying whether to perform parametric or nonparametric tests
+        err_type - str specifying the type of error to display on bar plots
 
-            test_method - str specifying the posthoc test to perform
+        shomeans - boolean specifying whether to show the means on box plots
 
-            display_stats - boolean specifying whether to display stats or not
+        test_type - str specifying whether to perform parametric or nonparametric tests
 
-            vol_norm - boolean specifying whether to use normalized relative volumes
+        test_method - str specifying the posthoc test to perform
 
-            save - boolean specifying whether to save the figure
+        display_stats - boolean specifying whether to display stats or not
 
-            save_path - str specifying where to save the figure
-    
+        vol_norm - boolean specifying whether to use normalized relative volumes
+
+        save - boolean specifying whether to save the figure
+
+        save_path - str specifying where to save the figure
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -4116,7 +4335,10 @@ def plot_nearby_spine_properties(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
@@ -4125,62 +4347,84 @@ def plot_nearby_spine_properties(
 
     # Subselect for present spines
     coactivity_rate_distribution = d_utils.subselect_data_by_idxs(
-        coactivity_rate_distribution, spine_idxs,
+        coactivity_rate_distribution,
+        spine_idxs,
     )
     avg_nearby_spine_coactivity_rate = d_utils.subselect_data_by_idxs(
-        avg_nearby_spine_coactivity_rate, spine_idxs,
+        avg_nearby_spine_coactivity_rate,
+        spine_idxs,
     )
     shuff_nearby_spine_coactivity_rate = d_utils.subselect_data_by_idxs(
-        shuff_nearby_spine_coactivity_rate, spine_idxs,
+        shuff_nearby_spine_coactivity_rate,
+        spine_idxs,
     )
     rel_nearby_spine_coactivity_rate = d_utils.subselect_data_by_idxs(
-        rel_nearby_spine_coactivity_rate, spine_idxs,
+        rel_nearby_spine_coactivity_rate,
+        spine_idxs,
     )
     conj_coactivity_rate_distribution = d_utils.subselect_data_by_idxs(
-        conj_coactivity_rate_distribution, spine_idxs,
+        conj_coactivity_rate_distribution,
+        spine_idxs,
     )
     avg_nearby_spine_conj_rate = d_utils.subselect_data_by_idxs(
-        avg_nearby_spine_conj_rate, spine_idxs,
+        avg_nearby_spine_conj_rate,
+        spine_idxs,
     )
     shuff_nearby_spine_conj_rate = d_utils.subselect_data_by_idxs(
-        shuff_nearby_spine_conj_rate, spine_idxs,
+        shuff_nearby_spine_conj_rate,
+        spine_idxs,
     )
     rel_nearby_spine_conj_rate = d_utils.subselect_data_by_idxs(
-        rel_nearby_spine_conj_rate, spine_idxs,
+        rel_nearby_spine_conj_rate,
+        spine_idxs,
     )
     spine_fraction_coactive_distribution = d_utils.subselect_data_by_idxs(
-        spine_fraction_coactive_distribution, spine_idxs,
+        spine_fraction_coactive_distribution,
+        spine_idxs,
     )
     avg_nearby_spine_fraction = d_utils.subselect_data_by_idxs(
-        avg_nearby_spine_fraction, spine_idxs,
+        avg_nearby_spine_fraction,
+        spine_idxs,
     )
     shuff_nearby_spine_fraction = d_utils.subselect_data_by_idxs(
-        shuff_nearby_spine_fraction, spine_idxs,
+        shuff_nearby_spine_fraction,
+        spine_idxs,
     )
-    rel_spine_fraction = d_utils.subselect_data_by_idxs(rel_spine_fraction, spine_idxs,)
+    rel_spine_fraction = d_utils.subselect_data_by_idxs(
+        rel_spine_fraction,
+        spine_idxs,
+    )
     dendrite_fraction_coactive_distribution = d_utils.subselect_data_by_idxs(
-        dendrite_fraction_coactive_distribution, spine_idxs,
+        dendrite_fraction_coactive_distribution,
+        spine_idxs,
     )
     avg_nearby_dendrite_fraction = d_utils.subselect_data_by_idxs(
-        avg_nearby_dendrite_fraction, spine_idxs,
+        avg_nearby_dendrite_fraction,
+        spine_idxs,
     )
     shuff_nearby_dendrite_fraction = d_utils.subselect_data_by_idxs(
-        shuff_nearby_dendrite_fraction, spine_idxs,
+        shuff_nearby_dendrite_fraction,
+        spine_idxs,
     )
     rel_dendrite_fraction = d_utils.subselect_data_by_idxs(
-        rel_dendrite_fraction, spine_idxs,
+        rel_dendrite_fraction,
+        spine_idxs,
     )
     relative_onset_distribution = d_utils.subselect_data_by_idxs(
-        relative_onset_distribution, spine_idxs,
+        relative_onset_distribution,
+        spine_idxs,
     )
     avg_nearby_relative_onset = d_utils.subselect_data_by_idxs(
-        avg_nearby_relative_onset, spine_idxs,
+        avg_nearby_relative_onset,
+        spine_idxs,
     )
     shuff_nearby_relative_onset = d_utils.subselect_data_by_idxs(
-        shuff_nearby_relative_onset, spine_idxs,
+        shuff_nearby_relative_onset,
+        spine_idxs,
     )
     rel_nearby_relative_onset = d_utils.subselect_data_by_idxs(
-        rel_nearby_relative_onset, spine_idxs,
+        rel_nearby_relative_onset,
+        spine_idxs,
     )
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
     nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
@@ -4556,7 +4800,7 @@ def plot_nearby_spine_properties(
         title="Relative Coactivity Rate",
         xtitle=None,
         ytitle="Realative coactivity rate (events/min)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -4768,7 +5012,7 @@ def plot_nearby_spine_properties(
         title="Relative Conj Rate",
         xtitle=None,
         ytitle="Relative coactivity rate (events/min)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -4982,7 +5226,7 @@ def plot_nearby_spine_properties(
         title="Relative Spine Fraction",
         xtitle=None,
         ytitle="Relative fraction of spine activity",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -5194,7 +5438,7 @@ def plot_nearby_spine_properties(
         title="Relative nearby Dendrite Fraction",
         xtitle=None,
         ytitle="Relative fraction of dendrite activity",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -5406,7 +5650,7 @@ def plot_nearby_spine_properties(
         title="Nearby Relative Relative Onset",
         xtitle=None,
         ytitle="Nearby relative onset (s)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -5438,11 +5682,17 @@ def plot_nearby_spine_properties(
         else:
             mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Dend_Properties_{mrs_name}Figure"
+            )
         elif period == "movement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Mvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Dend_Properties_Mvmt_{mrs_name}Figure"
+            )
         elif period == "nonmovement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Nonmvmt_{mrs_name}Figure")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Dend_Properties_Nonmvmt_{mrs_name}Figure"
+            )
 
         fig.savefig(fname + ".pdf")
 
@@ -5453,97 +5703,146 @@ def plot_nearby_spine_properties(
     # Perform the F-tests
     if test_type == "parametric":
         coactivity_f, coactivity_p, _, coactivity_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_rates, test_method,
+            plastic_avg_rates,
+            test_method,
         )
         (
             rel_coactivity_f,
             rel_coactivity_p,
             _,
             rel_coactivity_df,
-        ) = t_utils.ANOVA_1way_posthoc(plastic_rel_rates, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            plastic_rel_rates,
+            test_method,
+        )
         conj_f, conj_p, _, conj_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_conj, test_method,
+            plastic_avg_conj,
+            test_method,
         )
         rel_conj_f, rel_conj_p, _, rel_conj_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rel_conj, test_method,
+            plastic_rel_conj,
+            test_method,
         )
         spine_frac_f, spine_frac_p, _, spine_frac_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_spine_frac, test_method,
+            plastic_avg_spine_frac,
+            test_method,
         )
         (
             rel_spine_frac_f,
             rel_spine_frac_p,
             _,
             rel_spine_frac_df,
-        ) = t_utils.ANOVA_1way_posthoc(plastic_rel_spine_frac, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            plastic_rel_spine_frac,
+            test_method,
+        )
         dend_frac_f, dend_frac_p, _, dend_frac_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_dend_frac, test_method,
+            plastic_avg_dend_frac,
+            test_method,
         )
         (
             rel_dend_frac_f,
             rel_dend_frac_p,
             _,
             rel_dend_frac_df,
-        ) = t_utils.ANOVA_1way_posthoc(plastic_rel_dend_frac, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            plastic_rel_dend_frac,
+            test_method,
+        )
         onset_f, onset_p, _, onset_df = t_utils.ANOVA_1way_posthoc(
-            plastic_avg_onset, test_method,
+            plastic_avg_onset,
+            test_method,
         )
         rel_onset_f, rel_onset_p, _, rel_onset_df = t_utils.ANOVA_1way_posthoc(
-            plastic_rel_onset, test_method,
+            plastic_rel_onset,
+            test_method,
         )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         coactivity_f, coactivity_p, coactivity_df = t_utils.kruskal_wallis_test(
-            plastic_avg_rates, "Conover", test_method,
+            plastic_avg_rates,
+            "Conover",
+            test_method,
         )
         (
             rel_coactivity_f,
             rel_coactivity_p,
             rel_coactivity_df,
-        ) = t_utils.kruskal_wallis_test(plastic_rel_rates, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            plastic_rel_rates,
+            "Conover",
+            test_method,
+        )
         conj_f, conj_p, conj_df = t_utils.kruskal_wallis_test(
-            plastic_avg_conj, "Conover", test_method,
+            plastic_avg_conj,
+            "Conover",
+            test_method,
         )
         rel_conj_f, rel_conj_p, rel_conj_df = t_utils.kruskal_wallis_test(
-            plastic_rel_conj, "Conover", test_method,
+            plastic_rel_conj,
+            "Conover",
+            test_method,
         )
         spine_frac_f, spine_frac_p, spine_frac_df = t_utils.kruskal_wallis_test(
-            plastic_avg_spine_frac, "Conover", test_method,
+            plastic_avg_spine_frac,
+            "Conover",
+            test_method,
         )
         (
             rel_spine_frac_f,
             rel_spine_frac_p,
             rel_spine_frac_df,
-        ) = t_utils.kruskal_wallis_test(plastic_rel_spine_frac, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            plastic_rel_spine_frac,
+            "Conover",
+            test_method,
+        )
         dend_frac_f, dend_frac_p, dend_frac_df = t_utils.kruskal_wallis_test(
-            plastic_avg_dend_frac, "Conover", test_method,
+            plastic_avg_dend_frac,
+            "Conover",
+            test_method,
         )
         (
             rel_dend_frac_f,
             rel_dend_frac_p,
             rel_dend_frac_df,
-        ) = t_utils.kruskal_wallis_test(plastic_rel_dend_frac, "Conover", test_method,)
+        ) = t_utils.kruskal_wallis_test(
+            plastic_rel_dend_frac,
+            "Conover",
+            test_method,
+        )
         onset_f, onset_p, onset_df = t_utils.kruskal_wallis_test(
-            plastic_avg_onset, "Conover", test_method,
+            plastic_avg_onset,
+            "Conover",
+            test_method,
         )
         rel_onset_f, rel_onset_p, rel_onset_df = t_utils.kruskal_wallis_test(
-            plastic_rel_onset, "Conover", test_method,
+            plastic_rel_onset,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
     # Perform correlations
     _, coactivity_corr_df = t_utils.correlate_grouped_data(
-        plastic_rate_dist, distance_bins,
+        plastic_rate_dist,
+        distance_bins,
     )
-    _, conj_corr_df = t_utils.correlate_grouped_data(plastic_conj_dist, distance_bins,)
+    _, conj_corr_df = t_utils.correlate_grouped_data(
+        plastic_conj_dist,
+        distance_bins,
+    )
     _, spine_frac_corr_df = t_utils.correlate_grouped_data(
-        plastic_spine_frac_dist, distance_bins,
+        plastic_spine_frac_dist,
+        distance_bins,
     )
     _, dend_frac_corr_df = t_utils.correlate_grouped_data(
-        plastic_dend_frac_dist, distance_bins,
+        plastic_dend_frac_dist,
+        distance_bins,
     )
     _, onset_corr_df = t_utils.correlate_grouped_data(
-        plastic_onset_dist, distance_bins,
+        plastic_onset_dist,
+        distance_bins,
     )
     # Comparisions to chance
     ## Coactivity
@@ -5894,11 +6193,17 @@ def plot_nearby_spine_properties(
         else:
             mrs_name = ""
         if period == "All periods":
-            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Dend_Properties_{mrs_name}Stats"
+            )
         elif period == "movement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Mvmt_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Dend_Properties_Mvmt_{mrs_name}Stats"
+            )
         elif period == "nonmovement":
-            fname = os.path.join(save_path, f"Nearby_Spine_Dend_Properties_Nonmvmt_{mrs_name}Stats")
+            fname = os.path.join(
+                save_path, f"Nearby_Spine_Dend_Properties_Nonmvmt_{mrs_name}Stats"
+            )
 
         fig.savefig(fname + ".pdf")
 
@@ -5918,36 +6223,36 @@ def plot_global_movement_encoding(
     save_path=None,
 ):
     """Function to plot the movement encoding when spines are coactive with dendrite
-    
-        INPUT PARAMETERS
-            dataset - Global_Coactivity_Data object
-            
-            followup_dataset - optional Global_Coactivity_Data object of the subsequent
-                               session to use for volume comparision. Default is None,
-                               to use the followup volumes in the datset
-            
-            exclude - str specifying the type of spines to exclude from analysis
-            
-            threshold - float or tuple of floats specifying the threshold cutoffs for
-                        classifying plasticity
-                        
-            figsize - tuple specifying the size of the figure
-            
-            showmeans - boolean specifying whether to display mean values on box plots
-            
-            test_type - str specifying whether to perform parametric or nonparametric
-                        tests
-                        
-            test_method - str specifying the type of posthoct test to perform
-            
-            display_stats - boolean specifying whether to display the statistics
-            
-            vol_norm - boolean specifying whether to use normalized relative volume values
-            
-            save - boolean specifying whether to save the figure or not
-            
-            save_path - str specifying where to save the figures
-            
+
+    INPUT PARAMETERS
+        dataset - Global_Coactivity_Data object
+
+        followup_dataset - optional Global_Coactivity_Data object of the subsequent
+                           session to use for volume comparision. Default is None,
+                           to use the followup volumes in the datset
+
+        exclude - str specifying the type of spines to exclude from analysis
+
+        threshold - float or tuple of floats specifying the threshold cutoffs for
+                    classifying plasticity
+
+        figsize - tuple specifying the size of the figure
+
+        showmeans - boolean specifying whether to display mean values on box plots
+
+        test_type - str specifying whether to perform parametric or nonparametric
+                    tests
+
+        test_method - str specifying the type of posthoct test to perform
+
+        display_stats - boolean specifying whether to display the statistics
+
+        vol_norm - boolean specifying whether to use normalized relative volume values
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -5975,65 +6280,76 @@ def plot_global_movement_encoding(
     conj_coactive_movement_stereotypy = dataset.conj_movement_stereotypy
     conj_coactive_movement_reliability = dataset.conj_movement_reliability
     conj_coactive_movement_specificity = dataset.conj_movement_specificity
-    nonconj_coactive_movement_correlation = (
-        dataset.nonconj_movement_correlation
-    )
+    nonconj_coactive_movement_correlation = dataset.nonconj_movement_correlation
     nonconj_coactive_movement_stereotypy = dataset.nonconj_movement_stereotypy
-    nonconj_coactive_movement_reliability = (
-        dataset.nonconj_movement_reliability
-    )
-    nonconj_coactive_movement_specificity = (
-        dataset.nonconj_movement_specificity
-    )
+    nonconj_coactive_movement_reliability = dataset.nonconj_movement_reliability
+    nonconj_coactive_movement_specificity = dataset.nonconj_movement_specificity
 
     # Calculate the relative volumes
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Organize data
     ## Subselect present spines
     all_coactive_movement_correlation = d_utils.subselect_data_by_idxs(
-        all_coactive_movement_correlation, spine_idxs,
+        all_coactive_movement_correlation,
+        spine_idxs,
     )
     all_coactive_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        all_coactive_movement_stereotypy, spine_idxs,
+        all_coactive_movement_stereotypy,
+        spine_idxs,
     )
     all_coactive_movement_reliability = d_utils.subselect_data_by_idxs(
-        all_coactive_movement_reliability, spine_idxs,
+        all_coactive_movement_reliability,
+        spine_idxs,
     )
     all_coactive_movement_specificity = d_utils.subselect_data_by_idxs(
-        all_coactive_movement_specificity, spine_idxs,
+        all_coactive_movement_specificity,
+        spine_idxs,
     )
     conj_coactive_movement_correlation = d_utils.subselect_data_by_idxs(
-        conj_coactive_movement_correlation, spine_idxs,
+        conj_coactive_movement_correlation,
+        spine_idxs,
     )
     conj_coactive_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        conj_coactive_movement_stereotypy, spine_idxs,
+        conj_coactive_movement_stereotypy,
+        spine_idxs,
     )
     conj_coactive_movement_reliability = d_utils.subselect_data_by_idxs(
-        conj_coactive_movement_reliability, spine_idxs,
+        conj_coactive_movement_reliability,
+        spine_idxs,
     )
     conj_coactive_movement_specificity = d_utils.subselect_data_by_idxs(
-        conj_coactive_movement_specificity, spine_idxs,
+        conj_coactive_movement_specificity,
+        spine_idxs,
     )
     nonconj_coactive_movement_correlation = d_utils.subselect_data_by_idxs(
-        nonconj_coactive_movement_correlation, spine_idxs,
+        nonconj_coactive_movement_correlation,
+        spine_idxs,
     )
     nonconj_coactive_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        nonconj_coactive_movement_stereotypy, spine_idxs,
+        nonconj_coactive_movement_stereotypy,
+        spine_idxs,
     )
     nonconj_coactive_movement_reliability = d_utils.subselect_data_by_idxs(
-        nonconj_coactive_movement_reliability, spine_idxs,
+        nonconj_coactive_movement_reliability,
+        spine_idxs,
     )
     nonconj_coactive_movement_specificity = d_utils.subselect_data_by_idxs(
-        nonconj_coactive_movement_specificity, spine_idxs,
+        nonconj_coactive_movement_specificity,
+        spine_idxs,
     )
 
     ## Seperate into plasticity groups
@@ -6049,7 +6365,10 @@ def plot_global_movement_encoding(
     plastic_nonconj_stereo = {}
     plastic_nonconj_reli = {}
     plastic_nonconj_speci = {}
-    for key, value, in plastic_groups.items():
+    for (
+        key,
+        value,
+    ) in plastic_groups.items():
         spines = eval(value)
         plastic_mvmt_corr[key] = all_coactive_movement_correlation[spines]
         plastic_mvmt_stereo[key] = all_coactive_movement_stereotypy[spines]
@@ -6431,86 +6750,132 @@ def plot_global_movement_encoding(
     # Perform the f-tests
     if test_type == "parametric":
         all_corr_f, all_corr_p, _, all_corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_corr, test_method,
+            plastic_mvmt_corr,
+            test_method,
         )
         all_stereo_f, all_stereo_p, _, all_stereo_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_stereo, test_method,
+            plastic_mvmt_stereo,
+            test_method,
         )
         all_reli_f, all_reli_p, _, all_reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_reli, test_method,
+            plastic_mvmt_reli,
+            test_method,
         )
         all_speci_f, all_speci_p, _, all_speci_df = t_utils.ANOVA_1way_posthoc(
-            plastic_mvmt_speci, test_method,
+            plastic_mvmt_speci,
+            test_method,
         )
         conj_corr_f, conj_corr_p, _, conj_corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_conj_corr, test_method,
+            plastic_conj_corr,
+            test_method,
         )
         conj_stereo_f, conj_stereo_p, _, conj_stereo_df = t_utils.ANOVA_1way_posthoc(
-            plastic_conj_stereo, test_method,
+            plastic_conj_stereo,
+            test_method,
         )
         conj_reli_f, conj_reli_p, _, conj_reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_conj_reli, test_method,
+            plastic_conj_reli,
+            test_method,
         )
         conj_speci_f, conj_speci_p, _, conj_speci_df = t_utils.ANOVA_1way_posthoc(
-            plastic_conj_speci, test_method,
+            plastic_conj_speci,
+            test_method,
         )
         nonconj_corr_f, nonconj_corr_p, _, nonconj_corr_df = t_utils.ANOVA_1way_posthoc(
-            plastic_nonconj_corr, test_method,
+            plastic_nonconj_corr,
+            test_method,
         )
         (
             nonconj_stereo_f,
             nonconj_stereo_p,
             _,
             nonconj_stereo_df,
-        ) = t_utils.ANOVA_1way_posthoc(plastic_nonconj_stereo, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_stereo,
+            test_method,
+        )
         nonconj_reli_f, nonconj_reli_p, _, nonconj_reli_df = t_utils.ANOVA_1way_posthoc(
-            plastic_nonconj_reli, test_method,
+            plastic_nonconj_reli,
+            test_method,
         )
         (
             nonconj_speci_f,
             nonconj_speci_p,
             _,
             nonconj_speci_df,
-        ) = t_utils.ANOVA_1way_posthoc(plastic_nonconj_speci, test_method,)
+        ) = t_utils.ANOVA_1way_posthoc(
+            plastic_nonconj_speci,
+            test_method,
+        )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         all_corr_f, all_corr_p, all_corr_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_corr, "Conover", test_method,
+            plastic_mvmt_corr,
+            "Conover",
+            test_method,
         )
         all_stereo_f, all_stereo_p, all_stereo_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_stereo, "Conover", test_method,
+            plastic_mvmt_stereo,
+            "Conover",
+            test_method,
         )
         all_reli_f, all_reli_p, all_reli_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_reli, "Conover", test_method,
+            plastic_mvmt_reli,
+            "Conover",
+            test_method,
         )
         all_speci_f, all_speci_p, all_speci_df = t_utils.kruskal_wallis_test(
-            plastic_mvmt_speci, "Conover", test_method,
+            plastic_mvmt_speci,
+            "Conover",
+            test_method,
         )
         conj_corr_f, conj_corr_p, conj_corr_df = t_utils.kruskal_wallis_test(
-            plastic_conj_corr, "Conover", test_method,
+            plastic_conj_corr,
+            "Conover",
+            test_method,
         )
         conj_stereo_f, conj_stereo_p, conj_stereo_df = t_utils.kruskal_wallis_test(
-            plastic_conj_stereo, "Conover", test_method,
+            plastic_conj_stereo,
+            "Conover",
+            test_method,
         )
         conj_reli_f, conj_reli_p, conj_reli_df = t_utils.kruskal_wallis_test(
-            plastic_conj_reli, "Conover", test_method,
+            plastic_conj_reli,
+            "Conover",
+            test_method,
         )
         conj_speci_f, conj_speci_p, conj_speci_df = t_utils.kruskal_wallis_test(
-            plastic_conj_speci, "Conover", test_method,
+            plastic_conj_speci,
+            "Conover",
+            test_method,
         )
         nonconj_corr_f, nonconj_corr_p, nonconj_corr_df = t_utils.kruskal_wallis_test(
-            plastic_nonconj_corr, "Conover", test_method,
+            plastic_nonconj_corr,
+            "Conover",
+            test_method,
         )
         (
             nonconj_stereo_f,
             nonconj_stereo_p,
             nonconj_stereo_df,
-        ) = t_utils.kruskal_wallis_test(plastic_nonconj_stereo, "Conover", test_method,)
-        nonconj_reli_f, nonconj_reli_p, nonconj_reli_df = t_utils.kruskal_wallis_test(
-            plastic_nonconj_reli, "Conover", test_method,
+        ) = t_utils.kruskal_wallis_test(
+            plastic_nonconj_stereo,
+            "Conover",
+            test_method,
         )
-        nonconj_speci_f, nonconj_speci_p, nonconj_speci_df = t_utils.kruskal_wallis_test(
-            plastic_nonconj_speci, "Conover", test_method,
+        nonconj_reli_f, nonconj_reli_p, nonconj_reli_df = t_utils.kruskal_wallis_test(
+            plastic_nonconj_reli,
+            "Conover",
+            test_method,
+        )
+        (
+            nonconj_speci_f,
+            nonconj_speci_p,
+            nonconj_speci_df,
+        ) = t_utils.kruskal_wallis_test(
+            plastic_nonconj_speci,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
 
@@ -6694,3 +7059,337 @@ def plot_global_movement_encoding(
         fname = os.path.join(save_path, "Dendritic_Coactivity_Figure_25_Stats")
 
         fig2.savefig(fname + ".pdf")
+
+
+def plot_noncoactive_calcium(
+    dataset,
+    period="All periods",
+    followup_dataset=None,
+    exclude="Shaft Spine",
+    MRSs=None,
+    threshold=0.3,
+    figsize=(10, 10),
+    showmeans=False,
+    test_type="nonparametric",
+    test_method="holm-sidak",
+    display_stats=True,
+    vol_norm=False,
+    save=False,
+    save_path=None,
+):
+    """Function to plot spine calcium when the dendrite and neighbors
+        are active, but the spine isn't
+
+    INPUT PARAMETERS
+        dataset - Dendritic_Coactivity_Data object
+
+        period - str specifying whether the dataset is constrained to a particular
+                movement period
+
+        followup_data - optional Dendritic_Coactivity_Data object of the subsequent
+                        session to be used for volume comparisoin. Default is None
+                        to use the followup volumes in the dataset
+
+        exclude - str specifying spine type to exclude from data analysis
+
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" or "nMRS". Default is None to examine all spines
+
+        threshold - float or tuple of floats specifying the threshold cutoff
+                    for classifying plasticity
+
+        showmeans - boolean specifying whether to plot means on box plots
+
+        test_type - str specifying whether to perform parametric or nonparametric tests
+
+        test_method - str specifying the type of posthoc tests to perform
+
+        display_stats - boolean specifying whether to display stats
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying where to save the figure
+
+
+    """
+    COLORS = ["mediumslateblue", "tomato", "silver"]
+    plastic_groups = {
+        "sLTP": "enlarged_spines",
+        "sLTD": "shrunken_spines",
+        "Stable": "stable_spines",
+    }
+
+    if period == "All periods":
+        period_title = "Entire session"
+    elif period == "movement":
+        period_title = "Movement periods"
+    elif period == "nonmovement":
+        period_title = "Nonmovement periods"
+
+    # Pull relevant data
+    sampling_rate = dataset.parameters["Sampling Rate"]
+    activity_window = dataset.parameters["Activity Window"]
+    if dataset.parameters["zscore"]:
+        activity_type = "zscore"
+    else:
+        activity_type = "\u0394F/F"
+
+    spine_volumes = dataset.spine_volumes
+    spine_flags = dataset.spine_flags
+    if followup_dataset is None:
+        followup_volumes = dataset.followup_volumes
+        followup_flags = dataset.followup_flags
+    else:
+        followup_volumes = followup_dataset.spine_volumes
+        followup_flags = followup_dataset.spine_flags
+
+    ## Calcium related variables
+    noncoactive_spine_calcium_amplitude = dataset.noncoactive_spine_calcium_amplitude
+    noncoactive_spine_calcium_traces = dataset.noncoactive_spine_calcium_traces
+    conj_fraction_participating = dataset.conj_fraction_participating
+    nonparticipating_spine_calcium_amplitude = (
+        dataset.nonparticipating_spine_calcium_amplitude
+    )
+    nonparticipating_spine_calcium_traces = (
+        dataset.nonparticipating_spine_calcium_traces
+    )
+
+    # Calculate the relative volumes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
+    )
+    delta_volume = delta_volume[-1]
+    enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
+    )
+
+    # Subselect present spines
+    noncoactive_spine_calcium_amplitude = d_utils.subselect_data_by_idxs(
+        noncoactive_spine_calcium_amplitude,
+        spine_idxs,
+    )
+    noncoactive_spine_calcium_traces = d_utils.subselect_data_by_idxs(
+        noncoactive_spine_calcium_traces,
+        spine_idxs,
+    )
+    conj_fraction_participating = d_utils.subselect_data_by_idxs(
+        conj_fraction_participating,
+        spine_idxs,
+    )
+    nonparticipating_spine_calcium_amplitude = d_utils.subselect_data_by_idxs(
+        nonparticipating_spine_calcium_amplitude,
+        spine_idxs,
+    )
+    nonparticipating_spine_calcium_traces = d_utils.subselect_data_by_idxs(
+        nonparticipating_spine_calcium_traces, spine_idxs
+    )
+
+    mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
+
+    # Seperate into dicts for plotting
+    plastic_noncoactive_amp = {}
+    plastic_noncoactive_traces = {}
+    plastic_noncoactive_sems = {}
+    plastic_frac_participating = {}
+    plastic_nonparticipating_amp = {}
+    plastic_nonparticipating_traces = {}
+    plastic_nonparticipating_sems = {}
+
+    for key, value in plastic_groups.items():
+        spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * mvmt_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmvmt_spines
+        nonco_traces = compress(noncoactive_spine_calcium_traces, spines)
+        nonco_traces = [
+            np.nanmean(x, axis=1) for x in nonco_traces if type(x) == np.ndarray
+        ]
+        nonco_traces = np.vstack(nonco_traces)
+        plastic_noncoactive_traces[key] = np.nanmean(nonco_traces, axis=0)
+        plastic_noncoactive_sems[key] = stats.sem(
+            nonco_traces, axis=0, nan_policy="omit"
+        )
+        nonpart_traces = compress(nonparticipating_spine_calcium_traces, spines)
+        nonpart_traces = [
+            np.nanmean(x, axis=1) for x in nonpart_traces if type(x) == np.ndarray
+        ]
+        nonpart_traces = np.vstack(nonpart_traces)
+        plastic_nonparticipating_traces[key] = np.nanmean(nonpart_traces, axis=0)
+        plastic_nonparticipating_sems[key] = stats.sem(
+            nonpart_traces, axis=0, nan_policy="omit"
+        )
+        plastic_noncoactive_amp[key] = noncoactive_spine_calcium_amplitude[spines]
+        plastic_frac_participating[key] = conj_fraction_participating[spines]
+        plastic_nonparticipating_amp[key] = nonparticipating_spine_calcium_amplitude[
+            spines
+        ]
+
+    # Construct the figure
+    fig, axes = plt.subplot_mosaic("""ABCDE""", figsize=figsize)
+    fig.suptitle(f"{period_title} Noncoactive Calcium")
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    ################## Plot data onto axes ######################
+    # noncoactive calcium traces
+    plot_mean_activity_traces(
+        means=list(plastic_noncoactive_traces.values()),
+        sems=list(plastic_noncoactive_sems.values()),
+        group_names=list(plastic_noncoactive_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=[0],
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Noncoactive",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["A"],
+        save=False,
+        save_path=None,
+    )
+    # nonparticipating calcium traces
+    plot_mean_activity_traces(
+        means=list(plastic_nonparticipating_traces.values()),
+        sems=list(plastic_nonparticipating_sems.values()),
+        group_names=list(plastic_nonparticipating_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=activity_window,
+        avlines=[0],
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Nonparticipating",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["D"],
+        save=False,
+        save_path=None,
+    )
+    # noncoactive calcium amplitude box plot
+    plot_box_plot(
+        plastic_noncoactive_amp,
+        figsize=(5, 5),
+        title="Noncoactive",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+    # fraction nonparticpating box plot
+    plot_box_plot(
+        plastic_frac_participating,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle=f"Frac. participating",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["C"],
+        save=False,
+        save_path=None,
+    )
+    # nonparticipating calcium amplitude box plot
+    plot_box_plot(
+        plastic_nonparticipating_amp,
+        figsize=(5, 5),
+        title="Nonparticipating",
+        xtitle=None,
+        ytitle=f"Event amplitude ({activity_type})",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["E"],
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        if MRSs is not None:
+            mrs_name = f"{MRSs}_"
+        else:
+            mrs_name = ""
+        if period == "All periods":
+            fname = os.path.join(
+                save_path, f"Dendritic_Noncoactive_Event_Props_{mrs_name}Figure"
+            )
+        elif period == "movement":
+            fname = os.path.join(
+                save_path, f"Dendritic_Noncoactive_Event_Props_Mvmt_{mrs_name}Figure"
+            )
+        elif period == "nonmovement":
+            fname = os.path.join(
+                save_path, f"Dendritic_Noncoactive_Event_Props_Nonmvmt_{mrs_name}Figure"
+            )
+        fig.savefig(fname + ".pdf")
+
+    ######################### Statistics Section #########################3
