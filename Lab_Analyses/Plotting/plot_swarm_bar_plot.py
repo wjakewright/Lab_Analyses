@@ -35,6 +35,7 @@ def plot_swarm_bar_plot(
     axis_width=1,
     minor_ticks=None,
     tick_len=3,
+    x_rotation=45,
     ax=None,
     save=False,
     save_path=None,
@@ -185,7 +186,7 @@ def plot_swarm_bar_plot(
         axis_width,
     )
     for tick in ax.get_xticklabels():
-        tick.set_rotation(45)
+        tick.set_rotation(x_rotation)
 
     ax.set_xmargin(0.15)
     ticks = ax.get_yticks()
