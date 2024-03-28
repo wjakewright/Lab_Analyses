@@ -25,28 +25,28 @@ def organize_dual_spine_data(
     followup=True,
 ):
     """Function to handle the initial processing and organization of dual color spine
-        activity datasets.Specifically designed to handel GluSnFr and calcium activity
-        
-        INPUT PARAMETERS
-            mouse_id - str specifying what the mouse's id is
-            
-            channels - dictionary of strings for the different types of activity to 
-                       be processed paired with keywords that will be used to search
-                       and load those files
-            
-            fov_type - str specifying whether to process apical or basal FOVs
-            
-            redetection - boolean specifying whether to redo the event detection
+    activity datasets.Specifically designed to handel GluSnFr and calcium activity
 
-            resmooth - boolean specifying whether to redo the dFoF smoothing
+    INPUT PARAMETERS
+        mouse_id - str specifying what the mouse's id is
 
-            reprocess - boolean specifying whether to reprocess or try to load the
-                        data
-            
-            save - boolean specifying if the data is to be saved or not
-            
-            followup - boolean specifying if there is a dedicated followup structural
-                        file to be included in the data
+        channels - dictionary of strings for the different types of activity to
+                   be processed paired with keywords that will be used to search
+                   and load those files
+
+        fov_type - str specifying whether to process apical or basal FOVs
+
+        redetection - boolean specifying whether to redo the event detection
+
+        resmooth - boolean specifying whether to redo the dFoF smoothing
+
+        reprocess - boolean specifying whether to reprocess or try to load the
+                    data
+
+        save - boolean specifying if the data is to be saved or not
+
+        followup - boolean specifying if there is a dedicated followup structural
+                    file to be included in the data
     """
     print(
         f"--------------------------------------------------\nProcessing Mouse {mouse_id}"
@@ -61,7 +61,7 @@ def organize_dual_spine_data(
         align_save = (None, None)
 
     # Set up the paths to load the data from
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     mouse_path = os.path.join(initial_path, mouse_id)
     imaging_path = os.path.join(mouse_path, "imaging")
     behavior_path = os.path.join(mouse_path, "behavior")
@@ -97,13 +97,19 @@ def organize_dual_spine_data(
             if reprocess is False:
                 print(f"--Checking if {FOV} {session} aligned data exists...")
                 behavior_exists = get_existing_files(
-                    path=align_save_path, name="aligned_behavior", includes=True,
+                    path=align_save_path,
+                    name="aligned_behavior",
+                    includes=True,
                 )
                 GluSnFr_exists = get_existing_files(
-                    path=align_save_path, name="GluSnFr_aligned", includes=True,
+                    path=align_save_path,
+                    name="GluSnFr_aligned",
+                    includes=True,
                 )
                 Calcium_exists = get_existing_files(
-                    path=align_save_path, name="Calcium_aligned", includes=True,
+                    path=align_save_path,
+                    name="Calcium_aligned",
+                    includes=True,
                 )
                 if (
                     behavior_exists is not None
@@ -309,8 +315,13 @@ def organize_dual_spine_data(
                 spine_calcium_activity = calcium_activity["Spine"]
                 spine_calcium_floored = calcium_floored["Spine"]
             ### Classify movements
-            (movement_spines, silent_spines, _,) = movement_responsiveness(
-                spine_GluSnFr_processed_dFoF, lever_active,
+            (
+                movement_spines,
+                silent_spines,
+                _,
+            ) = movement_responsiveness(
+                spine_GluSnFr_processed_dFoF,
+                lever_active,
             )
             (
                 reward_movement_spines,
@@ -361,8 +372,13 @@ def organize_dual_spine_data(
                         dendrite_calcium_floored[:, s] = calcium_floored["Dendrite"][
                             :, d
                         ]
-            (movement_dendrites, silent_dendrites, _,) = movement_responsiveness(
-                dendrite_calcium_processed_dFoF, lever_active,
+            (
+                movement_dendrites,
+                silent_dendrites,
+                _,
+            ) = movement_responsiveness(
+                dendrite_calcium_processed_dFoF,
+                lever_active,
             )
             (
                 reward_movement_dendrites,
@@ -375,9 +391,19 @@ def organize_dual_spine_data(
             ## Poly Dendrite roi-related variables
             poly_dendrite_positions = Calcium.ROI_positions["Dendrite"]
             poly_dendrite_calcium_dFoF = calcium_dFoF["Dendrite Poly"]
-            poly_dendrite_calcium_processed_dFof = calcium_processed_dFoF[
-                "Dendrite Poly"
-            ]
+            if resmooth is True:
+                poly_dendrite_calcium_processed_dFof = []
+                for poly in calcium_processed_dFoF["Dendrite Poly"]:
+                    temp_dFoF = resmooth_dFoF(
+                        poly,
+                        sampling_rate=imaging_parameters["Sampling Rate"],
+                        smooth_window=0.5,
+                    )
+                    poly_dendrite_calcium_processed_dFof.append(temp_dFoF)
+            else:
+                poly_dendrite_calcium_processed_dFof = calcium_processed_dFoF[
+                    "Dendrite Poly"
+                ]
 
             # Pad spine and dendrite data if it is not the longest
             if len(spine_flags) != max_spine_num:
@@ -388,28 +414,44 @@ def organize_dual_spine_data(
                     corrected_spine_volume, max_spine_num
                 )
                 spine_GluSnFr_dFoF = pad_array_to_length(
-                    spine_GluSnFr_dFoF, max_spine_num, axis=1,
+                    spine_GluSnFr_dFoF,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_GluSnFr_processed_dFoF = pad_array_to_length(
-                    spine_GluSnFr_processed_dFoF, max_spine_num, axis=1,
+                    spine_GluSnFr_processed_dFoF,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_GluSnFr_activity = pad_array_to_length(
-                    spine_GluSnFr_activity, max_spine_num, axis=1,
+                    spine_GluSnFr_activity,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_GluSnFr_floored = pad_array_to_length(
-                    spine_GluSnFr_floored, max_spine_num, axis=1,
+                    spine_GluSnFr_floored,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_calcium_dFoF = pad_array_to_length(
-                    spine_calcium_dFoF, max_spine_num, axis=1,
+                    spine_calcium_dFoF,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_calcium_processed_dFoF = pad_array_to_length(
-                    spine_calcium_processed_dFoF, max_spine_num, axis=1,
+                    spine_calcium_processed_dFoF,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_calcium_activity = pad_array_to_length(
-                    spine_calcium_activity, max_spine_num, axis=1,
+                    spine_calcium_activity,
+                    max_spine_num,
+                    axis=1,
                 )
                 spine_calcium_floored = pad_array_to_length(
-                    spine_calcium_floored, max_spine_num, axis=1,
+                    spine_calcium_floored,
+                    max_spine_num,
+                    axis=1,
                 )
                 movement_spines = pad_array_to_length(
                     movement_spines, max_spine_num, value=False
@@ -425,16 +467,24 @@ def organize_dual_spine_data(
                 )
                 dendrite_length = pad_array_to_length(dendrite_length, max_spine_num)
                 dendrite_calcium_dFoF = pad_array_to_length(
-                    dendrite_calcium_dFoF, max_spine_num, axis=1,
+                    dendrite_calcium_dFoF,
+                    max_spine_num,
+                    axis=1,
                 )
                 dendrite_calcium_processed_dFoF = pad_array_to_length(
-                    dendrite_calcium_processed_dFoF, max_spine_num, axis=1,
+                    dendrite_calcium_processed_dFoF,
+                    max_spine_num,
+                    axis=1,
                 )
                 dendrite_calcium_activity = pad_array_to_length(
-                    dendrite_calcium_activity, max_spine_num, axis=1,
+                    dendrite_calcium_activity,
+                    max_spine_num,
+                    axis=1,
                 )
                 dendrite_calcium_floored = pad_array_to_length(
-                    dendrite_calcium_floored, max_spine_num, axis=1,
+                    dendrite_calcium_floored,
+                    max_spine_num,
+                    axis=1,
                 )
                 movement_dendrites = pad_array_to_length(
                     movement_dendrites, max_spine_num, value=False
@@ -520,14 +570,14 @@ def organize_dual_spine_data(
 ################################ HELPER FUNCTIONS #################################
 def pad_spine_flags(spine_flags, length):
     """Function to pad spine flag lists to a given length
-    
-        INPUT PARAMETERS
-            spine_flags - list of the spine flags
-            
-            length - int specifying the final length of the list
-            
-        OUTPUT PARAMETERS
-            padded_spine_flags - list of the padded spine flags
+
+    INPUT PARAMETERS
+        spine_flags - list of the spine flags
+
+        length - int specifying the final length of the list
+
+    OUTPUT PARAMETERS
+        padded_spine_flags - list of the padded spine flags
     """
     padded_spine_flags = (spine_flags + length * [["Absent"]])[:length]
     return padded_spine_flags
@@ -537,7 +587,7 @@ def pad_spine_flags(spine_flags, length):
 @dataclass
 class Dual_Channel_Spine_Data:
     """Dataclass containing all of the relevant behavioral and activity data for a single
-        imaging session. Contains both GluSnFr and calcium activity data together
+    imaging session. Contains both GluSnFr and calcium activity data together
     """
 
     # General variables
