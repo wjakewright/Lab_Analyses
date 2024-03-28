@@ -5,12 +5,12 @@ import numpy as np
 
 def get_activity_timestamps(activity):
     """Function to get the timestamps for activity onsets
-    
-        INPUT PARAMETERS
-            activity - np.array of binarized activity trace
-        
-        OUTPUT PARAMETERS
-            timestamps - list of timestamps
+
+    INPUT PARAMETERS
+        activity - np.array of binarized activity trace
+
+    OUTPUT PARAMETERS
+        timestamps - list of timestamps
     """
     diff = np.insert(np.diff(activity), 0, 0)
     onsets = np.nonzero(diff == 1)[0]
@@ -36,27 +36,27 @@ def get_activity_timestamps(activity):
 
 
 def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
-    """Function to refine the timestamps to makes sure they fit in the dataset and 
-        activity window
-        
-        INPUT PARAMETERS
-            timestamps - list of activity timestamps
+    """Function to refine the timestamps to makes sure they fit in the dataset and
+    activity window
 
-            window - tuple specifying the before and after window around the timestamp
-                    in seconds
+    INPUT PARAMETERS
+        timestamps - list of activity timestamps
 
-            max_len - int specifying the len of activity trace
+        window - tuple specifying the before and after window around the timestamp
+                in seconds
 
-            sampling_rate - int specifying the sampling rate
-        
-        OUTPUT PARAMETERS
-            refined_stamps - list of the refined timestamps
+        max_len - int specifying the len of activity trace
+
+        sampling_rate - int specifying the sampling rate
+
+    OUTPUT PARAMETERS
+        refined_stamps - list of the refined timestamps
     """
     # Check if timestamps are empty
     if len(timestamps) == 0:
         return []
     # Determine if the input are tuples or not
-    if type(timestamps[0]) == tuple:
+    if (type(timestamps[0]) == tuple) or (type(timestamps[0]) == np.ndarray):
         t_stamps = [x[0] for x in timestamps]
     else:
         t_stamps = timestamps
@@ -83,18 +83,18 @@ def refine_activity_timestamps(timestamps, window, max_len, sampling_rate=60):
 
 def timestamp_onset_correction(timestamps, activity_window, onset, sampling_rate):
     """Function to correct timestamps to be at activity onset
-        
-        INPUT PARAMETERS
-             timestamps - list of timestamps
-            
-            activity_window - tuple specifying the activity window the activity is 
-                              referenced to
-            
-            onset - int specifying the onset frame in reference to the activity
-                    window
-        
-        OUTPUT PARAMETERS
-            corrected_timestamps - list of the ocrrected timestamps
+
+    INPUT PARAMETERS
+         timestamps - list of timestamps
+
+        activity_window - tuple specifying the activity window the activity is
+                          referenced to
+
+        onset - int specifying the onset frame in reference to the activity
+                window
+
+    OUTPUT PARAMETERS
+        corrected_timestamps - list of the ocrrected timestamps
     """
     if np.isnan(onset):
         return timestamps
@@ -109,4 +109,3 @@ def timestamp_onset_correction(timestamps, activity_window, onset, sampling_rate
         corrected_timestamps = [int(x - offset) for x in timestamps]
 
     return corrected_timestamps
-
