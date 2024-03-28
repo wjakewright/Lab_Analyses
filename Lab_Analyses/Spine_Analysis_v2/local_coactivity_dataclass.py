@@ -8,8 +8,7 @@ from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 @dataclass
 class Local_Coactivity_Data:
-    """Dataclass to contain the local coactivity data from individual sessions
-    """
+    """Dataclass to contain the local coactivity data from individual sessions"""
 
     # Session information
     mouse_id: str
@@ -141,10 +140,9 @@ class Local_Coactivity_Data:
     noncoactive_local_dend_amplitude: np.ndarray
     noncoactive_local_dend_amplitude_dist: np.ndarray
 
-
     def save(self):
         """method to save the dataclass"""
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "coactivity_data", self.FOV, self.session
         )
@@ -176,9 +174,9 @@ class Grouped_Local_Coactivity_Data:
 
     def __init__(self, data_list):
         """Initialize the class
-            
-            INPUT PARAMETERS
-                data_list - list of Local_Coactivity_Data dataclasses
+
+        INPUT PARAMETERS
+            data_list - list of Local_Coactivity_Data dataclasses
         """
         # Initialize some of the initial attributes
         self.session = data_list[0].session
@@ -189,7 +187,7 @@ class Grouped_Local_Coactivity_Data:
 
     def concatenate_data(self, data_list):
         """Method to concatenate all the attributes from the different dataclasses
-            together and store the attributes in the current class
+        together and store the attributes in the current class
         """
         # Get a list of all the attributes
         attributes = list(data_list[0].__dict__.keys())
@@ -221,7 +219,7 @@ class Grouped_Local_Coactivity_Data:
 
     def save(self):
         """Method to save the grouped dataclass"""
-        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
+        save_path = r"G:\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         # Prepare the save name
