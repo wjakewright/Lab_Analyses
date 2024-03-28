@@ -20,26 +20,26 @@ def batch_spine_volume_normalization(
     mice_list, day, fov_type, activity_type, zscore, plot=False
 ):
     """Function to handle calculating constants to normalize activity traces
-        based on spine volume
-        
-        INPUT PARAMETERS
-            mice_list - list of str specifying the mice to analyze
-            
-            day - str speicifying what session to analyze
-            
-            fov_type - str specifying whether to analyze apical or basal FOVs
-            
-            activity_type - str specifying what type of data (GluSnFr or Calcium)
-                            to analyze
-            
-            zscore - boolean specifying if the input data is zscored
-            
-            plot - boolean specifying whether to plot the before and after relationship
-                    between activity and volume
+    based on spine volume
 
-        OUTPUT PARAMETERS
-            constant_dict - dict of dict containing the constants for each mouse and 
-                            each FOV spines  
+    INPUT PARAMETERS
+        mice_list - list of str specifying the mice to analyze
+
+        day - str speicifying what session to analyze
+
+        fov_type - str specifying whether to analyze apical or basal FOVs
+
+        activity_type - str specifying what type of data (GluSnFr or Calcium)
+                        to analyze
+
+        zscore - boolean specifying if the input data is zscored
+
+        plot - boolean specifying whether to plot the before and after relationship
+                between activity and volume
+
+    OUTPUT PARAMETERS
+        constant_dict - dict of dict containing the constants for each mouse and
+                        each FOV spines
     """
     # Initialize the output
     constant_dict = {}
@@ -128,7 +128,7 @@ def batch_spine_volume_normalization(
             constant_dict[mouse][fov] = norm_constants[idxs]
 
     # Save section
-    save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
+    save_path = r"G:\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
     if zscore:
@@ -152,28 +152,28 @@ def spine_volume_norm_constant(
     plot=False,
 ):
     """Function to generate a normalization constant to normalize spine activity
-        by its volume if there is a relationship between them
-        
-        INPUT PARAMETERS
-            activity_trace - np.array of all spines binarized activity
-            
-            dFoF_traces - np.array of all spines' dFoF traces
-            
-            volume - np.array of all the spines volumes converted to um
-            
-            sampling_rate - int specifying the imaging rate
+    by its volume if there is a relationship between them
 
-            activity_type - str specifying the type of activity
+    INPUT PARAMETERS
+        activity_trace - np.array of all spines binarized activity
 
-            zscore - boolean specifying whether to zscore the traces or not
-            
-            iterations - int specifying how many iterations to perform
+        dFoF_traces - np.array of all spines' dFoF traces
 
-            plot - boolean indicating whether to plot the relation ship between 
-                    activity and volume before and after correction
-            
-        OUTPUT PARAMTERS
-            norm_constants - np.array of the normalization constants for each spine
+        volume - np.array of all the spines volumes converted to um
+
+        sampling_rate - int specifying the imaging rate
+
+        activity_type - str specifying the type of activity
+
+        zscore - boolean specifying whether to zscore the traces or not
+
+        iterations - int specifying how many iterations to perform
+
+        plot - boolean indicating whether to plot the relation ship between
+                activity and volume before and after correction
+
+    OUTPUT PARAMTERS
+        norm_constants - np.array of the normalization constants for each spine
     """
     # Find the max amplitudes for each trace when it is active
     max_amplitudes = np.zeros(activity_traces.shape[1])
@@ -236,8 +236,8 @@ def spine_volume_norm_constant(
 
 
 def norm_objective_function(x, y, con):
-    """Helper function to generate the objective function for 
-        spine volume normalization"""
+    """Helper function to generate the objective function for
+    spine volume normalization"""
 
     new_x = x / (y + con)
     new_y = y
@@ -250,7 +250,7 @@ def norm_objective_function(x, y, con):
 
 def plot_norm_constants(max_amplitudes, volumes, norm_constants, activity_type):
     """Function to plot the before and after relationship between
-      amplitudes and spine volumes"""
+    amplitudes and spine volumes"""
 
     # Construct the plot
     fig, axes = plt.subplots(1, 2, figsize=(6, 3.5), constrained_layout=True)
@@ -307,19 +307,19 @@ def plot_norm_constants(max_amplitudes, volumes, norm_constants, activity_type):
 
 def load_norm_constants(fov_type, activity_type, signal_type):
     """Helper function to search and load for the normalization constants
-        
-        INPUT PARAMETERS
-            fov_type - str specifying the type of FOV
-            
-            activity_type - boolean specifying whether the activity type is zscore
-                            or dFoF
-            
-            signal_type - str specifying if the signal is GluSnFr or Calcium
-    
-        OUTPUT PARAMETERS
-            normalization_constants - nested dict of the normalization constants
+
+    INPUT PARAMETERS
+        fov_type - str specifying the type of FOV
+
+        activity_type - boolean specifying whether the activity type is zscore
+                        or dFoF
+
+        signal_type - str specifying if the signal is GluSnFr or Calcium
+
+    OUTPUT PARAMETERS
+        normalization_constants - nested dict of the normalization constants
     """
-    load_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
+    load_path = r"G:\Analyzed_data\grouped\Dual_Spine_Imaging\Normalization_Constants"
     if activity_type:
         aname = "zscore"
     else:
