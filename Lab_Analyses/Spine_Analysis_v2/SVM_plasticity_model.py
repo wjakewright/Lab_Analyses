@@ -5,10 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImPipeline
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn import metrics, svm
+from sklearn.impute import KNNImputer
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, make_scorer
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, cross_validate
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline as SkPipeline
 from sklearn.preprocessing import MinMaxScaler
 
 sns.set()
@@ -41,7 +45,10 @@ class SVM_Plasticity_Model:
         self.partial_models = None
         ## Data and features
         self.X = None
+        self.X_corrected = None
+        self.X_sampled = None
         self.y = None
+        self.y_sampled = None
         self.features = None
         self.classes = None
         self.full_model_parameters = None
@@ -58,20 +65,23 @@ class SVM_Plasticity_Model:
         self.random_state = random.randint(0, 100)
         self.score_method = None
         self.shuff_iterations = None
+        self.balance = False
 
         # Scorer options
         self.scorer_dict = {
             "accuracy": make_scorer(metrics.accuracy_score),
             "balanced_accuracy": make_scorer(metrics.balanced_accuracy_score),
-            "average_precision": make_scorer(metrics.average_precision_score),
+            "average_precision": make_scorer(
+                metrics.average_precision_score, average="micro"
+            ),
             "f1_micro": make_scorer(metrics.f1_score, average="micro"),
-            "precision": make_scorer(metrics.precision_score),
+            "precision": make_scorer(metrics.precision_score, average="micro"),
             "recall": make_scorer(metrics.recall_score),
             "roc_auc_ovr": make_scorer(metrics.roc_auc_score, multi_class="ovr"),
             "roc_auc_ovo": make_scorer(metrics.roc_auc_score, multi_class="ovo"),
         }
 
-    def train_model(self, x_values, y_values, classes, score_method):
+    def train_model(self, x_values, y_values, classes, score_method, balance=True):
         """Method to train the model using grid search cross validation
 
         INPUT PARAMETERS
@@ -88,6 +98,7 @@ class SVM_Plasticity_Model:
         ## Store feature names
         self.features = list(x_values.keys())
         self.score_method = score_method
+        self.balance = balance
         ## Convert x dict values into array with each column a feature
         X = np.array(list(x_values.values())).T
         ## Store x and y values
@@ -95,29 +106,51 @@ class SVM_Plasticity_Model:
         self.y = y_values
         self.classes = classes
 
-        # print(np.argwhere(np.isnan(X).any(axis=1)))
-        # print(np.argwhere(np.isnan(X).any(axis=0)))
-        X[np.isnan(X)] = 0
+        ## Replace nan values using KNN Impute
+        imputer = KNNImputer(n_neighbors=5, weights="distance", copy=True)
+        X_corrected = imputer.fit_transform(X)
+        self.X_corrected = X_corrected
+
+        ## Balance classes using SMOTE
+        smote = SMOTE(
+            sampling_strategy={1: 50, 2: 50, 3: 50},
+            random_state=self.random_state,
+            k_neighbors=5,
+        )
+        smote = RandomUnderSampler(
+            sampling_strategy="not minority",
+            random_state=self.random_state,
+        )
+        new_x, new_y = smote.fit_resample(X_corrected, y_values)
+        self.X_sampled = new_x
+        self.y_sampled = new_y
 
         # Preliminary setup for the grid search
         ## Get the scorer
         scorer = self.scorer_dict[score_method]
         ## Get cross validation method
         cv = StratifiedShuffleSplit(
-            n_splits=10, test_size=0.2, random_state=self.random_state
+            n_splits=5, test_size=0.2, random_state=self.random_state
         )
         ## Grid search parameters
-        search_params = {"C": np.logspace(-2, 2, 5)}
+        search_params = {"classify__C": np.logspace(-2, 2, 5)}
         ## Specify the classifier
         svc = svm.SVC(kernel="linear", class_weight="balanced")
 
-        # pipe = make_pipeline(
-        #    ("scaling", MinMaxScaler()), ("C", "passthrough"), ("classify", svc)
-        # )
+        if balance:
+            pipe = ImPipeline(
+                steps=[
+                    ("sampling", smote),
+                    ("scaling", MinMaxScaler()),
+                    ("classify", svc),
+                ]
+            )
+        else:
+            pipe = SkPipeline(steps=[("scaling", MinMaxScaler()), ("classify", svc)])
 
         # Perform the gridsearch
         clf = GridSearchCV(
-            estimator=svc,
+            estimator=pipe,
             param_grid=search_params,
             scoring=scorer,
             n_jobs=2,
@@ -127,15 +160,17 @@ class SVM_Plasticity_Model:
             return_train_score=True,
         )
         # clf = make_pipeline(MinMaxScaler(), grid)
-        scaler = MinMaxScaler()
-        X_scaled = scaler.fit_transform(X)
-        clf.fit(X=X_scaled, y=y_values)
+        # scaler = MinMaxScaler()
+        # X_scaled = scaler.fit_transform(X_corrected)
+        clf.fit(X=X_corrected, y=y_values)
 
         # Store best model and related variables
         ## Store the estimator
         self.full_model = clf.best_estimator_
+        print(clf.best_estimator_)
         self.full_model_parameters = clf.best_params_
-        self.full_model_feature_weights = clf.best_estimator_.coef_
+        print(clf.best_params_)
+        self.full_model_feature_weights = clf.best_estimator_[-1].coef_
         ## Find best scores
         self.full_model_test_score = clf.best_score_
         self.full_model_train_score = clf.cv_results_["mean_train_score"][
@@ -159,26 +194,46 @@ class SVM_Plasticity_Model:
         shuff_test_score = []
 
         # Get true model parameters and scorer
-        C = self.full_model_parameters["C"]
+        C = self.full_model_parameters["classify__C"]
         scorer = self.scorer_dict[self.score_method]
 
         # Set up cross-validation method
         cv = StratifiedShuffleSplit(
-            n_splits=10, test_size=0.2, random_state=self.random_state
+            n_splits=5, test_size=0.2, random_state=self.random_state
+        )
+        smote = SMOTE(
+            sampling_strategy={"1": 50, "2": 50, "3": 50},
+            random_state=self.random_state,
+            k_neighbors=5,
+        )
+        smote = RandomUnderSampler(
+            sampling_strategy="not minority",
+            random_state=self.random_state,
         )
 
         # Iteratively fit model for each shuffle iteration
         for i in range(iterations):
             print(f"PERFORMING SHUFFLE {i}")
             ## Shuffle data
-            shuff_x = copy.deepcopy(self.X)
+            shuff_x = copy.deepcopy(self.X_corrected)
             shuff_y = copy.deepcopy(self.y)
             np.random.shuffle(shuff_y)
             ## Set up the model and cross validation
-            svc = svm.SVC(kernel="linear", C=C)
-            clf = make_pipeline(MinMaxScaler(), svc)
+            svc = svm.SVC(kernel="linear", C=C, class_weight=None)
+            if self.balance:
+                pipe = ImPipeline(
+                    steps=[
+                        ("sampling", smote),
+                        ("scaling", MinMaxScaler()),
+                        ("classify", svc),
+                    ]
+                )
+            else:
+                pipe = SkPipeline(
+                    steps=[("scaling", MinMaxScaler()), ("classify", svc)]
+                )
             results = cross_validate(
-                clf,
+                pipe,
                 X=shuff_x,
                 y=shuff_y,
                 cv=cv,
@@ -206,14 +261,14 @@ class SVM_Plasticity_Model:
         # Plot confusion matrix
         ## Generate some splits
         cv = StratifiedShuffleSplit(
-            n_splits=10, test_size=0.2, random_state=self.random_state
+            n_splits=5, test_size=0.5, random_state=self.random_state
         )
         ## Get the average confusion matrix
         confusion_mat = None
-        for i, (_, t_split) in enumerate(cv.split(self.X, self.y)):
-            predictions = self.full_model.predict(self.X[t_split, :])
+        for i, (_, t_split) in enumerate(cv.split(self.X_sampled, self.y_sampled)):
+            predictions = self.full_model.predict(self.X_sampled[t_split, :])
             cm = confusion_matrix(
-                self.y[t_split], predictions, labels=self.full_model.classes_
+                self.y_sampled[t_split], predictions, labels=self.full_model.classes_
             )
             if i == 0:
                 confusion_mat = cm
@@ -283,7 +338,7 @@ class SVM_Plasticity_Model:
             class_feature_dict[class_comparisions[i]] = weights[i, :]
         mean_feature_dict = {}
         for i in range(weights.shape[1]):
-            mean_feature_dict[features[i]] = np.nanmean(weights[:, i])
+            mean_feature_dict[features[i]] = np.nanmean(np.absolute(weights[:, i]))
 
         # Perpare for plotting
         fig, axes = plt.subplot_mosaic("""AB""", figsize=figsize)
@@ -299,17 +354,17 @@ class SVM_Plasticity_Model:
         axes["A"].set_title("One vs One Feature Weights")
         axes["A"].set_xlabel("Features")
         axes["A"].set_xticks(ticks=x + width, labels=features, rotation="vertical")
-        axes["A"].legend(loc="upper left", ncols=len(classes))
+        axes["A"].legend(loc="lower right", ncols=1)
 
         ## Plot the mean weights
         plot_swarm_bar_plot(
             data_dict=mean_feature_dict,
             mean_type="mean",
-            err_type="sem",
+            err_type="std",
             figsize=(5, 5),
             title="Average Feature Weights",
             xtitle="Features",
-            ytitle=ytitle,
+            ytitle="Absolute Weights",
             ylim=None,
             b_colors="black",
             b_edgecolors="black",
@@ -324,6 +379,7 @@ class SVM_Plasticity_Model:
             axis_width=1.5,
             minor_ticks=None,
             tick_len=3,
+            x_rotation=90,
             ax=axes["B"],
             save=False,
             save_path=None,
@@ -452,6 +508,7 @@ def organize_input_data(
     y_values[enlarged_spines] = 1
     y_values[shrunken_spines] = 2
     y_values[stable_spines] = 3
+    y_values = y_values.astype(int)
     print(y_values)
 
     # Set up the x_values
