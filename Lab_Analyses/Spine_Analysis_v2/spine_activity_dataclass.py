@@ -9,7 +9,7 @@ from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 @dataclass
 class Spine_Activity_Data:
     """Data class to contain spine-centric activity data for an individual
-        session
+    session
     """
 
     # Session information
@@ -96,7 +96,7 @@ class Spine_Activity_Data:
 
     def save(self):
         """method to save the dataclass"""
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "coactivity_data", self.FOV, self.session
         )
@@ -120,9 +120,9 @@ class Grouped_Spine_Activity_Data:
 
     def __init__(self, data_list):
         """Initialize the class
-            
-            INPUT PARAMETERS
-                data_list - list of Spine_Activity_Data dataclasses
+
+        INPUT PARAMETERS
+            data_list - list of Spine_Activity_Data dataclasses
         """
         # Initalize some of the initial attributes
         self.session = data_list[0].session
@@ -133,7 +133,7 @@ class Grouped_Spine_Activity_Data:
 
     def concatenate_data(self, data_list):
         """Method to concatenate all the attributes from the different dataclass together
-            and store as attributes in the current class
+        and store as attributes in the current class
         """
         # Get a list of all the attributes
         attributes = list(data_list[0].__dict__.keys())
@@ -165,7 +165,7 @@ class Grouped_Spine_Activity_Data:
 
     def save(self):
         """Method to save the grouped dataclass"""
-        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
+        save_path = r"G:\Analyzed_data\grouped\Dual_Spine_Imaging\Coactivity_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
