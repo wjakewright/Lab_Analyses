@@ -18,41 +18,41 @@ def quantify_movement_quality(
     sampling_rate=60,
 ):
     """Function to assess the quality of movments during specific activity events.
-        Compared to the learned movement pattern on the final day
-        
-        INPUT PARAMETERS
-            mouse_id - str specifying the mouse id. Used to pull relevant learned movement
-            
-            activity_matrix - 2d np.array of the binaried activity traces. colums = different rois
-            
-            lever_active - np.array of the binarized lever activity
-            
-            lever_force - np.array of the lever force smooth
-            
-            threshold - float of the correlation threshold for a movement to be considered
-                        a learned movement
-                        
-            sampling_rate - int or float of the imaging sampling rate
+    Compared to the learned movement pattern on the final day
 
-        OUTPUT PARAMETERS
-            lever_learned_binary - np.array binarized to when learned movements occur
+    INPUT PARAMETERS
+        mouse_id - str specifying the mouse id. Used to pull relevant learned movement
 
-            all_active_movements - list of 2d np.arrays of all the movements an roi is active
-                                    during (rows = movements, columns = time)
+        activity_matrix - 2d np.array of the binaried activity traces. colums = different rois
 
-            avg_active_movements - list of np.arrays of the average movement an roi is active
-                                    during
+        lever_active - np.array of the binarized lever activity
 
-            median_movement_correlations - np.array of the median correlation of movements an 
-                                            roi is active during with the learned movement pattern
-            
-            learned_move_resample - np.array of the learned movement pattern resampled to a frames
-            
+        lever_force - np.array of the lever force smooth
+
+        threshold - float of the correlation threshold for a movement to be considered
+                    a learned movement
+
+        sampling_rate - int or float of the imaging sampling rate
+
+    OUTPUT PARAMETERS
+        lever_learned_binary - np.array binarized to when learned movements occur
+
+        all_active_movements - list of 2d np.arrays of all the movements an roi is active
+                                during (rows = movements, columns = time)
+
+        avg_active_movements - list of np.arrays of the average movement an roi is active
+                                during
+
+        median_movement_correlations - np.array of the median correlation of movements an
+                                        roi is active during with the learned movement pattern
+
+        learned_move_resample - np.array of the learned movement pattern resampled to a frames
+
     """
     EXPANSION = int(0.5 * sampling_rate)
     CORR_INT = 0.5
 
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
     final_day = sorted([x[0] for x in os.walk(behavior_path)])[-1]
     load_path = os.path.join(behavior_path, final_day)
@@ -233,24 +233,24 @@ def spine_dendrite_movement_similarity(
     spine_movements, dendrite_movements, nearby_spine_idxs
 ):
     """Function to compare the similarity of movements encoded by spines and their parent
-        dendrites and neighboring spines
-        
-        INPUT PARAMETERS
-            spine_movements - list containing all of the movements for each spine
-                              that it was active during
-            
-            dendrite_movements - list containing all of the movements that the parent
-                                  dendrite of each spine was active during
-                                  
-            nearby_spine_idxs - list of the indexs of the nearby spines for each spine
-    
-        OUTPUT PARAMETERS
-            spine_dendrite_corr - np.array of the median correlation between all spine-active
-                                  movements and all dendrite-active movements
-            
-            spine_nearby_corr - np.array of the mean of the median correlations between all
-                                spine-active movements and all active movements of each of 
-                                its nearby spines
+    dendrites and neighboring spines
+
+    INPUT PARAMETERS
+        spine_movements - list containing all of the movements for each spine
+                          that it was active during
+
+        dendrite_movements - list containing all of the movements that the parent
+                              dendrite of each spine was active during
+
+        nearby_spine_idxs - list of the indexs of the nearby spines for each spine
+
+    OUTPUT PARAMETERS
+        spine_dendrite_corr - np.array of the median correlation between all spine-active
+                              movements and all dendrite-active movements
+
+        spine_nearby_corr - np.array of the mean of the median correlations between all
+                            spine-active movements and all active movements of each of
+                            its nearby spines
     """
 
     # Set up outputs
@@ -279,4 +279,3 @@ def spine_dendrite_movement_similarity(
         spine_nearby_corr[i] = avg_nearby_corr
 
     return spine_dendrite_corr, spine_nearby_corr
-
