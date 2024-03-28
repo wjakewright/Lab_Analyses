@@ -30,47 +30,47 @@ def plot_mean_activity_traces(
     save=False,
     save_path=None,
 ):
-    """General function to plot the mean activity traces. Can plot individual means or 
-        means of different groups
-        
-        INPUT PARAMETERS
-            means - np.array of mean trace or a list of arrays for multiple groups
-            
-            sems - np.array of sem trace of a list of arrays for multiple groups
-            
-            group_names - list of str specifying the names of multiple groups if provided
-            
-            sampling_rate - int speciying the imaging sampling rate
-            
-            activity_window - tuple specifying the window (in sec) the trace is centered around
-            
-            avlines - list of x values for vertical lines to be plotted 
-            
-            ahlines - dict of y values to plot horizontal lines (for significance testing)
-            
-            figsize - tuple specifying figure size. Only used if independent figure
-            
-            colors - str or list of str specifying the color of the traces
-            
-            title - str specifying the title of the plot
-            
-            ytitle - str specifying the title of the y axis
+    """General function to plot the mean activity traces. Can plot individual means or
+    means of different groups
 
-            ylim - tuple specifying the limits of the y axis
-            
-            axis_width - int or float specifying how thick the axis lines should be
+    INPUT PARAMETERS
+        means - np.array of mean trace or a list of arrays for multiple groups
 
-            minor_ticks - str specifying if minor ticks should be add to the x and/or y 
-                          axes. Takes "both", "x", and "y" as inputs.
+        sems - np.array of sem trace of a list of arrays for multiple groups
 
-            tick_len - int or float specifying how long the tick marks should be
+        group_names - list of str specifying the names of multiple groups if provided
 
-            ax - axis object you wish the data to be plotted on. Useful for subplotting
+        sampling_rate - int speciying the imaging sampling rate
 
-            save - boolean specifying if you wish to save the figure or not
+        activity_window - tuple specifying the window (in sec) the trace is centered around
 
-            save_path - str specifying the path of where to save the figure
-    
+        avlines - list of x values for vertical lines to be plotted
+
+        ahlines - dict of y values to plot horizontal lines (for significance testing)
+
+        figsize - tuple specifying figure size. Only used if independent figure
+
+        colors - str or list of str specifying the color of the traces
+
+        title - str specifying the title of the plot
+
+        ytitle - str specifying the title of the y axis
+
+        ylim - tuple specifying the limits of the y axis
+
+        axis_width - int or float specifying how thick the axis lines should be
+
+        minor_ticks - str specifying if minor ticks should be add to the x and/or y
+                      axes. Takes "both", "x", and "y" as inputs.
+
+        tick_len - int or float specifying how long the tick marks should be
+
+        ax - axis object you wish the data to be plotted on. Useful for subplotting
+
+        save - boolean specifying if you wish to save the figure or not
+
+        save_path - str specifying the path of where to save the figure
+
     """
     # Check if axis was passed
     if ax is None:
@@ -82,7 +82,7 @@ def plot_mean_activity_traces(
     # Start making the plots
     if type(means) == np.ndarray:
         x = np.linspace(activity_window[0], activity_window[1], len(means))
-        ax.plot(x, means, color=colors)
+        ax.plot(x, means, color=colors, label=group_names)
         ax.fill_between(x, means - sems, means + sems, color=colors, alpha=0.2)
     elif type(means) == list:
         for m, s, c, n in zip(means, sems, colors, group_names):
@@ -115,7 +115,9 @@ def plot_mean_activity_traces(
     ax.set_title(title)
 
     # Adjust the axes
-    ax.set_xticks(ticks=[activity_window[0], 0, activity_window[1]],)
+    ax.set_xticks(
+        ticks=[activity_window[0], 0, activity_window[1]],
+    )
     ax.set_xticklabels(labels=[activity_window[0], 0, activity_window[1]])
     adjust_axes(ax, minor_ticks, "Time (s)", ytitle, tick_len, axis_width)
     ticks = ax.get_yticks()
@@ -129,4 +131,3 @@ def plot_mean_activity_traces(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, title)
         fig.savefig(fname + ".pdf")
-
