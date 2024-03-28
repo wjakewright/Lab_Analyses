@@ -115,7 +115,7 @@ def load_spine_datasets(mouse_id, days, fov_type):
         mouse_data - dict of dict containing data for each FOV (upper dict)
                     for each imaged data (lower dict)
     """
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
 
     data_path = os.path.join(initial_path, mouse_id, "spine_data")
     FOVs = next(os.walk(data_path))[1]
@@ -310,7 +310,7 @@ def load_analyzed_datasets(
         ename = "_extended"
 
     # Set up the path
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data"
+    initial_path = r"G:\Analyzed_data"
     if grouped:
         load_path = os.path.join(
             initial_path, "grouped", "Dual_Spine_Imaging", "Coactivity_Data"
@@ -370,7 +370,7 @@ def batch_load_individual_analyzed_datasets(
     partner=None,
 ):
     """Heler function to load all the individual datasets for a group of mice"""
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     all_data = []
     for mouse in mice_list:
         # Check and get all the FOVs
