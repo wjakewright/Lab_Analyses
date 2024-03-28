@@ -8,17 +8,17 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 def isosbestic_volume_comparison(mouse_list, save_fig=False, save_path=None):
     """Function to compare volume estimation between 925nm and 810nm
-        isosbestic imaging wavelengths
+    isosbestic imaging wavelengths
 
-        INPUT PARAMETERS
-            mouse_list - list of strings specifying the mice to analyze
+    INPUT PARAMETERS
+        mouse_list - list of strings specifying the mice to analyze
 
-            save_fig - boolean specifying whether to save the figure or not
+        save_fig - boolean specifying whether to save the figure or not
 
-            save_path - str specifying where to save the figure    
-        
+        save_path - str specifying where to save the figure
+
     """
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
 
     # Set up volume variables
     functional_volumes = []
@@ -80,4 +80,3 @@ def isosbestic_volume_comparison(mouse_list, save_fig=False, save_path=None):
         save=save_fig,
         save_path=save_path,
     )
-
