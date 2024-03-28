@@ -27,17 +27,17 @@ def organize_population_data(
     save=False,
 ):
     """Function to handle the initial processing and organization of population data
-        extracted using Suite2p. 
-        
-        INPUT PARAMETERS
-            mouse_id - str specifying what the mouse's id is
-            
-            roi_match - boolean specifying whether or not to take only cells tracked
-                        across all sessions
-            
-            reprocess - boolean specifying whether to reprocess the data or try to load it
-            
-            save - boolean specifying if the data is to be saved or not
+    extracted using Suite2p.
+
+    INPUT PARAMETERS
+        mouse_id - str specifying what the mouse's id is
+
+        roi_match - boolean specifying whether or not to take only cells tracked
+                    across all sessions
+
+        reprocess - boolean specifying whether to reprocess the data or try to load it
+
+        save - boolean specifying if the data is to be saved or not
     """
 
     print(
@@ -49,9 +49,7 @@ def organize_population_data(
         align_save = None
     # Set up the paths to load the data from
     suite2p_path = r"D:\Suite2P_data\paAIP2"
-    mouse_path = os.path.join(
-        r"C:\Users\Jake\Desktop\Analyzed_data\individual", mouse_id
-    )
+    mouse_path = os.path.join(r"G:\Analyzed_data\individual", mouse_id)
     behavior_path = os.path.join(mouse_path, "behavior")
     imaging_path = os.path.join(suite2p_path, mouse_id)
 
@@ -71,10 +69,14 @@ def organize_population_data(
         if reprocess is False:
             print(f"--Checking if {session} aligned data exists...")
             behavior_exists = get_existing_files(
-                path=align_save_path, name="aligned_behavior", includes=True,
+                path=align_save_path,
+                name="aligned_behavior",
+                includes=True,
             )
             imaging_exists = get_existing_files(
-                path=align_save_path, name="aligned_activity", includes=True,
+                path=align_save_path,
+                name="aligned_activity",
+                includes=True,
             )
             if behavior_exists is not None and imaging_exists is not None:
                 print(f"--Loading aligned datasets")
@@ -148,7 +150,10 @@ def organize_population_data(
         elif sensor == "RCaMP2":
             tau = 1.5
         deconvolved = oasis(
-            fluo=fluoro, batch_size=500, tau=tau, sampling_rate=int(ops_file["fs"]),
+            fluo=fluoro,
+            batch_size=500,
+            tau=tau,
+            sampling_rate=int(ops_file["fs"]),
         )
 
         deconvolved = uniform_filter1d(deconvolved, 6, axis=0)
@@ -217,7 +222,9 @@ def organize_population_data(
         if reprocess is False:
             print(f"--Checking if {session} population data exists...")
             exists = get_existing_files(
-                path=save_path, name=f"{session}_dual_spine_data", includes=True,
+                path=save_path,
+                name=f"{session}_dual_spine_data",
+                includes=True,
             )
             if exists is not None:
                 print(f"--{session} data already organized")
@@ -349,7 +356,7 @@ class Temp_Suite2P_activity:
 @dataclass
 class Population_Data:
     """Dataclass for containing all of the relevant behavioral and activity data
-        for a single population imaging session"""
+    for a single population imaging session"""
 
     # General variables
     mouse_id: str
@@ -384,4 +391,3 @@ class Population_Data:
     silent_cells_spikes: list
     reward_movement_cells_spikes: list
     reward_silent_cells_spikes: list
-
