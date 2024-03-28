@@ -22,54 +22,54 @@ def quantify_movement_quality(
     corr_duration=0.5,
     sampling_rate=60,
 ):
-    """Function to assess the quality of movements during specific activity events. 
-        Compared to the learned movement pattern on the final day of training
-        
-        INPUT PARAMETERS
-            mouse_id - str specifying the mouse id. Used to pull the relevant learned movement
-            
-            activity_matrix - 2d np.array of the binarized activity traces
-            
-            lever_active - np.array of the binarized lever activity
-            
-            lever_force - np.array of the lever force smoothed
-            
-            threshold - float of the correlation threshold for a movement to be considered
-                        a learned movement
-            
-            corr_duration - float specifying how long (sec) of the movements to correlate
-                        
-            sampling_rate - int or float specifying the imaging rate
-        
-        OUTPUT PARAMETERS
-            active_movements - list of 2d arrays containing all the movements and roi is
-                                active during (rows for each movement)
-            
-            movement_correlation - np.array of the median correlation of all movements with the
-                                    learned movement pattern for each ROI
+    """Function to assess the quality of movements during specific activity events.
+    Compared to the learned movement pattern on the final day of training
 
-            movement_stereotypy - np.array of the medean correlation between all active 
-                                  movements for each roi
-            
-            movement_reliability - np.array of the the fraction of movements an roi is
-                                    active during
-            
-            movement_specificity - np.array of the fraction of activity events that occur
-                                    during movements
-            
-            LMP_reliability - np.array of the fraction of LMP movements an roi is active during
+    INPUT PARAMETERS
+        mouse_id - str specifying the mouse id. Used to pull the relevant learned movement
 
-            LMP_specificity - np.array of the fraction of activity events that occurr during
-                              an LMP movement
-            
-            learned_movement_resample - np.array of the LMP resampled to the imaging rate
-        
+        activity_matrix - 2d np.array of the binarized activity traces
+
+        lever_active - np.array of the binarized lever activity
+
+        lever_force - np.array of the lever force smoothed
+
+        threshold - float of the correlation threshold for a movement to be considered
+                    a learned movement
+
+        corr_duration - float specifying how long (sec) of the movements to correlate
+
+        sampling_rate - int or float specifying the imaging rate
+
+    OUTPUT PARAMETERS
+        active_movements - list of 2d arrays containing all the movements and roi is
+                            active during (rows for each movement)
+
+        movement_correlation - np.array of the median correlation of all movements with the
+                                learned movement pattern for each ROI
+
+        movement_stereotypy - np.array of the medean correlation between all active
+                              movements for each roi
+
+        movement_reliability - np.array of the the fraction of movements an roi is
+                                active during
+
+        movement_specificity - np.array of the fraction of activity events that occur
+                                during movements
+
+        LMP_reliability - np.array of the fraction of LMP movements an roi is active during
+
+        LMP_specificity - np.array of the fraction of activity events that occurr during
+                          an LMP movement
+
+        learned_movement_resample - np.array of the LMP resampled to the imaging rate
+
     """
     # Set up some constants
     EXPANSION = int(0.5 * sampling_rate)  # 0.5 seconds
 
     # Load the learned movement pattern
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
     final_day = sorted(x[0] for x in os.walk(behavior_path))[-1]
     load_path = os.path.join(behavior_path, final_day)
@@ -226,4 +226,3 @@ def quantify_movement_quality(
         LMP_specificity,
         learned_move_resample,
     )
-
