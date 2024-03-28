@@ -32,10 +32,10 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
     """
     ALPHA = 0.05
     DISTANCE = 0.5 * sampling_rate
-    CENTER_POINT = np.absolute(window[0]) * sampling_rate
-    BEFORE = 0.5 * sampling_rate
-    AFTER = 1 * sampling_rate
-    AVG_RANGE = 0.25 * sampling_rate
+    CENTER_POINT = int(np.absolute(window[0]) * sampling_rate)
+    BEFORE = int(0.5 * sampling_rate)
+    AFTER = int(0.5 * sampling_rate)
+    AVG_RANGE = int(0.25 * sampling_rate)
 
     # Initialize outputs
     diffs = np.zeros(dFoF.shape[1])
@@ -62,7 +62,7 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
         for event in range(traces.shape[1]):
             event_trace = traces[:, event]
             if smooth:
-                event_trace = sysignal.savgol_filter(event_trace, 15, 3)
+                event_trace = sysignal.savgol_filter(event_trace, 31, 3)
             # Get baseline value
             baseline = np.nanmean(event_trace[CENTER_POINT - BEFORE : CENTER_POINT])
             # Get the post stimulation values
@@ -70,15 +70,26 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
             stim_peak = np.argmax(event_trace[CENTER_POINT : CENTER_POINT + AFTER])
             ## Average around that point
             stim_amp = np.nanmean(
-                event_trace[stim_peak - AVG_RANGE : stim_peak + AVG_RANGE]
+                event_trace[
+                    stim_peak
+                    + CENTER_POINT
+                    - AVG_RANGE : stim_peak
+                    + CENTER_POINT
+                    + AVG_RANGE
+                ]
             )
+            stim_amp = np.nanmean(event_trace[CENTER_POINT : CENTER_POINT + AFTER])
             baseline_values.append(baseline)
             stim_values.append(stim_amp)
         # Perform Wilcoxon signed-rank test
-        diff = np.nanmean(stim_values - baseline_values)
+        trial_diffs = np.array(stim_values) - np.array(baseline_values)
+        diff = np.nanmean(np.array(stim_values) - np.array(baseline_values))
         rank, pval = stats.wilcoxon(baseline_values, stim_values)
+
+        consistancy = np.nanmean(trial_diffs >= 0.5)
+
         # Assess significance
-        sig = (pval < ALPHA) * 1
+        sig = ((pval < ALPHA) and (consistancy >= 0.5)) * 1
         diffs[spine] = diff
         pvalues[spine] = pval
         ranks[spine] = rank
