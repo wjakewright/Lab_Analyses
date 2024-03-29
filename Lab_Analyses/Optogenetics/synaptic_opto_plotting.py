@@ -59,7 +59,7 @@ def plot_session_activity(
     # Get stimulation timestamps
     ## Should be all the same for each spine
     stims = dataset.stim_timestamps[data_idxs[0]]
-    stim_len = dataset.stim_len[data_idxs][0]
+    stim_len = dataset.stim_len[data_idxs[0]]
 
     sampling_rate = dataset.parameters["Sampling Rate"]
 
@@ -85,7 +85,7 @@ def plot_session_activity(
         ax.axvspan(
             stim / sampling_rate,
             (stim + stim_len) / sampling_rate,
-            alpha=30,
+            alpha=0.3,
             color="red",
         )
 
@@ -111,6 +111,7 @@ def plot_individual_examples(
     identifiers={"mouse_id": None, "FOV": None},
     hmap_range=(0, 2),
     figsize=(8, 8),
+    norm=False,
     save=False,
     save_path=None,
 ):
@@ -136,6 +137,7 @@ def plot_individual_examples(
     sampling_rate = dataset.parameters["Sampling Rate"]
     # First lets get the example data
     if identifiers["mouse_id"]:
+        print("getting mouse data")
         prefix = f"{identifiers['mouse_id']}_{identifiers['FOV']}_"
         mouse_idxs = [
             i for i, x in enumerate(dataset.mouse_id) if x == identifiers["mouse_id"]
@@ -152,12 +154,13 @@ def plot_individual_examples(
         if len(nonresponsive_idxs) < EXAMPLE_NUM:
             return f"{identifiers['mouse_id']} {identifiers['FOV']} does not have enough nonresponsive spines"
     else:
-        data_idxs = list(range(dataset.spine_z_dFoF.shape[1]))
+        print("randomly selecting data")
+        data_idxs = np.array(list(range(dataset.spine_z_dFoF.shape[1])))
         responsive_idxs = np.nonzero(dataset.responsive_spines)[0]
         nonresponsive_idxs = np.nonzero(1 - dataset.responsive_spines)[0]
 
-    stim_len = dataset.stim_len[data_idxs][0]
-
+    print("processing")
+    stim_len = dataset.stim_len[data_idxs[0]]
     # Randomly sample the examples
     responsive_spines = np.random.choice(
         data_idxs[responsive_idxs], EXAMPLE_NUM, replace=False
@@ -165,11 +168,18 @@ def plot_individual_examples(
     nonresponsive_spines = np.random.choice(
         data_idxs[nonresponsive_idxs], EXAMPLE_NUM, replace=False
     )
+    print(
+        f"Responsive idxs: {[(i, x) for i, x in enumerate(data_idxs) if x in responsive_spines]}"
+    )
+    print(
+        f"Non-responsive idxs: {[(i, x) for i, x in enumerate(data_idxs) if x in nonresponsive_spines]}"
+    )
 
     # Get the trial activity for the examples
     responsive_activity = [dataset.stim_traces[i] for i in responsive_spines]
     nonresponsive_activity = [dataset.stim_traces[j] for j in nonresponsive_spines]
 
+    print("plotting")
     # Initialize the plot
     fig, axes = plt.subplot_mosaic(
         """
@@ -179,7 +189,7 @@ def plot_individual_examples(
         """,
         figsize=figsize,
     )
-    fig.tight_layout()
+    fig.subplots_adjust(hspace=1, wspace=0.5)
 
     responsive_axes = [("A", "B"), ("E", "F"), ("I", "J")]
     nonresponsive_axes = [("C", "D"), ("G", "H"), ("K", "L")]
@@ -194,17 +204,18 @@ def plot_individual_examples(
         else:
             title = "Non-responsive"
         ## Mean trace activity
+        zeroed_activity = d_utils.zero_window(activity, (0, 2), sampling_rate)
         axes[ax[0]].set_title(title)
-        mean_trace = np.nanmean(activity, axis=1)
-        sem_trace = stats.sem(activity, axis=1, nan_policy="omit")
+        mean_trace = np.nanmean(zeroed_activity, axis=1)
+        sem_trace = stats.sem(zeroed_activity, axis=1, nan_policy="omit")
         plot_mean_activity_traces(
             means=mean_trace,
             sems=sem_trace,
-            group_names=None,
+            group_names="Spine",
             sampling_rate=sampling_rate,
             activity_window=activity_window,
             avlines=None,
-            axlines=None,
+            ahlines=None,
             figsize=(5, 5),
             colors="forestgreen",
             title=title,
@@ -216,9 +227,9 @@ def plot_individual_examples(
             save=False,
             save_path=None,
         )
-        axes[ax[0]].axvspan(0, stim_len, color="red", alpha=0.1)
+        axes[ax[0]].axvspan(0, stim_len / sampling_rate, color="red", alpha=0.1)
         ## Heatmap
-        zeroed_activity = d_utils.zero_window(activity, (0, 2), sampling_rate)
+
         ## Plot
         plot_activity_heatmap(
             zeroed_activity,
@@ -229,8 +240,8 @@ def plot_individual_examples(
             cbar_label="Zscore",
             hmap_range=hmap_range,
             center=None,
-            sorted="difference",
-            normalize=False,
+            sorted=None,
+            normalize=norm,
             cmap="plasma",
             axis_width=1.5,
             minor_ticks=None,
@@ -239,6 +250,13 @@ def plot_individual_examples(
             save=False,
             save_path=None,
         )
+        axes[ax[1]].axvline(
+            np.absolute(activity_window[0]) * sampling_rate,
+            color="white",
+            linestyle="--",
+        )
+
+    fig.tight_layout()
 
     if save:
         if save_path is None:
@@ -296,12 +314,18 @@ def plot_responsive_synapse_properties(
         responsive_positions = dend_positions[dend_responsive.astype(bool)]
         if len(responsive_positions) == 0:
             continue
+        if len(responsive_positions) == 1:
+            distance_between_responsive = distance_between_responsive + [
+                np.max(dend_positions)
+            ]
+            clustered_responsive_spines.append(0)
+            continue
         for spine in range(len(responsive_positions)):
             curr_pos = responsive_positions[spine]
             other_pos = [x for i, x in enumerate(responsive_positions) if i != spine]
             rel_pos = np.array(other_pos) - curr_pos
             rel_pos = np.absolute(rel_pos)
-            distance_between_responsive = distance_between_responsive + rel_pos
+            distance_between_responsive = distance_between_responsive + list(rel_pos)
             if any(rel_pos <= cluster_dist):
                 clustered_responsive_spines.append(1)
             else:
@@ -332,11 +356,12 @@ def plot_responsive_synapse_properties(
     fig, axes = plt.subplot_mosaic(
         """
         ABC
-        EDF
+        DEF
         """,
         figsize=figsize,
     )
-    fig.tight_layout()
+
+    fig.subplots_adjust(hspace=1, wspace=0.5)
 
     # Plot fraction of responsive spines
     plot_pie_chart(
@@ -346,12 +371,12 @@ def plot_responsive_synapse_properties(
         },
         title="Percent responsive spines",
         figsize=(5, 5),
-        color=["forestgreen", "silver"],
+        colors=["forestgreen", "silver"],
         alpha=0.7,
         edgecolor="white",
         txt_color="black",
         txt_size=10,
-        legend="top",
+        legend="upper left",
         donut=0.6,
         linewidth=1.5,
         ax=axes["A"],
@@ -362,7 +387,7 @@ def plot_responsive_synapse_properties(
     # Plot fraction across dendrites
     plot_swarm_bar_plot(
         data_dict={
-            "Data": np.array(dend_percent_responsive),
+            "Data": np.array(dend_percent_responsive) * 100,
         },
         mean_type="mean",
         err_type="sem",
@@ -410,17 +435,18 @@ def plot_responsive_synapse_properties(
         save_path=None,
     )
     # Add line to seperate the responsive from nonresponsive
-    axes["C"].axhline(responsive_num)
+    axes["C"].axhline(responsive_num, color="red")
+    axes["C"].axvline(120, color="white", linestyle="--")
 
     # Plot histogram of distances between responsive spines
     plot_histogram(
         data=np.array(distance_between_responsive),
-        bins=40,
+        bins=25,
         stat="probability",
-        avlines=None,
+        avlines=[cluster_dist],
         title="Distance Between Responsive",
         xtitle="Distance (um)",
-        xlim=None,
+        xlim=(0, None),
         figsize=(5, 5),
         color="forestgreen",
         alpha=0.5,
@@ -444,7 +470,7 @@ def plot_responsive_synapse_properties(
         edgecolor="white",
         txt_color="black",
         txt_size=10,
-        legend="top",
+        legend="upper left",
         donut=0.6,
         linewidth=1.5,
         ax=axes["E"],
@@ -463,13 +489,15 @@ def plot_responsive_synapse_properties(
         edgecolor="white",
         txt_color="black",
         txt_size=10,
-        legend="top",
+        legend="upper left",
         donut=0.6,
         linewidth=1.5,
         ax=axes["F"],
         save=False,
         save_path=None,
     )
+
+    fig.tight_layout()
 
     if save:
         if save_path is None:
