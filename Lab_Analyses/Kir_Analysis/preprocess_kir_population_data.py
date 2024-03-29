@@ -10,23 +10,25 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
 def organize_kir_population_data(
-    mouse_id, channels={"Functional": "GreenCh", "Expression": "RedCh"}, save=False,
+    mouse_id,
+    channels={"Functional": "GreenCh", "Expression": "RedCh"},
+    save=False,
 ):
     """Function to handle the initial processing and organization of the kir population
-        data
-        
-        INPUT PARAMETERS
-            mouse_id - str specifying what the mouse's id is 
+    data
 
-            channels - dictionary specifying what the functional and expression channels are
+    INPUT PARAMETERS
+        mouse_id - str specifying what the mouse's id is
 
-            redetection - boolean specifying whether to reperform event detection
+        channels - dictionary specifying what the functional and expression channels are
 
-            deconvolution - boolean specifying whether to estimate spikes 
+        redetection - boolean specifying whether to reperform event detection
 
-            save - boolean specifying whether the save the output data
-        
-        """
+        deconvolution - boolean specifying whether to estimate spikes
+
+        save - boolean specifying whether the save the output data
+
+    """
     print(
         f"--------------------------------------------------\nProcessing Mouse {mouse_id}"
     )
@@ -34,7 +36,7 @@ def organize_kir_population_data(
     if len(channels) != 2:
         return "Need to have at least two channels specified"
     # Set up the paths to load the data from
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     mouse_path = os.path.join(initial_path, mouse_id)
     imaging_path = os.path.join(mouse_path, "imaging")
 
@@ -122,7 +124,7 @@ def organize_kir_population_data(
 @dataclass
 class Kir_Population_Data:
     """Dataclass for containing all the relevant activity data for a single
-        kir population dataset"""
+    kir population dataset"""
 
     mouse_id: str
     fov: str
