@@ -262,7 +262,7 @@ def organize_da_spine_data(
                 rewarded_movement_binary=rewarded_movement_binary,
                 binary_cue=binary_cue,
                 reward_delivery=reward_delivery,
-                punish_deliver=punish_delivery,
+                punish_delivery=punish_delivery,
                 spine_flags=spine_flags,
                 spine_groupings=spine_groupings,
                 spine_positions=spine_positions,
@@ -311,7 +311,7 @@ class DA_Spine_Data:
     rewarded_movement_binary: np.ndarray
     binary_cue: np.ndarray
     reward_delivery: np.ndarray
-    punish_deliver: np.ndarray
+    punish_delivery: np.ndarray
     # Spine-related variables
     spine_flags: list
     spine_groupings: list
