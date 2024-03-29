@@ -55,7 +55,7 @@ class Kir_Spine_Activity_Data:
 
     def save(self):
         """Method to save the data"""
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path,
             self.mouse_id,
@@ -125,9 +125,7 @@ class Grouped_Kir_Spine_Activity_Data:
 
     def save(self):
         """Method to save the grouped dataclass"""
-        save_path = (
-            r"C:\Users\Jake\Desktop\Analyzed_data\Kir_Spine_Imaging\Activity_Data"
-        )
+        save_path = r"G:\Analyzed_data\Kir_Spine_Imaging\Activity_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
