@@ -1,6 +1,5 @@
 """Module for loading optogenetic stimulation sessions for opto responsiveness analysis"""
 
-
 import os
 import re
 
@@ -9,24 +8,24 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
 def load_opto_sessions(mice, days, keywords=None):
     """Function to load multiple optogenetic stimulation session datasets.
-        Can load multiple mice and multiple days
-        
-        INPUT PARAMETERS
-            mice - list of strings with the each mouses id
-            
-            days - list of lists containing which days to load for each mouse
-            
-            keywords - a list of keywords that should be in the file names to be loaded
-            
-        OUTPUT PARAMETERS
-            imaging_datasets - dictionary for each session that contains the loaded files
-                                for that session 
-            
-            behavior_datsets - dictionary for each session that contains the loaded files
-                                for that session
-    
+    Can load multiple mice and multiple days
+
+    INPUT PARAMETERS
+        mice - list of strings with the each mouses id
+
+        days - list of lists containing which days to load for each mouse
+
+        keywords - a list of keywords that should be in the file names to be loaded
+
+    OUTPUT PARAMETERS
+        imaging_datasets - dictionary for each session that contains the loaded files
+                            for that session
+
+        behavior_datsets - dictionary for each session that contains the loaded files
+                            for that session
+
     """
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
 
     # Initialize the output
     imaging_datasets = {}
