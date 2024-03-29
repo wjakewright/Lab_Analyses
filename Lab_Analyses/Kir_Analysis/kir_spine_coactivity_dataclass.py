@@ -111,7 +111,7 @@ class Kir_Coactivity_Data:
 
     def save(self):
         """method to save the dataclass"""
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "kir_data", self.FOV, self.session
         )
@@ -182,9 +182,7 @@ class Grouped_Kir_Coactivity_Data:
 
     def save(self):
         """method to save the grouped dataclass"""
-        save_path = (
-            r"C:\Users\Desktop\Analyzed_data\grouped\Kir_Spine_Imaging\Activity_Data"
-        )
+        save_path = r"G:\Analyzed_data\grouped\Kir_Spine_Imaging\Activity_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         # Prepare the save name
