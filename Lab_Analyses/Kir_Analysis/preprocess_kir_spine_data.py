@@ -53,7 +53,7 @@ def organize_kir_spine_data(
         align_save = None
 
     # Set up the paths to load the data from
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     mouse_path = os.path.join(initial_path, mouse_id)
     imaging_path = os.path.join(mouse_path, "imaging")
     behavior_path = os.path.join(mouse_path, "behavior")
