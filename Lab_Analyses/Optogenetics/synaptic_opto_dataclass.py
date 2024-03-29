@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
@@ -35,13 +36,13 @@ class Synaptic_Opto_Data:
 
     def save(self):
         """Method to save the dataclass"""
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(
             initial_path, self.mouse_id, "optogenetics", self.FOV, self.session
         )
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
-        fname = f"{self.mouse_id}_{self.session}_synaptic_opto_data"
+        fname = f"{self.mouse_id}_{self.parameters['FOV_type']}_{self.session}_synaptic_opto_data"
         save_pickle(fname, self, save_path)
 
 
@@ -71,6 +72,7 @@ class Grouped_Synaptic_Opto_Data:
         # Get a list of the attributes
         attributes = list(data_list[0].__dict__.keys())
         dend_tracker = 0
+        max_activity_len = np.max([x.spine_dFoF.shape[0] for x in data_list])
         # Iterate through each dataclass
         for i, data in enumerate(data_list):
             for attribute in attributes:
@@ -80,7 +82,7 @@ class Grouped_Synaptic_Opto_Data:
                     attribute == "mouse_id"
                     or attribute == "FOV"
                     or attribute == "stim_timestamps"
-                    or attribute == "stem_len"
+                    or attribute == "stim_len"
                 ):
                     ## Map mouse id and FOV id to each spine for easier indexing
                     var = getattr(data, attribute)
@@ -95,10 +97,13 @@ class Grouped_Synaptic_Opto_Data:
                     for u in unique:
                         variable[np.where(temp_var == u)] = dend_tracker
                         dend_tracker = dend_tracker + 1
-                    print(variable)
 
-                # Initialize the attribute if first dataset
                 if i == 0:
+                    if type(variable) == np.ndarray:
+                        if len(variable.shape) == 2:
+                            variable = d_utils.pad_array_to_length(
+                                variable, max_activity_len, axis=0
+                            )
                     setattr(self, attribute, variable)
                 # Concatenate the attributes together for subsequent datasets
                 else:
@@ -107,6 +112,11 @@ class Grouped_Synaptic_Opto_Data:
                         if len(variable.shape) == 1:
                             new_var = np.concatenate((old_var, variable))
                         elif len(variable.shape) == 2:
+                            variable = d_utils.pad_array_to_length(
+                                old_var,
+                                max_activity_len,
+                                axis=0,
+                            )
                             new_var = np.hstack((old_var, variable))
                     elif type(variable) == list:
                         new_var = old_var + variable
@@ -115,9 +125,11 @@ class Grouped_Synaptic_Opto_Data:
 
     def save(self):
         """method to save the grouped dataclass"""
-        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Synaptic_Opto"
+        save_path = r"G:\Analyzed_data\grouped\Synaptic_Opto"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
 
-        fname = f"{self.session}_grouped_synaptic_opto_data"
+        fname = (
+            f"{self.parameters['FOV_type']}_{self.session}_grouped_synaptic_opto_data"
+        )
         save_pickle(fname, self, save_path)
