@@ -1,74 +1,75 @@
 """Module to process lever press behavior output from ephus and dispatcher"""
 
-
 import os
 import re
 from dataclasses import dataclass
 
 import numpy as np
 
-from Lab_Analyses.Behavior.dispatcher_to_frames_continuous import \
-    dispatcher_to_frames_continuous
+from Lab_Analyses.Behavior.dispatcher_to_frames_continuous import (
+    dispatcher_to_frames_continuous,
+)
 from Lab_Analyses.Behavior.load_xsg_continuous import load_xsg_continuous
-from Lab_Analyses.Behavior.parse_lever_movement_continuous import \
-    parse_lever_movement_continuous
+from Lab_Analyses.Behavior.parse_lever_movement_continuous import (
+    parse_lever_movement_continuous,
+)
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def process_lever_behavior(mouse_id, path, imaged, save=False, save_suffix=None):
     """Function to process lever press behavior data
-    
-        INPUT PARAMETERS
-            mouse_id - str specifying the id of the mouse
 
-            path - string indicating the path where all of the behavior files
-                    are located. Should contain all files from dispatcher and ephus
-            
-            imaged - boolean True or False indicating if the behavioral session
-                    was imaged
-            
-            save - boolean True or Falsse to save the data at the nedd
-                    Optional. Default is set to False
-            
-            save_suffix - string to be appended at the end of the file name.
-                          used to indicated any additional information about the session.
-                          Default is set to None
-                          
-        OUTPUT PARAMETERS
-            behavior_data - dataclass object containing the behavior data with fields:
+    INPUT PARAMETERS
+        mouse_id - str specifying the id of the mouse
 
-                            mouse_id - str with the id of the mouse
+        path - string indicating the path where all of the behavior files
+                are located. Should contain all files from dispatcher and ephus
 
-                            sess_name - str with the name of the session
+        imaged - boolean True or False indicating if the behavioral session
+                was imaged
 
-                            date - str with the date the data was collected on
+        save - boolean True or Falsse to save the data at the nedd
+                Optional. Default is set to False
 
-                            dispatcher_data - object containing all the native data
+        save_suffix - string to be appended at the end of the file name.
+                      used to indicated any additional information about the session.
+                      Default is set to None
 
-                                            from dispatcher directly loaded from matlab
-                            
-                            xsg_data - Xsglog_Data object containing xsglog data
-                            
-                            lever_active - np.array of when lever was active binarized
-                            
-                            lever_force_resample - np. array of the lever force resampled
-                                                    to 1kHz
-                            
-                            lever_force_smooth - np.array of the resampled lever force smooth
-                                                with a butterworth filter
-                                                
-                            lever_velocity_envelope_smooth - np.array of the lever velocity envelope
-                                                            calculated with hilbert transformation
-                                                            and then smoothed
-                            
-                            behavior_frames - np.array containing the data for each behavioral trial.
-                                              Data for each trial is stored in an object
-                            
-                            imaged_trials - logical array indicating which trials imaging
-                                            was also performed
+    OUTPUT PARAMETERS
+        behavior_data - dataclass object containing the behavior data with fields:
 
-                            frame_times - np.array with the time (sec) of each imaging frame
-                                    
+                        mouse_id - str with the id of the mouse
+
+                        sess_name - str with the name of the session
+
+                        date - str with the date the data was collected on
+
+                        dispatcher_data - object containing all the native data
+
+                                        from dispatcher directly loaded from matlab
+
+                        xsg_data - Xsglog_Data object containing xsglog data
+
+                        lever_active - np.array of when lever was active binarized
+
+                        lever_force_resample - np. array of the lever force resampled
+                                                to 1kHz
+
+                        lever_force_smooth - np.array of the resampled lever force smooth
+                                            with a butterworth filter
+
+                        lever_velocity_envelope_smooth - np.array of the lever velocity envelope
+                                                        calculated with hilbert transformation
+                                                        and then smoothed
+
+                        behavior_frames - np.array containing the data for each behavioral trial.
+                                          Data for each trial is stored in an object
+
+                        imaged_trials - logical array indicating which trials imaging
+                                        was also performed
+
+                        frame_times - np.array with the time (sec) of each imaging frame
+
     """
     # Session name
     sess_name = os.path.basename(path)
@@ -135,7 +136,7 @@ def process_lever_behavior(mouse_id, path, imaged, save=False, save_suffix=None)
     # Save the data
     if save is True:
         # Set the save path
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(initial_path, mouse_id, "behavior", sess_name)
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
@@ -171,4 +172,3 @@ class Processed_Lever_Data:
     behavior_frames: np.ndarray
     imaged_trials: np.ndarray
     frame_times: np.ndarray
-

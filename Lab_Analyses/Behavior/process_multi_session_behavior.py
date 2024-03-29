@@ -78,7 +78,7 @@ def process_multi_session_behavior(
             if save:
                 print("Saving data")
                 # Set the save path
-                initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+                initial_path = r"G:\Analyzed_data\individual"
                 save_path = os.path.join(initial_path, mouse_id, "behavior", day_name)
                 if not os.path.isdir(save_path):
                     os.makedirs(save_path)

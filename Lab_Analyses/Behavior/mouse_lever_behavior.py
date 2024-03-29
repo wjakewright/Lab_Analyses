@@ -1,7 +1,6 @@
 """Module for analyzing and summarizing the main metrics of lever press behavior
     for a single mouse across all sessions. Stores outputs as dataclasses"""
 
-
 import os
 import re
 from dataclasses import dataclass
@@ -9,8 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from Lab_Analyses.Behavior.process_lever_behavior import process_lever_behavior
-from Lab_Analyses.Behavior.summarize_lever_behavior_v2 import \
-    summarize_lever_behavior
+from Lab_Analyses.Behavior.summarize_lever_behavior_v2 import summarize_lever_behavior
 from Lab_Analyses.Utilities.check_file_exists import get_existing_files
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
@@ -28,22 +26,22 @@ def analyze_mouse_lever_behavior(
 ):
     """Function to analyze the lever press of all the sessions for a single
         mouse
-    
+
     INPUT PARAMETERS
         mouse_id - str specifying what the mouse's id is
-        
+
         path - str of the path to the directory containing all of the behavioral
                 data for a given mouse, with each session in a subdirectory
-                
+
         imaged - boolean list specifying if the session was also imaged or not
-        
+
         exp - str containing descriptino of the experiment
 
         save - boolean specifying if the data is to be saved
 
-        save_suffix - list of str to add additional descriptor to file name 
+        save_suffix - list of str to add additional descriptor to file name
                         each file
-        
+
         reanalyze - boolean specifying if this is to reanalyze data
 
         ignore_dir - tuple of strings specifying directories/days to ignore for analysis
@@ -56,7 +54,7 @@ def analyze_mouse_lever_behavior(
     print(f"----------------------------\nAnalyzing Mouse {mouse_id}")
 
     # Parent path where analyzed data is stored
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
 
     # Check if file already exists
     if reanalyze is False:
@@ -100,9 +98,13 @@ def analyze_mouse_lever_behavior(
 
     # Process lever press data for each session
     files = []
-    for directory, im, sess, name, suffix, in zip(
-        directories, imaged, sessions, sess_names, save_suffix
-    ):
+    for (
+        directory,
+        im,
+        sess,
+        name,
+        suffix,
+    ) in zip(directories, imaged, sessions, sess_names, save_suffix):
         print(f" - Processing session {sess}", end="\r")
         p_file = get_processed_data(
             mouse_id, directory, im, name, save, suffix, initial_path, reanalyze
@@ -191,7 +193,9 @@ def analyze_mouse_lever_behavior(
         save_name = f"{mouse_id}_all_lever_data"
         # Save the data as a pickle file
         save_pickle(
-            save_name, mouse_lever_data, save_path,
+            save_name,
+            mouse_lever_data,
+            save_path,
         )
 
     print(f"\nDone Analyzing Mouse {mouse_id}\n----------------------------")
@@ -201,11 +205,11 @@ def analyze_mouse_lever_behavior(
 
 def correlate_lever_press(movement_matrices, length):
     """Helper function to correlate movements within and across sessions for a single mouse
-    
-        INPUT PARAMETERS
-            movement_matricies - 2d np.array of movements
-        
-            length - float specifying how long of the press you wish to correlate"""
+
+    INPUT PARAMETERS
+        movement_matricies - 2d np.array of movements
+
+        length - float specifying how long of the press you wish to correlate"""
 
     # Initialize the correlation matrix
     length = int(length * 1000)
@@ -231,17 +235,17 @@ def correlate_lever_press(movement_matrices, length):
 
 def correlate_btw_sessions(A, B, length):
     """Helper function to perform pairwise correlations between movements from two
-        different sessions. This is a vectorized approach for faster run time
-        
-        INPUT PARAMETERS
-            A - np.array of movement matrix of the first session
-            
-            B - np.array of movement matrix fo the second session
-            
-        OUTPUT PARAMETER
-            across_corr - float of the median pairwise correlation for all movements
-                          in session A with those of session B
-    
+    different sessions. This is a vectorized approach for faster run time
+
+    INPUT PARAMETERS
+        A - np.array of movement matrix of the first session
+
+        B - np.array of movement matrix fo the second session
+
+    OUTPUT PARAMETER
+        across_corr - float of the median pairwise correlation for all movements
+                      in session A with those of session B
+
     """
     # Transpose movement rows to columns
     A = A[:, :length]
@@ -258,8 +262,8 @@ def correlate_btw_sessions(A, B, length):
     # Vectorize and broadcast the A and B
     p1 = n * np.dot(B.T, A)
     p2 = sA * sB[:, None]
-    p3 = n * ((B ** 2).sum(axis=0)) - (sB ** 2)
-    p4 = n * ((A ** 2).sum(axis=0)) - (sA ** 2)
+    p3 = n * ((B**2).sum(axis=0)) - (sB**2)
+    p4 = n * ((A**2).sum(axis=0)) - (sA**2)
 
     # Compute pairwise Pearsons Correlation Coefficient as 2D array
     pcorr = (p1 - p2) / np.sqrt(p4 * p3[:, None])
@@ -350,7 +354,7 @@ def get_summarized_data(file, sname, save, suffix, save_path, reanalyze):
 @dataclass
 class Mouse_Lever_Data:
     """Dataclass for storing processed lever press behavior data across
-       all sessions for a single mouse"""
+    all sessions for a single mouse"""
 
     mouse_id: str
     experiment: str

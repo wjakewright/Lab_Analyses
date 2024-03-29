@@ -7,63 +7,62 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.signal as sysignal
 
-from Lab_Analyses.Behavior.profile_rewarded_movements import \
-    profile_rewarded_movements
+from Lab_Analyses.Behavior.profile_rewarded_movements import profile_rewarded_movements
 from Lab_Analyses.Behavior.read_bit_code import read_bit_code
 from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def summarize_lever_behavior(file, save=False, save_suffix=None):
-    """Parent function to summarize lever press behavior from a single mouse for 
-        a single session. Calls different functions depending if the mouse was imaged
-        or not.
-        
-        INPUT PARAMETERS
-            file - Object (processed_lever_data dataclass) containing the processed
-                    lever behavior for a single session for a single mouse
-            
-            save - boolean specifying whether to save the output or not
-                    Default is False
-            
-            save_suffix - string to be appended at the end of the file name.
-                          used to indicated any additional information about the session.
-                          Default is set to None
-        
-        OUTPUT PARAMETERS
-            summarized_data - Session_Summary_Lever_Data dataclass with fields:
+    """Parent function to summarize lever press behavior from a single mouse for
+    a single session. Calls different functions depending if the mouse was imaged
+    or not.
 
-                            mouse_id - str with the id of the mouse
+    INPUT PARAMETERS
+        file - Object (processed_lever_data dataclass) containing the processed
+                lever behavior for a single session for a single mouse
 
-                            date - str with the date the data was collected
-                            
-                            used_trial - boolean array of which trials were used and ignored
-                            
-                            movement_matrix - np.array of all rewarded movements, each 
-                                              row representing a single movement trace
-                            
-                            movement_avg - np. array of the averaged rewarded movement traces
-                            
-                            rewards - int specifying how many rewards were recieved
-                            
-                            move_at_start_faults - int specifying how many trials were ignored
-                                                    due to mouse moving at start of the trial
-                            
-                            avg_reaction_time - float of the average reaction time for mouse to move
-                            
-                            avg_cue_to_reward - float of the average time from cue onset till
-                                                mouse recieved the reward
-                                                
-                            trials - in specifying the number of trials within the session
-                            
-                            move_duration_before_cue - list of floats specifying how much time mouse
-                                                        spent moving before cue for each trial
-                            
-                            number_movements_during_ITI - list of the num of movements mouse made
-                                                          during the ITI for each trial
-                                                          
-                            fraction_ITI_spent_moving - list of the fraction of time mouse spent
-                                                        moving during the ITI for each trial
-        
+        save - boolean specifying whether to save the output or not
+                Default is False
+
+        save_suffix - string to be appended at the end of the file name.
+                      used to indicated any additional information about the session.
+                      Default is set to None
+
+    OUTPUT PARAMETERS
+        summarized_data - Session_Summary_Lever_Data dataclass with fields:
+
+                        mouse_id - str with the id of the mouse
+
+                        date - str with the date the data was collected
+
+                        used_trial - boolean array of which trials were used and ignored
+
+                        movement_matrix - np.array of all rewarded movements, each
+                                          row representing a single movement trace
+
+                        movement_avg - np. array of the averaged rewarded movement traces
+
+                        rewards - int specifying how many rewards were recieved
+
+                        move_at_start_faults - int specifying how many trials were ignored
+                                                due to mouse moving at start of the trial
+
+                        avg_reaction_time - float of the average reaction time for mouse to move
+
+                        avg_cue_to_reward - float of the average time from cue onset till
+                                            mouse recieved the reward
+
+                        trials - in specifying the number of trials within the session
+
+                        move_duration_before_cue - list of floats specifying how much time mouse
+                                                    spent moving before cue for each trial
+
+                        number_movements_during_ITI - list of the num of movements mouse made
+                                                      during the ITI for each trial
+
+                        fraction_ITI_spent_moving - list of the fraction of time mouse spent
+                                                    moving during the ITI for each trial
+
     """
     MIN_MOVE_NUM = 0
     MIN_T = 3001
@@ -89,7 +88,7 @@ def summarize_lever_behavior(file, save=False, save_suffix=None):
         mouse_id = file.mouse_id
         sess_name = file.sess_name
         # Set the path
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         save_path = os.path.join(initial_path, mouse_id, "behavior", sess_name)
         if not os.path.isdir(save_path):
             os.mkdir(save_path)
@@ -187,7 +186,8 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                 # Get time of the reward for current trial
                 rewards = rewards + 1
                 reward_time = np.round(
-                    file.frame_times[np.round(trial.states.reward[0]).astype(int)] * 1000
+                    file.frame_times[np.round(trial.states.reward[0]).astype(int)]
+                    * 1000
                 )
                 if reward_time == 0:
                     reward_time = 1
@@ -197,16 +197,17 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                 # Get the time of the start of the cue
                 cue_start = int(
                     np.round(
-                        file.frame_times[np.round(trial.states.cue[0]).astype(int)] * 1000
+                        file.frame_times[np.round(trial.states.cue[0]).astype(int)]
+                        * 1000
                     )
                 )
                 # Get time of next cue, indicating end of current trial
                 if num < len(file.behavior_frames) - 1:
                     next_cue = np.round(
                         file.frame_times[
-                            np.round(file.behavior_frames[num + 1].states.cue[0]).astype(
-                                int
-                            )
+                            np.round(
+                                file.behavior_frames[num + 1].states.cue[0]
+                            ).astype(int)
                         ]
                         * 1000
                     )
@@ -257,18 +258,24 @@ def summarize_imaged_lever_behavior(file, MIN_MOVE_NUM, MIN_T):
                 trial_ends.append(np.nan)
                 reward_times.append(0)
         else:
-            trial = file.dispatcher_data.saved_history.ProtocolsSection_parsed_events[num]
+            trial = file.dispatcher_data.saved_history.ProtocolsSection_parsed_events[
+                num
+            ]
             # Profile only the rewarded trials
             if not trial.states.reward.size == 0:
                 # Get rewards and reward time
                 rewards = rewards + 1
-                reward_time = np.round(start_trial + (trial.states.reward[0] - t0) * 1000)
+                reward_time = np.round(
+                    start_trial + (trial.states.reward[0] - t0) * 1000
+                )
                 if reward_time == 0:
                     reward_time = 1
                 reward_time = int(reward_time)
                 reward_times.append(reward_time)
 
-                cue_start = int(np.round(start_trial + (trial.states.cue[0] - t0) * 1000))
+                cue_start = int(
+                    np.round(start_trial + (trial.states.cue[0] - t0) * 1000)
+                )
                 # Ensure trial occurs during movement recording
                 if cue_start >= len(file.lever_force_smooth) or reward_time >= len(
                     file.lever_force_smooth
@@ -664,7 +671,7 @@ def smooth_lick_data(licks):
 @dataclass
 class Session_Summary_Lever_Data:
     """Dataclass for storing the summarized lver press data of a single session
-        for a single mouse"""
+    for a single mouse"""
 
     mouse_id: str
     sess_name: str

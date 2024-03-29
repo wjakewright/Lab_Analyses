@@ -21,21 +21,21 @@ def align_lever_behavior_suite2p(
     save_suffix={"behavior": None, "imaging": None},
 ):
     """Function to align lever traces with the activity traces for each trial
-        
-        INPUT PARAMETERS
-            behavior_data - dataclass containing the Processed_Lever_Data
-                            Output from process_lever_behavior
-            
-            imaging_data - dataclass containing the Activity_Output with activity 
-                            data in it. Output from Activity_Viewer
 
-            save - str specifying which data you wish to save. Default is none
+    INPUT PARAMETERS
+        behavior_data - dataclass containing the Processed_Lever_Data
+                        Output from process_lever_behavior
 
-            save_suffix - dict for additional name information for behavior and/or
-                        imaging datasets
+        imaging_data - dataclass containing the Activity_Output with activity
+                        data in it. Output from Activity_Viewer
 
-        OUTPUT PARAMETERS
-            aligned_data - dataclass containing 
+        save - str specifying which data you wish to save. Default is none
+
+        save_suffix - dict for additional name information for behavior and/or
+                    imaging datasets
+
+    OUTPUT PARAMETERS
+        aligned_data - dataclass containing
     """
     # Get important part of dispatcher data
     dispatcher = (
@@ -157,9 +157,11 @@ def align_lever_behavior_suite2p(
         lever_active_time = behavior_data.lever_active[
             start_trial_time : end_trial_time + 1
         ]
-        lever_velocity_envelop_smooth_time = behavior_data.lever_velocity_envelope_smooth[
-            start_trial_time : end_trial_time + 1
-        ]
+        lever_velocity_envelop_smooth_time = (
+            behavior_data.lever_velocity_envelope_smooth[
+                start_trial_time : end_trial_time + 1
+            ]
+        )
         # Zero start to minimize downsampling edge effects
         lever_force_resample_time = (
             lever_force_resample_time - lever_force_resample_time[0]
@@ -259,7 +261,8 @@ def align_lever_behavior_suite2p(
 
         try:
             fluo = align_activity(
-                imaging_data.fluorescence, behavior_data.behavior_frames[i],
+                imaging_data.fluorescence,
+                behavior_data.behavior_frames[i],
             )
             fluorescence.append(fluo)
         except IndexError:
@@ -341,7 +344,7 @@ def align_lever_behavior_suite2p(
     if save:
         # Set up the save path
         if save_path is None:
-            initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+            initial_path = r"G:\Analyzed_data\individual"
             save_path = os.path.join(
                 initial_path,
                 behavior_data.mouse_id,
@@ -389,7 +392,7 @@ def align_lever_behavior_suite2p(
 @dataclass
 class Trial_Aligned_Behavior:
     """Dataclass to contain all the lever behavior data for each trial.
-        Includes it in terms of original sampling and in terms of image frames"""
+    Includes it in terms of original sampling and in terms of image frames"""
 
     mouse_id: str
     session: str
@@ -409,8 +412,8 @@ class Trial_Aligned_Behavior:
 
 @dataclass
 class Trial_Aligned_Suite2P_Activity:
-    """Dataclass to contain all the relevant activity data that has been 
-        aligned to each trial"""
+    """Dataclass to contain all the relevant activity data that has been
+    aligned to each trial"""
 
     mouse_id: str
     session: str
@@ -424,4 +427,3 @@ class Trial_Aligned_Suite2P_Activity:
     floored_trace: list
     spikes: list
     processed_spikes: list
-

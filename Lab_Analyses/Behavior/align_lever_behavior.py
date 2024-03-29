@@ -20,21 +20,21 @@ def align_lever_behavior(
     save_suffix={"behavior": None, "imaging": None},
 ):
     """Function to align lever traces with the activity traces for each trial
-        
-        INPUT PARAMETERS
-            behavior_data - dataclass containing the Processed_Lever_Data
-                            Output from process_lever_behavior
-            
-            imaging_data - dataclass containing the Activity_Output with activity 
-                            data in it. Output from Activity_Viewer
 
-            save - str specifying which data you wish to save. Default is none
+    INPUT PARAMETERS
+        behavior_data - dataclass containing the Processed_Lever_Data
+                        Output from process_lever_behavior
 
-            save_suffix - dict for additional name information for behavior and/or
-                        imaging datasets
+        imaging_data - dataclass containing the Activity_Output with activity
+                        data in it. Output from Activity_Viewer
 
-        OUTPUT PARAMETERS
-            aligned_data - dataclass containing 
+        save - str specifying which data you wish to save. Default is none
+
+        save_suffix - dict for additional name information for behavior and/or
+                    imaging datasets
+
+    OUTPUT PARAMETERS
+        aligned_data - dataclass containing
 
     """
     # Get important part of dispatcher data
@@ -156,9 +156,11 @@ def align_lever_behavior(
         lever_active_time = behavior_data.lever_active[
             start_trial_time : end_trial_time + 1
         ]
-        lever_velocity_envelop_smooth_time = behavior_data.lever_velocity_envelope_smooth[
-            start_trial_time : end_trial_time + 1
-        ]
+        lever_velocity_envelop_smooth_time = (
+            behavior_data.lever_velocity_envelope_smooth[
+                start_trial_time : end_trial_time + 1
+            ]
+        )
         # Zero start to minimize downsampling edge effects
         lever_force_resample_time = (
             lever_force_resample_time - lever_force_resample_time[0]
@@ -349,7 +351,7 @@ def align_lever_behavior(
     if save:
         # Set up the save path
         if save_path is None:
-            initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+            initial_path = r"G:\Analyzed_data\individual"
             save_path = os.path.join(
                 initial_path,
                 behavior_data.mouse_id,
@@ -393,19 +395,19 @@ def align_lever_behavior(
 
 def align_activity(activity, behavior_frames):
     """Helper function to handle aligning all the FOVs in the activity dictionary
-        
-        INPUT PARAMETERS
-            activity - dict containing the activity for the different types of ROIs. 
-                        Each key is for a different ROI type, which then contains all
-                        the ROIs for that type within. 
-                        This is a single field from the Activity_Output Datalcass
-                        
-            behavior_frame - object containing the behavior frames generated from 
-                             dispatcher data
-                             
-        OUTPUT PARAMETERS
-            tiral_activity - dict containint the activity the different types of ROIs. 
-                            Same organization as the inpupt dict
+
+    INPUT PARAMETERS
+        activity - dict containing the activity for the different types of ROIs.
+                    Each key is for a different ROI type, which then contains all
+                    the ROIs for that type within.
+                    This is a single field from the Activity_Output Datalcass
+
+        behavior_frame - object containing the behavior frames generated from
+                         dispatcher data
+
+    OUTPUT PARAMETERS
+        tiral_activity - dict containint the activity the different types of ROIs.
+                        Same organization as the inpupt dict
     """
     # get the start and end of the trial
     start = int(behavior_frames.states.state_0[0, 1])
@@ -440,7 +442,7 @@ def align_activity(activity, behavior_frames):
 @dataclass
 class Trial_Aligned_Behavior:
     """Dataclass to contain all the lever behavior data for each trial.
-        Includes it in terms of original sampling and in terms of image frames"""
+    Includes it in terms of original sampling and in terms of image frames"""
 
     mouse_id: str
     session: str
@@ -460,8 +462,8 @@ class Trial_Aligned_Behavior:
 
 @dataclass
 class Trial_Aligned_Activity:
-    """Dataclass to contain all the relevant activity data that has been 
-        aligned to each trial"""
+    """Dataclass to contain all the relevant activity data that has been
+    aligned to each trial"""
 
     mouse_id: str
     session: str
@@ -482,4 +484,3 @@ class Trial_Aligned_Activity:
     corrected_spine_pixel_intensity: list
     corrected_dend_segment_intensity: list
     corrected_spine_volume: list
-
