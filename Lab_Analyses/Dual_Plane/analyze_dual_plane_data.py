@@ -15,17 +15,17 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     """Functoin to analyze the dual plane somatic and dendritic imaging datasets
-        Combines data across mice and FOVs
-        
-        INPUT PARAMETERS
-            mouse_list - list of str specifying the mice we wish to analyze
-            
-            save - boolean of whetehr or not to save the output
-            
-            save_path - str specifying where to save the data
+    Combines data across mice and FOVs
+
+    INPUT PARAMETERS
+        mouse_list - list of str specifying the mice we wish to analyze
+
+        save - boolean of whetehr or not to save the output
+
+        save_path - str specifying where to save the data
     """
     # Load datasets
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     datasets = []
     for mouse in mouse_list:
         top_dir = os.path.join(initial_path, mouse, "dual_plane")
@@ -95,10 +95,14 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
 
             # Calculate the fraction of events coactive
             (_, _, frac_dend_active, _, _) = calculate_coactivity(
-                d_activity, s_activity, sampling_rate=processed_data["sampling_rate"],
+                d_activity,
+                s_activity,
+                sampling_rate=processed_data["sampling_rate"],
             )
             (_, _, frac_soma_active, _, _) = calculate_coactivity(
-                s_activity, d_activity, sampling_rate=processed_data["sampling_rate"],
+                s_activity,
+                d_activity,
+                sampling_rate=processed_data["sampling_rate"],
             )
 
             # Get dend activity timestamps
@@ -115,7 +119,12 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
                 sampling_rate=processed_data["sampling_rate"],
             )
             ## Using normalized traces
-            (dend_amps_norm, soma_amps_norm, _, _,) = analyze_paired_events(
+            (
+                dend_amps_norm,
+                soma_amps_norm,
+                _,
+                _,
+            ) = analyze_paired_events(
                 dend_events,
                 d_dFoF_norm,
                 s_dFoF_norm,
@@ -238,9 +247,7 @@ def analyze_dual_plane_data(mouse_list, save=False, save_path=None):
     # save sectino
     if save:
         if save_path is None:
-            save_path = (
-                r"C:\Users\Jake\Desktop\Analyzed_data\grouped\dual_plane_imaging"
-            )
+            save_path = r"G:\Analyzed_data\grouped\dual_plane_imaging"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         save_name = f"analyzed_dual_plane_data"
@@ -258,7 +265,7 @@ def analyze_paired_events(
     timestamps, dend_dFoF, soma_dFoF, activity_window, sampling_rate
 ):
     """Helper functon to analyze the amplitudes and decay of paired somatic and dendritic
-        events
+    events
     """
     DISTANCE = 0.5 * sampling_rate
     # Get traces around timestamps
@@ -301,10 +308,14 @@ def analyze_paired_events(
         s_height = s_med + s_std
 
         d_peaks, d_props = sysignal.find_peaks(
-            d_smooth, height=d_height, distance=DISTANCE,
+            d_smooth,
+            height=d_height,
+            distance=DISTANCE,
         )
         s_peaks, s_props = sysignal.find_peaks(
-            s_smooth, height=s_height, distance=DISTANCE,
+            s_smooth,
+            height=s_height,
+            distance=DISTANCE,
         )
 
         # Get max amplitudes
@@ -349,10 +360,15 @@ def analyze_paired_events(
 
 
 def get_coactive_vs_noncoactive_traces(
-    dend_activity, soma_activity, dend_dFoF, soma_dFoF, activity_window, sampling_rate,
+    dend_activity,
+    soma_activity,
+    dend_dFoF,
+    soma_dFoF,
+    activity_window,
+    sampling_rate,
 ):
     """Helper function to get traces during periods where soma and dned are determined
-        to be coactive vs when they are not"""
+    to be coactive vs when they are not"""
 
     boundary = 2 * sampling_rate
     # Get active epochs
@@ -385,7 +401,10 @@ def get_coactive_vs_noncoactive_traces(
         window=activity_window,
         sampling_rate=sampling_rate,
     )
-    coactive_soma_traces, _, = d_utils.get_trace_mean_sem(
+    (
+        coactive_soma_traces,
+        _,
+    ) = d_utils.get_trace_mean_sem(
         soma_dFoF.reshape(-1, 1),
         ["Soma"],
         coactive_idxs,
@@ -399,7 +418,10 @@ def get_coactive_vs_noncoactive_traces(
         window=activity_window,
         sampling_rate=sampling_rate,
     )
-    noncoactive_soma_traces, _, = d_utils.get_trace_mean_sem(
+    (
+        noncoactive_soma_traces,
+        _,
+    ) = d_utils.get_trace_mean_sem(
         soma_dFoF.reshape(-1, 1),
         ["Soma"],
         noncoactive_idxs,
@@ -417,4 +439,3 @@ def get_coactive_vs_noncoactive_traces(
         coactive_soma_traces,
         noncoactive_soma_traces,
     )
-
