@@ -13,15 +13,16 @@ from Lab_Analyses.Utilities.save_load_pickle import load_pickle, save_pickle
 
 
 def analyze_kir_population_data(
-    mouse_list, save=False,
+    mouse_list,
+    save=False,
 ):
     """Function to analyze kir population data
-    
-        INPUT PARAMETERS
-            mouse_list - list of str specifying the mice to be analyzed
 
-            save_grouped - boolean specifying whether or not to group all mice together
-                            and save
+    INPUT PARAMETERS
+        mouse_list - list of str specifying the mice to be analyzed
+
+        save_grouped - boolean specifying whether or not to group all mice together
+                        and save
 
     """
     analyzed_data = []
@@ -31,7 +32,7 @@ def analyze_kir_population_data(
         print("----------------------------------------")
         print(f"- Analyzing {mouse}")
         # Load the datasets
-        initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+        initial_path = r"G:\Analyzed_data\individual"
         data_path = os.path.join(initial_path, mouse, "kir_population_data")
         fnames = next(os.walk(data_path))[2]
 
@@ -85,7 +86,9 @@ def analyze_kir_population_data(
                 sampling_rate=data.imaging_parameters["Sampling Rate"],
             )
             shuff_amplitudes = chance_event_rates(
-                amplitudes, kir_positive, permutations=1000,
+                amplitudes,
+                kir_positive,
+                permutations=1000,
             )
 
             # Store data
@@ -116,7 +119,7 @@ def analyze_kir_population_data(
     grouped_data = Grouped_Kir_Activity_Data(analyzed_data)
     if save:
         print("Saving Grouped data")
-        save_path = r"C:\Users\Jake\Desktop\Analyzed_data\grouped\Kir_Population_Data"
+        save_path = r"G:\Analyzed_data\grouped\Kir_Population_Data"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
         fname = "grouped_kir_population_activity_data"
@@ -127,7 +130,7 @@ def analyze_kir_population_data(
 
 def chance_event_rates(event_rates, positive, permutations=1000):
     """Helper function to get chance event rates from randomly
-        selected neurons"""
+    selected neurons"""
     # Initialize output
     shuff_event_rates = np.zeros((permutations, len(event_rates))) * np.nan
     # Set number of positive neurons
@@ -215,4 +218,3 @@ class Grouped_Kir_Activity_Data:
                         new_var = old_var + variable
                     # Set the attribute with new values
                     setattr(self, attribute, new_var)
-
