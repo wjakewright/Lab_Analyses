@@ -37,7 +37,7 @@ def synaptic_opto_processing(
     print(
         f"----------------------------------------------------\nAnalyzing Mouse {mouse_id}"
     )
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     mouse_path = os.path.join(initial_path, mouse_id)
     imaging_path = os.path.join(mouse_path, "imaging")
     behavior_path = os.path.join(mouse_path, "behavior")
@@ -47,9 +47,11 @@ def synaptic_opto_processing(
     FOVs = [x for x in FOVs if "FOV" in x]
     FOVs = [x for x in FOVs if fov_type in x]
 
+    opto_data_list = []
+
     # Analyze each FOV seperately
     for FOV in FOVs:
-        print(f"- Organizing data")
+        print(f"- Organizing {FOV} data")
         # Load in the appropriate data
         FOV_path = os.path.join(imaging_path, FOV)
 
@@ -74,9 +76,9 @@ def synaptic_opto_processing(
         sampling_rate = activity_data.parameters["Sampling Rate"]
         spine_flags = activity_data.ROI_flags["Spine"]
         spine_positions = np.array(activity_data.ROI_positions["Spine"])
-        spine_groupings = activity_data.imaging_parameters["Spine Groupings"]
+        spine_groupings = activity_data.parameters["Spine Groupings"]
         if len(spine_groupings) == 0:
-            spine_groupings = list(range(activity_data.dFoF[0]["Spine"].shape[1]))
+            spine_groupings = list(range(activity_data.dFoF["Spine"].shape[1]))
         corrected_spine_volume = np.array(activity_data.corrected_spine_volume)
         dFoF = activity_data.dFoF["Spine"]
         processed_dFoF = activity_data.processed_dFoF["Spine"]
@@ -95,8 +97,8 @@ def synaptic_opto_processing(
         behavior_frames = list(compress(behavior_data.behavior_frames, imaged_trials))
         stims = []
         for i in behavior_frames:
-            stims.append(i.states.iti2)
-        stim_len = np.nanmedian(x[1] - x[0] for x in stims)
+            stims.append(i.states.iti2.astype(int))
+        stim_len = int(np.nanmedian([x[1] - x[0] for x in stims]))
         ## Refine stim onsets to make sure they fit in the imaging sessions
         stims = refine_activity_timestamps(
             timestamps=stims,
@@ -104,19 +106,19 @@ def synaptic_opto_processing(
             max_len=len(dFoF[:, 0]),
             sampling_rate=sampling_rate,
         )
-
+        stims = [x[0] for x in stims]
         # Zscore some of the activity to use
         z_processed_dFoF = d_utils.z_score(processed_dFoF)
 
         # Get the activity around each stimulation for each spine
         stim_traces, _ = d_utils.get_trace_mean_sem(
             activity=z_processed_dFoF,
-            ROI_ids=list(np.array(list(range(z_processed_dFoF.shape[1])))).astype(str),
+            ROI_ids=list(np.array(list(range(processed_dFoF.shape[1]))).astype(str)),
             timestamps=stims,
             window=VIS_WIN,
-            samping_rate=sampling_rate,
+            sampling_rate=sampling_rate,
         )
-        stim_traces = list(stim_traces.value())
+        stim_traces = list(stim_traces.values())
 
         # Test significance
         diffs, pvalues, ranks, sigs = synaptic_opto_responsive(
@@ -124,23 +126,26 @@ def synaptic_opto_processing(
             timestamps=stims,
             window=ANALYSIS_WIN,
             sampling_rate=sampling_rate,
-            smooth=False,
+            smooth=True,
         )
 
         parameters = {
             "Sampling Rate": sampling_rate,
             "Analysis Window": ANALYSIS_WIN,
             "Visual Window": VIS_WIN,
+            "FOV_type": fov_type,
         }
 
         # Assign dendrite id for each spine
+        if type(spine_groupings[0]) != list:
+            spine_groupings = [spine_groupings]
         spine_dendrite = np.zeros(z_processed_dFoF.shape[1]) * np.nan
         for i, spines in enumerate(spine_groupings):
             spine_dendrite[spines] = i
 
         # Store the data in a dataclass
         opto_data = Synaptic_Opto_Data(
-            mosue_id=mouse_id,
+            mouse_id=mouse_id,
             FOV=FOV,
             session=session,
             parameters=parameters,
@@ -161,8 +166,9 @@ def synaptic_opto_processing(
             responsive_spines=sigs,
             stim_traces=stim_traces,
         )
+        opto_data_list.append(opto_data)
         # Save the data
         if save:
             opto_data.save()
 
-    return opto_data
+    return opto_data_list
