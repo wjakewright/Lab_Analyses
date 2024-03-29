@@ -15,23 +15,23 @@ def organize_dual_plane_data(
     save=False,
 ):
     """Function to organize and preprocess simultaneously imaged dendrite
-        and soma datasets
-        
-        INPUT PARAMETERS
-            mouse_id - str specifying what the mouse's id is
-            
-            data_dir - str specifying the name of the directory where the data 
-                        files are located
-                        
-            file_types - dict containing keywords in the file names for the Dendrie
-                        and Soma data files
-            
-            reprocess - boolean specifying if you wish to reprocess the data or not
-            
-            save - boolean specifying whether or not to save the data
+    and soma datasets
+
+    INPUT PARAMETERS
+        mouse_id - str specifying what the mouse's id is
+
+        data_dir - str specifying the name of the directory where the data
+                    files are located
+
+        file_types - dict containing keywords in the file names for the Dendrie
+                    and Soma data files
+
+        reprocess - boolean specifying if you wish to reprocess the data or not
+
+        save - boolean specifying whether or not to save the data
     """
     # set up the load path
-    initial_path = r"C:\Users\Jake\Desktop\Analyzed_data\individual"
+    initial_path = r"G:\Analyzed_data\individual"
     load_path = os.path.join(initial_path, mouse_id, "imaging", data_dir)
     FOVs = next(os.walk(load_path))[1]
 
