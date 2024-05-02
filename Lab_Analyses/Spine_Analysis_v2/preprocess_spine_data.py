@@ -391,19 +391,9 @@ def organize_dual_spine_data(
             ## Poly Dendrite roi-related variables
             poly_dendrite_positions = Calcium.ROI_positions["Dendrite"]
             poly_dendrite_calcium_dFoF = calcium_dFoF["Dendrite Poly"]
-            if resmooth is True:
-                poly_dendrite_calcium_processed_dFof = []
-                for poly in calcium_processed_dFoF["Dendrite Poly"]:
-                    temp_dFoF = resmooth_dFoF(
-                        poly,
-                        sampling_rate=imaging_parameters["Sampling Rate"],
-                        smooth_window=0.5,
-                    )
-                    poly_dendrite_calcium_processed_dFof.append(temp_dFoF)
-            else:
-                poly_dendrite_calcium_processed_dFof = calcium_processed_dFoF[
-                    "Dendrite Poly"
-                ]
+            poly_dendrite_calcium_processed_dFof = calcium_processed_dFoF[
+                "Dendrite Poly"
+            ]
 
             # Pad spine and dendrite data if it is not the longest
             if len(spine_flags) != max_spine_num:
