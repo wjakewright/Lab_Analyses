@@ -9,14 +9,14 @@ from scipy import stats
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import \
-    plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_pie_chart import plot_pie_chart
-from Lab_Analyses.Plotting.plot_scatter_correlation import \
-    plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
+    calculate_volume_change,
+    classify_plasticity,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -41,37 +41,37 @@ def plot_basic_features(
     save_path=None,
 ):
     """Function to plot the distribution of relative volumes and activity rates
-    
-        INPUT PARAMETERS
-            dataset - Spine_Activity_Data object
-            
-            followup_dataset - optional Spine_Activity_Data object of the subsequent
-                                session to use for volume comparison. Default is None
-                                to use the followup volumes in the dataset
 
-            exclude - str specifying a type of spine to exclude from analysis
+    INPUT PARAMETERS
+        dataset - Spine_Activity_Data object
 
-            MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
-                    "MRS" and "nMRS". Default is None to examine all spines
+        followup_dataset - optional Spine_Activity_Data object of the subsequent
+                            session to use for volume comparison. Default is None
+                            to use the followup volumes in the dataset
 
-            threshold - float or tuple of floats specifying the threshold cuttoffs 
-                        for classifying plasticity
+        exclude - str specifying a type of spine to exclude from analysis
 
-            figsize - tuple specifying the figure size
+        MRSs - str specifying if you wish to examine only MRSs or nonMRSs. Accepts
+                "MRS" and "nMRS". Default is None to examine all spines
 
-            hist_bins - int specifying how many bins to plot for the histogram
+        threshold - float or tuple of floats specifying the threshold cuttoffs
+                    for classifying plasticity
 
-            showmeans - boolean specifying whether to show the mean on box plots
+        figsize - tuple specifying the figure size
 
-            test_type - str specifying whetehr to perform parametric or nonparameteric stats
+        hist_bins - int specifying how many bins to plot for the histogram
 
-            test_methods - str specifying the type of posthoc test to perform
+        showmeans - boolean specifying whether to show the mean on box plots
 
-            display_stats - boolean specifying whether to display stat results
-            
-            save - boolean specifying whether to save the figure or not
-            
-            save_path - str specifying where to save the path
+        test_type - str specifying whetehr to perform parametric or nonparameteric stats
+
+        test_methods - str specifying the type of posthoc test to perform
+
+        display_stats - boolean specifying whether to display stat results
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying where to save the path
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     spine_groups = {
@@ -83,6 +83,7 @@ def plot_basic_features(
     initial_volumes = dataset.spine_volumes
     spine_flags = dataset.spine_flags
     spine_activity_rate = dataset.spine_activity_rate
+    mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
 
     # Calculate spine volumes
     ## Get followup volumes
@@ -120,13 +121,18 @@ def plot_basic_features(
     spine_activity_rate = d_utils.subselect_data_by_idxs(
         spine_activity_rate, spine_idxs
     )
+    mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
     mvmt_spines = d_utils.subselect_data_by_idxs(dataset.movement_spines, spine_idxs)
-    nonmvmt_spines = d_utils.subselect_data_by_idxs(dataset.nonmovement_spines, spine_idxs)
+    nonmvmt_spines = d_utils.subselect_data_by_idxs(
+        dataset.nonmovement_spines, spine_idxs
+    )
 
     # Organize datad dictionaries
     initial_vol_dict = {}
     activity_dict = {}
     count_dict = {}
+    vol_mouse_dict = {}
+    activity_mouse_dict = {}
     for key, value in spine_groups.items():
         spines = eval(value)
         if MRSs == "MRS":
@@ -138,10 +144,14 @@ def plot_basic_features(
         initial_vol_dict[key] = vol[~np.isnan(vol)]
         activity_dict[key] = activity[~np.isnan(activity)]
         count_dict[key] = np.sum(spines)
+        ids = mouse_ids[spines]
+        vol_mouse_dict[key] = ids[~np.isnan(vol)]
+        activity_mouse_dict[key] = ids[~np.isnan(activity)]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
-        [["tl", "tm", "tr"], ["bl", "bm", "br"]], figsize=figsize,
+        [["tl", "tm", "tr"], ["bl", "bm", "br"]],
+        figsize=figsize,
     )
     fig.suptitle("Basic Spine Features")
     fig.subplots_adjust(hspace=1, wspace=0.5)
@@ -322,14 +332,33 @@ def plot_basic_features(
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         vol_f, vol_p, vol_test_df = t_utils.kruskal_wallis_test(
-            initial_vol_dict, "Conover", test_method,
+            initial_vol_dict,
+            "Conover",
+            test_method,
         )
         activity_f, activity_p, activity_test_df = t_utils.kruskal_wallis_test(
-            activity_dict, "Conover", test_method,
+            activity_dict,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
+    elif test_type == "mixed-effect":
+        vol_f, vol_p, vol_test_df = t_utils.one_way_mixed_effects_model(
+            initial_vol_dict,
+            vol_mouse_dict,
+            test_method,
+            slopes_intercept=False,
+        )
+        activity_f, activity_p, activity_test_df = t_utils.one_way_mixed_effects_model(
+            activity_dict,
+            activity_mouse_dict,
+            test_method,
+            slopes_intercept=False,
+        )
+        test_title = f"Mixed-Effect {test_method}"
+
     # Display the statistics
-    fig2, axes2 = plt.subplot_mosaic([["left", "right"]], figsize=(8, 4))
+    fig2, axes2 = plt.subplot_mosaic([["left", "right"]], figsize=(13, 6))
     ## Format the first table
     axes2["left"].axis("off")
     axes2["left"].axis("tight")
@@ -389,34 +418,34 @@ def plot_movement_related_activity(
     save_path=None,
 ):
     """Function to plot movement-related activity of different spine classes
-    
-        INPUT PARAMETERS
-            dataset - Spine_Activity_Data object
-            
-            followup_dataset - optional Spine_Activity_Data object of the subsequent 
-                                session to use for volume comparision. Default is None,
-                                to sue the followup volumes in the dataset
-            
-            exclude - str specifying type of spine to exclude from analysis
-            
-            threshold - float or tuple of floats specifying the threshold cutoffs for
-                        classifying plasticity
-                        
-            figsize - tuple specifying the figure size
-            
-            hist_bins - int specifying how many  bins to plot for the histograms
-            
-            showmeans - boolean specifying whether to show mean on box plots
-            
-            test_type - str specifying whether to perform parametric or nonparametric stats
-            
-            test_method - str specifying the type of posthoc test to perform
-            
-            display_stats - boolean specifying whether to display stat results
-            
-            save - boolean specifying whether to save the figure or not
-            
-            save_path - str specifying where to save the figures
+
+    INPUT PARAMETERS
+        dataset - Spine_Activity_Data object
+
+        followup_dataset - optional Spine_Activity_Data object of the subsequent
+                            session to use for volume comparision. Default is None,
+                            to sue the followup volumes in the dataset
+
+        exclude - str specifying type of spine to exclude from analysis
+
+        threshold - float or tuple of floats specifying the threshold cutoffs for
+                    classifying plasticity
+
+        figsize - tuple specifying the figure size
+
+        hist_bins - int specifying how many  bins to plot for the histograms
+
+        showmeans - boolean specifying whether to show mean on box plots
+
+        test_type - str specifying whether to perform parametric or nonparametric stats
+
+        test_method - str specifying the type of posthoc test to perform
+
+        display_stats - boolean specifying whether to display stat results
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying where to save the figures
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     spine_groups = {
@@ -442,6 +471,8 @@ def plot_movement_related_activity(
         followup_volumes = followup_dataset.spine_volumes
         followup_flags = followup_dataset.spine_flags
 
+    mouse_ids = dataset.mouse_id
+
     ## Movement identifiers
     movement_spines = dataset.movement_spines
     nonmovement_spines = dataset.nonmovement_spines
@@ -460,15 +491,21 @@ def plot_movement_related_activity(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Organize data
     ## Subselect present spines
+    mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
     movement_spines = d_utils.subselect_data_by_idxs(movement_spines, spine_idxs)
     nonmovement_spines = d_utils.subselect_data_by_idxs(nonmovement_spines, spine_idxs)
     rwd_movement_spines = d_utils.subselect_data_by_idxs(
@@ -993,30 +1030,42 @@ def plot_movement_related_activity(
     ## Perform the statistics
     if test_type == "parametric":
         g_amp_f, g_amp_p, _, g_amp_df = t_utils.ANOVA_1way_posthoc(
-            mrs_grouped_mvmt_amps, test_method,
+            mrs_grouped_mvmt_amps,
+            test_method,
         )
         c_amp_f, c_amp_p, _, c_amp_df = t_utils.ANOVA_1way_posthoc(
-            mrs_grouped_mvmt_calcium_amps, test_method,
+            mrs_grouped_mvmt_calcium_amps,
+            test_method,
         )
         g_onset_f, g_onset_p, _, g_onset_df = t_utils.ANOVA_1way_posthoc(
-            mrs_grouped_mvmt_onsets, test_method,
+            mrs_grouped_mvmt_onsets,
+            test_method,
         )
         c_onset_f, c_onset_p, _, c_onset_df = t_utils.ANOVA_1way_posthoc(
-            mrs_grouped_mvmt_calcium_onsets, test_method,
+            mrs_grouped_mvmt_calcium_onsets,
+            test_method,
         )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         g_amp_f, g_amp_p, g_amp_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_amps, "Conover", test_method,
+            mrs_grouped_mvmt_amps,
+            "Conover",
+            test_method,
         )
         c_amp_f, c_amp_p, c_amp_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_calcium_amps, "Conover", test_method,
+            mrs_grouped_mvmt_calcium_amps,
+            "Conover",
+            test_method,
         )
         g_onset_f, g_onset_p, g_onset_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_onsets, "Conover", test_method,
+            mrs_grouped_mvmt_onsets,
+            "Conover",
+            test_method,
         )
         c_onset_f, c_onset_p, c_onset_df = t_utils.kruskal_wallis_test(
-            mrs_grouped_mvmt_calcium_onsets, "Conover", test_method,
+            mrs_grouped_mvmt_calcium_onsets,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
     # Display the statistics
@@ -1112,32 +1161,32 @@ def plot_rewarded_movement_related_activity(
 
     INPUT PARAMETERS
         dataset - Spine_Activity_Data object
-            
-        followup_dataset - optional Spine_Activity_Data object of the subsequent 
+
+        followup_dataset - optional Spine_Activity_Data object of the subsequent
                             session to use for volume comparision. Default is None,
                             to sue the followup volumes in the dataset
-        
+
         exclude - str specifying type of spine to exclude from analysis
-        
+
         threshold - float or tuple of floats specifying the threshold cutoffs for
                     classifying plasticity
-                    
+
         figsize - tuple specifying the figure size
-        
+
         hist_bins - int specifying how many  bins to plot for the histograms
-        
+
         showmeans - boolean specifying whether to show means on box plots
-        
+
         test_type - str specifying whether to perform parametric or nonparametric stats
-        
+
         test_method - str specifying the type of posthoc test to perform
-        
+
         display_stats - boolean specifying whether to display stat results
-        
+
         save - boolean specifying whether to save the figure or not
-        
+
         save_path - str specifying where to save the figures
-    
+
     """
     COLORS = ["darkorange", "darkviolet", "silver"]
     plastic_groups = {
@@ -1185,11 +1234,16 @@ def plot_rewarded_movement_related_activity(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Organize data
@@ -1199,37 +1253,47 @@ def plot_rewarded_movement_related_activity(
         spine_rwd_movement_traces, spine_idxs
     )
     spine_rwd_movement_calcium_traces = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_calcium_traces, spine_idxs,
+        spine_rwd_movement_calcium_traces,
+        spine_idxs,
     )
     spine_rwd_movement_amplitude = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_amplitude, spine_idxs,
+        spine_rwd_movement_amplitude,
+        spine_idxs,
     )
     spine_rwd_movement_calcium_amplitude = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_calcium_amplitude, spine_idxs,
+        spine_rwd_movement_calcium_amplitude,
+        spine_idxs,
     )
     spine_rwd_movement_onset = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_onset, spine_idxs,
+        spine_rwd_movement_onset,
+        spine_idxs,
     )
     spine_rwd_movement_calcium_onset = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_calcium_onset, spine_idxs,
+        spine_rwd_movement_calcium_onset,
+        spine_idxs,
     )
     spine_nonrwd_movement_traces = d_utils.subselect_data_by_idxs(
-        spine_nonrwd_movement_traces, spine_idxs,
+        spine_nonrwd_movement_traces,
+        spine_idxs,
     )
     spine_nonrwd_movement_calcium_traces = d_utils.subselect_data_by_idxs(
         spine_nonrwd_movement_calcium_traces, spine_idxs
     )
     spine_nonrwd_movement_amplitude = d_utils.subselect_data_by_idxs(
-        spine_nonrwd_movement_amplitude, spine_idxs,
+        spine_nonrwd_movement_amplitude,
+        spine_idxs,
     )
     spine_nonrwd_movement_calcium_amplitude = d_utils.subselect_data_by_idxs(
-        spine_nonrwd_movement_calcium_amplitude, spine_idxs,
+        spine_nonrwd_movement_calcium_amplitude,
+        spine_idxs,
     )
     spine_nonrwd_movement_onset = d_utils.subselect_data_by_idxs(
-        spine_nonrwd_movement_onset, spine_idxs,
+        spine_nonrwd_movement_onset,
+        spine_idxs,
     )
     spine_nonrwd_movement_calcium_onset = d_utils.subselect_data_by_idxs(
-        spine_nonrwd_movement_calcium_onset, spine_idxs,
+        spine_nonrwd_movement_calcium_onset,
+        spine_idxs,
     )
 
     ## Get data for direct rewarded vs nonrewarded comparisons
@@ -1806,13 +1870,15 @@ def plot_rewarded_movement_related_activity(
         )
         t_title = "T-Test"
         rwd_amp_f, rwd_amp_p, _, rwd_amp_df = t_utils.ANOVA_1way_posthoc(
-            rwd_amps, test_method,
+            rwd_amps,
+            test_method,
         )
         rwd_ca_amp_f, rwd_ca_amp_p, _, rwd_ca_amp_df = t_utils.ANOVA_1way_posthoc(
             rwd_ca_amps, test_method
         )
         nonrwd_amp_f, nonrwd_amp_p, _, nonrwd_amp_df = t_utils.ANOVA_1way_posthoc(
-            nonrwd_amps, test_method,
+            nonrwd_amps,
+            test_method,
         )
         (
             nonrwd_ca_amp_f,
@@ -1821,13 +1887,15 @@ def plot_rewarded_movement_related_activity(
             nonrwd_ca_amp_df,
         ) = t_utils.ANOVA_1way_posthoc(nonrwd_ca_amps, test_method)
         rwd_onset_f, rwd_onset_p, _, rwd_onset_df = t_utils.ANOVA_1way_posthoc(
-            rwd_onsets, test_method,
+            rwd_onsets,
+            test_method,
         )
         rwd_ca_onset_f, rwd_ca_onset_p, _, rwd_ca_onset_df = t_utils.ANOVA_1way_posthoc(
             rwd_ca_onsets, test_method
         )
         nonrwd_onset_f, nonrwd_onset_p, _, nonrwd_onset_df = t_utils.ANOVA_1way_posthoc(
-            nonrwd_onsets, test_method,
+            nonrwd_onsets,
+            test_method,
         )
         (
             nonrwd_ca_onset_f,
@@ -1847,13 +1915,17 @@ def plot_rewarded_movement_related_activity(
         )
         t_title = "Mann-Whitney U"
         rwd_amp_f, rwd_amp_p, rwd_amp_df = t_utils.kruskal_wallis_test(
-            rwd_amps, "Conover", test_method,
+            rwd_amps,
+            "Conover",
+            test_method,
         )
         rwd_ca_amp_f, rwd_ca_amp_p, rwd_ca_amp_df = t_utils.kruskal_wallis_test(
             rwd_ca_amps, "Conover", test_method
         )
         nonrwd_amp_f, nonrwd_amp_p, nonrwd_amp_df = t_utils.kruskal_wallis_test(
-            nonrwd_amps, "Conover", test_method,
+            nonrwd_amps,
+            "Conover",
+            test_method,
         )
         (
             nonrwd_ca_amp_f,
@@ -1861,13 +1933,17 @@ def plot_rewarded_movement_related_activity(
             nonrwd_ca_amp_df,
         ) = t_utils.kruskal_wallis_test(nonrwd_ca_amps, "Conover", test_method)
         rwd_onset_f, rwd_onset_p, rwd_onset_df = t_utils.kruskal_wallis_test(
-            rwd_onsets, "Conover", test_method,
+            rwd_onsets,
+            "Conover",
+            test_method,
         )
         rwd_ca_onset_f, rwd_ca_onset_p, rwd_ca_onset_df = t_utils.kruskal_wallis_test(
             rwd_ca_onsets, "Conover", test_method
         )
         nonrwd_onset_f, nonrwd_onset_p, nonrwd_onset_df = t_utils.kruskal_wallis_test(
-            nonrwd_onsets, "Conover", test_method,
+            nonrwd_onsets,
+            "Conover",
+            test_method,
         )
         (
             nonrwd_ca_onset_f,
@@ -2027,33 +2103,33 @@ def plot_spine_movement_encoding(
     save=False,
     save_path=None,
 ):
-    """Function to plot the movement encoding related variables for the different 
-        groups
+    """Function to plot the movement encoding related variables for the different
+    groups
 
-        INPUT PARAMETERS
-            dataset - Spine_Activity_Data object
+    INPUT PARAMETERS
+        dataset - Spine_Activity_Data object
 
-            followup_dataset - optional Spine_Activity_Data object of the subsequent
-                                session to use for volume comparison. Default is None,
-                                to use the followup volumes in the dataset
-            
-            exclude - str specifying type of spine to exclude from analysis
+        followup_dataset - optional Spine_Activity_Data object of the subsequent
+                            session to use for volume comparison. Default is None,
+                            to use the followup volumes in the dataset
 
-            threshold - float or tuple of floats specifying the threshold cutoffs for 
-                        classifying plasticity
-            
-            figsize - tuple specifying the figure size
+        exclude - str specifying type of spine to exclude from analysis
 
-            showmeans - boolean specifying whether to show the means on box plots
+        threshold - float or tuple of floats specifying the threshold cutoffs for
+                    classifying plasticity
 
-            test_type - str specifying whether to perform parametric or nonparametric stats
+        figsize - tuple specifying the figure size
 
-            display_stats - boolean specifying whether to display stat results
+        showmeans - boolean specifying whether to show the means on box plots
 
-            save - boolean specifying whether to save the figure or not
+        test_type - str specifying whether to perform parametric or nonparametric stats
 
-            save_path - str specifying where to save the figures
-        
+        display_stats - boolean specifying whether to display stat results
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying where to save the figures
+
     """
     COLORS = ["mediumslateblue", "tomato", "silver"]
     plastic_groups = {
@@ -2069,6 +2145,8 @@ def plot_spine_movement_encoding(
         activity_type = "zscore"
     else:
         activity_type = "\u0394F/F"
+
+    mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
     ## Volume related information
     spine_volumes = dataset.spine_volumes
     spine_flags = dataset.spine_flags
@@ -2095,48 +2173,64 @@ def plot_spine_movement_encoding(
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
     delta_volume, spine_idxs = calculate_volume_change(
-        volumes, flags, norm=vol_norm, exclude=exclude,
+        volumes,
+        flags,
+        norm=vol_norm,
+        exclude=exclude,
     )
     delta_volume = delta_volume[-1]
     enlarged_spines, shrunken_spines, stable_spines = classify_plasticity(
-        delta_volume, threshold=threshold, norm=vol_norm,
+        delta_volume,
+        threshold=threshold,
+        norm=vol_norm,
     )
 
     # Organize the data
     ## Subselect present spines
     spine_movement_correlation = d_utils.subselect_data_by_idxs(
-        spine_movement_correlation, spine_idxs,
+        spine_movement_correlation,
+        spine_idxs,
     )
     spine_movement_stereotypy = d_utils.subselect_data_by_idxs(
-        spine_movement_stereotypy, spine_idxs,
+        spine_movement_stereotypy,
+        spine_idxs,
     )
     spine_movement_reliability = d_utils.subselect_data_by_idxs(
-        spine_movement_reliability, spine_idxs,
+        spine_movement_reliability,
+        spine_idxs,
     )
     spine_movement_specificity = d_utils.subselect_data_by_idxs(
-        spine_movement_specificity, spine_idxs,
+        spine_movement_specificity,
+        spine_idxs,
     )
     spine_LMP_reliability = d_utils.subselect_data_by_idxs(
-        spine_LMP_reliability, spine_idxs,
+        spine_LMP_reliability,
+        spine_idxs,
     )
     spine_LMP_specificity = d_utils.subselect_data_by_idxs(
-        spine_LMP_specificity, spine_idxs,
+        spine_LMP_specificity,
+        spine_idxs,
     )
     spine_rwd_movement_correlation = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_correlation, spine_idxs,
+        spine_rwd_movement_correlation,
+        spine_idxs,
     )
     spine_rwd_movement_stereotypy = d_utils.subselect_data_by_idxs(
         spine_rwd_movement_stereotypy, spine_idxs
     )
     spine_rwd_movement_reliability = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_reliability, spine_idxs,
+        spine_rwd_movement_reliability,
+        spine_idxs,
     )
     spine_rwd_movement_specificity = d_utils.subselect_data_by_idxs(
-        spine_rwd_movement_specificity, spine_idxs,
+        spine_rwd_movement_specificity,
+        spine_idxs,
     )
     spine_fraction_rwd_mvmts = d_utils.subselect_data_by_idxs(
-        spine_fraction_rwd_mvmts, spine_idxs,
+        spine_fraction_rwd_mvmts,
+        spine_idxs,
     )
+    mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
 
     ## Seperate groups
     group_mvmt_corr = {}
@@ -2150,6 +2244,7 @@ def plot_spine_movement_encoding(
     group_rwd_mvmt_reli = {}
     group_rwd_mvmt_spec = {}
     group_frac_rwd = {}
+    group_mouse_ids = {}
     for key, value in plastic_groups.items():
         spines = eval(value)
         group_mvmt_corr[key] = spine_movement_correlation[spines]
@@ -2163,6 +2258,7 @@ def plot_spine_movement_encoding(
         group_rwd_mvmt_reli[key] = spine_rwd_movement_reliability[spines]
         group_rwd_mvmt_spec[key] = spine_rwd_movement_specificity[spines]
         group_frac_rwd[key] = spine_fraction_rwd_mvmts[spines]
+        group_mouse_ids[key] = mouse_ids[spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -2502,74 +2598,178 @@ def plot_spine_movement_encoding(
     # Perform the statistics
     if test_type == "parametric":
         mvmt_corr_f, mvmt_corr_p, _, mvmt_corr_df = t_utils.ANOVA_1way_posthoc(
-            group_mvmt_corr, test_method,
+            group_mvmt_corr,
+            test_method,
         )
         mvmt_stereo_f, mvmt_stereo_p, _, mvmt_stereo_df = t_utils.ANOVA_1way_posthoc(
-            group_mvmt_stero, test_method,
+            group_mvmt_stero,
+            test_method,
         )
         mvmt_rel_f, mvmt_rel_p, _, mvmt_rel_df = t_utils.ANOVA_1way_posthoc(
-            group_mvmt_reli, test_method,
+            group_mvmt_reli,
+            test_method,
         )
         mvmt_spec_f, mvmt_spec_p, _, mvmt_spec_df = t_utils.ANOVA_1way_posthoc(
-            group_mvmt_spec, test_method,
+            group_mvmt_spec,
+            test_method,
         )
         LMP_rel_f, LMP_rel_p, _, LMP_rel_df = t_utils.ANOVA_1way_posthoc(
-            group_LMP_reli, test_method,
+            group_LMP_reli,
+            test_method,
         )
         LMP_spec_f, LMP_spec_p, _, LMP_spec_df = t_utils.ANOVA_1way_posthoc(
-            group_LMP_spec, test_method,
+            group_LMP_spec,
+            test_method,
         )
         rwd_corr_f, rwd_corr_p, _, rwd_corr_df = t_utils.ANOVA_1way_posthoc(
-            group_rwd_mvmt_corr, test_method,
+            group_rwd_mvmt_corr,
+            test_method,
         )
         rwd_stereo_f, rwd_stereo_p, _, rwd_stereo_df = t_utils.ANOVA_1way_posthoc(
-            group_rwd_mvmt_stero, test_method,
+            group_rwd_mvmt_stero,
+            test_method,
         )
         rwd_rel_f, rwd_rel_p, _, rwd_rel_df = t_utils.ANOVA_1way_posthoc(
-            group_rwd_mvmt_reli, test_method,
+            group_rwd_mvmt_reli,
+            test_method,
         )
         rwd_spec_f, rwd_spec_p, _, rwd_spec_df = t_utils.ANOVA_1way_posthoc(
-            group_rwd_mvmt_spec, test_method,
+            group_rwd_mvmt_spec,
+            test_method,
         )
         frac_f, frac_p, _, frac_df = t_utils.ANOVA_1way_posthoc(
-            group_frac_rwd, test_method,
+            group_frac_rwd,
+            test_method,
         )
         test_title = f"One-Way ANOVA {test_method}"
     elif test_type == "nonparametric":
         mvmt_corr_f, mvmt_corr_p, mvmt_corr_df = t_utils.kruskal_wallis_test(
-            group_mvmt_corr, "Conover", test_method,
+            group_mvmt_corr,
+            "Conover",
+            test_method,
         )
         mvmt_stereo_f, mvmt_stereo_p, mvmt_stereo_df = t_utils.kruskal_wallis_test(
-            group_mvmt_stero, "Conover", test_method,
+            group_mvmt_stero,
+            "Conover",
+            test_method,
         )
         mvmt_rel_f, mvmt_rel_p, mvmt_rel_df = t_utils.kruskal_wallis_test(
-            group_mvmt_reli, "Conover", test_method,
+            group_mvmt_reli,
+            "Conover",
+            test_method,
         )
         mvmt_spec_f, mvmt_spec_p, mvmt_spec_df = t_utils.kruskal_wallis_test(
-            group_mvmt_spec, "Conover", test_method,
+            group_mvmt_spec,
+            "Conover",
+            test_method,
         )
         LMP_rel_f, LMP_rel_p, LMP_rel_df = t_utils.kruskal_wallis_test(
-            group_LMP_reli, "Conover", test_method,
+            group_LMP_reli,
+            "Conover",
+            test_method,
         )
         LMP_spec_f, LMP_spec_p, LMP_spec_df = t_utils.kruskal_wallis_test(
-            group_LMP_spec, "Conover", test_method,
+            group_LMP_spec,
+            "Conover",
+            test_method,
         )
         rwd_corr_f, rwd_corr_p, rwd_corr_df = t_utils.kruskal_wallis_test(
-            group_rwd_mvmt_corr, "Conover", test_method,
+            group_rwd_mvmt_corr,
+            "Conover",
+            test_method,
         )
         rwd_stereo_f, rwd_stereo_p, rwd_stereo_df = t_utils.kruskal_wallis_test(
-            group_rwd_mvmt_stero, "Conover", test_method,
+            group_rwd_mvmt_stero,
+            "Conover",
+            test_method,
         )
         rwd_rel_f, rwd_rel_p, rwd_rel_df = t_utils.kruskal_wallis_test(
-            group_rwd_mvmt_reli, "Conover", test_method,
+            group_rwd_mvmt_reli,
+            "Conover",
+            test_method,
         )
         rwd_spec_f, rwd_spec_p, rwd_spec_df = t_utils.kruskal_wallis_test(
-            group_rwd_mvmt_spec, "Conover", test_method,
+            group_rwd_mvmt_spec,
+            "Conover",
+            test_method,
         )
         frac_f, frac_p, frac_df = t_utils.kruskal_wallis_test(
-            group_frac_rwd, "Conover", test_method,
+            group_frac_rwd,
+            "Conover",
+            test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
+
+    elif test_type == "mixed-effect":
+        mvmt_corr_f, mvmt_corr_p, mvmt_corr_df = t_utils.one_way_mixed_effects_model(
+            group_mvmt_corr,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        mvmt_stereo_f, mvmt_stereo_p, mvmt_stereo_df = (
+            t_utils.one_way_mixed_effects_model(
+                group_mvmt_stero,
+                group_mouse_ids,
+                test_method,
+                slopes_intercept=False,
+            )
+        )
+        mvmt_rel_f, mvmt_rel_p, mvmt_rel_df = t_utils.one_way_mixed_effects_model(
+            group_mvmt_reli,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        mvmt_spec_f, mvmt_spec_p, mvmt_spec_df = t_utils.one_way_mixed_effects_model(
+            group_mvmt_spec,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        LMP_rel_f, LMP_rel_p, LMP_rel_df = t_utils.one_way_mixed_effects_model(
+            group_LMP_reli,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        LMP_spec_f, LMP_spec_p, LMP_spec_df = t_utils.one_way_mixed_effects_model(
+            group_LMP_spec,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        rwd_corr_f, rwd_corr_p, rwd_corr_df = t_utils.one_way_mixed_effects_model(
+            group_rwd_mvmt_corr,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        rwd_stereo_f, rwd_stereo_p, rwd_stereo_df = t_utils.one_way_mixed_effects_model(
+            group_rwd_mvmt_stero,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        rwd_rel_f, rwd_rel_p, rwd_rel_df = t_utils.one_way_mixed_effects_model(
+            group_rwd_mvmt_reli,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        rwd_spec_f, rwd_spec_p, rwd_spec_df = t_utils.one_way_mixed_effects_model(
+            group_rwd_mvmt_spec,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        frac_f, frac_p, frac_df = t_utils.one_way_mixed_effects_model(
+            group_frac_rwd,
+            group_mouse_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        test_title = f"Mixed-Effect {test_method}"
 
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
@@ -2581,7 +2781,7 @@ def plot_spine_movement_encoding(
         IJ
         K.
         """,
-        figsize=(8, 12),
+        figsize=(14, 12),
     )
     ## Format the tables
     axes2["A"].axis("off")
@@ -2736,4 +2936,3 @@ def plot_spine_movement_encoding(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, "Spine_Mvmt_Encoding_Stats")
         fig2.savefig(fname + ".pdf")
-
