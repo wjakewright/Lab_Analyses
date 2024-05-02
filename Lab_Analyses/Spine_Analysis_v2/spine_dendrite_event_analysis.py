@@ -11,7 +11,6 @@ from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities.coactivity_functions import (
     calculate_coactivity,
     calculate_relative_onset,
-    find_individual_onsets,
     get_conservative_coactive_binary,
 )
 from Lab_Analyses.Utilities.mean_trace_functions import analyze_event_activity
@@ -185,6 +184,8 @@ def spine_dendrite_event_analysis(
     above_chance_coactivity_norm = np.zeros(spine_activity.shape[1])
     fraction_dend_coactive = np.zeros(spine_activity.shape[1])
     fraction_spine_coactive = np.zeros(spine_activity.shape[1])
+    coactive_spines = np.zeros(spine_activity.shape[1]).astype(bool)
+    coactive_spines_norm = np.zeros(spine_activity.shape[1]).astype(bool)
     relative_onsets = np.zeros(spine_activity.shape[1]) * np.nan
 
     # coactive_onsets = [[] for i in range(spine_activity.shape[1])]
@@ -237,6 +238,8 @@ def spine_dendrite_event_analysis(
             fraction_spine,
             _,
             _,
+            coactive,
+            coactive_norm,
         ) = calculate_dendrite_coactivity_rate(
             s_activity,
             d_activity,
@@ -257,6 +260,8 @@ def spine_dendrite_event_analysis(
         above_chance_coactivity_norm[spine] = relative_diff_norm
         fraction_dend_coactive[spine] = fraction_dend
         fraction_spine_coactive[spine] = fraction_spine
+        coactive_spines[spine] = coactive
+        coactive_spines_norm[spine] = coactive_norm
 
         # Get timestamps of coactivity
         # coactive_stamps = t_stamps.get_activity_timestamps(coactive_trace)
@@ -273,13 +278,20 @@ def spine_dendrite_event_analysis(
         #    coactive_onsets[spine] = refine_coactive_stamps
 
         # Find dendrite onsets for each coactivity event
-        _, d_onsets = find_individual_onsets(
-            s_activity,
+        # _, d_onsets = find_individual_onsets(
+        #     s_activity,
+        #     d_activity,
+        #     coactivity=coactive_trace,
+        #     sampling_rate=sampling_rate,
+        #     activity_window=activity_window,
+        # )
+        dend_coactive, _ = get_conservative_coactive_binary(
             d_activity,
-            coactivity=coactive_trace,
-            sampling_rate=sampling_rate,
-            activity_window=activity_window,
+            coactive_trace,
         )
+        d_onsets = t_stamps.get_activity_timestamps(dend_coactive)
+        d_onsets = [x[0] for x in d_onsets]
+
         if len(d_onsets) == 0:
             dend_onsets[spine] = d_onsets
         else:
@@ -367,6 +379,8 @@ def spine_dendrite_event_analysis(
         spine_coactive_traces,
         spine_coactive_calcium_traces,
         dendrite_coactive_traces,
+        coactive_spines,
+        coactive_spines_norm,
     )
 
 
