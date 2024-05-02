@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 
+from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.data_utilities import pad_array_to_length
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
@@ -400,10 +401,12 @@ def calculate_nearby_vs_distance_variable(variable_mat, position_bins, cluster_d
     """Helper function to calculate the nearby coactivity rate vs
     the distance coactivity rate for each spine"""
     DISTANT_BIN = position_bins[-1] - cluster_dist
+    # DISTANT_BIN = position_bins[-1]
     # Distant is considered further than 30um
 
     # Get idx for the nearby cluster bin cutoff
     near_bin_idx = np.nonzero(position_bins == cluster_dist)[0][0]
+    # near_bin_idx = 0
     dist_bin_idx = np.nonzero(position_bins >= DISTANT_BIN)[0][0]
 
     # Slice near and distant data
@@ -418,5 +421,8 @@ def calculate_nearby_vs_distance_variable(variable_mat, position_bins, cluster_d
 
     # Perform calculation
     near_minus_dist = near - distant
+    # near_minus_dist = d_utils.normalized_relative_difference(
+    #    np.array(distant), np.array(near)
+    # )
 
     return near_minus_dist
