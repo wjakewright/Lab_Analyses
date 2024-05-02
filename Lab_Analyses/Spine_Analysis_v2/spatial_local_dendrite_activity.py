@@ -258,9 +258,9 @@ def spatial_local_dendrite_activity(
             noncoactive_local_dend_amplitude[spines[spine]] = sorted_noncoactive_amps[0]
             ## Binned amplitudes
             coactive_local_dend_amplitude_dist[:, spines[spine]] = binned_coactive_amps
-            noncoactive_local_dend_amplitude_dist[
-                :, spines[spine]
-            ] = binned_noncoactive_amps
+            noncoactive_local_dend_amplitude_dist[:, spines[spine]] = (
+                binned_noncoactive_amps
+            )
 
     return (
         coactive_local_dend_traces,
@@ -278,6 +278,8 @@ def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
     dendrite traces. Works with only ons set of timestamps and a single
     local dendrite dFoF trace
     """
+    center_point = np.absolute(activity_window[0]) * sampling_rate
+    after_point = sampling_rate
 
     # Return null values if there are no timestamps
     if len(timestamps) == 0:
@@ -306,7 +308,10 @@ def get_dend_traces(timestamps, dend_dFoF, activity_window, sampling_rate):
     max_idx = np.argmax(mean)
 
     # Average amplitude around the max
-    win = int((0.5 * sampling_rate) / 2)
-    amplitude = np.nanmean(mean[max_idx - win : max_idx + win])
+    # win = int((0.25 * sampling_rate) / 2)
+    # amplitude = np.nanmean(mean[max_idx - win : max_idx + win])
+    amplitude = np.nanmean(mean[center_point : center_point + after_point])
+    base = np.nanmean(mean[center_point - after_point : center_point])
+    amplitude = amplitude - base
 
     return traces, amplitude
