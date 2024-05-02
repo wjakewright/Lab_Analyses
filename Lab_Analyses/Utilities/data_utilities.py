@@ -1,5 +1,7 @@
 """Module containing various functions that help with data handeling"""
+
 import random
+from collections import defaultdict
 from itertools import compress
 
 import numpy as np
@@ -9,31 +11,35 @@ from sklearn import preprocessing
 
 
 def get_before_after_means(
-    activity, timestamps, window, sampling_rate, offset=False,
+    activity,
+    timestamps,
+    window,
+    sampling_rate,
+    offset=False,
 ):
     """Function to get the mean activity before and after a specific behavioral
-        event
-        
-        INPUT PARAMETERS
-            activity - np.array of neural activity, with each column representing a single
-                        ROI. Can also be a single column vector for a single ROI
-            
-            timestamps - list of timestamps corresponding to the imaging frame where
-                         each behavioral event occurred. 
-                         
-            window - list specifying the time before and after the behavioral event
-                    you want to assess (e.g., [-2, 2] for 2 sec before and after)
-            
-            sampling_rate - scaler specifying the image sampling rate
-            
-            offset - boolean term indicating if the timestamps include the offset of behavioral
-                    event and if this should be used to determine the after period. Default
-                    is set to False. 
-            
-        OUTPUT PARAMETERS
-            all_befores - list containing all the before means (np.array) for each ROI
-            
-            all_afters - list containing all the after means (np.array) for each ROI
+    event
+
+    INPUT PARAMETERS
+        activity - np.array of neural activity, with each column representing a single
+                    ROI. Can also be a single column vector for a single ROI
+
+        timestamps - list of timestamps corresponding to the imaging frame where
+                     each behavioral event occurred.
+
+        window - list specifying the time before and after the behavioral event
+                you want to assess (e.g., [-2, 2] for 2 sec before and after)
+
+        sampling_rate - scaler specifying the image sampling rate
+
+        offset - boolean term indicating if the timestamps include the offset of behavioral
+                event and if this should be used to determine the after period. Default
+                is set to False.
+
+    OUTPUT PARAMETERS
+        all_befores - list containing all the before means (np.array) for each ROI
+
+        all_afters - list containing all the after means (np.array) for each ROI
     """
     # Organize the timestampse
     if offset == False:
@@ -77,22 +83,22 @@ def get_before_after_means(
 
 def get_before_during_means(activity, timestamps, window, sampling_rate):
     """Function to get the before and during behavioral event
-    
-        INPUT PARAMETERS
-            activity - np.array of neural activity, with each column representing ROI
-            
-            timestamps - list of tuples with the onset and offest of each behavioral event
-            
-            window - int specifying the timewindow before the behavioral event 
-                    to use as the baseline in seconds
-                    
-            sampling_rate - float specifying what the imaging rate was
 
-        OUTPUT PARAMETERS
-            all_befores - list containing all the before means (np.array) for each ROI
-            
-            all_durings - list containing all the during means (np.array) for each ROI
-            
+    INPUT PARAMETERS
+        activity - np.array of neural activity, with each column representing ROI
+
+        timestamps - list of tuples with the onset and offest of each behavioral event
+
+        window - int specifying the timewindow before the behavioral event
+                to use as the baseline in seconds
+
+        sampling_rate - float specifying what the imaging rate was
+
+    OUTPUT PARAMETERS
+        all_befores - list containing all the before means (np.array) for each ROI
+
+        all_durings - list containing all the during means (np.array) for each ROI
+
     """
     # Get the before time in frames
     before_f = int(window * sampling_rate)
@@ -115,28 +121,28 @@ def get_before_during_means(activity, timestamps, window, sampling_rate):
 
 def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
     """Function to get the mean and sem of neural activity around behavioral events
-        
-        INPUT PARAMETERS
-            activity - np.array of neural activity, with each column for each ROI
 
-            ROI_ids - list of strings with each ROI id
-            
-            timestamps - list of timestamps corresponding to the imaging frame where
-                        each event occured
-                        
-            window - list specifying the time before and after the behavioral event
-                     you want to assess (e.g. [-2,2] for 2 secs before and after
-                     
-            sampling_rate - scaler specifying the image sampling rate
-        
-        OUTPUT PARAMETERS
-            roi_event_epochs - dictionary containing an array for each ROI. Each array
-                              contains the activity during the window for each event, 
-                              with a column for each event
-            
-            roi_mean_sems - dictionary containing the activity mean and sem for each ROI.
-                            For each ROI key there are two arrays, one for the mean activity
-                            during the event, and the other for the sem during the same period
+    INPUT PARAMETERS
+        activity - np.array of neural activity, with each column for each ROI
+
+        ROI_ids - list of strings with each ROI id
+
+        timestamps - list of timestamps corresponding to the imaging frame where
+                    each event occured
+
+        window - list specifying the time before and after the behavioral event
+                 you want to assess (e.g. [-2,2] for 2 secs before and after
+
+        sampling_rate - scaler specifying the image sampling rate
+
+    OUTPUT PARAMETERS
+        roi_event_epochs - dictionary containing an array for each ROI. Each array
+                          contains the activity during the window for each event,
+                          with a column for each event
+
+        roi_mean_sems - dictionary containing the activity mean and sem for each ROI.
+                        For each ROI key there are two arrays, one for the mean activity
+                        during the event, and the other for the sem during the same period
     """
     # Get the window in terms of frames
     before_f = int(window[0] * sampling_rate)
@@ -156,7 +162,8 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
             try:
                 epochs = np.hstack((epochs, e))
             except ValueError:
-                continue
+                nan_array = np.zeros(win_size) * np.nan
+                epochs = np.hstack((epochs, nan_array.reshape(-1, 1)))
         epochs = epochs[:, 1:]
         roi_event_epochs[roi] = epochs
 
@@ -176,12 +183,12 @@ def get_trace_mean_sem(activity, ROI_ids, timestamps, window, sampling_rate):
 
 def z_score(data):
     """Function to z-score the data
-    
-        INPUT PARAMETERS
-            data - np.array of neural data with each column representing a seperate roi
-            
-        OUTPUT PARAMETERS
-            z_data - np.array of z-scored data
+
+    INPUT PARAMETERS
+        data - np.array of neural data with each column representing a seperate roi
+
+    OUTPUT PARAMETERS
+        z_data - np.array of z-scored data
     """
 
     # initialize the output variable
@@ -195,18 +202,18 @@ def z_score(data):
 
 def zero_window(data, base_win, sampling_rate):
     """Fucntion to zero neural activity to a specified baseline period for trial
-        activity. For plotting purposes
-        
-        INPUT PARAMETERS
-            data - dataframe or array of neural activity, with each column representing a single ROI
-            
-            base_win - tuple of ints spcifying the period within the trial you wish to 
-                        define as the baseline period in terms of seconds. 
-            
-            sampling_rate - int specifying the imaging rate 
-        
-        OUTPUT PARAMETERS
-            zeroed_data - dataframe of the now zeroed data
+    activity. For plotting purposes
+
+    INPUT PARAMETERS
+        data - dataframe or array of neural activity, with each column representing a single ROI
+
+        base_win - tuple of ints spcifying the period within the trial you wish to
+                    define as the baseline period in terms of seconds.
+
+        sampling_rate - int specifying the imaging rate
+
+    OUTPUT PARAMETERS
+        zeroed_data - dataframe of the now zeroed data
     """
 
     # get baseline period in terms of frames
@@ -228,22 +235,22 @@ def zero_window(data, base_win, sampling_rate):
 
 def diff_sorting(data, length, sampling_rate):
     """Function to sort neurons based on their change in activity
-        around a specified event 
-        
-        INPUT PARAMETERS
-            data - array or dataframe of neural activity, with each row
-                    representing a single neuron or trial (for a single neuron). 
-                    Note data must be centered around the event
-            
-            length - tuple of ints specifying how long before and after
-                     the event to compare (e.g. (2,2) for 2s before vs
-                    2s after)
-            
-            sampling_rate - int of the imaging sampling rate (e.g. 30hz)
-            
-        OUTPUT PARAMETERS
-            sorted_data - dataframe of the sorted neural activity
-            
+    around a specified event
+
+    INPUT PARAMETERS
+        data - array or dataframe of neural activity, with each row
+                representing a single neuron or trial (for a single neuron).
+                Note data must be centered around the event
+
+        length - tuple of ints specifying how long before and after
+                 the event to compare (e.g. (2,2) for 2s before vs
+                2s after)
+
+        sampling_rate - int of the imaging sampling rate (e.g. 30hz)
+
+    OUTPUT PARAMETERS
+        sorted_data - dataframe of the sorted neural activity
+
     """
     if type(data) == np.ndarray:
         data = pd.DataFrame(data)
@@ -264,13 +271,13 @@ def diff_sorting(data, length, sampling_rate):
 
 def peak_sorting(data):
     """Function to sort traces based on the timing of the peak ampliitude
-    
-        INPUT PARAMETERS
-            data - np.array of pd.DataFrame of the data, with columns representing
-                    different rois
-                    
-        OUTPUT PARAMETERS
-            sorted_data - np.array of the sorted data
+
+    INPUT PARAMETERS
+        data - np.array of pd.DataFrame of the data, with columns representing
+                different rois
+
+    OUTPUT PARAMETERS
+        sorted_data - np.array of the sorted data
     """
     if type(data) == pd.DataFrame:
         data = np.array(data)
@@ -282,14 +289,14 @@ def peak_sorting(data):
 
 
 def peak_normalize_data(data):
-    """Function to normalize activity data from 0 to 1. 
-        
-        INPUT PARAMETERS
-            data - np.array or pd.DataFrame of data, with columns representing rois
-            
-        OUTPUT PARAMETERS
-            normalized_data - np.array of the peak normalized data
-            
+    """Function to normalize activity data from 0 to 1.
+
+    INPUT PARAMETERS
+        data - np.array or pd.DataFrame of data, with columns representing rois
+
+    OUTPUT PARAMETERS
+        normalized_data - np.array of the peak normalized data
+
     """
     scaler = preprocessing.MinMaxScaler()
     normalized_data = scaler.fit_transform(data)
@@ -299,7 +306,7 @@ def peak_normalize_data(data):
 
 def join_dictionaries(dict_list):
     """Function to join a list of dictionaries with the same keys into a single
-        contiuous dictionary"""
+    contiuous dictionary"""
     new_dict = dict_list[0]
     for d in dict_list[1:]:
         for key, value in d.items():
@@ -331,9 +338,9 @@ def unique_array_list(array_list):
 
 def calculate_activity_event_rate(activity_array, sampling_rate=60):
     """Function to calculate the activity frequency of rois
-    
-        INPUT PARAMETERS
-            activity_array - 2d np.array of binary activity for each roi (columns)
+
+    INPUT PARAMETERS
+        activity_array - 2d np.array of binary activity for each roi (columns)
     """
     activity_rate = np.zeros(activity_array.shape[1])
     for i in range(activity_array.shape[1]):
@@ -348,7 +355,7 @@ def calculate_activity_event_rate(activity_array, sampling_rate=60):
 
 def neg_num_relative_difference(pre_values, post_values):
     """Method to calculate the relative difference of two sets of values that include
-        negative numbers"""
+    negative numbers"""
 
     rel_diff = []
     for pre, post in zip(pre_values, post_values):
@@ -421,16 +428,16 @@ def pad_array_to_length(array, length, axis=0, value=np.nan):
 def roll_2d_array(array, shift_range, axis=1):
     """Function to roll each row or col of a 2d array independently
 
-        INPUT PARAMETERS
-            array - 2d np.array of the data to be rolled
-            
-            shfit_rate - tuple specifying the minimum and maximum range of the roll
-            
-            axis - int specifying which axis to roll
+    INPUT PARAMETERS
+        array - 2d np.array of the data to be rolled
 
-        OUTPUT PARAMETERS
-            rolled_array - 2d np.array with each axis rolled
-        
+        shfit_rate - tuple specifying the minimum and maximum range of the roll
+
+        axis - int specifying which axis to roll
+
+    OUTPUT PARAMETERS
+        rolled_array - 2d np.array with each axis rolled
+
     """
     # Set up the output
     rolled_array = np.zeros(array.shape) * np.nan
@@ -451,13 +458,13 @@ def roll_2d_array(array, shift_range, axis=1):
 
 def subselect_data_by_idxs(data, idxs):
     """Helper function to subsect data by its index
-    
-        INPUT PARAMETERS
-            data - the data to be subselected. Can be list or arrays
-            
-            idxs - list or np.array of the indexes to use for selection
-                    Can be an array of the actual indexes or a boolean
-                    list
+
+    INPUT PARAMETERS
+        data - the data to be subselected. Can be list or arrays
+
+        idxs - list or np.array of the indexes to use for selection
+                Can be an array of the actual indexes or a boolean
+                list
     """
     if type(data) == np.ndarray:
         if len(data.shape) == 1:
@@ -478,14 +485,14 @@ def subselect_data_by_idxs(data, idxs):
 
 def shuffle_binary_arrays(array, axis=1):
     """Helper function to shuffle chunks of binary array data
-    
-        INPUT PARAMETERS
-            array - 1 or 2d binary array
 
-            axis - int specifying the axis to shuffle along. Optional for only 2d arrays
-        
-        OUTPUT PARAMETERS
-            shuff_array - 1 or 2d binary array now shuffled
+    INPUT PARAMETERS
+        array - 1 or 2d binary array
+
+        axis - int specifying the axis to shuffle along. Optional for only 2d arrays
+
+    OUTPUT PARAMETERS
+        shuff_array - 1 or 2d binary array now shuffled
     """
     if len(array.shape) == 1:
         shuff_array = shuffle_binary_chunks(array)
@@ -506,10 +513,10 @@ def shuffle_binary_arrays(array, axis=1):
 
 def shuffle_binary_chunks(array):
     """Helper function to shuffle binary arrays
-        INPUT
-            array - 1d binary array
-        OUTPUT
-            shuff_array - 1d binary array
+    INPUT
+        array - 1d binary array
+    OUTPUT
+        shuff_array - 1d binary array
     """
     # pad data
     pad = np.zeros(1)
@@ -518,7 +525,7 @@ def shuffle_binary_chunks(array):
 
     # Split into chunks
     chunks = []
-    first_start = array[:boundary_frames[0]]
+    first_start = array[: boundary_frames[0]]
     chunks.append(first_start)
     for i, _ in enumerate(boundary_frames[1:]):
         start = boundary_frames[i]
@@ -541,5 +548,12 @@ def convert_dataclass_to_dict(dataclass):
     output = {}
     for attribute in dataclass.__dict__.keys():
         output[attribute] = getattr(dataclass, attribute)
-    
+
     return output
+
+
+def code_str_to_int(str_list):
+    temp = defaultdict(lambda: len(temp))
+    int_list = [temp[ele] for ele in str_list]
+
+    return int_list
