@@ -1,4 +1,5 @@
 """Module containing commonly used tests"""
+
 import itertools
 import os
 import random
@@ -269,7 +270,9 @@ def kruskal_wallis_test(data_dict, post_method, adj_method):
     return f_stat, kruskal_p, results_table
 
 
-def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="between"):
+def ANOVA_2way_mixed_posthoc(
+    data_dict, method, rm_vals=None, compare_type="between", test_type="parametric"
+):
     """Function to perform a repeated measures two-way anova with specified posthoc
     tests
 
@@ -308,9 +311,11 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
             sub = [sub_count for x in range(len(data))]
             temp_dict = {"subject": sub, "data": data, "group": g, "rm_val": rm_vals}
             temp_df = pd.DataFrame(temp_dict)
-            dfs.append(temp_df.dropna())
+            dfs.append(temp_df.dropna(axis=0))
             sub_count = sub_count + 1
     test_df = pd.concat(dfs)
+
+    test_df.reset_index(inplace=True, drop=True)
 
     # Perform the mixed ANOVA
     two_way_mixed_anova = pg.mixed_anova(
@@ -345,7 +350,10 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
                 data1 = np.array(data1["data"])
                 data2 = np.array(data2["data"])
                 ## Perform the t-tests
-                t, p = stats.ttest_ind(data1, data2)
+                if test_type == "parametric":
+                    t, p = stats.ttest_ind(data1, data2)
+                elif test_type == "nonparametric":
+                    t, p = stats.mannwhitneyu(data1, data2)
                 t_vals.append(t)
                 raw_pvals.append(p)
 
@@ -366,6 +374,32 @@ def ANOVA_2way_mixed_posthoc(data_dict, method, rm_vals=None, compare_type="betw
         }
         # posthoc_table = tabulate(posthoc_dict, headers="keys", tablefmt="fancy_grid")
         posthoc_table = pd.DataFrame.from_dict(posthoc_dict)
+        try:
+            two_way_mixed_anova.drop(
+                columns=["sphericity", "W-spher", "p-spher", "p-GG-corr"], inplace=True
+            )
+        except KeyError:
+            pass
+
+        # Format outputs
+        two_way_mixed_anova.update(two_way_mixed_anova[["SS"]].applymap("{:.4}".format))
+        two_way_mixed_anova.update(two_way_mixed_anova[["MS"]].applymap("{:.4}".format))
+        two_way_mixed_anova.update(two_way_mixed_anova[["F"]].applymap("{:.4}".format))
+        two_way_mixed_anova.update(
+            two_way_mixed_anova[["p-unc"]].applymap("{:.3E}".format)
+        )
+        two_way_mixed_anova.update(
+            two_way_mixed_anova[["np2"]].applymap("{:.4}".format)
+        )
+        two_way_mixed_anova.update(
+            two_way_mixed_anova[["eps"]].applymap("{:.4}".format)
+        )
+
+        posthoc_table.update(posthoc_table[["t stat"]].applymap("{:.4}".format))
+        posthoc_table.update(posthoc_table[["raw p-vals"]].applymap("{:.3E}".format))
+        posthoc_table.update(
+            posthoc_table[["adjusted p-vals"]].applymap("{:.3E}".format)
+        )
 
     return two_way_mixed_anova, posthoc_dict, posthoc_table
 
@@ -406,12 +440,14 @@ def significant_vs_shuffle(real_values, shuffle_values, alpha, nan_policy="omit"
         if np.isnan(value):
             ranks.append(np.nan)
             significance.append(np.nan)
+            continue
         ## Remove nan values from shuff
         if np.sum(np.isnan(shuff)):
             if nan_policy == "omit":
                 shuff = shuff[~np.isnan(shuff)]
             elif nan_policy == "zero":
                 shuff[np.isnan(shuff)] = 0
+            continue
         # calculate the rank
         rank = stats.percentileofscore(shuff, value)
         # determine significance
@@ -639,8 +675,8 @@ def one_way_mixed_effects_model(
     """
     # Organize the data into a DataFrame
     ## Convert from dictionaries
-    data_df = pd.DataFrame.from_dict(data_dict)
-    rand_df = pd.DataFrame.from_dict(random_dict)
+    data_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in data_dict.items()]))
+    rand_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in random_dict.items()]))
     ## Linearize the data into columns
     data_df = pd.melt(
         data_df, value_vars=data_dict.keys(), var_name="Group", value_name="Data"
@@ -656,77 +692,44 @@ def one_way_mixed_effects_model(
     for i, key in enumerate(data_dict.keys()):
         map_dict[key] = codes[i]
     data_df = data_df.assign(Group_Coded=data_df["Group"].map(map_dict))
+    data_df = data_df.dropna(axis=0, how="any")
 
     # Perform the mix-effects model test
     ## Define formula
     if slopes_intercept is True:
-        formula = "Data ~ Group_Coded + (1|Rand_Var) + (Group_Coded-1|Rand_Var)"
+        formula = "Data ~ Group + (1|Rand_Var) + (Group-1|Rand_Var)"
     else:
-        formula = "Data ~ Group_Coded + (1|Rand_Var)"
+        formula = "Data ~ Group + (1|Rand_Var)"
     ## Construct and fit the model
     model = Lmer(formula, data=data_df)
-    model.fit(summarize=False)
+    model.fit(summarize=False, factors={"Group": list(data_dict.keys())}, ordered=True)
+    anova = model.anova()
     ## Get t and p values
-    t_stat = model.coefs["T-stat"]["Group_Coded"]
-    p_val = model.coefs["P-val"]["Group_Coded"]
+    t_stat = anova["F-stat"]["Group"]
+    p_val = anova["P-val"]["Group"]
 
-    # Perform the posthoc
-    if post_method != "Tukey":
-        # Perform t-tests across all groups
-        ## Get all possible combinations
-        combos = list(itertools.combinations(data_dict.keys()), 2)
-        test_performed = []
-        t_vals = []
-        raw_pvals = []
-        for combo in combos:
-            test_performed.append(f"{combo[0]} vs. {combo[1]}")
-            t, p = stats.ttest_ind(
-                data_dict[combo[0]],
-                data_dict[combo[1]],
-                nan_policy="omit",
-            )
-            t_vals.append(t)
-            raw_pvals.append(p)
-        ## Perform corrections
-        _, adj_pvals, _, _ = multipletests(
-            raw_pvals,
-            alpha=0.05,
-            method=post_method,
-            is_sorted=False,
-            returnsorted=False,
-        )
-        results_dict = {
-            "comparison": test_performed,
-            "t stat": t_vals,
-            "raw p-vals": raw_pvals,
-            "adjusted p-vals": adj_pvals,
-        }
-        results_df = pd.DataFrame.from_dict(results_dict)
-        results_df.update(results_df[["t stat"]].applymap("{:.3}".format))
-        results_df.update(results_df[["raw p-vals"]].applymap("{:.4E}".format))
-        results_df.update(results_df[["adjusted p-vals"]].applymap("{:.4E}".format))
-
-    elif post_method == "Tukey":
-        # Drop nan values
-        post_df = data_df.dropna(inplace=False)
-        # Perform the tukey result
-        tukey_result = pairwise_tukeyhsd(
-            endog=post_df["Data"], groups=post_df["Group"], alpha=0.05
-        )
-        results_df = pd.DataFrame(
-            data=tukey_result._results_table.data[1:],
-            columns=tukey_result._results_table.data[0],
-        )
-        results_df.update(results_df[["meandiff"]].applymap("{:.3}".format))
-        results_df.update(results_df[["p-adj"]].applymap("{:.4E}".format))
-        results_df.update(results_df[["lower"]].applymap("{:.3}".format))
-        results_df.update(results_df[["upper"]].appylmap("{:.3}".format))
+    # Perform the posthocs
+    posthoc = model.post_hoc(marginal_vars=["Group"], p_adjust="fdr")
+    results_df = posthoc[1]
+    results_df.update(results_df[["Estimate"]].applymap("{:.3}".format))
+    results_df.update(results_df[["2.5_ci"]].applymap("{:.3}".format))
+    results_df.update(results_df[["97.5_ci"]].applymap("{:.3}".format))
+    results_df.update(results_df[["SE"]].applymap("{:.3}".format))
+    results_df.update(results_df[["DF"]].applymap("{:.3}".format))
+    results_df.update(results_df[["T-stat"]].applymap("{:.3}".format))
+    results_df.update(results_df[["P-val"]].applymap("{:.3E}".format))
 
     return t_stat, p_val, results_df
 
 
 def two_way_RM_mixed_effects_model(
-    data_dict, random_dict, post_method, rm_vals=None, compare_type="between"
+    data_dict,
+    random_dict,
+    post_method,
+    rm_vals=None,
+    compare_type="between",
+    slopes_intercept=False,
+    test_type="parametric",
 ):
     """Function to perform a linear mixed effects model test between groups across
     different time points (e.g., 2-way RM ANOVA like)
@@ -762,6 +765,7 @@ def two_way_RM_mixed_effects_model(
     elif len(rm_vals) != data_len:
         print("Inputed RM Values do not match data!!")
         rm_vals = list(range(data_len))
+    rm_vals = np.array(rm_vals).astype(int)
 
     # Organize the data in the appropriate format
     dfs = []
@@ -771,7 +775,12 @@ def two_way_RM_mixed_effects_model(
             random_val = random_dict[key][v]
             g = [key for x in range(len(data))]
             rm = [random_val for x in range(len(data))]
-            temp_dict = {"Rand_Var": rm, "Data": data, "Group": g, "RM_Vals": rm_vals}
+            temp_dict = {
+                "Rand_Var": rm,
+                "Data": data,
+                "Group": g,
+                "RM_Vals": rm_vals,
+            }
             temp_df = pd.DataFrame(temp_dict)
             dfs.append(temp_df)
     test_df = pd.concat(dfs)
@@ -782,17 +791,47 @@ def two_way_RM_mixed_effects_model(
     for i, key in enumerate(data_dict.keys()):
         map_dict[key] = codes[i]
     test_df = test_df.assign(Group_Coded=test_df["Group"].map(map_dict))
+    test_df = test_df.dropna(axis=0, how="any")
+
+    test_df.reset_index(inplace=True, drop=True)
 
     # Perform the mixed-effects model test
     ## Define the formula
-    formula = "Data ~ Group_Coded + RM_Vals + Group_Coded:RM_Vals + (1|Rand_Var) + (Group_Coded-1|Rand_Var) + (RM_Vals:Group_Coded|Rand_Var)"
+    # formula = "Data ~ Group_Coded + RM_Vals + Group_Coded:RM_Vals + (1|Rand_Var) + (Group_Coded-1|Rand_Var) + (RM_Vals:Group_Coded|Rand_Var)"
+    if slopes_intercept == True:
+        formula = "Data ~ Group + RM_Vals + Group:RM_Vals + (1|Rand_Var) + (Group - 1|Rand_Var)"
+    else:
+        formula = "Data ~ Group + RM_Vals + Group:RM_Vals + (1|Rand_Var)"
     # Construct the model and fit the model
     model = Lmer(formula, data=test_df)
-    model.fit(summarize=False)
-    model_df = model.coefs
+    model.fit(
+        summarize=False,
+        factors={"Group": list(data_dict.keys())},
+        ordered=True,
+    )
+    # model_df = model.coefs
+    model_df = model.anova(force_orthogonal=True)
+
+    model_df.update(model_df[["SS"]].applymap("{:.3}".format))
+    model_df.update(model_df[["MS"]].applymap("{:.3}".format))
+    model_df.update(model_df[["F-stat"]].applymap("{:.3}".format))
+    model_df.update(model_df[["P-val"]].applymap("{:.3E}".format))
+
+    # # Perform the posthocs
+    # posthoc = model.post_hoc(
+    #     marginal_vars=["Group"], grouping_vars=["RM_Vals"], p_adjust="fdr"
+    # )
+    # results_df = posthoc[1]
+    # results_df.update(results_df[["Estimate"]].applymap("{:.3}".format))
+    # results_df.update(results_df[["2.5_ci"]].applymap("{:.3}".format))
+    # results_df.update(results_df[["97.5_ci"]].applymap("{:.3}".format))
+    # results_df.update(results_df[["SE"]].applymap("{:.3}".format))
+    # results_df.update(results_df[["DF"]].applymap("{:.3}".format))
+    # results_df.update(results_df[["T-stat"]].applymap("{:.3}".format))
+    # results_df.update(results_df[["P-val"]].applymap("{:.3E}".format))
 
     # Perform the posthoc tests
-    ## Between group comparisions
+    # Between group comparisions
     if compare_type == "between":
         ## Get combinations of tests
         combos = list(itertools.combinations(groups, 2))
@@ -815,7 +854,10 @@ def two_way_RM_mixed_effects_model(
                 data1 = np.array(data1["Data"])
                 data2 = np.array(data2["Data"])
                 ## Perform the t-tests
-                t, p = stats.ttest_ind(data1, data2)
+                if test_type == "parametric":
+                    t, p = stats.ttest_ind(data1, data2)
+                elif test_type == "nonparametric":
+                    t, p = stats.mannwhitneyu(data1, data2)
                 t_vals.append(t)
                 raw_pvals.append(p)
         ## Correct for multiple comparisons
@@ -834,5 +876,15 @@ def two_way_RM_mixed_effects_model(
             "adjusted p-vals": adj_pvals,
         }
         posthoc_df = pd.DataFrame.from_dict(posthoc_dict)
+
+    # Format tables
+    # for col in model_df.columns:
+    #   model_df.update(model_df[[col]].applymap("{:.4}".format))
+
+    # model_df.reset_index(inplace=True)
+
+    posthoc_df.update(posthoc_df[["t stat"]].applymap("{:.4}".format))
+    posthoc_df.update(posthoc_df[["raw p-vals"]].applymap("{:.3E}".format))
+    posthoc_df.update(posthoc_df[["adjusted p-vals"]].applymap("{:.3E}".format))
 
     return model_df, posthoc_df
