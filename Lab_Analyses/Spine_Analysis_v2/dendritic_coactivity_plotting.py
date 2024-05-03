@@ -1454,6 +1454,8 @@ def plot_plasticity_coactivity_rates(
         followup_volumes = followup_dataset.spine_volumes
         followup_flags = followup_dataset.spine_flags
 
+    mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
+
     ## Coactivity-related variables
     if norm == False:
         nname = "Raw"
@@ -1570,6 +1572,8 @@ def plot_plasticity_coactivity_rates(
         dataset.nonmovement_spines, spine_idxs
     )
 
+    mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
+
     ## Seperate into groups
     all_coactivity_rate = {}
     all_shuff_coactivity_rate = {}
@@ -1584,6 +1588,7 @@ def plot_plasticity_coactivity_rates(
     conj_dend_fraction = {}
     conj_spine_fraction = {}
     frac_conj_events = {}
+    plastic_ids = {}
 
     for key, value in plastic_groups.items():
         spines = eval(value)
@@ -1606,6 +1611,7 @@ def plot_plasticity_coactivity_rates(
         conj_dend_fraction[key] = conj_fraction_dendrite_coactive[spines]
         conj_spine_fraction[key] = conj_fraction_spine_coactive[spines]
         frac_conj_events[key] = fraction_conj_events[spines]
+        plastic_ids[key] = mouse_ids[spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -1633,7 +1639,7 @@ def plot_plasticity_coactivity_rates(
         xtitle=f"{coactivity_title}",
         ytitle="\u0394 volume",
         figsize=(5, 5),
-        xlim=(0, None),
+        xlim=(0, 6),
         ylim=(0, None),
         marker_size=25,
         face_color="cmap",
@@ -1657,7 +1663,7 @@ def plot_plasticity_coactivity_rates(
         xtitle=f"{coactivity_title}",
         ytitle="\u0394 volume",
         figsize=(5, 5),
-        xlim=(0, None),
+        xlim=(0, 6),
         ylim=(0, None),
         marker_size=25,
         face_color="cmap",
@@ -1681,7 +1687,7 @@ def plot_plasticity_coactivity_rates(
         xtitle=f"{coactivity_title}",
         ytitle="\u0394 volume",
         figsize=(5, 5),
-        xlim=(0, None),
+        xlim=(0, 6),
         ylim=(0, None),
         marker_size=25,
         face_color="cmap",
@@ -2630,6 +2636,83 @@ def plot_plasticity_coactivity_rates(
             test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
+
+    elif test_type == "mixed-effect":
+        all_coactivity_f, all_coactivity_p, all_coactivity_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=all_coactivity_rate,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        all_s_frac_f, all_s_frac_p, all_s_frac_df = t_utils.one_way_mixed_effects_model(
+            data_dict=all_spine_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        all_d_frac_f, all_d_frac_p, all_d_frac_df = t_utils.one_way_mixed_effects_model(
+            data_dict=all_dend_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        nonconj_coactivity_f, nonconj_coactivity_p, nonconj_coactivity_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=nonconj_coactivity_rate,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        nonconj_s_frac_f, nonconj_s_frac_p, nonconj_s_frac_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=nonconj_spine_fraction,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        nonconj_d_frac_f, nonconj_d_frac_p, nonconj_d_frac_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=nonconj_dend_fraction,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        conj_coactivity_f, conj_coactivity_p, conj_coactivity_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=conj_coactivity_rate,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        conj_s_frac_f, conj_s_frac_p, conj_s_frac_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=conj_spine_fraction,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        conj_d_frac_f, conj_d_frac_p, conj_d_frac_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=conj_dend_fraction,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        frac_conj_f, frac_conj_p, frac_conj_df = t_utils.one_way_mixed_effects_model(
+            data_dict=frac_conj_events,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        test_title = f"Mixed-effects {test_method}"
 
     # Comparisions to chance
     ## All events
