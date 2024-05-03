@@ -125,27 +125,21 @@ def nearby_coactive_spine_activity(
         # Get coactivity timestamps
         if not np.nansum(coactivity):
             continue
-        # Old method
-        # timestamps = get_activity_timestamps(coactivity)
-        # timestamps = refine_activity_timestamps(
-        #    timestamps,
-        #    window=activity_window,
-        #    max_len=len(coactivity),
-        #    sampling_rate=sampling_rate,
-        # )
+        timestamps = get_activity_timestamps(coactivity)
+
         # if offsets is not None:
         #    timestamps = timestamp_onset_correction(
         #        timestamps, activity_window, offsets[spine], sampling_rate
         #    )
 
         ## Get timestamps of the target spine for each coactivity event
-        _, timestamps = find_individual_onsets(
-            target_activity,
-            target_activity,
-            coactivity=coactivity,
-            sampling_rate=sampling_rate,
-            activity_window=activity_window,
-        )
+        # _, timestamps = find_individual_onsets(
+        #     target_activity,
+        #     target_activity,
+        #     coactivity=coactivity,
+        #     sampling_rate=sampling_rate,
+        #     activity_window=activity_window,
+        # )
         if len(timestamps) == 0:
             continue
 
@@ -156,6 +150,7 @@ def nearby_coactive_spine_activity(
             sampling_rate=sampling_rate,
         )
 
+        timestamps = [x[0] for x in timestamps]
         # Iterate through each coactivity event
         spine_wise_onsets = [[] for i in range(nearby_activity.shape[1])]
         for event in timestamps:
