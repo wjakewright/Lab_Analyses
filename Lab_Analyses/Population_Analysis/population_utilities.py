@@ -1,4 +1,7 @@
+import itertools
 import os
+
+import numpy as np
 
 from Lab_Analyses.Utilities.save_load_pickle import load_pickle
 
@@ -28,3 +31,39 @@ def load_population_datasets(mouse_id, sessions):
         mouse_data[session] = data
 
     return mouse_data
+
+
+def calc_pairwise_distances_btw_vectors(array_list):
+    """Helper function to calculate the Eucledian distances between
+    multidimensional vectors
+
+    INPUT PARAMETERS
+        array_list - list of 2d arrays. Rows represent time and columns represent
+                    dimensions of the vector.
+
+    OUTPUT PARAMETERS
+        similarities - np.array of all pairwise similarities
+
+        med_similarity - float of the median of all similarities
+
+
+    """
+    # Get all combinations of events
+    combos = itertools.combinations(array_list, 2)
+    # Perform pariwise similarities
+    similarities = []
+    for combo in combos:
+        # Seperate vectors
+        a = combo[0]
+        b = combo[1]
+        # Calculate the distance
+        dist = np.linalg.norm(a - b, axis=1)
+        # Average the distance across all time points
+        avg_dist = np.nanmean(dist)
+        # Get the inverse
+        similarities.append(1 / avg_dist)
+
+    # Calculate the overall median similarity
+    med_similarity = np.nanmedian(similarities)
+
+    return np.array(similarities), med_similarity
