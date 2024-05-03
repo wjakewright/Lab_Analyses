@@ -60,6 +60,7 @@ def analyze_da_traces(
     # Analyze each mouse and FOV seperately
     dendrite_tracker = 0
     for mouse in mice_list:
+        print(mouse)
         # Load the data
         datasets = load_spine_datasets(mouse, [session], fov_type)
 
@@ -83,6 +84,8 @@ def analyze_da_traces(
             binary_cue = data.binary_cue
             reward_delivery = data.reward_delivery
 
+            if type(spine_groupings[0]) != list:
+                spine_groupings = [spine_groupings]
             # Analyze each dendrite in the FOV
             for i, grouping in enumerate(spine_groupings):
                 dendrite_tracker = dendrite_tracker + i
@@ -91,7 +94,7 @@ def analyze_da_traces(
                 # Get appropriate activity
                 if roi_type == "dendrite":
                     activity = dendrite_activity[i]
-                    dFoF = dendrite_dFoF
+                    dFoF = dendrite_dFoF[i]
                 else:
                     activity = spine_activity[:, grouping]
                     dFoF = spine_dFoF[:, grouping]
@@ -108,6 +111,7 @@ def analyze_da_traces(
                     a_stamps = t_stamps.refine_activity_timestamps(
                         a_stamps, activity_window, activity.shape[0], sampling_rate
                     )
+                    a_stamps = [x[0] for x in a_stamps]
                     activity_timestamps.append(a_stamps)
                 a_traces, _, _ = trace_fun.analyze_event_activity(
                     dFoF,
@@ -128,6 +132,7 @@ def analyze_da_traces(
                 move_timestamps = t_stamps.refine_activity_timestamps(
                     move_timestamps, activity_window, activity.shape[0], sampling_rate
                 )
+                move_timestamps = [x[0] for x in move_timestamps]
                 movement_timestamps = [
                     move_timestamps for i in range(activity.shape[1])
                 ]
@@ -153,6 +158,7 @@ def analyze_da_traces(
                     activity.shape[0],
                     sampling_rate,
                 )
+                rwd_move_timestamps = [x[0] for x in rwd_move_timestamps]
                 rwd_movement_timestamps = [
                     rwd_move_timestamps for i in range(activity.shape[1])
                 ]
@@ -178,6 +184,7 @@ def analyze_da_traces(
                     activity.shape[0],
                     sampling_rate,
                 )
+                rwd_timestamps = [x[0] for x in rwd_timestamps]
                 reward_timestamps = [rwd_timestamps for i in range(activity.shape[1])]
                 rwd_traces, _, _ = trace_fun.analyze_event_activity(
                     dFoF,
@@ -201,7 +208,8 @@ def analyze_da_traces(
                     activity.shape[0],
                     sampling_rate,
                 )
-                cue_timestamps = [cue_timestamps for i in range(activity.shape[1])]
+                c_timestamps = [x[0] for x in c_timestamps]
+                cue_timestamps = [c_timestamps for i in range(activity.shape[1])]
                 c_traces, _, _ = trace_fun.analyze_event_activity(
                     dFoF,
                     cue_timestamps,
@@ -225,7 +233,7 @@ def analyze_da_traces(
                     rnd_timestamps = t_stamps.refine_activity_timestamps(
                         rnd_timestamps,
                         activity_window,
-                        activity.shape[1],
+                        activity.shape[0],
                         sampling_rate,
                     )
                     random_timestamps.append(rnd_timestamps)
@@ -247,7 +255,9 @@ def analyze_da_traces(
     print(f"Number of dendrite: {len(identifiers)}")
     ## Randomly select dendrite to plot if none given
     if dend_to_plot is None:
-        dend_to_plot = np.random.choice(len(identifiers), 1)
+        dend_to_plot = np.random.choice(len(identifiers), 1)[0]
+
+    print(dend_to_plot)
 
     plot_identifier = identifiers[dend_to_plot]
     plot_session_activity_traces = session_activity_traces[dend_to_plot]
@@ -260,7 +270,7 @@ def analyze_da_traces(
     plot_random_traces = random_traces[dend_to_plot]
 
     # Plot session dFoF
-    sess_fig, sess_ax = plt.subplots(figsize=(12, 8))
+    sess_fig, sess_ax = plt.subplots(figsize=(12, 16))
     sess_fig.tight_layout()
     sess_ax.set_title(f"Session dFoF {plot_identifier}")
     for i in range(plot_session_dFoF_traces.shape[1]):
@@ -276,6 +286,11 @@ def analyze_da_traces(
             linewidth=0.5,
             color="mediumslateblue",
         )
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Figures"
+        save_name = os.path.join(save_path, f"Session_dFoF_{plot_identifier}")
+        sess_fig.savefig(save_name + ".pdf")
 
     # Plot active traces
     plot_roi_traces(
@@ -354,7 +369,7 @@ def plot_roi_traces(
     tot = len(roi_traces)
     row_num = tot // col_num
     row_num += tot % col_num
-    figsize = (10, 4 * row_num)
+    figsize = (10, 2.5 * row_num)
     fig = plt.figure(figsize=figsize)
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
     fig.suptitle(title)
