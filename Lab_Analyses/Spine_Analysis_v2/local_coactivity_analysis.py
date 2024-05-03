@@ -1,34 +1,47 @@
 import numpy as np
 
-from Lab_Analyses.Spine_Analysis_v2.coactive_vs_noncoactive_event_analysis import \
-    coactive_vs_noncoactive_event_analysis
-from Lab_Analyses.Spine_Analysis_v2.distance_coactivity_rate_analysis import \
-    distance_coactivity_rate_analysis
+from Lab_Analyses.Spine_Analysis_v2.coactive_vs_noncoactive_event_analysis import (
+    coactive_vs_noncoactive_event_analysis,
+)
+from Lab_Analyses.Spine_Analysis_v2.distance_coactivity_rate_analysis import (
+    distance_coactivity_rate_analysis,
+)
 from Lab_Analyses.Spine_Analysis_v2.local_coactivity_dataclass import (
-    Grouped_Local_Coactivity_Data, Local_Coactivity_Data)
-from Lab_Analyses.Spine_Analysis_v2.local_dendrite_activity import \
-    local_dendrite_activity
-from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import \
-    nearby_coactive_spine_activity
-from Lab_Analyses.Spine_Analysis_v2.nearby_spine_density_analysis import \
-    nearby_spine_density_analysis
-from Lab_Analyses.Spine_Analysis_v2.nearby_spine_movement_quality import \
-    neraby_spine_movement_quality
-from Lab_Analyses.Spine_Analysis_v2.spatial_local_dendrite_activity import \
-    spatial_local_dendrite_activity
+    Grouped_Local_Coactivity_Data,
+    Local_Coactivity_Data,
+)
+from Lab_Analyses.Spine_Analysis_v2.local_dendrite_activity import (
+    local_dendrite_activity,
+)
+from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
+    nearby_coactive_spine_activity,
+)
+from Lab_Analyses.Spine_Analysis_v2.nearby_spine_density_analysis import (
+    nearby_spine_density_analysis,
+)
+from Lab_Analyses.Spine_Analysis_v2.nearby_spine_movement_quality import (
+    neraby_spine_movement_quality,
+)
+from Lab_Analyses.Spine_Analysis_v2.spatial_local_dendrite_activity import (
+    spatial_local_dendrite_activity,
+)
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    load_spine_datasets, parse_movement_nonmovement_spines)
-from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import \
-    load_norm_constants
+    load_spine_datasets,
+    parse_movement_nonmovement_spines,
+)
+from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import (
+    load_norm_constants,
+)
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
-from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import \
-    variable_distance_dependence
+    calculate_volume_change,
+    classify_plasticity,
+)
+from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import (
+    variable_distance_dependence,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.coactivity_functions import \
-    get_conservative_coactive_binary
-from Lab_Analyses.Utilities.quantify_movement_quality import \
-    quantify_movement_quality
+from Lab_Analyses.Utilities.coactivity_functions import get_conservative_coactive_binary
+from Lab_Analyses.Utilities.quantify_movement_quality import quantify_movement_quality
 
 
 def local_coactivity_analysis(
@@ -45,33 +58,33 @@ def local_coactivity_analysis(
     save_grouped=False,
 ):
     """Function to handle the analysis of local coactivity between spines
-    
-        INPUT PARAMETERS
-            mice_list - list of str specifying all the mice to be analyzed
-            
-            session - str specifying the session to be analyzed
-            
-            fov_type - str specifying whether to analyze apical or basal FOVs
-            
-            activity_window - tuple specifying the window around which the activity
-                              should be analyzed (sec)
-            
-            cluster_dist - int/float speicfying the distance to be considered local
-            
-            zscore - boolean of whether or not to zscore the activity for analysis
-            
-            volume_norm - boolean of whether or not to normalize activity by 
-                          spine volume
-                          
-            partners - str specifying whether or not to contrain analysis to 
-                        only 'MRS' or 'nMRS' partners
 
-            movement_period - str specifying whether or not to constrain analysis to 
-                            specific movement epochs
-            
-            save_ind - boolean specifying whether to save the data for each FOV
-            
-            save_grouped - boolean specifying whether to save all of the FOVs grouped together
+    INPUT PARAMETERS
+        mice_list - list of str specifying all the mice to be analyzed
+
+        session - str specifying the session to be analyzed
+
+        fov_type - str specifying whether to analyze apical or basal FOVs
+
+        activity_window - tuple specifying the window around which the activity
+                          should be analyzed (sec)
+
+        cluster_dist - int/float speicfying the distance to be considered local
+
+        zscore - boolean of whether or not to zscore the activity for analysis
+
+        volume_norm - boolean of whether or not to normalize activity by
+                      spine volume
+
+        partners - str specifying whether or not to contrain analysis to
+                    only 'MRS' or 'nMRS' partners
+
+        movement_period - str specifying whether or not to constrain analysis to
+                        specific movement epochs
+
+        save_ind - boolean specifying whether to save the data for each FOV
+
+        save_grouped - boolean specifying whether to save all of the FOVs grouped together
     """
     # Get normalization constants
     if volume_norm:
@@ -195,10 +208,10 @@ def local_coactivity_analysis(
                 avg_local_coactivity_rate_norm,
                 shuff_local_coactivity_rate,
                 shuff_local_coactivity_rate_norm,
-                _,
-                _,
-                _,
-                _,
+                shuff_distance_coactivity_rate,
+                shuff_distance_coactivity_rate_norm,
+                coactive_spines,
+                coactive_spines_norm,
                 near_vs_dist_coactivity,
                 near_vs_dist_coactivity_norm,
             ) = distance_coactivity_rate_analysis(
@@ -213,7 +226,7 @@ def local_coactivity_analysis(
                 sampling_rate=sampling_rate,
                 norm_method="mean",
                 alpha=0.05,
-                iterations=1,
+                iterations=1000,
             )
 
             # Assess activity and coactivity of nearby spines
@@ -325,7 +338,9 @@ def local_coactivity_analysis(
             )
             relative_volumes[stable_idxs] = rel_vols[-1]
             enlarged, shrunken, _ = classify_plasticity(
-                relative_volumes, threshold=(0.25, 0.5), norm=False,
+                relative_volumes,
+                threshold=(0.25, 0.5),
+                norm=False,
             )
             enlarged = np.array(enlarged)
             shrunken = np.array(shrunken)
@@ -451,7 +466,6 @@ def local_coactivity_analysis(
                 iterations=10000,
             )
 
-
             # Analyze coactive and noncoactive spine events
             print(f"---- Analyzing coactive and noncoactive events")
             ## All events
@@ -489,15 +503,17 @@ def local_coactivity_analysis(
             ## Isolated events
             isolated_matrix = np.zeros(spine_activity.shape)
             for c in range(spine_activity.shape[1]):
-                _, dend_inactive = get_conservative_coactive_binary(spine_activity[:, c], dendrite_activity[:, c])
+                _, dend_inactive = get_conservative_coactive_binary(
+                    spine_activity[:, c], dendrite_activity[:, c]
+                )
                 isolated_matrix[:, c] = dend_inactive
 
             ## Old method
             ### modify the constrain matrix
-            #dendrite_inactive = 1 - dendrite_activity
-            #if constrain_matrix is not None:
+            # dendrite_inactive = 1 - dendrite_activity
+            # if constrain_matrix is not None:
             #    temp_matrix = constrain_matrix.reshape(-1, 1) * dendrite_inactive
-            #else:
+            # else:
             #    temp_matrix = dendrite_inactive
 
             (
@@ -695,11 +711,15 @@ def local_coactivity_analysis(
                 rwd_movement_dendrites=rwd_movement_dendrites,
                 nonrwd_movement_dendrites=nonrwd_movement_dendrites,
                 distance_coactivity_rate=distance_coactivity_rate,
+                shuff_distance_coactivity_rate=shuff_distance_coactivity_rate,
+                shuff_distance_coactivity_rate_norm=shuff_distance_coactivity_rate_norm,
                 distance_coactivity_rate_norm=distance_coactivity_rate_norm,
                 avg_local_coactivity_rate=avg_local_coactivity_rate,
                 avg_local_coactivity_rate_norm=avg_local_coactivity_rate_norm,
                 shuff_local_coactivity_rate=shuff_local_coactivity_rate,
                 shuff_local_coactivity_rate_norm=shuff_local_coactivity_rate_norm,
+                coactive_spines=coactive_spines,
+                coactive_spines_norm=coactive_spines_norm,
                 near_vs_dist_coactivity=near_vs_dist_coactivity,
                 near_vs_dist_coactivity_norm=near_vs_dist_coactivity_norm,
                 avg_nearby_spine_rate=avg_nearby_spine_rate,
@@ -736,7 +756,7 @@ def local_coactivity_analysis(
                 shuff_nn_shrunken=shuff_nn_shrunken,
                 shrunken_spine_distribution=shrunken_spine_distribution,
                 avg_nearby_enlarged_spine_rate=avg_nearby_enlarged_spine_rate,
-                shuff_nearby_enlarged_spine_rate= shuff_nearby_enlarged_spine_rate,
+                shuff_nearby_enlarged_spine_rate=shuff_nearby_enlarged_spine_rate,
                 enlarged_spine_activity_rate_distribution=enlarged_spine_activity_rate_distribution,
                 near_vs_dist_enlarged_activity_rate=near_vs_dist_enlarged_activity_rate,
                 avg_nearby_enlarged_coactivity_rate=avg_nearby_enlarged_coactivity_rate,
@@ -744,7 +764,7 @@ def local_coactivity_analysis(
                 enlarged_local_coactivity_rate_distribution=enlarged_local_coactivity_rate_distribution,
                 near_vs_dist_enlarged_nearby_coactivity_rate=near_vs_dist_enlarged_nearby_coactivity_rate,
                 avg_nearby_shrunken_spine_rate=avg_nearby_shrunken_spine_rate,
-                shuff_nearby_shrunken_spine_rate= shuff_nearby_shrunken_spine_rate,
+                shuff_nearby_shrunken_spine_rate=shuff_nearby_shrunken_spine_rate,
                 shrunken_spine_activity_rate_distribution=shrunken_spine_activity_rate_distribution,
                 near_vs_dist_shrunken_activity_rate=near_vs_dist_shrunken_activity_rate,
                 avg_nearby_shrunken_coactivity_rate=avg_nearby_shrunken_coactivity_rate,
@@ -814,4 +834,3 @@ def local_coactivity_analysis(
         grouped_spine_coactivity_data.save()
 
     return grouped_spine_coactivity_data
-
