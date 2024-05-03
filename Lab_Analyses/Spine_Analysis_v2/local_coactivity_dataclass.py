@@ -31,10 +31,14 @@ class Local_Coactivity_Data:
     # Local coactivity rates
     distance_coactivity_rate: np.ndarray
     distance_coactivity_rate_norm: np.ndarray
+    shuff_distance_coactivity_rate: list
+    shuff_distance_coactivity_rate_norm: list
     avg_local_coactivity_rate: np.ndarray
     avg_local_coactivity_rate_norm: np.ndarray
     shuff_local_coactivity_rate: np.ndarray
     shuff_local_coactivity_rate_norm: np.ndarray
+    coactive_spines: np.ndarray
+    coactive_spines_norm: np.ndarray
     near_vs_dist_coactivity: np.ndarray
     near_vs_dist_coactivity_norm: np.ndarray
     # Nearby spine properties
