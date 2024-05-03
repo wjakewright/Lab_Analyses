@@ -23,8 +23,8 @@ def distance_coactivity_rate_analysis(
     alpha=0.05,
     iterations=1000,
 ):
-    """Helper function to perform calculate_distance_coactivity_rate and 
-        calculate_chance_coactivity together"""
+    """Helper function to perform calculate_distance_coactivity_rate and
+    calculate_chance_coactivity together"""
 
     # Distance coactivity rate
     (
@@ -46,10 +46,14 @@ def distance_coactivity_rate_analysis(
     )
     # Calculate nearby - distance coactivity
     near_minus_distant = calculate_nearby_vs_distance_variable(
-        distance_coactivity_rate, position_bins, cluster_dist,
+        distance_coactivity_rate,
+        position_bins,
+        cluster_dist,
     )
     near_minus_distant_norm = calculate_nearby_vs_distance_variable(
-        distance_coactivity_rate_norm, position_bins, cluster_dist,
+        distance_coactivity_rate_norm,
+        position_bins,
+        cluster_dist,
     )
 
     # Local coactivity vs chance
@@ -58,8 +62,8 @@ def distance_coactivity_rate_analysis(
         avg_local_coactivity_rate_norm,
         shuff_local_coactivity_rate,
         shuff_local_coactivity_rate_norm,
-        relative_diff,
-        relative_diff_norm,
+        shuff_distance_coactivity_rate,
+        shuff_distance_coactivity_rate_norm,
         coactive_spines,
         coactive_norm_spines,
     ) = calculate_chance_local_coactivity(
@@ -84,11 +88,10 @@ def distance_coactivity_rate_analysis(
         avg_local_coactivity_rate_norm,
         shuff_local_coactivity_rate,
         shuff_local_coactivity_rate_norm,
-        relative_diff,
-        relative_diff_norm,
+        shuff_distance_coactivity_rate,
+        shuff_distance_coactivity_rate_norm,
         coactive_spines,
         coactive_norm_spines,
         near_minus_distant,
         near_minus_distant_norm,
     )
-
