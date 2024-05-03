@@ -8,27 +8,35 @@ from Lab_Analyses.Population_Analysis.assess_MRN_activity import (
     get_fraction_MRNs,
 )
 from Lab_Analyses.Utilities import data_utilities as d_utils
+from Lab_Analyses.Utilities.movement_related_activity_v2 import (
+    get_movement_onsets,
+    movement_related_activity,
+)
 
 
 def paAIP2_population_analysis(
-    paAIP2_mice, EGFP_mice, activity_window=(-2, 4), save_ind=False, save_grouped=False,
+    paAIP2_mice,
+    EGFP_mice,
+    activity_window=(-2, 4),
+    save_ind=False,
+    save_grouped=False,
 ):
     """Function to analyze experimental and control mice from paAIP2 population
-        imaging experiments
-        
-        INPUT PARAMETERS
-            paAIP2_mice - list of str specifying the mice in the paAIP2 group to be
-                          analyzed
-            
-            EGFP_mice - list of str specifying the mice in the EGFP group to be
-                        analyzed
-            
-            activity_window - tuple specifying the window size to analyze activity around
+    imaging experiments
 
-            save_ind - boolean specifying whetehr to save the data for each mouse
+    INPUT PARAMETERS
+        paAIP2_mice - list of str specifying the mice in the paAIP2 group to be
+                      analyzed
 
-            save_grouped - boolean specifying whether or not to group all mice together
-                            and save
+        EGFP_mice - list of str specifying the mice in the EGFP group to be
+                    analyzed
+
+        activity_window - tuple specifying the window size to analyze activity around
+
+        save_ind - boolean specifying whetehr to save the data for each mouse
+
+        save_grouped - boolean specifying whether or not to group all mice together
+                        and save
     """
 
     all_mice = paAIP2_mice + EGFP_mice
@@ -48,6 +56,7 @@ def paAIP2_population_analysis(
         ## Parameters
         imaging_parameters = datasets["Early"].imaging_parameters
         matched = imaging_parameters["Matched"]
+        sampling_rate = imaging_parameters["Sampling Rate"]
         ## Lever related data
         lever_active = [x.lever_active for x in list(datasets.values())]
         lever_force = [x.lever_force_smooth for x in list(datasets.values())]
@@ -106,3 +115,36 @@ def paAIP2_population_analysis(
             sampling_rate=imaging_parameters["Sampling Rate"],
         )
 
+        # Get movement related activity
+        movement_traces_dFoF, movement_amplitudes_dFoF, mean_onsets_dFoF = (
+            movement_related_activity(
+                lever_active=lever_active,
+                activity=activity,
+                dFoF=zscore_dFoF,
+                norm=None,
+                avg_window=None,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
+        )
+        movement_traces_spikes, movement_amplitudes_spikes, mean_onsets_spikes = (
+            movement_related_activity(
+                lever_active=lever_active,
+                activity=activity,
+                dFoF=zscore_spikes,
+                norm=None,
+                avg_window=None,
+                sampling_rate=sampling_rate,
+                activity_window=activity_window,
+            )
+        )
+
+        # Get individual movement onsets and jitter
+        individual_mvmt_onsets, mvmt_onset_jitter = get_movement_onsets(
+            lever_active=lever_active,
+            activity=activity,
+            sampling_rate=sampling_rate,
+            activity_window=activity_window,
+        )
+
+        # Analyze population level activity
