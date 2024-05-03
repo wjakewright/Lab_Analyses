@@ -34,6 +34,8 @@ class Dendritic_Coactivity_Data:
     all_dendrite_coactivity_rate_norm: np.ndarray
     all_shuff_dendrite_coactivity_rate: np.ndarray
     all_shuff_dendrite_coactivity_rate_norm: np.ndarray
+    all_above_chance_coactivity: np.ndarray
+    all_above_chance_coactivity_norm: np.ndarray
     all_fraction_dendrite_coactive: np.ndarray
     all_fraction_spine_coactive: np.ndarray
     all_spine_coactive_amplitude: np.ndarray
@@ -43,11 +45,15 @@ class Dendritic_Coactivity_Data:
     all_spine_coactive_traces: list
     all_spine_coactive_calcium_traces: list
     all_dendrite_coactive_traces: list
+    all_coactive_spines: np.ndarray
+    all_coactive_spines_norm: np.ndarray
     ## Conj coactive events
     conj_dendrite_coactivity_rate: np.ndarray
     conj_dendrite_coactivity_rate_norm: np.ndarray
     conj_shuff_dendrite_coactivity_rate: np.ndarray
     conj_shuff_dendrite_coactivity_rate_norm: np.ndarray
+    conj_above_chance_coactivity: np.ndarray
+    conj_above_chance_coactivity_norm: np.ndarray
     conj_fraction_dendrite_coactive: np.ndarray
     conj_fraction_spine_coactive: np.ndarray
     conj_spine_coactive_amplitude: np.ndarray
@@ -57,11 +63,15 @@ class Dendritic_Coactivity_Data:
     conj_spine_coactive_traces: list
     conj_spine_coactive_calcium_traces: list
     conj_dendrite_coactive_traces: list
+    conj_coactive_spines: np.ndarray
+    conj_coactive_spines_norm: np.ndarray
     ## Nonconj coactive events
     nonconj_dendrite_coactivity_rate: np.ndarray
     nonconj_dendrite_coactivity_rate_norm: np.ndarray
     nonconj_shuff_dendrite_coactivity_rate: np.ndarray
     nonconj_shuff_dendrite_coactivity_rate_norm: np.ndarray
+    nonconj_above_chance_coactivity: np.ndarray
+    nonconj_above_chance_coactivity_norm: np.ndarray
     nonconj_fraction_dendrite_coactive: np.ndarray
     nonconj_fraction_spine_coactive: np.ndarray
     nonconj_spine_coactive_amplitude: np.ndarray
@@ -71,6 +81,8 @@ class Dendritic_Coactivity_Data:
     nonconj_spine_coactive_traces: list
     nonconj_spine_coactive_calcium_traces: list
     nonconj_dendrite_coactive_traces: list
+    nonconj_coactive_spines: np.ndarray
+    nonconj_coactive_spines_norm: np.ndarray
     fraction_conj_events: np.ndarray
     # Nearby spine coactivity properties
     conj_coactive_spine_num: np.ndarray
