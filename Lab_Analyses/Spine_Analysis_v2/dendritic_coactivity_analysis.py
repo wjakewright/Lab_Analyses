@@ -1,22 +1,30 @@
 import numpy as np
 
 from Lab_Analyses.Spine_Analysis_v2.dendritic_coactivity_dataclass import (
-    Dendritic_Coactivity_Data, Grouped_Dendritic_Coactivity_Data)
-from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import \
-    nearby_coactive_spine_activity
-from Lab_Analyses.Spine_Analysis_v2.noncoactive_dendrite_analysis import \
-    noncoactive_dendrite_analysis
-from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import \
-    spine_dendrite_event_analysis
+    Dendritic_Coactivity_Data,
+    Grouped_Dendritic_Coactivity_Data,
+)
+from Lab_Analyses.Spine_Analysis_v2.nearby_coactive_spine_activity import (
+    nearby_coactive_spine_activity,
+)
+from Lab_Analyses.Spine_Analysis_v2.noncoactive_dendrite_analysis import (
+    noncoactive_dendrite_analysis,
+)
+from Lab_Analyses.Spine_Analysis_v2.spine_dendrite_event_analysis import (
+    spine_dendrite_event_analysis,
+)
 from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
-    load_spine_datasets, parse_movement_nonmovement_spines)
-from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import \
-    load_norm_constants
-from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import \
-    variable_distance_dependence
+    load_spine_datasets,
+    parse_movement_nonmovement_spines,
+)
+from Lab_Analyses.Spine_Analysis_v2.spine_volume_normalization import (
+    load_norm_constants,
+)
+from Lab_Analyses.Spine_Analysis_v2.variable_distance_dependence import (
+    variable_distance_dependence,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
-from Lab_Analyses.Utilities.quantify_movement_quality import \
-    quantify_movement_quality
+from Lab_Analyses.Utilities.quantify_movement_quality import quantify_movement_quality
 
 
 def dendritic_coactivity_analysis(
@@ -34,37 +42,37 @@ def dendritic_coactivity_analysis(
     save_grouped=False,
 ):
     """Function to handle the analysis of dendritic coactivity with spines
-    
-        INPUT PARAMATERS
-            mice_list - list of str specifying all the mice to be analyzed
-            
-            session - str specifying the session to be analyzed
-            
-            fov_type - str specifying whether to analyze apical or basal FOVs
-            
-            activity_window - tuple specifying the window around which the activity
-                              should be analyzed (sec)
-            
-            cluster_dist - int/float specifying the distance to be considered local
-            
-            zscore - boolean of whether or not to zscore the activity for analysis
-            
-            volume_norm - boolean of whether or not to normalize activity by spine
-                          volume
-            
-            partners - str specifying whether or not to constrain analysis to only 
-                        'MRS' or 'nMRS' partners
-            
-            movement_period - str specifying whether or not to constrain analysis to
-                             specific movement periods
-            
-            extend - float specifying the duration in seconds to extend the window for 
-                     considering coactivity. Default is none for no extension
-            
-            save_ind - boolean specifying whetehr to save the data for each FOV
-            
-            save_grouped - boolean specifying whether to save all of the FOVs grouped together
-            
+
+    INPUT PARAMATERS
+        mice_list - list of str specifying all the mice to be analyzed
+
+        session - str specifying the session to be analyzed
+
+        fov_type - str specifying whether to analyze apical or basal FOVs
+
+        activity_window - tuple specifying the window around which the activity
+                          should be analyzed (sec)
+
+        cluster_dist - int/float specifying the distance to be considered local
+
+        zscore - boolean of whether or not to zscore the activity for analysis
+
+        volume_norm - boolean of whether or not to normalize activity by spine
+                      volume
+
+        partners - str specifying whether or not to constrain analysis to only
+                    'MRS' or 'nMRS' partners
+
+        movement_period - str specifying whether or not to constrain analysis to
+                         specific movement periods
+
+        extend - float specifying the duration in seconds to extend the window for
+                 considering coactivity. Default is none for no extension
+
+        save_ind - boolean specifying whetehr to save the data for each FOV
+
+        save_grouped - boolean specifying whether to save all of the FOVs grouped together
+
     """
     MAX_DIST = 40
     bin_num = int(MAX_DIST / 5)
@@ -186,8 +194,8 @@ def dendritic_coactivity_analysis(
                 all_dendrite_coactivity_rate_norm,
                 all_shuff_dendrite_coactivity_rate,
                 all_shuff_dendrite_coactivity_rate_norm,
-                _,
-                _,
+                all_above_chance_coactivity,
+                all_above_chance_coactivity_norm,
                 all_fraction_dend_coactive,
                 all_fraction_spine_coactive,
                 all_spine_coactive_amplitude,
@@ -197,6 +205,8 @@ def dendritic_coactivity_analysis(
                 all_spine_coactive_traces,
                 all_spine_coactive_calcium_traces,
                 all_dendrite_coactive_traces,
+                all_coactive_spines,
+                all_coactive_spines_norm,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -224,8 +234,8 @@ def dendritic_coactivity_analysis(
                 conj_dendrite_coactivity_rate_norm,
                 conj_shuff_dendrite_coactivity_rate,
                 conj_shuff_dendrite_coactivity_rate_norm,
-                _,
-                _,
+                conj_above_chance_coactivity,
+                conj_above_chance_coactivity_norm,
                 conj_fraction_dend_coactive,
                 conj_fraction_spine_coactive,
                 conj_spine_coactive_amplitude,
@@ -235,6 +245,8 @@ def dendritic_coactivity_analysis(
                 conj_spine_coactive_traces,
                 conj_spine_coactive_calcium_traces,
                 conj_dendrite_coactive_traces,
+                conj_coactive_spines,
+                conj_coactive_spines_norm,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -262,8 +274,8 @@ def dendritic_coactivity_analysis(
                 nonconj_dendrite_coactivity_rate_norm,
                 nonconj_shuff_dendrite_coactivity_rate,
                 nonconj_shuff_dendrite_coactivity_rate_norm,
-                _,
-                _,
+                nonconj_above_chance_coactivity,
+                nonconj_above_chance_coactivity_norm,
                 nonconj_fraction_dend_coactive,
                 nonconj_fraction_spine_coactive,
                 nonconj_spine_coactive_amplitude,
@@ -273,6 +285,8 @@ def dendritic_coactivity_analysis(
                 nonconj_spine_coactive_traces,
                 nonconj_spine_coactive_calcium_traces,
                 nonconj_dendrite_coactive_traces,
+                nonconj_coactive_spines,
+                nonconj_coactive_spines_norm,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -390,7 +404,8 @@ def dendritic_coactivity_analysis(
                 [
                     (x - y) / (x + y)
                     for x, y in zip(
-                        conj_dendrite_coactivity_rate, avg_nearby_spine_conj_rate,
+                        conj_dendrite_coactivity_rate,
+                        avg_nearby_spine_conj_rate,
                     )
                 ]
             )
@@ -678,6 +693,8 @@ def dendritic_coactivity_analysis(
                 all_dendrite_coactivity_rate_norm=all_dendrite_coactivity_rate_norm,
                 all_shuff_dendrite_coactivity_rate=all_shuff_dendrite_coactivity_rate,
                 all_shuff_dendrite_coactivity_rate_norm=all_shuff_dendrite_coactivity_rate_norm,
+                all_above_chance_coactivity=all_above_chance_coactivity,
+                all_above_chance_coactivity_norm=all_above_chance_coactivity_norm,
                 all_fraction_dendrite_coactive=all_fraction_dend_coactive,
                 all_fraction_spine_coactive=all_fraction_spine_coactive,
                 all_spine_coactive_amplitude=all_spine_coactive_amplitude,
@@ -687,10 +704,14 @@ def dendritic_coactivity_analysis(
                 all_spine_coactive_traces=all_spine_coactive_traces,
                 all_spine_coactive_calcium_traces=all_spine_coactive_calcium_traces,
                 all_dendrite_coactive_traces=all_dendrite_coactive_traces,
+                all_coactive_spines=all_coactive_spines,
+                all_coactive_spines_norm=all_coactive_spines_norm,
                 conj_dendrite_coactivity_rate=conj_dendrite_coactivity_rate,
                 conj_dendrite_coactivity_rate_norm=conj_dendrite_coactivity_rate_norm,
                 conj_shuff_dendrite_coactivity_rate=conj_shuff_dendrite_coactivity_rate,
                 conj_shuff_dendrite_coactivity_rate_norm=conj_shuff_dendrite_coactivity_rate_norm,
+                conj_above_chance_coactivity=conj_above_chance_coactivity,
+                conj_above_chance_coactivity_norm=conj_above_chance_coactivity_norm,
                 conj_fraction_dendrite_coactive=conj_fraction_dend_coactive,
                 conj_fraction_spine_coactive=conj_fraction_spine_coactive,
                 conj_spine_coactive_amplitude=conj_spine_coactive_amplitude,
@@ -700,10 +721,14 @@ def dendritic_coactivity_analysis(
                 conj_spine_coactive_traces=conj_spine_coactive_traces,
                 conj_spine_coactive_calcium_traces=conj_spine_coactive_calcium_traces,
                 conj_dendrite_coactive_traces=conj_dendrite_coactive_traces,
+                conj_coactive_spines=conj_coactive_spines,
+                conj_coactive_spines_norm=conj_coactive_spines_norm,
                 nonconj_dendrite_coactivity_rate=nonconj_dendrite_coactivity_rate,
                 nonconj_dendrite_coactivity_rate_norm=nonconj_dendrite_coactivity_rate_norm,
                 nonconj_shuff_dendrite_coactivity_rate=nonconj_shuff_dendrite_coactivity_rate,
                 nonconj_shuff_dendrite_coactivity_rate_norm=nonconj_shuff_dendrite_coactivity_rate_norm,
+                nonconj_above_chance_coactivity=nonconj_above_chance_coactivity,
+                nonconj_above_chance_coactivity_norm=nonconj_above_chance_coactivity_norm,
                 nonconj_fraction_dendrite_coactive=nonconj_fraction_dend_coactive,
                 nonconj_fraction_spine_coactive=nonconj_fraction_spine_coactive,
                 nonconj_spine_coactive_amplitude=nonconj_spine_coactive_amplitude,
@@ -713,6 +738,8 @@ def dendritic_coactivity_analysis(
                 nonconj_spine_coactive_traces=nonconj_spine_coactive_traces,
                 nonconj_spine_coactive_calcium_traces=nonconj_spine_coactive_calcium_traces,
                 nonconj_dendrite_coactive_traces=nonconj_dendrite_coactive_traces,
+                nonconj_coactive_spines=nonconj_coactive_spines,
+                nonconj_coactive_spines_norm=nonconj_coactive_spines_norm,
                 fraction_conj_events=fraction_conj_events,
                 conj_coactive_spine_num=conj_coactive_spine_num,
                 conj_nearby_coactive_spine_amplitude=conj_nearby_coactive_spine_amplitude,
@@ -802,4 +829,3 @@ def dendritic_coactivity_analysis(
         grouped_dendritic_coactivity_data.save()
 
     return grouped_dendritic_coactivity_data
-
