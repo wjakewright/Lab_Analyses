@@ -16,6 +16,7 @@ def plot_multi_line_plot(
     x_vals,
     plot_ind=False,
     figsize=(5, 5),
+    mean_type="mean",
     title=None,
     ytitle=None,
     xtitle=None,
@@ -93,7 +94,10 @@ def plot_multi_line_plot(
     x = list(range(len(x_vals)))
     for i, (key, value) in enumerate(data_dict.items()):
         ## Get mean and sem of the group
-        mean = np.nanmean(value, axis=1)
+        if mean_type == "mean":
+            mean = np.nanmean(value, axis=1)
+        elif mean_type == "median":
+            mean = np.nanmedian(value, axis=1)
         sem = stats.sem(value, axis=1, nan_policy="omit")
         ## Plot individual values
         if plot_ind:
