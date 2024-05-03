@@ -197,7 +197,7 @@ def organize_da_spine_data(
                 spine_DA_processed_dFoF = resmooth_dFoF(
                     spine_DA_dFoF,
                     sampling_rate=imaging_parameters["Sampling Rate"],
-                    smooth_window=0.5,
+                    smooth_window=1,
                 )
             else:
                 spine_DA_processed_dFoF = DA_processed_dFoF["Spine"]
@@ -219,11 +219,11 @@ def organize_da_spine_data(
             dendrite_DA_dFoF = DA_dFoF["Dendrite Poly"]
             if resmooth is True:
                 dendrite_DA_processed_dFoF = []
-                for poly in dendrite_DA_dFoF["Dendrite Poly"]:
+                for poly in dendrite_DA_dFoF:
                     temp_dFoF = resmooth_dFoF(
                         poly,
                         sampling_rate=imaging_parameters["Sampling Rate"],
-                        smooth_window=0.5,
+                        smooth_window=1,
                     )
                     dendrite_DA_processed_dFoF.append(temp_dFoF)
             else:
@@ -232,7 +232,7 @@ def organize_da_spine_data(
                 dendrite_DA_activity = []
                 dendrite_DA_floored = []
                 for poly in dendrite_DA_processed_dFoF:
-                    a, f = event_detection(
+                    a, f, _ = event_detection(
                         poly,
                         threshold=2,
                         lower_threshold=1,
