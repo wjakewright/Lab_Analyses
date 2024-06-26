@@ -71,14 +71,19 @@ def quantify_movement_quality(
     # Load the learned movement pattern
     initial_path = r"G:\Analyzed_data\individual"
     behavior_path = os.path.join(initial_path, mouse_id, "behavior")
-    final_day = sorted(x[0] for x in os.walk(behavior_path))[-1]
-    load_path = os.path.join(behavior_path, final_day)
-    fnames = next(os.walk(load_path))[2]
-    fname = [x for x in fnames if "summarized_lever_data" in x]
-    learned_file = load_pickle(fname, load_path)[0]
-    learned_movement = np.nanmean(learned_file.corr_matrix, axis=0)
-    ## Center start of movement to zero
-    learned_movement = learned_movement - learned_movement[0]
+    day_range = [-1, -2, -3, -4]
+    learned_movements = []
+    for day in day_range:
+        b_day = sorted(x[0] for x in os.walk(behavior_path))[day]
+        load_path = os.path.join(behavior_path, b_day)
+        fnames = next(os.walk(load_path))[2]
+        fname = [x for x in fnames if "summarized_lever_data" in x]
+        learned_file = load_pickle(fname, load_path)[0]
+        l_movement = np.nanmean(learned_file.corr_matrix, axis=0)
+        ## Center start of movement to zero
+        l_movement = l_movement - l_movement[0]
+        learned_movements.append(l_movement)
+    learned_movement = np.nanmean(np.vstack(learned_movements))
 
     # Downsample the learned movement to match imaging rate
     frac = Fraction(sampling_rate / 1000).limit_denominator()
