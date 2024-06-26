@@ -151,9 +151,10 @@ def spine_dendrite_event_analysis(
                 np.nansum(constrain_matrix[:, i])
                 for i in range(constrain_matrix.shape[1])
             ]
-        spine_activity = spine_activity * constrain_matrix
+        activity_matrix = spine_activity * constrain_matrix
     else:
         duration = None
+        activity_matrix = spine_activity
 
     # Extend dendrite activity if specified
     if extend is not None:
@@ -172,39 +173,39 @@ def spine_dendrite_event_analysis(
         ca_norm_constants = None
 
     # Set up some outputs
-    coactive_binary = np.zeros(spine_activity.shape)
-    dendrite_coactive_event_num = np.zeros(spine_activity.shape[1])
-    dendrite_coactivity_rate = np.zeros(spine_activity.shape[1])
-    dendrite_coactivity_rate_norm = np.zeros(spine_activity.shape[1])
-    shuff_dendrite_coactivity_rate = np.zeros((iterations, spine_activity.shape[1]))
+    coactive_binary = np.zeros(activity_matrix.shape)
+    dendrite_coactive_event_num = np.zeros(activity_matrix.shape[1])
+    dendrite_coactivity_rate = np.zeros(activity_matrix.shape[1])
+    dendrite_coactivity_rate_norm = np.zeros(activity_matrix.shape[1])
+    shuff_dendrite_coactivity_rate = np.zeros((iterations, activity_matrix.shape[1]))
     shuff_dendrite_coactivity_rate_norm = np.zeros(
-        (iterations, spine_activity.shape[1])
+        (iterations, activity_matrix.shape[1])
     )
-    above_chance_coactivity = np.zeros(spine_activity.shape[1])
-    above_chance_coactivity_norm = np.zeros(spine_activity.shape[1])
-    fraction_dend_coactive = np.zeros(spine_activity.shape[1])
-    fraction_spine_coactive = np.zeros(spine_activity.shape[1])
-    coactive_spines = np.zeros(spine_activity.shape[1]).astype(bool)
-    coactive_spines_norm = np.zeros(spine_activity.shape[1]).astype(bool)
-    relative_onsets = np.zeros(spine_activity.shape[1]) * np.nan
+    above_chance_coactivity = np.zeros(activity_matrix.shape[1])
+    above_chance_coactivity_norm = np.zeros(activity_matrix.shape[1])
+    fraction_dend_coactive = np.zeros(activity_matrix.shape[1])
+    fraction_spine_coactive = np.zeros(activity_matrix.shape[1])
+    coactive_spines = np.zeros(activity_matrix.shape[1]).astype(bool)
+    coactive_spines_norm = np.zeros(activity_matrix.shape[1]).astype(bool)
+    relative_onsets = np.zeros(activity_matrix.shape[1]) * np.nan
 
     # coactive_onsets = [[] for i in range(spine_activity.shape[1])]
-    dend_onsets = [[] for i in range(spine_activity.shape[1])]
+    dend_onsets = [[] for i in range(activity_matrix.shape[1])]
 
     # Iterate through each spine
-    for spine in range(spine_activity.shape[1]):
+    for spine in range(activity_matrix.shape[1]):
         # Skip absent spines
         if present_spines[spine] == False:
             continue
         # Constrain spine activity for local or without local activity
         if activity_type != "all":
-            n_activity = spine_activity[:, nearby_spine_idxs[spine]]
+            n_activity = activity_matrix[:, nearby_spine_idxs[spine]]
             combined_activity = np.nansum(n_activity, axis=1)
             combined_activity[combined_activity > 1] = 1
             if activity_type == "local":
                 # Old method
                 _, _, _, _, s_activity = calculate_coactivity(
-                    spine_activity[:, spine],
+                    activity_matrix[:, spine],
                     combined_activity,
                     sampling_rate=sampling_rate,
                 )
@@ -213,14 +214,14 @@ def spine_dendrite_event_analysis(
                 # Old method
                 combined_inactivity = 1 - combined_activity
                 _, _, _, _, s_activity = calculate_coactivity(
-                    spine_activity[:, spine],
+                    activity_matrix[:, spine],
                     combined_inactivity,
                     sampling_rate=sampling_rate,
                 )
                 # _, s_activity = get_conservative_coactive_binary(spine_activity[:, spine], combined_activity)
 
         else:
-            s_activity = spine_activity[:, spine]
+            s_activity = activity_matrix[:, spine]
 
         d_activity = ref_dend_activity[:, spine]
 
