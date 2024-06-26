@@ -99,14 +99,14 @@ def spatial_local_dendrite_activity(
         matrix = spine_activity
 
     # Extend dendrite activity to remove potentially decaying events
-    ext_dend_activity = extend_dendrite_activity(dendrite_activity, 0.5, sampling_rate)
+    ext_dend_activity = extend_dendrite_activity(dendrite_activity, 0.2, sampling_rate)
 
     # Remove events that overlap with global dendritic events
     ## Create the variable
     activity_matrix = np.zeros(matrix.shape)
     for c in range(matrix.shape[1]):
         _, dend_inactive = get_conservative_coactive_binary(
-            matrix[:, c], dendrite_activity[:, c]
+            matrix[:, c], ext_dend_activity[:, c]
         )
         activity_matrix[:, c] = dend_inactive
 
@@ -137,6 +137,10 @@ def spatial_local_dendrite_activity(
         curr_present = present_spines[spines]
         curr_positions = spine_positions[spines]
         curr_nearby_spines = [nearby_spine_idxs[j] for j in spines]
+
+        # Normalize poly dendrite ROIs against global artifact
+        dend_median_dFoF = np.nanmedian(curr_dend_dFoF, axis=1)
+        corr_dend_dFoF = curr_dend_dFoF - dend_median_dFoF.reshape(-1, 1)
 
         # Iterate through each spine
         for spine in range(curr_s_activity.shape[1]):
@@ -206,16 +210,16 @@ def spatial_local_dendrite_activity(
             temp_coactive_amps = []
             temp_noncoactive_traces = []
             temp_noncoactive_amps = []
-            for i in range(curr_dend_dFoF.shape[1]):
+            for i in range(corr_dend_dFoF.shape[1]):
                 coactive_traces, coactive_amp = get_dend_traces(
                     coactive_stamps,
-                    curr_dend_dFoF[:, i],
+                    corr_dend_dFoF[:, i],
                     activity_window,
                     sampling_rate,
                 )
                 noncoactive_traces, noncoactive_amp = get_dend_traces(
                     noncoactive_stamps,
-                    curr_dend_dFoF[:, i],
+                    corr_dend_dFoF[:, i],
                     activity_window,
                     sampling_rate,
                 )
