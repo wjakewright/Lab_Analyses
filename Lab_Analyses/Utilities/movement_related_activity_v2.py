@@ -161,8 +161,7 @@ def get_movement_onsets(lever_active, activity, sampling_rate, activity_window):
         for movement in timestamps:
             mvmt_activity = curr_activity[movement + before_f : movement + after_f]
             if not np.nansum(mvmt_activity):
-                movement_onsets.append(None)
-                movement_onsets_jitter.append(np.nan)
+                temp_onsets.append(np.nan)
                 continue
             # Get activity boundaries
             boundaries = np.insert(np.diff(mvmt_activity), 0, 0, axis=0)
