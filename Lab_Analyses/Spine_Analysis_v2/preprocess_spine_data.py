@@ -267,12 +267,16 @@ def organize_dual_spine_data(
                 corrected_followup_volume = np.array(
                     followup_data.corrected_spine_volume
                 )
+                followup_positions = np.array(followup_data.ROI_positions["Spine"])
+                followup_groupings = followup_data.parameters["Spine Groupings"]
             else:
                 followup_flags = [None for x in spine_flags]
                 followup_volume = np.zeros(spine_volume.shape) * np.nan
                 corrected_followup_volume = (
                     np.zeros(corrected_spine_volume.shape) * np.nan
                 )
+                followup_positions = np.zeros(spine_positions.shape) * np.nan
+                followup_groupings = copy(spine_groupings)
             ### Activity
             spine_GluSnFr_dFoF = GluSnFr_dFoF["Spine"]
             spine_calcium_dFoF = calcium_dFoF["Spine"]
@@ -349,7 +353,7 @@ def organize_dual_spine_data(
                 if redetection is True:
                     da, df, _ = event_detection(
                         calcium_processed_dFoF["Dendrite"][:, d].reshape(-1, 1),
-                        threshold=2,
+                        threshold=3,
                         lower_threshold=0,
                         lower_limit=None,
                         sampling_rate=imaging_parameters["Sampling Rate"],
@@ -492,6 +496,9 @@ def organize_dual_spine_data(
                 corrected_followup_volume = pad_array_to_length(
                     corrected_followup_volume, max_spine_num
                 )
+                followup_positions = pad_array_to_length(
+                    followup_positions, max_spine_num
+                )
                 if followup_data is not None:
                     followup_flags = pad_spine_flags(followup_flags, max_spine_num)
                 else:
@@ -545,6 +552,8 @@ def organize_dual_spine_data(
                 followup_flags=followup_flags,
                 followup_volume=followup_volume,
                 corrected_followup_volume=corrected_followup_volume,
+                followup_positions=followup_positions,
+                followup_groupings=followup_groupings,
             )
 
             # Save section
@@ -632,3 +641,5 @@ class Dual_Channel_Spine_Data:
     followup_flags: list
     followup_volume: np.ndarray
     corrected_followup_volume: np.ndarray
+    followup_positions: np.ndarray
+    followup_groupings: list
