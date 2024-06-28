@@ -28,44 +28,44 @@ def plot_activity_heatmap(
     save_path=None,
 ):
     """General function to plot a heatmap for activity traces
-    
-        INPUT PARAMETERS
-            data - 2d np.array of the traces to be plotted (colums=rows of the heatmap)
-            
-            figsize - tuple specifying the size of the figure. Only if independent
-            
-            sampling_rate - int specifying the sampling rate
-            
-            activity_window - tuple specifying the window (sec) the activity is centered on
-            
-            title - str specifying the title of the plot
-            
-            cbar_label - str specifying the label of the color bar
-            
-            hmap_range - tuple specifying the min and max of the heatmap range
-            
-            center - int specifying the center of the color map
-            
-            sorted - str specifying if and how to sort the data. Accepts 'peak'
-                    and 'difference' to sort the data based on their peak timing
-                    or difference in their activity before and after center point
-            
-            normalize - boolean specifying if you wish to normalize activity for each row
-            
-            cmap - str specifying the color map to use
-            
-            axis_width - int or float specifying how thick the axis lines should be
 
-            minor_ticks - str specifying if minor ticks should be add to the x and/or y 
-                          axes. Takes "both", "x", and "y" as inputs.
+    INPUT PARAMETERS
+        data - 2d np.array of the traces to be plotted (colums=rows of the heatmap)
 
-            tick_len - int or float specifying how long the tick marks should be
+        figsize - tuple specifying the size of the figure. Only if independent
 
-            ax - axis object you wish the data to be plotted on. Useful for subplotting
+        sampling_rate - int specifying the sampling rate
 
-            save - boolean specifying if you wish to save the figure or not
+        activity_window - tuple specifying the window (sec) the activity is centered on
 
-            save_path - str specifying the path of where to save the figure
+        title - str specifying the title of the plot
+
+        cbar_label - str specifying the label of the color bar
+
+        hmap_range - tuple specifying the min and max of the heatmap range
+
+        center - int specifying the center of the color map
+
+        sorted - str specifying if and how to sort the data. Accepts 'peak'
+                and 'difference' to sort the data based on their peak timing
+                or difference in their activity before and after center point
+
+        normalize - boolean specifying if you wish to normalize activity for each row
+
+        cmap - str specifying the color map to use
+
+        axis_width - int or float specifying how thick the axis lines should be
+
+        minor_ticks - str specifying if minor ticks should be add to the x and/or y
+                      axes. Takes "both", "x", and "y" as inputs.
+
+        tick_len - int or float specifying how long the tick marks should be
+
+        ax - axis object you wish the data to be plotted on. Useful for subplotting
+
+        save - boolean specifying if you wish to save the figure or not
+
+        save_path - str specifying the path of where to save the figure
     """
     # Check if axis was passed
     if ax is None:
@@ -103,7 +103,11 @@ def plot_activity_heatmap(
         center=center,
         vmax=hmap_range[1],
         vmin=hmap_range[0],
-        cbar_kws={"label": cbar_label, "orientation": "vertical", "ticks": cbar_ticks,},
+        cbar_kws={
+            "label": cbar_label,
+            "orientation": "vertical",
+            "ticks": cbar_ticks,
+        },
         yticklabels=False,
         ax=ax,
     )
@@ -139,4 +143,3 @@ def plot_activity_heatmap(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         fname = os.path.join(save_path, title)
         fig.savefig(fname + ".pdf")
-
