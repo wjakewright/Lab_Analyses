@@ -24,6 +24,7 @@ def plot_scatter_correlation(
     ylim=None,
     marker_size=5,
     face_color="mediumblue",
+    cmap_color=None,
     edge_color="white",
     edge_width=0.3,
     line_color="mediumblue",
@@ -38,55 +39,55 @@ def plot_scatter_correlation(
     save_path=None,
 ):
     """Function to plot general correlation between two variables with a regression line.
-    
-        INPUT PARAMETERS
-            x_var - np.array of the x variable to plot
-            
-            y_var - np.array of the y variable to plot
-            
-            CI - int specifying the confidence interval to use around the regression line
-            
-            title - str specifying the title of the plot
-            
-            xtitle - str specifying the title of the x axis
-            
-            ytitle - str specifying the title of the y axis
-            
-            figsize - tuple of the size of the figure to set. Only used if independent
-                      figure
-                      
-            xlim - tuple specifying the limits of the x axis
-            
-            ylim - tuple specifying the limits of the y axis
 
-            marker_size - int specifing the size of the scatter points
+    INPUT PARAMETERS
+        x_var - np.array of the x variable to plot
 
-            face_color - str specifying what color the face of the points should be. Note
-                        can enter "cmap" for a density-based heatmap instead
+        y_var - np.array of the y variable to plot
 
-            edge_color - str specifying what color the edge of the points should be
+        CI - int specifying the confidence interval to use around the regression line
 
-            edge_width - float specifying how think the edges of the points should be
+        title - str specifying the title of the plot
 
-            line_color - str specifying what color the regression line should be
+        xtitle - str specifying the title of the x axis
 
-            s_alpha - float specifying the alhpa of the points
+        ytitle - str specifying the title of the y axis
 
-            line_width - int or float specifying the thickness of the regression line
+        figsize - tuple of the size of the figure to set. Only used if independent
+                  figure
 
-            axis_width - int or float specifying how thick the axis lines should be
+        xlim - tuple specifying the limits of the x axis
 
-            minor_ticks - str specifying if minor ticks should be add to the x and/or y 
-                          axes. Takes "both", "x", and "y" as inputs.
+        ylim - tuple specifying the limits of the y axis
 
-            tick_len - int or float specifying how long the tick marks should be
+        marker_size - int specifing the size of the scatter points
 
-            ax - axis object you wish the data to be plotted on. Useful for subplotting
+        face_color - str specifying what color the face of the points should be. Note
+                    can enter "cmap" for a density-based heatmap instead
 
-            save - boolean specifying if you wish to save the figure or not
+        edge_color - str specifying what color the edge of the points should be
 
-            save_path - str specifying the path of where to save the figure
-            
+        edge_width - float specifying how think the edges of the points should be
+
+        line_color - str specifying what color the regression line should be
+
+        s_alpha - float specifying the alhpa of the points
+
+        line_width - int or float specifying the thickness of the regression line
+
+        axis_width - int or float specifying how thick the axis lines should be
+
+        minor_ticks - str specifying if minor ticks should be add to the x and/or y
+                      axes. Takes "both", "x", and "y" as inputs.
+
+        tick_len - int or float specifying how long the tick marks should be
+
+        ax - axis object you wish the data to be plotted on. Useful for subplotting
+
+        save - boolean specifying if you wish to save the figure or not
+
+        save_path - str specifying the path of where to save the figure
+
     """
     # Check if axis was passed
     if ax is None:
@@ -104,7 +105,8 @@ def plot_scatter_correlation(
     y_var = y_var[non_nan]
 
     # Perform correlatino of the data
-    corr, p = stats.pearsonr(x_var, y_var)
+    # corr, p = stats.pearsonr(x_var, y_var)
+    corr, p = stats.spearmanr(x_var, y_var)
     # Add correlation to the title
     fig_title = f"{title}\nr = {corr:.3}  p = {p:.3E}"
     ax.set_title(fig_title)
@@ -126,6 +128,7 @@ def plot_scatter_correlation(
             x=x_var,
             y=y_var,
             ci=CI,
+            robust=True,
             scatter_kws=scatter_kws,
             line_kws=line_kws,
             ax=ax,
@@ -134,6 +137,8 @@ def plot_scatter_correlation(
 
     ## density-based scatter
     else:
+        if cmap_color is None:
+            cmap_color = "plasma"
         x_var, y_var, face_colors = generate_scatter_cmap(x_var, y_var)
         scatter_kws = {
             "facecolor": face_colors,
@@ -142,11 +147,12 @@ def plot_scatter_correlation(
             "s": marker_size,
             "clip_on": False,
         }
-        ax.scatter(x=x_var, y=y_var, c=face_colors, s=marker_size, cmap="plasma")
+        ax.scatter(x=x_var, y=y_var, c=face_colors, s=marker_size, cmap=cmap_color)
         sns.regplot(
             x=x_var,
             y=y_var,
             ci=CI,
+            robust=False,
             scatter=False,
             line_kws=line_kws,
             ax=ax,
