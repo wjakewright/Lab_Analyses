@@ -9,19 +9,18 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
-from Lab_Analyses.Plotting.plot_cummulative_distribution import (
-    plot_cummulative_distribution,
-)
+from Lab_Analyses.Plotting.plot_cummulative_distribution import \
+    plot_cummulative_distribution
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import \
+    plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
-from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import \
+    plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2 import spine_utilities as s_utils
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change,
-    classify_plasticity,
-)
+    calculate_volume_change, classify_plasticity)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -1455,6 +1454,7 @@ def plot_plasticity_coactivity_rates(
         followup_flags = followup_dataset.spine_flags
 
     mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
+    fovs = dataset.FOV
 
     ## Coactivity-related variables
     if norm == False:
@@ -1573,6 +1573,12 @@ def plot_plasticity_coactivity_rates(
     )
 
     mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
+    fovs = d_utils.subselect_data_by_idxs(fovs, spine_idxs)
+
+    #for m, f, e, v, coa in zip(
+    #    mouse_ids, fovs, enlarged_spines, delta_volume, all_dendrite_coactivity_rate
+    #):
+    #    print(f"{m}:{f} - {e} - {v}: {coa}")
 
     ## Seperate into groups
     all_coactivity_rate = {}
