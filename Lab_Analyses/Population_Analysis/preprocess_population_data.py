@@ -89,7 +89,7 @@ def organize_population_data(
                 continue
 
         # Process data if not loading
-        print(f"--- preprocessing {session} datasets")
+        print(f"- preprocessing {session} datasets")
         session_path = os.path.join(imaging_path, session)
         fnames = next(os.walk(session_path))[2]
         ## Get names of relevant files
@@ -102,9 +102,9 @@ def organize_population_data(
         )
         stat_fname = os.path.join(session_path, [x for x in fnames if "stat" in x][0])
         ## Load the activity files
-        raw_fluoro = np.load(fluo_fname)
+        raw_fluoro = np.load(fluo_fname, allow_pickle=True)
         ops_file = np.load(ops_fname, allow_pickle=True).item()
-        iscell = np.load(iscell_fname)[:, 0].astype(int)
+        iscell = np.load(iscell_fname, allow_pickle=True)[:, 0].astype(int)
         iscell = iscell.astype(bool)
         stat_file = np.load(stat_fname, allow_pickle=True)
 
@@ -117,20 +117,31 @@ def organize_population_data(
         fluoro = raw_fluoro[cells].T
 
         # Calculate dFoF and processed dFoF
+        print(f"--- Calulating dFoF")
+        good_roi_idxs = []
         dFoF = np.zeros(fluoro.shape)
         processed_dFoF = np.zeros(fluoro.shape)
         for i in range(fluoro.shape[1]):
-            f, pf, _ = get_dFoF(
-                data=fluoro[:, i],
-                sampling_rate=int(ops_file["fs"]),
-                smooth_window=0.5,
-                bout_separations=None,
-                artifact_frames=None,
-            )
-            dFoF[:, i] = f
-            processed_dFoF[:, i] = pf
+            try:
+                f, pf, _ = get_dFoF(
+                    data=fluoro[:, i],
+                    sampling_rate=int(ops_file["fs"]),
+                    smooth_window=0.5,
+                    bout_separations=None,
+                    artifact_frames=None,
+                )
+                dFoF[:, i] = f
+                processed_dFoF[:, i] = pf
+                good_roi_idxs.append(i)
+            except:
+                continue
 
+        # Remove bad ROIs
+        fluoro = fluoro[:, good_roi_idxs]
+        dFoF = dFoF[:, good_roi_idxs]
+        processed_dFoF = processed_dFoF[:, good_roi_idxs]
         # Perform event detection
+        print(f"--- Event detection")
         activity, floored, _ = event_detection(
             processed_dFoF,
             threshold=3,
@@ -141,6 +152,7 @@ def organize_population_data(
             sec_smooth=1,
         )
 
+        print(f"--- Deconvolving")
         if sensor == "GCaMP6f":
             tau = 0.7
         elif sensor == "GCaMP6s":
@@ -164,7 +176,7 @@ def organize_population_data(
             smooth_int = smooth_int + 1
         processed_deconvolved = np.zeros(deconvolved.shape)
         for i in range(deconvolved.shape[1]):
-            smooth_spikes = sysignal.savgol_filter(deconvolved[:i], smooth_int, 3)
+            smooth_spikes = sysignal.savgol_filter(deconvolved[:, i], smooth_int, 3)
             processed_deconvolved[:, i] = smooth_spikes
 
         # Store important prameters
@@ -178,6 +190,7 @@ def organize_population_data(
         }
         ## Get positions
         stats = stat_file[cells]
+        stats = [stats[i] for i in good_roi_idxs]
         roi_positions = np.array([x["med"] for x in stats])
 
         suite2p_data = Temp_Suite2P_activity(
@@ -270,6 +283,7 @@ def organize_population_data(
         cell_positions = imaging.roi_positions
 
         # Classify movement responsiveness
+        print(f"--- Movement reponsiveness")
         movement_cells, silent_cells, _ = movement_responsiveness(
             aligned_processed_dFoF, lever_active, permutations=1000, percentile=99
         )
