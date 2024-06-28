@@ -71,8 +71,8 @@ def organize_kir_population_data(
         activity, floored, _ = event_detection(
             processed_dFoF,
             threshold=3,
-            lower_threshold=1,
-            lower_limit=0,
+            lower_threshold=0,
+            lower_limit=None,
             sampling_rate=imaging_parameters["Sampling Rate"],
             filt_poly=1,
             sec_smooth=0.5,
