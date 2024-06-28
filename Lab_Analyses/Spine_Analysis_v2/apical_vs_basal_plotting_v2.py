@@ -23,6 +23,7 @@ from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
     load_spine_datasets,
 )
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
+    calculate_fraction_plastic,
     calculate_spine_dynamics,
     calculate_volume_change,
     classify_plasticity,
@@ -593,59 +594,75 @@ def plot_structural_plasticity(
     )
     basal_delta_volume = basal_delta_volume[-1]
 
-    # Classify plasticity
-    apical_LTP, apical_LTD, _ = classify_plasticity(
-        apical_delta_volume,
-        threshold=threshold,
-        norm=False,
-    )
-    basal_LTP, basal_LTD, _ = classify_plasticity(
-        basal_delta_volume,
-        threshold=threshold,
-        norm=False,
-    )
-
     # Organize plasticity per dendrite
     ## Get uniuque and dendrites corresponding to plastic spines
     unique_apical_dendrites = np.unique(apical_dendrites)
-    apical_p_dendrites = d_utils.subselect_data_by_idxs(apical_dendrites, apical_idx)
     unique_basal_dendrites = np.unique(basal_dendrites)
-    basal_p_dendrites = d_utils.subselect_data_by_idxs(basal_dendrites, basal_idx)
 
     # Set up plasticity variables
     apical_frac_LTP = []
     apical_frac_LTD = []
+    apical_frac_stable = []
     basal_frac_LTP = []
     basal_frac_LTD = []
+    basal_frac_stable = []
 
-    for a_dend in unique_apical_dendrites:
+    for i, a_dend in enumerate(unique_apical_dendrites):
         ## Deal with plasticity first
-        dend_idxs = np.nonzero(apical_p_dendrites == a_dend)[0]
-        a_ltp = np.sum(np.array(apical_LTP)[dend_idxs]) / len(
-            np.array(apical_LTP)[dend_idxs]
+        if np.isnan(a_dend):
+            continue
+        dend_idxs = np.nonzero(apical_dendrites == a_dend)[0]
+        temp_flag_list = [
+            d_utils.subselect_data_by_idxs(apical_flags, dend_idxs),
+            d_utils.subselect_data_by_idxs(apical_followup_flags, dend_idxs),
+        ]
+        temp_vol_list = [
+            d_utils.subselect_data_by_idxs(apical_volumes, dend_idxs),
+            d_utils.subselect_data_by_idxs(apical_followup_volumes, dend_idxs),
+        ]
+        a_ltp, a_ltd, a_stable = calculate_fraction_plastic(
+            temp_vol_list, temp_flag_list, threshold=threshold, exclude="Shaft Spine"
         )
-        a_ltd = np.sum(np.array(apical_LTD)[dend_idxs]) / len(
-            np.array(apical_LTD)[dend_idxs]
-        )
+
         apical_frac_LTP.append(a_ltp)
         apical_frac_LTD.append(a_ltd)
+        apical_frac_stable.append(a_stable)
 
     for b_dend in unique_basal_dendrites:
         ## Deal with plasticity first
-        dend_idxs = np.nonzero(basal_p_dendrites == b_dend)[0]
-        b_ltp = np.sum(np.array(basal_LTP)[dend_idxs]) / len(
-            np.array(basal_LTP)[dend_idxs]
+        if np.isnan(b_dend):
+            continue
+        dend_idxs = np.nonzero(basal_dendrites == b_dend)[0]
+        temp_flag_list = [
+            d_utils.subselect_data_by_idxs(basal_flags, dend_idxs),
+            d_utils.subselect_data_by_idxs(basal_followup_flags, dend_idxs),
+        ]
+        temp_vol_list = [
+            d_utils.subselect_data_by_idxs(basal_volumes, dend_idxs),
+            d_utils.subselect_data_by_idxs(basal_followup_volumes, dend_idxs),
+        ]
+        b_ltp, b_ltd, b_stable = calculate_fraction_plastic(
+            temp_vol_list, temp_flag_list, threshold=threshold, exclude="Shaft Spine"
         )
-        b_ltd = np.sum(np.array(basal_LTD)[dend_idxs]) / len(
-            np.array(basal_LTD)[dend_idxs]
-        )
+
         basal_frac_LTP.append(b_ltp)
         basal_frac_LTD.append(b_ltd)
+        basal_frac_stable.append(b_stable)
 
     apical_frac_LTP = np.array(apical_frac_LTP)
     apical_frac_LTD = np.array(apical_frac_LTD)
     basal_frac_LTP = np.array(basal_frac_LTP)
     basal_frac_LTD = np.array(basal_frac_LTD)
+
+    apical_frac_stable = np.array(apical_frac_stable)
+    basal_frac_stable = np.array(basal_frac_stable)
+
+    print(f"Apical LTP: {np.nanmean(apical_frac_LTP)}")
+    print(f"Apical LTD: {np.nanmean(apical_frac_LTD)}")
+    print(f"Apical Stable: {np.nanmean(apical_frac_stable)}")
+    print(f"Basal LTP: {np.nanmean(basal_frac_LTP)}")
+    print(f"Basal LTD: {np.nanmean(basal_frac_LTD)}")
+    print(f"Basal Stable: {np.nanmean(basal_frac_stable)}")
 
     # Calculate spine dynamics
     apical_mice = list(set(apical_dataset.mouse_id))
@@ -659,13 +676,12 @@ def plot_structural_plasticity(
     basal_elim_spines = []
 
     for mouse in apical_mice:
-        temp_data = load_spine_datasets(mouse, ["Early", "Middle"], fov_type="apical")
+        temp_data = load_spine_datasets(mouse, ["Early"], fov_type="apical")
         for FOV, dataset in temp_data.items():
             t_data = dataset["Early"]
-            t_data_2 = dataset["Middle"]
-            temp_groupings = [t_data.spine_groupings, t_data_2.spine_groupings]
-            temp_flags = [t_data.spine_flags, t_data_2.spine_flags]
-            temp_positions = [t_data.spine_positions, t_data_2.spine_positions]
+            temp_groupings = [t_data.spine_groupings, t_data.followup_groupings]
+            temp_flags = [t_data.spine_flags, t_data.followup_flags]
+            temp_positions = [t_data.spine_positions, t_data.followup_positions]
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -675,13 +691,12 @@ def plot_structural_plasticity(
             apical_new_spines.append(temp_new[-1])
             apical_elim_spines.append(temp_elim[-1])
     for mouse in basal_mice:
-        temp_data = load_spine_datasets(mouse, ["Early", "Middle"], fov_type="basal")
+        temp_data = load_spine_datasets(mouse, ["Early"], fov_type="basal")
         for FOV, dataset in temp_data.items():
             t_data = dataset["Early"]
-            t_data_2 = dataset["Middle"]
-            temp_groupings = [t_data.spine_groupings, t_data_2.spine_groupings]
-            temp_flags = [t_data.spine_flags, t_data_2.spine_flags]
-            temp_positions = [t_data.spine_positions, t_data_2.spine_positions]
+            temp_groupings = [t_data.spine_groupings, t_data.followup_groupings]
+            temp_flags = [t_data.spine_flags, t_data.followup_flags]
+            temp_positions = [t_data.spine_positions, t_data.followup_positions]
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -709,6 +724,22 @@ def plot_structural_plasticity(
     )
     fig.suptitle(f"Apical vs Basal Structural Plasticity")
     fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    # dynamics_df = pd.DataFrame(
+    #    {
+    #        "Density": apical_density,
+    #        "New spines": apical_new_spines,
+    #        "Elim spines": apical_elim_spines,
+    #    }
+    # )
+    # volume_df = pd.DataFrame(
+    #    {
+    #        "Volume": d_utils.subselect_data_by_idxs(apical_volumes, apical_idx),
+    #        "Delta Volume": apical_delta_volume,
+    #    }
+    # )
+    # dynamics_df.to_csv("dynamics.csv", index=False)
+    # volume_df.to_csv("volume.csv", index=False)
 
     ########################## Plot data onto axes ############################
     # Spine density
