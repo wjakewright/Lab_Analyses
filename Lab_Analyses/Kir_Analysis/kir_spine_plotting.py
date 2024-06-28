@@ -23,6 +23,7 @@ from Lab_Analyses.Spine_Analysis_v2.spine_utilities import (
     load_spine_datasets,
 )
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
+    calculate_fraction_plastic,
     calculate_spine_dynamics,
     calculate_volume_change,
     classify_plasticity,
@@ -155,13 +156,12 @@ def plot_kir_vs_ctl_basic_props(
     ctl_mice = list(set(ctl_activity_dataset.mouse_id))
 
     for mouse in kir_mice:
-        temp_data = load_spine_datasets(mouse, ["Early", "Middle"], fov_type=fov_type)
+        temp_data = load_spine_datasets(mouse, ["Early"], fov_type=fov_type)
         for FOV, dataset in temp_data.items():
             t_data = dataset["Early"]
-            t_data_2 = dataset["Middle"]
-            temp_groupings = [t_data.spine_groupings, t_data_2.spine_groupings]
-            temp_flags = [t_data.spine_flags, t_data_2.spine_flags]
-            temp_positions = [t_data.spine_positions, t_data_2.spine_positions]
+            temp_groupings = [t_data.spine_groupings, t_data.followup_groupings]
+            temp_flags = [t_data.spine_flags, t_data.followup_flags]
+            temp_positions = [t_data.spine_positions, t_data.followup_positions]
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -171,13 +171,12 @@ def plot_kir_vs_ctl_basic_props(
             kir_new_spines.append(temp_new[-1])
             kir_elim_spines.append(temp_elim[-1])
     for mouse in ctl_mice:
-        temp_data = load_spine_datasets(mouse, ["Early", "Middle"], fov_type=fov_type)
+        temp_data = load_spine_datasets(mouse, ["Early"], fov_type=fov_type)
         for FOV, dataset in temp_data.items():
             t_data = dataset["Early"]
-            t_data_2 = dataset["Middle"]
-            temp_groupings = [t_data.spine_groupings, t_data_2.spine_groupings]
-            temp_flags = [t_data.spine_flags, t_data_2.spine_flags]
-            temp_positions = [t_data.spine_positions, t_data_2.spine_positions]
+            temp_groupings = [t_data.spine_groupings, t_data.followup_groupings]
+            temp_flags = [t_data.spine_flags, t_data.followup_flags]
+            temp_positions = [t_data.spine_positions, t_data.followup_positions]
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -201,27 +200,51 @@ def plot_kir_vs_ctl_basic_props(
     kir_ltd = []
     ctl_ltp = []
     ctl_ltd = []
-    for k_dend in kir_dendrites_u:
+
+    for i, k_dend in enumerate(kir_dendrites_u):
+        ## Deal with plasticity first
+        if np.isnan(k_dend):
+            continue
         dend_idxs = np.nonzero(kir_dendrites == k_dend)[0]
-        print(dend_idxs)
-        k_ltp = np.sum(np.array(kir_enlarged_spines)[dend_idxs]) / len(
-            np.array(kir_enlarged_spines)[dend_idxs]
+        temp_flag_list = [
+            d_utils.subselect_data_by_idxs(kir_flag_list[0], dend_idxs),
+            d_utils.subselect_data_by_idxs(kir_flag_list[1], dend_idxs),
+        ]
+        temp_vol_list = [
+            d_utils.subselect_data_by_idxs(kir_volume_list[0], dend_idxs),
+            d_utils.subselect_data_by_idxs(kir_volume_list[1], dend_idxs),
+        ]
+        k_ltp, k_ltd, _ = calculate_fraction_plastic(
+            temp_vol_list, temp_flag_list, threshold=threshold, exclude="Shaft Spine"
         )
-        k_ltd = np.sum(np.array(kir_shrunken_spines)[dend_idxs]) / len(
-            np.array(kir_shrunken_spines)[dend_idxs]
-        )
+
         kir_ltp.append(k_ltp)
         kir_ltd.append(k_ltd)
+
     for c_dend in ctl_dendrites_u:
+        ## Deal with plasticity first
+        if np.isnan(c_dend):
+            continue
         dend_idxs = np.nonzero(ctl_dendrites == c_dend)[0]
-        c_ltp = np.sum(np.array(ctl_enlarged_spines)[dend_idxs]) / len(
-            np.array(ctl_enlarged_spines)[dend_idxs]
+        temp_flag_list = [
+            d_utils.subselect_data_by_idxs(ctl_flag_list[0], dend_idxs),
+            d_utils.subselect_data_by_idxs(ctl_flag_list[1], dend_idxs),
+        ]
+        temp_vol_list = [
+            d_utils.subselect_data_by_idxs(ctl_volume_list[0], dend_idxs),
+            d_utils.subselect_data_by_idxs(ctl_volume_list[1], dend_idxs),
+        ]
+        c_ltp, c_ltd, c_stable = calculate_fraction_plastic(
+            temp_vol_list, temp_flag_list, threshold=threshold, exclude="Shaft Spine"
         )
-        c_ltd = np.sum(np.array(ctl_shrunken_spines)[dend_idxs]) / len(
-            np.array(ctl_shrunken_spines)[dend_idxs]
-        )
+
         ctl_ltp.append(c_ltp)
         ctl_ltd.append(c_ltd)
+
+    kir_ltp = np.array(kir_ltp)
+    kir_ltd = np.array(kir_ltd)
+    ctl_ltp = np.array(ctl_ltp)
+    ctl_ltd = np.array(ctl_ltd)
 
     # construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -642,6 +665,11 @@ def plot_kir_vs_ctl_basic_props(
     kir_ltd = np.array(kir_ltd)
 
     # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, f"Kir_Basic_Properties")
+        fig.savefig(fname + ".pdf")
 
     ####################### Statistics Section ############################
     if display_stats == False:
@@ -755,6 +783,12 @@ def plot_kir_vs_ctl_basic_props(
     fig2.tight_layout()
 
     # Save section
+    # Save section
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        fname = os.path.join(save_path, f"Kir_Basic_Properties_Stats")
+        fig2.savefig(fname + ".pdf")
 
 
 def plot_kir_spine_plasticity(
