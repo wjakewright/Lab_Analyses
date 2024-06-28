@@ -1493,6 +1493,7 @@ def plot_plasticity_coactivity_rates(
 
     # Pull relevant data
     mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
+    fovs = dataset.FOV
     spine_volumes = dataset.spine_volumes
     spine_flags = dataset.spine_flags
     if followup_dataset is None:
@@ -1577,6 +1578,12 @@ def plot_plasticity_coactivity_rates(
         dataset.nonmovement_spines, spine_idxs
     )
     mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
+    fovs = d_utils.subselect_data_by_idxs(fovs, spine_idxs)
+
+    # for m, f, e, v, coa in zip(
+    #    mouse_ids, fovs, enlarged_spines, delta_volume, avg_local_coactivity_rate
+    # ):
+    #    print(f"{m}:{f} - {e} - {v}: {coa}")
 
     # Seperate into groups
     plastic_distance_rates = {}
