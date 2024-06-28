@@ -67,3 +67,29 @@ def calc_pairwise_distances_btw_vectors(array_list):
     med_similarity = np.nanmedian(similarities)
 
     return np.array(similarities), med_similarity
+
+
+def load_analyzed_pop_datasets(mouse_list, group="paAIP2"):
+    """Function to load multiple analyzed datasets
+
+    INPUT PARAMETERS
+        mouse_list - list of str with mouse ids
+
+    OUTPUT PARAMETERS
+        loaded_data - list of analyzed data objects
+
+    """
+    initial_path = r"G:\Analyzed_data\individual"
+    loaded_data = []
+    for mouse in mouse_list:
+        load_path = os.path.join(initial_path, mouse, "paAIP2_activity")
+        fname = f"{mouse}_{group}_population_activity_data"
+        try:
+            load_name = os.path.join(load_path, fname)
+            data = load_pickle([load_name])[0]
+            loaded_data.append(data)
+        except FileNotFoundError:
+            print(load_name)
+            print("File matching input parameters does not exist")
+
+    return loaded_data
