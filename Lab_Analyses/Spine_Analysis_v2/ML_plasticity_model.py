@@ -1,4 +1,5 @@
 import copy
+import os
 import random
 
 import matplotlib.pyplot as plt
@@ -94,6 +95,7 @@ class ML_Plasticity_Model:
             "balanced_accuracy": make_scorer(metrics.balanced_accuracy_score),
             "average_precision": make_scorer(metrics.average_precision_score),
             "f1_micro": make_scorer(metrics.f1_score, average="micro"),
+            "f1_macro": make_scorer(metrics.f1_score, average="macro"),
             "precision": make_scorer(metrics.precision_score),
             "recall": make_scorer(metrics.recall_score),
             "roc_auc_ovr": make_scorer(metrics.roc_auc_score, multi_class="ovr"),
@@ -228,7 +230,14 @@ class ML_Plasticity_Model:
         self.shuff_model_test_score = np.vstack(shuff_test_scores)
         self.shuff_model_confusion_matricies = shuff_confusion_matricies
 
-    def plot_model_performance(self, iterations=10, color="mediumblue", figsize=(5, 5)):
+    def plot_model_performance(
+        self,
+        iterations=10,
+        color="mediumblue",
+        figsize=(5, 5),
+        save=False,
+        save_path=None,
+    ):
         """Method to compare the real full model to the shuffled model performance"""
         # Check the full model is trained and tested
         if self.full_models is None:
@@ -308,6 +317,12 @@ class ML_Plasticity_Model:
         )
 
         fig.tight_layout()
+        # Save section
+        if save:
+            if save_path is None:
+                save_path = r"C:\users\Jake\Desktop\Figures"
+            fname = os.path.join(save_path, "ML_Model_Performance")
+            fig.savefig(fname + ".svg")
 
     def plot_feature_weights(self, figsize=(5, 5)):
         """Method to plot the feature weights of the full model"""
@@ -536,7 +551,7 @@ def train_test_model(
                 estimator,
                 X_resample[train_split, :],
                 y_resample[train_split],
-                n_repeats=10,
+                n_repeats=20,
                 random_state=random_state,
             )
             ### What explains model performance ont he test data
@@ -544,7 +559,7 @@ def train_test_model(
                 estimator,
                 X_resample[test_split, :],
                 y_resample[test_split],
-                n_repeats=10,
+                n_repeats=20,
                 random_state=random_state,
             )
             feature_importance_train.append(train_importance.importances_mean)
