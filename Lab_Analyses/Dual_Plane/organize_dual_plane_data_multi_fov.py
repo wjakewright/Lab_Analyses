@@ -77,6 +77,7 @@ def organize_dual_plane_data(
         # Pull the relevant data to output
         dual_soma_apical_basal_data = Dual_Soma_Apical_Basal_Data(
             mouse_id=mouse_id,
+            FOV=FOV,
             apical_ids=apical_data.ROI_ids["Dendrite"],
             apical_dFoF=apical_data.dFoF["Dendrite"],
             apical_processed_dFoF=apical_data.processed_dFoF["Dendrite"],
