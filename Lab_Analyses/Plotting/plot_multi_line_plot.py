@@ -14,6 +14,7 @@ sns.set_style("ticks")
 def plot_multi_line_plot(
     data_dict,
     x_vals,
+    x_labels=None,
     plot_ind=False,
     figsize=(5, 5),
     mean_type="mean",
@@ -84,6 +85,9 @@ def plot_multi_line_plot(
     # Set title
     ax.set_title(title)
 
+    if x_labels is None:
+        x_labels = x_vals
+
     # Sort colors
     if type(line_color) == str:
         line_color = [line_color for x in data_dict.keys()]
@@ -91,14 +95,37 @@ def plot_multi_line_plot(
         face_color = [face_color for x in data_dict.keys()]
 
     # Plot the data
-    x = list(range(len(x_vals)))
+    # x = list(range(len(x_vals)))
+    x = x_vals
     for i, (key, value) in enumerate(data_dict.items()):
         ## Get mean and sem of the group
         if mean_type == "mean":
             mean = np.nanmean(value, axis=1)
+            data_sems = stats.sem(value, axis=1, nan_policy="omit")
         elif mean_type == "median":
             mean = np.nanmedian(value, axis=1)
-        sem = stats.sem(value, axis=1, nan_policy="omit")
+            data_sems = []
+            for j in range(value.shape[0]):
+                d = (value[j, :],)
+                bootstrap = stats.bootstrap(
+                    d,
+                    np.nanmedian,
+                    confidence_level=0.90,
+                    method="percentile",
+                    n_resamples=100,
+                )
+                low = mean[j] - bootstrap.confidence_interval.low
+                high = bootstrap.confidence_interval.high - mean[j]
+                sem = np.array([low, high]).reshape(-1, 1)
+                data_sems.append(sem)
+                # d = value[j, :]
+                # est_MAD = stats.median_abs_deviation(d, scale=1, nan_policy="omit")
+                # std = np.nanstd(d)
+                # const = std / est_MAD
+                # MAD = stats.median_abs_deviation(d, scale=const, nan_policy="omit")
+                # data_sems.append(MAD)
+            data_sems = np.hstack(data_sems)
+        # sem = stats.sem(value, axis=1, nan_policy="omit")
         ## Plot individual values
         if plot_ind:
             for ind in range(value.shape[1]):
@@ -115,7 +142,7 @@ def plot_multi_line_plot(
             ax.errorbar(
                 x,
                 mean,
-                yerr=sem,
+                yerr=data_sems,
                 color=line_color[i],
                 linestyle=linestyle,
                 label=key,
@@ -124,7 +151,7 @@ def plot_multi_line_plot(
             ax.errorbar(
                 x,
                 mean,
-                yerr=sem,
+                yerr=data_sems,
                 color=line_color[i],
                 marker="o",
                 markerfacecolor=face_color[i],
@@ -135,9 +162,10 @@ def plot_multi_line_plot(
             )
 
     # Adjust the axes
-    ax.set_xticks(ticks=x)
-    ax.set_xticklabels(labels=x_vals)
+    ax.set_xticks(ticks=x_labels)
+    ax.set_xticklabels(labels=x_labels)
     adjust_axes(ax, minor_ticks, xtitle, ytitle, tick_len, axis_width)
+    ax.set_xlim(left=None, right=x_labels[-1])
     ticks = ax.get_yticks()
     bottom, top = get_axis_limit(ylim, ticks)
     ax.set_ylim(bottom=bottom, top=top)
