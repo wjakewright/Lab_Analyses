@@ -25,12 +25,19 @@ def load_population_datasets(mouse_id, sessions):
     fnames = next(os.walk(data_path))[2]
 
     mouse_data = {}
+    mouse_spikes = {}
     for session in sessions:
-        load_name = [x for x in fnames if session in x][0]
+        session_data = session + "_population_data"
+        load_name = [x for x in fnames if session_data in x][0]
         data = load_pickle([load_name], path=data_path)[0]
         mouse_data[session] = data
+        session_spikes = session + "_population_spikes"
+        spike_name = [x for x in fnames if session_spikes in x][0]
+        spikes = np.load(os.path.join(data_path, spike_name))
+        spikes = np.nan_to_num(spikes, nan=0)
+        mouse_spikes[session] = spikes.T
 
-    return mouse_data
+    return mouse_data, mouse_spikes
 
 
 def calc_pairwise_distances_btw_vectors(array_list):
