@@ -7,10 +7,14 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.adjust_axes import adjust_axes
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
+from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
 from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_pie_chart import plot_pie_chart
+from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
+from Lab_Analyses.Spine_Analysis_v2.spine_utilities import find_nearby_spines
+from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import calculate_volume_change
 from Lab_Analyses.Utilities import data_utilities as d_utils
 
 sns.set()
@@ -503,4 +507,224 @@ def plot_responsive_synapse_properties(
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
         save_name = os.path.join(save_path, "responsive_spine_properties")
+        fig.savefig(save_name + ".pdf")
+
+
+def plot_plasticity(
+    dataset,
+    figsize=(5, 5),
+    cluster_dist=10,
+    test_type="nonparametric",
+    test_method="fdr_tsbh",
+    save=False,
+    save_path=None,
+):
+    """Function to plot the plasticity of different types of responsive spines
+    against different types of non-responsive spines
+
+    INPUT PARAMETERS
+        dataset - Grouped_Synaptic_Opto_Data set
+
+        figisze - tuple specifying the size of the figure
+
+        cluster_dist - int specifying the distance considered to be spatially
+                        clustered
+
+        test_type - str specifying what type of statistics to perform
+
+        test_method - str specifying what type of multiple comparisons
+                     correction to perform
+
+        save - boolean specifying whether to save the figure or not
+
+        save_path - str specifying the path where to save the figure
+
+    """
+    # Pull relevant variables
+    responsive_spines = dataset.responsive_spines
+    spine_flags = dataset.spine_flags
+    spine_positions = dataset.spine_positions
+    spine_volumes = dataset.spine_volumes
+
+    followup_flags = dataset.followup_flags
+    followup_positions = dataset.followup_flags
+    followup_volumes = dataset.followup_volumes
+
+    # Get unique dendrites
+    dendrites = dataset.spine_dendrite
+    unique_dendrites = set(dendrites)
+    print(np.nonzero(responsive_spines)[0])
+
+    # Find clustered responsive spines
+    clustered_responsive_spines = np.zeros(len(responsive_spines))
+
+    for dend in unique_dendrites:
+        dend_idxs = np.nonzero(dendrites == dend)[0]
+        # Get current spines and responsive spines
+        curr_responsive = responsive_spines[dend_idxs]
+        curr_positions = spine_positions[dend_idxs]
+        responsive_idxs = np.nonzero(curr_responsive)[0]
+        ## Get only the responsive spine positions
+        responsive_positions = curr_positions[curr_responsive.astype(bool)]
+        if len(responsive_positions) == 0:
+            continue
+        if len(responsive_positions) == 1:
+            continue
+        for spine in range(len(responsive_positions)):
+            curr_pos = responsive_positions[spine]
+            other_pos = [x for i, x in enumerate(responsive_positions) if i != spine]
+            rel_pos = np.array(other_pos) - curr_pos
+            rel_pos = np.absolute(rel_pos)
+            if any(rel_pos <= cluster_dist):
+                clustered_responsive_spines[dend_idxs[responsive_idxs[spine]]] = 1
+
+    # Get non-clustered and non-responsive lists
+    nonclustered_responsive_spines = responsive_spines - clustered_responsive_spines
+    nonresponsive_spines = np.array([not x for x in responsive_spines]).astype(int)
+
+    # Calculate volume changes
+    volumes = [spine_volumes, followup_volumes]
+    flags = [spine_flags, followup_flags]
+
+    delta_volume, spine_idxs = calculate_volume_change(
+        volumes,
+        flags,
+        norm=False,
+        exclude="Shaft Spine",
+    )
+    delta_volume = delta_volume[-1]
+
+    # Subset spine positions for present spines
+    responsive_spines = d_utils.subselect_data_by_idxs(responsive_spines, spine_idxs)
+    clustered_responsive_spines = d_utils.subselect_data_by_idxs(
+        clustered_responsive_spines, spine_idxs
+    )
+    nonclustered_responsive_spines = d_utils.subselect_data_by_idxs(
+        nonclustered_responsive_spines, spine_idxs
+    )
+    nonresponsive_spines = d_utils.subselect_data_by_idxs(
+        nonresponsive_spines, spine_idxs
+    )
+    spine_positions = d_utils.subselect_data_by_idxs(spine_positions, spine_idxs)
+    dendrites = d_utils.subselect_data_by_idxs(dendrites, spine_idxs)
+    spine_flags = d_utils.subselect_data_by_idxs(spine_flags, spine_idxs)
+
+    # Set up volume dictionary
+    volume_dict = {
+        "clustered": delta_volume[clustered_responsive_spines.astype(bool)],
+        "nonclustered": delta_volume[nonclustered_responsive_spines.astype(bool)],
+        "nonresponsive": delta_volume[nonresponsive_spines.astype(bool)],
+    }
+
+    print(volume_dict["clustered"])
+    print(np.nanmedian(volume_dict["clustered"]))
+    print(np.nanmedian(volume_dict["nonresponsive"]))
+    print(stats.mannwhitneyu(volume_dict["clustered"], volume_dict["nonresponsive"]))
+
+    # Get responsive spines and their neighbors volume changes
+    responsive_volume = []
+    nearby_volume = []
+
+    for dend in unique_dendrites:
+        dend_idxs = np.nonzero(dendrites == dend)[0]
+        # Get current spines and responsive spines
+        curr_volume = delta_volume[dend_idxs]
+        curr_responsive = clustered_responsive_spines[dend_idxs]
+        curr_positions = spine_positions[dend_idxs]
+        # Normalize spine ids for each dendrite
+        grouping = np.arange(len(curr_volume))
+
+        curr_flags = d_utils.subselect_data_by_idxs(spine_flags, dend_idxs)
+        nearby_responsive_spines = find_nearby_spines(
+            curr_positions,
+            curr_flags,
+            grouping,
+            partner_list=curr_responsive,
+            cluster_dist=cluster_dist,
+        )
+
+        for i, clustered in enumerate(curr_responsive):
+            if clustered == 0:
+                continue
+            clust_vol = curr_volume[i]
+            clust_nearby = nearby_responsive_spines[i]
+            nearby_vol = curr_volume[clust_nearby]
+            if len(nearby_vol) == 0:
+                continue
+            responsive_volume.append([[clust_vol] for j in range(len(nearby_vol))])
+            nearby_volume.append(nearby_vol)
+
+    responsive_volume = [x for y in responsive_volume for x in y]
+    nearby_volume = [x for y in nearby_volume for x in y]
+
+    # Make the plot
+    fig, axes = plt.subplot_mosaic(
+        """AB""",
+        figsize=figsize,
+    )
+
+    fig.subplots_adjust(hspace=1, wspace=0.5)
+
+    # Plot the volume changes
+    plot_box_plot(
+        data_dict=volume_dict,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle="Volume Change",
+        ylim=None,
+        b_colors=["forestgreen", "mediumspringgreen", "silver"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1,
+        b_width=0.5,
+        b_linewidth=1,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1,
+        outliers=False,
+        showmeans=True,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["A"],
+        save=False,
+        save_path=None,
+    )
+
+    # Plot the correlation between clustered spines and their neighbors
+    plot_scatter_correlation(
+        x_var=np.array(responsive_volume),
+        y_var=np.array(nearby_volume),
+        CI=95,
+        title=None,
+        xtitle="Clustered volume change",
+        ytitle="Nearby volume change",
+        figsize=(5, 5),
+        xlim=None,
+        ylim=None,
+        marker_size=10,
+        face_color="forestgreen",
+        cmap_color=None,
+        edge_color="white",
+        edge_width=0.3,
+        line_color="forestgreen",
+        s_alpha=1,
+        line_width=1.5,
+        axis_width=1.5,
+        tick_len=3,
+        unity=True,
+        ax=axes["B"],
+        save=False,
+        save_path=None,
+    )
+
+    fig.tight_layout()
+
+    if save:
+        if save_path is None:
+            save_path = r"C:\Users\Jake\Desktop\Figures"
+        save_name = os.path.join(save_path, "responsive_spine_plasticity")
         fig.savefig(save_name + ".pdf")
