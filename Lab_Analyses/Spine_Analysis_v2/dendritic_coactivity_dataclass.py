@@ -47,6 +47,8 @@ class Dendritic_Coactivity_Data:
     all_dendrite_coactive_traces: list
     all_coactive_spines: np.ndarray
     all_coactive_spines_norm: np.ndarray
+    all_cross_corr_traces: list
+    all_cross_corr_peaks: np.ndarray
     ## Conj coactive events
     conj_dendrite_coactivity_rate: np.ndarray
     conj_dendrite_coactivity_rate_norm: np.ndarray
@@ -65,6 +67,8 @@ class Dendritic_Coactivity_Data:
     conj_dendrite_coactive_traces: list
     conj_coactive_spines: np.ndarray
     conj_coactive_spines_norm: np.ndarray
+    conj_cross_corr_traces: list
+    conj_cross_corr_peaks: np.ndarray
     ## Nonconj coactive events
     nonconj_dendrite_coactivity_rate: np.ndarray
     nonconj_dendrite_coactivity_rate_norm: np.ndarray
@@ -84,6 +88,8 @@ class Dendritic_Coactivity_Data:
     nonconj_coactive_spines: np.ndarray
     nonconj_coactive_spines_norm: np.ndarray
     fraction_conj_events: np.ndarray
+    nonconj_cross_corr_traces: list
+    nonconj_cross_corr_peaks: list
     # Nearby spine coactivity properties
     conj_coactive_spine_num: np.ndarray
     conj_nearby_coactive_spine_amplitude: np.ndarray
