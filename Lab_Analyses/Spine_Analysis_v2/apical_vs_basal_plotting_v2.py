@@ -674,6 +674,8 @@ def plot_structural_plasticity(
     basal_density = []
     basal_new_spines = []
     basal_elim_spines = []
+    apical_max_positions = []
+    basal_max_positions = []
 
     for mouse in apical_mice:
         temp_data = load_spine_datasets(mouse, ["Early"], fov_type="apical")
@@ -682,6 +684,7 @@ def plot_structural_plasticity(
             temp_groupings = [t_data.spine_groupings, t_data.followup_groupings]
             temp_flags = [t_data.spine_flags, t_data.followup_flags]
             temp_positions = [t_data.spine_positions, t_data.followup_positions]
+            apical_max_positions.append(np.nanmax(t_data.spine_positions))
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -697,6 +700,7 @@ def plot_structural_plasticity(
             temp_groupings = [t_data.spine_groupings, t_data.followup_groupings]
             temp_flags = [t_data.spine_flags, t_data.followup_flags]
             temp_positions = [t_data.spine_positions, t_data.followup_positions]
+            basal_max_positions.append(np.nanmax(t_data.spine_positions))
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -712,6 +716,25 @@ def plot_structural_plasticity(
     basal_density = np.concatenate(basal_density)
     basal_new_spines = np.concatenate(basal_new_spines)
     basal_elim_spines = np.concatenate(basal_elim_spines)
+
+    print(f"Apical dend. n: {len(apical_density)}")
+    print(f"Basal dend n: {len(basal_density)}")
+
+    apical_dict = {
+        "Density": apical_density,
+        "sLTP_fraction": apical_frac_LTP,
+        "sLTD_fraction": apical_frac_LTD,
+    }
+    apical_df = pd.DataFrame.from_dict(apical_dict)
+    basal_dict = {
+        "Density": basal_density,
+        "sLTP_fraction": basal_frac_LTP,
+        "sLTD_fraction": basal_frac_LTD,
+    }
+    basal_df = pd.DataFrame.from_dict(basal_dict)
+
+    apical_df.to_csv("apical_structural_properties.csv", index=False)
+    basal_df.to_csv("basal_structural_properties.csv", index=False)
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -1177,8 +1200,12 @@ def plot_movement_related_activity(
     COLORS = ["goldenrod", "mediumseagreen"]
 
     # Pull relevant data
-    apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
-    basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+    # apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
+    # basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+    all_ids = apical_dataset.mouse_id + basal_dataset.mouse_id
+    all_ids_coded = np.array(d_utils.code_str_to_int(all_ids))
+    apical_ids = all_ids_coded[: len(apical_dataset.mouse_id)]
+    basal_ids = all_ids_coded[len(apical_dataset.mouse_id) :]
     ## Parameters
     sampling_rate = apical_dataset.parameters["Sampling Rate"]
     activity_window = apical_dataset.parameters["Activity Window"]
@@ -1251,6 +1278,39 @@ def plot_movement_related_activity(
     basal_onset = d_utils.subselect_data_by_idxs(
         basal_dataset.spine_movement_onset, basal_present
     )
+
+    ## Output some data as CVS for collaboration
+    event_rate_dict = {
+        "Apical": apical_event_rate,
+        "Basal": basal_event_rate,
+    }
+    event_rate_df = pd.DataFrame(
+        dict([(key, pd.Series(value)) for key, value in event_rate_dict.items()])
+    )
+
+    event_rate_df.to_csv("spine_event_rate.csv", index=False)
+
+    apical_dend_rate = d_utils.subselect_data_by_idxs(
+        apical_dataset.dendrite_activity_rate,
+        apical_present,
+    )
+    apical_dend_rate_temp, a_ind = np.unique(apical_dend_rate, return_index=True)
+    apical_dend_rate = apical_dend_rate_temp[np.argsort(a_ind)]
+
+    basal_dend_rate = d_utils.subselect_data_by_idxs(
+        basal_dataset.dendrite_activity_rate, basal_present
+    )
+    basal_dend_rate_temp, b_ind = np.unique(basal_dend_rate, return_index=True)
+    basal_dend_rate = basal_dend_rate_temp[np.argsort(b_ind)]
+
+    dend_rate_dict = {
+        "Apical": apical_dend_rate,
+        "Basal": basal_dend_rate,
+    }
+    dend_rate_df = pd.DataFrame(
+        dict([(key, pd.Series(value)) for key, value in dend_rate_dict.items()])
+    )
+    dend_rate_df.to_csv("dendrite_event_rate.csv", index=False)
 
     apical_trace_spines = apical_MRSs
     basal_trace_spines = basal_MRSs
@@ -1466,11 +1526,13 @@ def plot_movement_related_activity(
         activity_window=activity_window,
         title="Apical",
         cbar_label=activity_type,
-        hmap_range=(0, 1),
+        hmap_range=(0.0, 0.8),
         center=None,
-        sorted="peak",
+        vline=121,
+        sorted="onset",
+        onset_color="white",
         normalize=True,
-        cmap="YlOrBr",
+        cmap="plasma",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -1486,11 +1548,13 @@ def plot_movement_related_activity(
         activity_window=activity_window,
         title="Basal",
         cbar_label=activity_type,
-        hmap_range=(0, 1),
+        hmap_range=(0.0, 0.8),
         center=None,
-        sorted="peak",
+        vline=121,
+        sorted="onset",
+        onset_color="white",
         normalize=True,
-        cmap="Greens",
+        cmap="plasma",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -1703,6 +1767,53 @@ def plot_movement_related_activity(
         )
         test_title = "Mixed-Effects"
 
+    elif test_type == "ART":
+        rate_t, rate_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_event_rate,
+                "Basal": basal_event_rate,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        amp_t, amp_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_glu_amp,
+                "Basal": basal_glu_amp,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        onset_t, onset_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_onset,
+                "Basal": basal_onset,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        ca_amp_t, ca_amp_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_ca_amp,
+                "Basal": basal_ca_amp,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        test_title = "Aligned Rank Transform"
+
     # Perform the fishers exact
 
     contingency_table = np.array(
@@ -1712,6 +1823,11 @@ def plot_movement_related_activity(
         ]
     )
     MRS_ratio, MRS_p = stats.fisher_exact(contingency_table)
+
+    print(f"Apical total N: {len(apical_event_rate[~np.isnan(apical_event_rate)])}")
+    print(f"Apical MRS n: {np.nansum(apical_MRSs)}")
+    print(f"Basal total N: {len(basal_event_rate[~np.isnan(basal_event_rate)])}")
+    print(f"Basal MRS n: {np.nansum(basal_MRSs)}")
 
     # Organize the results
     results_dict = {
@@ -1787,8 +1903,13 @@ def plot_spine_movement_encoding(
     """
     COLORS = ["goldenrod", "mediumseagreen"]
 
-    apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
-    basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+    # apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
+    # basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+
+    all_ids = apical_dataset.mouse_id + basal_dataset.mouse_id
+    all_ids_coded = np.array(d_utils.code_str_to_int(all_ids))
+    apical_ids = all_ids_coded[: len(apical_dataset.mouse_id)]
+    basal_ids = all_ids_coded[len(apical_dataset.mouse_id) :]
 
     # Pull relevant data
     apical_LMP = apical_dataset.spine_movement_correlation
@@ -2119,6 +2240,64 @@ def plot_spine_movement_encoding(
         )
         test_title = "Mixed-Effects"
 
+    elif test_type == "ART":
+        LMP_t, LMP_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_LMP,
+                "Basal": basal_LMP,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        stereo_t, stereo_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_sterotypy,
+                "Basal": basal_sterotypy,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        reli_t, reli_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_reliability,
+                "Basal": basal_reliability,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        speci_t, speci_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_specificity,
+                "Basal": basal_specificity,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        rwd_t, rwd_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_fraction_rwd_mvmt,
+                "Basal": basal_fraction_rwd_mvmt,
+            },
+            random_dict={
+                "Apical": apical_ids,
+                "Basal": basal_ids,
+            },
+            post_method=test_method,
+        )
+        test_title = "Aligned Rank Transform"
+
     # Organize the results
     result_dict = {
         "Comparison": [
@@ -2177,14 +2356,12 @@ def plot_spine_movement_encoding(
 def plot_local_coactivity(
     apical_dataset,
     basal_dataset,
-    MRSs=None,
     partners=None,
     figsize=(10, 8),
     showmeans=False,
     mean_type="mean",
-    err_type="sem",
-    hist_bins=50,
     test_type="nonparametric",
+    test_method="fdr_bh",
     display_stats=True,
     save=False,
     save_path=None,
@@ -2219,8 +2396,12 @@ def plot_local_coactivity(
 
     """
     COLORS = ["goldenrod", "mediumseagreen"]
-    apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
-    basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+    all_ids = apical_dataset.mouse_id + basal_dataset.mouse_id
+    all_ids_coded = np.array(d_utils.code_str_to_int(all_ids))
+    a_ids = all_ids_coded[: len(apical_dataset.mouse_id)]
+    b_ids = all_ids_coded[len(apical_dataset.mouse_id) :]
+    # a_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
+    # b_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
 
     # Find the present spines
     apical_present = find_present_spines(apical_dataset.spine_flags)
@@ -2228,18 +2409,14 @@ def plot_local_coactivity(
     distance_bins = apical_dataset.parameters["position bins"][1:]
 
     # Pull relevant data
-    apical_distance_coactivity = apical_dataset.distance_coactivity_rate
-    basal_distance_coactivity = basal_dataset.distance_coactivity_rate
-    apical_distance_coactivity_norm = apical_dataset.distance_coactivity_rate_norm
-    basal_distance_coactivity_norm = basal_dataset.distance_coactivity_rate_norm
+    a_distance_coactivity = apical_dataset.distance_coactivity_rate
+    b_distance_coactivity = basal_dataset.distance_coactivity_rate
+    a_distance_coactivity_norm = apical_dataset.distance_coactivity_rate_norm
+    b_distance_coactivity_norm = basal_dataset.distance_coactivity_rate_norm
     apical_local_coactivity = apical_dataset.avg_local_coactivity_rate
     basal_local_coactivity = basal_dataset.avg_local_coactivity_rate
     apical_local_coactivity_norm = apical_dataset.avg_local_coactivity_rate_norm
     basal_local_coactivity_norm = basal_dataset.avg_local_coactivity_rate_norm
-    apical_shuff_coactivity = apical_dataset.shuff_distance_coactivity_rate
-    basal_shuff_coactivity = basal_dataset.shuff_distance_coactivity_rate
-    apical_shuff_coactivity_norm = apical_dataset.shuff_distance_coactivity_rate_norm
-    basal_shuff_coactivity_norm = basal_dataset.shuff_distance_coactivity_rate_norm
     apical_coactive_spines = apical_dataset.coactive_spines
     basal_coactive_spines = basal_dataset.coactive_spines
     apical_coactive_spines_norm = apical_dataset.coactive_spines_norm
@@ -2259,30 +2436,64 @@ def plot_local_coactivity(
     apical_nonmvmt_spines = apical_dataset.nonmovement_spines
     basal_nonmvmt_spines = basal_dataset.nonmovement_spines
 
-    if MRSs == "MRS":
-        apical_present = apical_present * apical_mvmt_spines
-        basal_present = basal_present * basal_mvmt_spines
-    elif MRSs == "nMRS":
-        apical_present = apical_present * apical_nonmvmt_spines
-        basal_present = basal_present * basal_nonmvmt_spines
+    apical_MRS = apical_present * apical_mvmt_spines
+    basal_MRS = basal_present * basal_mvmt_spines
+
+    apical_nMRS = apical_present * apical_nonmvmt_spines
+    basal_nMRS = basal_present * basal_nonmvmt_spines
 
     # Subselect for present spines
-    apical_ids = d_utils.subselect_data_by_idxs(apical_ids, apical_present)
+    apical_ids = d_utils.subselect_data_by_idxs(a_ids, apical_present)
     basal_ids = d_utils.subselect_data_by_idxs(
-        basal_ids,
+        b_ids,
         basal_present,
     )
+    apical_MRS_ids = d_utils.subselect_data_by_idxs(a_ids, apical_MRS)
+    basal_MRS_ids = d_utils.subselect_data_by_idxs(
+        b_ids,
+        basal_MRS,
+    )
+    apical_nMRS_ids = d_utils.subselect_data_by_idxs(a_ids, apical_nMRS)
+    basal_nMRS_ids = d_utils.subselect_data_by_idxs(
+        b_ids,
+        basal_nMRS,
+    )
+
     apical_distance_coactivity = d_utils.subselect_data_by_idxs(
-        apical_distance_coactivity, apical_present
+        a_distance_coactivity, apical_present
     )
     basal_distance_coactivity = d_utils.subselect_data_by_idxs(
-        basal_distance_coactivity, basal_present
+        b_distance_coactivity, basal_present
+    )
+    apical_MRS_distance_coactivity = d_utils.subselect_data_by_idxs(
+        a_distance_coactivity, apical_MRS
+    )
+    basal_MRS_distance_coactivity = d_utils.subselect_data_by_idxs(
+        b_distance_coactivity, basal_MRS
+    )
+    apical_nMRS_distance_coactivity = d_utils.subselect_data_by_idxs(
+        a_distance_coactivity, apical_nMRS
+    )
+    basal_nMRS_distance_coactivity = d_utils.subselect_data_by_idxs(
+        b_distance_coactivity, basal_nMRS
     )
     apical_distance_coactivity_norm = d_utils.subselect_data_by_idxs(
-        apical_distance_coactivity_norm, apical_present
+        a_distance_coactivity_norm, apical_present
     )
     basal_distance_coactivity_norm = d_utils.subselect_data_by_idxs(
-        basal_distance_coactivity_norm, basal_present
+        b_distance_coactivity_norm, basal_present
+    )
+    apical_MRS_distance_coactivity_norm = d_utils.subselect_data_by_idxs(
+        a_distance_coactivity_norm, apical_MRS
+    )
+    basal_MRS_distance_coactivity_norm = d_utils.subselect_data_by_idxs(
+        b_distance_coactivity_norm, basal_MRS
+    )
+    apical_nMRS_distance_coactivity_norm = d_utils.subselect_data_by_idxs(
+        a_distance_coactivity_norm, apical_nMRS
+    )
+    basal_nMRS_distance_coactivity_norm = d_utils.subselect_data_by_idxs(
+        b_distance_coactivity_norm, basal_nMRS
     )
     apical_local_coactivity = d_utils.subselect_data_by_idxs(
         apical_local_coactivity, apical_present
@@ -2295,18 +2506,6 @@ def plot_local_coactivity(
     )
     basal_local_coactivity_norm = d_utils.subselect_data_by_idxs(
         basal_local_coactivity_norm, basal_present
-    )
-    apical_shuff_coactivity = d_utils.subselect_data_by_idxs(
-        apical_shuff_coactivity, apical_present
-    )
-    basal_shuff_coactivity = d_utils.subselect_data_by_idxs(
-        basal_shuff_coactivity, basal_present
-    )
-    apical_shuff_coactivity_norm = d_utils.subselect_data_by_idxs(
-        apical_shuff_coactivity_norm, apical_present
-    )
-    basal_shuff_coactivity_norm = d_utils.subselect_data_by_idxs(
-        basal_shuff_coactivity_norm, basal_present
     )
     apical_coactive_spines = d_utils.subselect_data_by_idxs(
         apical_coactive_spines, apical_present
@@ -2351,121 +2550,12 @@ def plot_local_coactivity(
         basal_coactive_num, basal_present
     )
 
-    # Organize shuffle data
-    ## Concatenate all shuffled values
-    apical_all_shuff_coactivity = np.hstack(apical_shuff_coactivity)
-    basal_all_shuff_coactivity = np.hstack(basal_shuff_coactivity)
-    apical_all_shuff_coactivity_norm = np.hstack(apical_shuff_coactivity_norm)
-    basal_all_shuff_coactivity_norm = np.hstack(basal_shuff_coactivity_norm)
-
-    if mean_type == "mean":
-        apical_shuff_mean = np.nanmean(apical_all_shuff_coactivity, axis=1)
-        basal_shuff_mean = np.nanmean(basal_all_shuff_coactivity, axis=1)
-        apical_shuff_norm_mean = np.nanmean(apical_all_shuff_coactivity_norm, axis=1)
-        basal_shuff_norm_mean = np.nanmean(basal_all_shuff_coactivity_norm, axis=1)
-    elif mean_type == "median":
-        apical_shuff_mean = np.nanmedian(apical_all_shuff_coactivity, axis=1)
-        basal_shuff_mean = np.nanmedian(basal_all_shuff_coactivity, axis=1)
-        apical_shuff_norm_mean = np.nanmedian(apical_all_shuff_coactivity_norm, axis=1)
-        basal_shuff_norm_mean = np.nanmedian(basal_all_shuff_coactivity_norm, axis=1)
-
-    apical_shuff_sem = stats.sem(apical_all_shuff_coactivity, axis=1, nan_policy="omit")
-    apical_shuff_norm_sem = stats.sem(
-        apical_all_shuff_coactivity_norm, axis=1, nan_policy="omit"
-    )
-    basal_shuff_sem = stats.sem(basal_all_shuff_coactivity, axis=1, nan_policy="omit")
-    basal_shuff_norm_sem = stats.sem(
-        basal_all_shuff_coactivity_norm, axis=1, nan_policy="omit"
-    )
-
-    ## Perform real vs shuff calculations
-    apical_real_vs_shuff = np.zeros(apical_distance_coactivity.shape) * np.nan
-    basal_real_vs_shuff = np.zeros(basal_distance_coactivity.shape) * np.nan
-    apical_real_vs_shuff_norm = np.zeros(apical_distance_coactivity_norm.shape) * np.nan
-    basal_real_vs_shuff_norm = np.zeros(basal_distance_coactivity_norm.shape) * np.nan
-    for i in range(apical_distance_coactivity.shape[1]):
-        temp_shuff = apical_shuff_coactivity[i]
-        temp_shuff_norm = apical_shuff_coactivity_norm[i]
-        median_shuff = np.nanmedian(temp_shuff, axis=1)
-        median_shuff_norm = np.nanmedian(temp_shuff_norm, axis=1)
-        diff = apical_distance_coactivity[:, i] - median_shuff
-        diff_norm = apical_distance_coactivity_norm[:, i] - median_shuff_norm
-        apical_real_vs_shuff[:, i] = diff
-        apical_real_vs_shuff_norm[:, i] = diff_norm
-    ### Repeat for basal
-    for i in range(basal_distance_coactivity.shape[1]):
-        temp_shuff = basal_shuff_coactivity[i]
-        temp_shuff_norm = basal_shuff_coactivity_norm[i]
-        median_shuff = np.nanmedian(temp_shuff, axis=1)
-        median_shuff_norm = np.nanmedian(temp_shuff_norm, axis=1)
-        diff = basal_distance_coactivity[:, i] - median_shuff
-        diff_norm = basal_distance_coactivity_norm[:, i] - median_shuff_norm
-        basal_real_vs_shuff[:, i] = diff
-        basal_real_vs_shuff_norm[:, i] = diff_norm
-
-    ## Normalized shuff and real data distributions for local coactivity
-    apical_scaled_local_coactivity = np.zeros(len(apical_local_coactivity)) * np.nan
-    basal_scaled_local_coactivity = np.zeros(len(basal_local_coactivity)) * np.nan
-    apical_scaled_local_coactivity_norm = (
-        np.zeros(len(apical_local_coactivity_norm)) * np.nan
-    )
-    basal_scaled_local_coactivity_norm = (
-        np.zeros(len(basal_local_coactivity_norm)) * np.nan
-    )
-    apical_scaled_shuffled = []
-    basal_scaled_shuffled = []
-    apical_scaled_shuffled_norm = []
-    basal_scaled_shuffled_norm = []
-    ### go through apial first
-    for i, (co, con) in enumerate(
-        zip(apical_local_coactivity, apical_local_coactivity_norm)
-    ):
-        temp_scaler = MinMaxScaler()
-        temp_scaler_norm = MinMaxScaler()
-        ### Get local shuff coactivity values
-        local_shuff = apical_shuff_coactivity[i][0, :].reshape(-1, 1)
-        local_shuff_norm = apical_shuff_coactivity_norm[i][0, :].reshape(-1, 1)
-        ### MinMax scale shuff values
-        temp_scaler.fit(local_shuff)
-        temp_scaler_norm.fit(local_shuff_norm)
-        scaled_shuff = temp_scaler.transform(local_shuff)
-        scaled_shuff_norm = temp_scaler_norm.transform(local_shuff_norm)
-        ### MinMax scale real value
-        scaled_co = temp_scaler.transform(np.array([[co]]))[0, 0]
-        scaled_con = temp_scaler_norm.transform(np.array([[con]]))[0, 0]
-        apical_scaled_local_coactivity[i] = scaled_co
-        apical_scaled_local_coactivity_norm[i] = scaled_con
-        apical_scaled_shuffled.append(scaled_shuff.flatten())
-        apical_scaled_shuffled_norm.append(scaled_shuff_norm.flatten())
-    ### Repeat for basal
-    for i, (co, con) in enumerate(
-        zip(basal_local_coactivity, basal_local_coactivity_norm)
-    ):
-        temp_scaler = MinMaxScaler()
-        temp_scaler_norm = MinMaxScaler()
-        ### Get local shuff coactivity values
-        local_shuff = basal_shuff_coactivity[i][0, :].reshape(-1, 1)
-        local_shuff_norm = basal_shuff_coactivity_norm[i][0, :].reshape(-1, 1)
-        ### MinMax scale shuff values
-        temp_scaler.fit(local_shuff)
-        temp_scaler_norm.fit(local_shuff_norm)
-        scaled_shuff = temp_scaler.transform(local_shuff)
-        scaled_shuff_norm = temp_scaler_norm.transform(local_shuff_norm)
-        ### MinMax scale real value
-        scaled_co = temp_scaler.transform(np.array([[co]]))[0, 0]
-        scaled_con = temp_scaler_norm.transform(np.array([[con]]))[0, 0]
-        basal_scaled_local_coactivity[i] = scaled_co
-        basal_scaled_local_coactivity_norm[i] = scaled_con
-        basal_scaled_shuffled.append(scaled_shuff.flatten())
-        basal_scaled_shuffled_norm.append(scaled_shuff_norm.flatten())
-
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
         ABaCDE
         FGfHIJ
-        KLMN..
-        OPQ...
+        ..KLM.
         """,
         figsize=figsize,
         width_ratios=[2, 2, 1, 1, 1, 1],
@@ -2473,21 +2563,30 @@ def plot_local_coactivity(
     fig.suptitle("Apical vs Basal Local Coactivity")
     fig.subplots_adjust(hspace=1, wspace=0.5)
 
+    print(f"All apical n: {apical_distance_coactivity.shape[1]}")
+    print(f"Apical MRS n: {apical_MRS_distance_coactivity.shape[1]}")
+    print(f"Apical nMRS n: {apical_nMRS_distance_coactivity.shape[1]}")
+    print(f"All basal n: {basal_distance_coactivity.shape[1]}")
+    print(f"Basal MRS n: {basal_MRS_distance_coactivity.shape[1]}")
+    print(f"Basal nMRS n: {basal_nMRS_distance_coactivity.shape[1]}")
+
     #################### Plot data onto axes #######################
     # Distance coactivity rate
+    plot_bins = distance_bins - 2.5
     plot_multi_line_plot(
         data_dict={
             "Apical": apical_distance_coactivity,
             "Basal": basal_distance_coactivity,
         },
-        x_vals=distance_bins,
+        x_vals=plot_bins,
+        x_labels=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
         mean_type=mean_type,
         title="Raw Coactivity",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
-        ylim=None,
+        ylim=(0.2, 0.8),
         line_color=COLORS,
         face_color="white",
         m_size=6,
@@ -2501,24 +2600,7 @@ def plot_local_coactivity(
         save=False,
         save_path=None,
     )
-    ## Add shuffled lines with shaded error
-    x = list(range(len(apical_shuff_mean)))
-    axes["A"].plot(x, apical_shuff_mean, color=COLORS[0], linewidth=1, linestyle="--")
-    axes["A"].fill_between(
-        x,
-        apical_shuff_mean - apical_shuff_sem,
-        apical_shuff_mean + apical_shuff_sem,
-        color=COLORS[0],
-        alpha=0.2,
-    )
-    axes["A"].plot(x, basal_shuff_mean, color=COLORS[1], linewidth=1, linestyle="--")
-    axes["A"].fill_between(
-        x,
-        basal_shuff_mean - basal_shuff_sem,
-        basal_shuff_mean + basal_shuff_sem,
-        color=COLORS[1],
-        alpha=0.2,
-    )
+
     # Distance coactivity rate norm
     plot_multi_line_plot(
         data_dict={
@@ -2546,51 +2628,51 @@ def plot_local_coactivity(
         save=False,
         save_path=None,
     )
-    ## Add shuffled lines with shaded error
-    axes["F"].plot(
-        x,
-        apical_shuff_norm_mean,
-        color=COLORS[0],
-        linewidth=1,
-        linestyle="--",
-    )
-    axes["F"].fill_between(
-        x,
-        apical_shuff_norm_mean - apical_shuff_norm_sem,
-        apical_shuff_norm_mean + apical_shuff_norm_sem,
-        color=COLORS[0],
-        alpha=0.2,
-    )
-    axes["F"].plot(
-        x,
-        basal_shuff_norm_mean,
-        color=COLORS[1],
-        linewidth=1,
-        linestyle="--",
-    )
-    axes["F"].fill_between(
-        x,
-        basal_shuff_norm_mean - basal_shuff_norm_sem,
-        basal_shuff_norm_mean + basal_shuff_norm_sem,
-        color=COLORS[1],
-        alpha=0.2,
-    )
+
     # Distance real vs shuff
     plot_multi_line_plot(
         data_dict={
-            "Apical": apical_real_vs_shuff,
-            "Basal": basal_real_vs_shuff,
+            "Apical MRS": apical_MRS_distance_coactivity,
+            "Basal MRS": basal_MRS_distance_coactivity,
         },
-        x_vals=distance_bins,
+        x_vals=plot_bins,
+        x_labels=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
         mean_type=mean_type,
-        title="Real vs. Shuff",
-        ytitle="Real - Shuff Coactivity",
+        title="Raw MRS vs nMRS",
+        ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
-        ylim=(0, None),
+        ylim=(0.3, 1.4),
         line_color=COLORS,
         face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["B"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    plot_multi_line_plot(
+        data_dict={
+            "Apical nMRS": apical_nMRS_distance_coactivity,
+            "Basal nMRS": basal_nMRS_distance_coactivity,
+        },
+        x_vals=plot_bins,
+        x_labels=distance_bins,
+        plot_ind=False,
+        figsize=(5, 5),
+        mean_type=mean_type,
+        title="Raw MRS vs nMRS",
+        ytitle="Coactivity rate (events/min)",
+        xtitle="Distance (\u03BCm)",
+        ylim=(0.2, 1.0),
+        line_color=COLORS,
+        face_color=COLORS,
         m_size=6,
         linewidth=1.5,
         linestyle="-",
@@ -2605,19 +2687,45 @@ def plot_local_coactivity(
     # Distance real vs shuff norm
     plot_multi_line_plot(
         data_dict={
-            "Apical": apical_real_vs_shuff_norm,
-            "Basal": basal_real_vs_shuff_norm,
+            "Apical MRS": apical_MRS_distance_coactivity_norm,
+            "Basal MRS": basal_MRS_distance_coactivity_norm,
         },
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
         mean_type=mean_type,
-        title="Real vs. Shuff Norm.",
-        ytitle="Real - Shuff Norm. Coactivity",
+        title="Norm. MRS vs nMRS",
+        ytitle="Norm. coactivity rate",
         xtitle="Distance (\u03BCm)",
         ylim=(0, None),
         line_color=COLORS,
         face_color="white",
+        m_size=6,
+        linewidth=1.5,
+        linestyle="-",
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["G"],
+        legend=True,
+        save=False,
+        save_path=None,
+    )
+    plot_multi_line_plot(
+        data_dict={
+            "Apical nMRS": apical_nMRS_distance_coactivity_norm,
+            "Basal nMRS": basal_nMRS_distance_coactivity_norm,
+        },
+        x_vals=distance_bins,
+        plot_ind=False,
+        figsize=(5, 5),
+        mean_type=mean_type,
+        title="Norm. MRS vs nMRS",
+        ytitle="Norm. coactivity rate",
+        xtitle="Distance (\u03BCm)",
+        ylim=(0, None),
+        line_color=COLORS,
+        face_color=COLORS,
         m_size=6,
         linewidth=1.5,
         linestyle="-",
@@ -2858,7 +2966,7 @@ def plot_local_coactivity(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["M"],
+        ax=axes["K"],
         save=False,
         save_path=None,
     )
@@ -2889,7 +2997,7 @@ def plot_local_coactivity(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["N"],
+        ax=axes["L"],
         save=False,
         save_path=None,
     )
@@ -2920,87 +3028,7 @@ def plot_local_coactivity(
         axis_width=1.5,
         minor_ticks="y",
         tick_len=3,
-        ax=axes["Q"],
-        save=False,
-        save_path=None,
-    )
-    # Apical Shuff vs Real histogram
-    plot_histogram(
-        data=[
-            np.concatenate(apical_scaled_shuffled),
-            np.array(apical_scaled_local_coactivity),
-        ],
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
-        title="Real vs Shuff",
-        xtitle="Scaled coactivity",
-        xlim=(-1, 5),
-        color=["grey", COLORS[0]],
-        alpha=0.4,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["K"],
-        save=False,
-        save_path=None,
-    )
-    # Basal Shuff vs Real histogram
-    plot_histogram(
-        data=[
-            np.concatenate(basal_scaled_shuffled),
-            np.array(basal_scaled_local_coactivity),
-        ],
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
-        title="Real vs Shuff",
-        xtitle="Scaled coactivity",
-        xlim=(-1, 5),
-        color=["grey", COLORS[1]],
-        alpha=0.4,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["L"],
-        save=False,
-        save_path=None,
-    )
-    # Apical Shuff vs Real histogram Norm
-    plot_histogram(
-        data=[
-            np.concatenate(apical_scaled_shuffled_norm),
-            np.array(apical_scaled_local_coactivity_norm),
-        ],
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
-        title="Real vs Shuff Norm",
-        xtitle="Scaled coactivity",
-        xlim=(-1, 3),
-        color=["grey", COLORS[0]],
-        alpha=0.4,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["O"],
-        save=False,
-        save_path=None,
-    )
-    # Basal Shuff vs Real histogram Norm
-    plot_histogram(
-        data=[
-            np.concatenate(basal_scaled_shuffled_norm),
-            np.array(basal_scaled_local_coactivity_norm),
-        ],
-        bins=hist_bins,
-        stat="probability",
-        avlines=None,
-        title="Real vs Shuff Norm",
-        xtitle="Scaled coactivity",
-        xlim=(-1, 3),
-        color=["grey", COLORS[1]],
-        alpha=0.4,
-        minor_ticks="both",
-        tick_len=3,
-        ax=axes["P"],
+        ax=axes["M"],
         save=False,
         save_path=None,
     )
@@ -3012,17 +3040,11 @@ def plot_local_coactivity(
     if save:
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        if MRSs:
-            mname = f"_{MRSs}"
-        else:
-            mname = ""
         if partners:
             pname = f"_{partners}"
         else:
             pname = ""
-        fname = os.path.join(
-            save_path, f"Apical_vs_Basal_Local_Coactivity{mname}{pname}"
-        )
+        fname = os.path.join(save_path, f"Apical_vs_Basal_Local_Coactivity{pname}")
         fig.savefig(fname + ".pdf")
 
     ######################### Statistics Section ###########################
@@ -3037,7 +3059,7 @@ def plot_local_coactivity(
                     "Apical": apical_distance_coactivity,
                     "Basal": basal_distance_coactivity,
                 },
-                method="fdr_bh",
+                method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
@@ -3048,24 +3070,33 @@ def plot_local_coactivity(
                     "Apical": apical_distance_coactivity_norm,
                     "Basal": basal_distance_coactivity_norm,
                 },
-                method="fdr_bh",
+                method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
         )
-        real_v_shuff_table, _, real_v_shuff_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
-            data_dict={"Apical": apical_real_vs_shuff, "Basal": basal_real_vs_shuff},
-            method="fdr_bh",
-            rm_vals=distance_bins,
-            compare_type="between",
-        )
-        real_v_shuff_norm_table, _, real_v_shuff_norm_posthoc = (
+        dist_coactivity_MRS_table, _, dist_coactivity_MRS_posthoc = (
             t_utils.ANOVA_2way_mixed_posthoc(
                 data_dict={
-                    "Apical": apical_real_vs_shuff_norm,
-                    "Basal": basal_real_vs_shuff_norm,
+                    "Apical MRS": apical_MRS_distance_coactivity,
+                    "Basal MRS": basal_MRS_distance_coactivity,
+                    "Apical nMRS": apical_nMRS_distance_coactivity,
+                    "Basal nMRS": basal_nMRS_distance_coactivity,
                 },
-                method="fdr_bh",
+                method=test_method,
+                rm_vals=distance_bins,
+                compare_type="between",
+            )
+        )
+        dist_coactivity_MRS_table_norm, _, dist_coactivity_MRS_posthoc_norm = (
+            t_utils.ANOVA_2way_mixed_posthoc(
+                data_dict={
+                    "Apical MRS": apical_MRS_distance_coactivity_norm,
+                    "Basal MRS": basal_MRS_distance_coactivity_norm,
+                    "Apical nMRS": apical_nMRS_distance_coactivity_norm,
+                    "Basal nMRS": basal_nMRS_distance_coactivity_norm,
+                },
+                method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
@@ -3101,7 +3132,7 @@ def plot_local_coactivity(
                     "Apical": apical_distance_coactivity,
                     "Basal": basal_distance_coactivity,
                 },
-                method="fdr_bh",
+                method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
@@ -3112,24 +3143,33 @@ def plot_local_coactivity(
                     "Apical": apical_distance_coactivity_norm,
                     "Basal": basal_distance_coactivity_norm,
                 },
-                method="fdr_bh",
+                method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
         )
-        real_v_shuff_table, _, real_v_shuff_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
-            data_dict={"Apical": apical_real_vs_shuff, "Basal": basal_real_vs_shuff},
-            method="fdr_bh",
-            rm_vals=distance_bins,
-            compare_type="between",
-        )
-        real_v_shuff_norm_table, _, real_v_shuff_norm_posthoc = (
+        dist_coactivity_MRS_table, _, dist_coactivity_MRS_posthoc = (
             t_utils.ANOVA_2way_mixed_posthoc(
                 data_dict={
-                    "Apical": apical_real_vs_shuff_norm,
-                    "Basal": basal_real_vs_shuff_norm,
+                    "Apical MRS": apical_MRS_distance_coactivity,
+                    "Basal MRS": basal_MRS_distance_coactivity,
+                    "Apical nMRS": apical_nMRS_distance_coactivity,
+                    "Basal nMRS": basal_nMRS_distance_coactivity,
                 },
-                method="fdr_bh",
+                method=test_method,
+                rm_vals=distance_bins,
+                compare_type="between",
+            )
+        )
+        dist_coactivity_MRS_table_norm, _, dist_coactivity_MRS_posthoc_norm = (
+            t_utils.ANOVA_2way_mixed_posthoc(
+                data_dict={
+                    "Apical MRS": apical_MRS_distance_coactivity_norm,
+                    "Basal MRS": basal_MRS_distance_coactivity_norm,
+                    "Apical nMRS": apical_nMRS_distance_coactivity_norm,
+                    "Basal nMRS": basal_nMRS_distance_coactivity_norm,
+                },
+                method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
@@ -3171,10 +3211,9 @@ def plot_local_coactivity(
                     "Basal": basal_distance_coactivity,
                 },
                 random_dict={"Apical": apical_ids, "Basal": basal_ids},
-                post_method="fdr_bh",
+                post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
-                test_type="nonparametric",
             )
         )
         dist_coactivity_norm_table, dist_coactivity_norm_posthoc = (
@@ -3184,33 +3223,45 @@ def plot_local_coactivity(
                     "Basal": basal_distance_coactivity_norm,
                 },
                 random_dict={"Apical": apical_ids, "Basal": basal_ids},
-                post_method="fdr_bh",
+                post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
-                test_type="nonparametric",
             )
         )
-        real_v_shuff_table, real_v_shuff_posthoc = (
+        dist_coactivity_MRS_table, dist_coactivity_MRS_posthoc = (
             t_utils.two_way_RM_mixed_effects_model(
                 data_dict={
-                    "Apical": apical_real_vs_shuff,
-                    "Basal": basal_real_vs_shuff,
+                    "Apical MRS": apical_MRS_distance_coactivity,
+                    "Basal MRS": basal_MRS_distance_coactivity,
+                    "Apical nMRS": apical_nMRS_distance_coactivity,
+                    "Basal nMRS": basal_nMRS_distance_coactivity,
                 },
-                random_dict={"Apical": apical_ids, "Basal": basal_ids},
-                post_method="fdr_bh",
+                random_dict={
+                    "Apical MRS": apical_MRS_ids,
+                    "Basal MRS": basal_MRS_ids,
+                    "Apical nMRS": apical_nMRS_ids,
+                    "Basal nMRS": basal_nMRS_ids,
+                },
+                post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
-                test_type="nonparametric",
             )
         )
-        real_v_shuff_norm_table, real_v_shuff_norm_posthoc = (
+        dist_coactivity_MRS_table_norm, dist_coactivity_MRS_posthoc_norm = (
             t_utils.two_way_RM_mixed_effects_model(
                 data_dict={
-                    "Apical": apical_real_vs_shuff_norm,
-                    "Basal": basal_real_vs_shuff_norm,
+                    "Apical MRS": apical_MRS_distance_coactivity_norm,
+                    "Basal MRS": basal_MRS_distance_coactivity_norm,
+                    "Apical nMRS": apical_nMRS_distance_coactivity_norm,
+                    "Basal nMRS": basal_nMRS_distance_coactivity_norm,
                 },
-                random_dict={"Apical": apical_ids, "Basal": basal_ids},
-                post_method="fdr_bh",
+                random_dict={
+                    "Apical MRS": apical_MRS_ids,
+                    "Basal MRS": basal_MRS_ids,
+                    "Apical nMRS": apical_nMRS_ids,
+                    "Basal nMRS": basal_nMRS_ids,
+                },
+                post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
             )
@@ -3221,7 +3272,7 @@ def plot_local_coactivity(
                 "Basal": basal_local_coactivity,
             },
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         local_norm_t, local_norm_p, _ = t_utils.one_way_mixed_effects_model(
@@ -3230,13 +3281,13 @@ def plot_local_coactivity(
                 "Basal": basal_local_coactivity_norm,
             },
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         near_dist_t, near_dist_p, _ = t_utils.one_way_mixed_effects_model(
             data_dict={"Apical": apical_near_vs_dist, "Basal": basal_near_vs_dist},
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         near_dist_norm_t, near_dist_norm_p, _ = t_utils.one_way_mixed_effects_model(
@@ -3245,7 +3296,7 @@ def plot_local_coactivity(
                 "Basal": basal_near_vs_dist_norm,
             },
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         frac_coactive_t, frac_coactive_p, _ = t_utils.one_way_mixed_effects_model(
@@ -3254,7 +3305,7 @@ def plot_local_coactivity(
                 "Basal": basal_fraction_coactive,
             },
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         frac_part_t, frac_part_p, _ = t_utils.one_way_mixed_effects_model(
@@ -3263,7 +3314,7 @@ def plot_local_coactivity(
                 "Basal": basal_fraction_participating,
             },
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         num_t, num_p, _ = t_utils.one_way_mixed_effects_model(
@@ -3272,10 +3323,120 @@ def plot_local_coactivity(
                 "Basal": basal_coactive_num,
             },
             random_dict={"Apical": apical_ids, "Basal": basal_ids},
-            post_method="fdr_bh",
+            post_method=test_method,
             slopes_intercept=False,
         )
         test_title = "Mixed-Effects"
+
+    elif test_type == "ART":
+        dist_coactivity_table, dist_coactivity_posthoc = t_utils.two_way_RM_ART(
+            data_dict={
+                "Apical": apical_distance_coactivity,
+                "Basal": basal_distance_coactivity,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            rm_vals=distance_bins,
+            post_method=test_method,
+        )
+        dist_coactivity_norm_table, dist_coactivity_norm_posthoc = (
+            t_utils.two_way_RM_ART(
+                data_dict={
+                    "Apical": apical_distance_coactivity_norm,
+                    "Basal": basal_distance_coactivity_norm,
+                },
+                random_dict={"Apical": apical_ids, "Basal": basal_ids},
+                rm_vals=distance_bins,
+                post_method=test_method,
+            )
+        )
+        dist_coactivity_MRS_table, dist_coactivity_MRS_posthoc = t_utils.two_way_RM_ART(
+            data_dict={
+                "Apical MRS": apical_MRS_distance_coactivity,
+                "Basal MRS": basal_MRS_distance_coactivity,
+                "Apical nMRS": apical_nMRS_distance_coactivity,
+                "Basal nMRS": basal_nMRS_distance_coactivity,
+            },
+            random_dict={
+                "Apical MRS": apical_MRS_ids,
+                "Basal MRS": basal_MRS_ids,
+                "Apical nMRS": apical_nMRS_ids,
+                "Basal nMRS": basal_nMRS_ids,
+            },
+            rm_vals=distance_bins,
+            post_method=test_method,
+        )
+        dist_coactivity_MRS_table_norm, dist_coactivity_MRS_posthoc_norm = (
+            t_utils.two_way_RM_ART(
+                data_dict={
+                    "Apical MRS": apical_MRS_distance_coactivity_norm,
+                    "Basal MRS": basal_MRS_distance_coactivity_norm,
+                    "Apical nMRS": apical_nMRS_distance_coactivity_norm,
+                    "Basal nMRS": basal_nMRS_distance_coactivity_norm,
+                },
+                random_dict={
+                    "Apical MRS": apical_MRS_ids,
+                    "Basal MRS": basal_MRS_ids,
+                    "Apical nMRS": apical_nMRS_ids,
+                    "Basal nMRS": basal_nMRS_ids,
+                },
+                rm_vals=distance_bins,
+                post_method=test_method,
+            )
+        )
+        local_t, local_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_local_coactivity,
+                "Basal": basal_local_coactivity,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        local_norm_t, local_norm_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_local_coactivity_norm,
+                "Basal": basal_local_coactivity_norm,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        near_dist_t, near_dist_p, _ = t_utils.one_way_ART(
+            data_dict={"Apical": apical_near_vs_dist, "Basal": basal_near_vs_dist},
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        near_dist_norm_t, near_dist_norm_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_near_vs_dist_norm,
+                "Basal": basal_near_vs_dist_norm,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        frac_coactive_t, frac_coactive_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_fraction_coactive,
+                "Basal": basal_fraction_coactive,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        frac_part_t, frac_part_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_fraction_participating,
+                "Basal": basal_fraction_participating,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        num_t, num_p, _ = t_utils.one_way_ART(
+            data_dict={
+                "Apical": apical_coactive_num,
+                "Basal": basal_coactive_num,
+            },
+            random_dict={"Apical": apical_ids, "Basal": basal_ids},
+            post_method=test_method,
+        )
+        test_title = "Aligned Rank Transform"
 
     # Perform fishers exact
     contingency_table = np.array(
@@ -3336,6 +3497,7 @@ def plot_local_coactivity(
         ],
     }
     results_df = pd.DataFrame.from_dict(results_dict)
+    print(results_df)
     results_df.update(results_df[["stat"]].applymap("{:.4}".format))
     results_df.update(results_df[["p-val"]].applymap("{:.4E}".format))
 
@@ -3348,7 +3510,8 @@ def plot_local_coactivity(
         GH
         I.
         """,
-        figsize=(15, 18),
+        figsize=(15, 45),
+        height_ratios=[1, 1, 1, 2, 1],
     )
     # Format the tables
     axes2["A"].axis("off")
@@ -3397,10 +3560,10 @@ def plot_local_coactivity(
     D_table.set_fontsize(8)
     axes2["E"].axis("off")
     axes2["E"].axis("tight")
-    axes2["E"].set_title("Real vs Shuff Table")
+    axes2["E"].set_title("Coactivity MRS nMRS Table")
     E_table = axes2["E"].table(
-        cellText=real_v_shuff_table.values,
-        colLabels=real_v_shuff_table.columns,
+        cellText=dist_coactivity_MRS_table.values,
+        colLabels=dist_coactivity_MRS_table.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
@@ -3408,10 +3571,10 @@ def plot_local_coactivity(
     E_table.set_fontsize(8)
     axes2["F"].axis("off")
     axes2["F"].axis("tight")
-    axes2["F"].set_title("Real vs Shuff Norm. Table")
+    axes2["F"].set_title("Coactivity MRS nMRS Norm. Table")
     F_table = axes2["F"].table(
-        cellText=real_v_shuff_norm_table.values,
-        colLabels=real_v_shuff_norm_table.columns,
+        cellText=dist_coactivity_MRS_table_norm.values,
+        colLabels=dist_coactivity_MRS_table_norm.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
@@ -3419,10 +3582,10 @@ def plot_local_coactivity(
     F_table.set_fontsize(8)
     axes2["G"].axis("off")
     axes2["G"].axis("tight")
-    axes2["G"].set_title("Real vs Shuff Posthoc")
+    axes2["G"].set_title("Coactivity MRS Posthoc")
     G_table = axes2["G"].table(
-        cellText=real_v_shuff_posthoc.values,
-        colLabels=real_v_shuff_posthoc.columns,
+        cellText=dist_coactivity_MRS_posthoc.values,
+        colLabels=dist_coactivity_MRS_posthoc.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
@@ -3430,10 +3593,10 @@ def plot_local_coactivity(
     G_table.set_fontsize(8)
     axes2["H"].axis("off")
     axes2["H"].axis("tight")
-    axes2["H"].set_title("Real vs Shuff Norm. Posthoc")
+    axes2["H"].set_title("Coactivity MRS Norm. Posthoc")
     H_table = axes2["H"].table(
-        cellText=real_v_shuff_norm_posthoc.values,
-        colLabels=real_v_shuff_norm_posthoc.columns,
+        cellText=dist_coactivity_MRS_posthoc_norm.values,
+        colLabels=dist_coactivity_MRS_posthoc_norm.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
@@ -3460,16 +3623,13 @@ def plot_local_coactivity(
 
         if save_path is None:
             save_path = r"C:\Users\Jake\Desktop\Figures"
-        if MRSs:
-            mname = f"_{MRSs}"
-        else:
-            mname = ""
+
         if partners:
             pname = f"_{partners}"
         else:
             pname = ""
         fname = os.path.join(
-            save_path, f"Apical_vs_Basal_Local_Coactivity{mname}{pname}_stats"
+            save_path, f"Apical_vs_Basal_Local_Coactivity{pname}_stats"
         )
         fig2.savefig(fname + ".pdf")
 
@@ -3513,8 +3673,13 @@ def plot_dendrite_coactivity(
     """
     COLORS = ["goldenrod", "mediumseagreen"]
 
-    apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
-    basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+    # apical_ids = np.array(d_utils.code_str_to_int(apical_dataset.mouse_id))
+    # basal_ids = np.array(d_utils.code_str_to_int(basal_dataset.mouse_id))
+
+    all_ids = apical_dataset.mouse_id + basal_dataset.mouse_id
+    all_ids_coded = np.array(d_utils.code_str_to_int(all_ids))
+    apical_ids = all_ids_coded[: len(apical_dataset.mouse_id)]
+    basal_ids = all_ids_coded[len(apical_dataset.mouse_id) :]
 
     # Find present spines
     apical_present = find_present_spines(apical_dataset.spine_flags)
