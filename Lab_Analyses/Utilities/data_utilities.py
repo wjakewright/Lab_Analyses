@@ -9,6 +9,8 @@ import pandas as pd
 from scipy import stats
 from sklearn import preprocessing
 
+from Lab_Analyses.Utilities.mean_trace_functions import find_activity_onset
+
 
 def get_before_after_means(
     activity,
@@ -286,6 +288,39 @@ def peak_sorting(data):
     sorted_data = data[:, sorted_idxs]
 
     return sorted_data
+
+
+def onset_sorting(data):
+    """Function to sort traces based on onset timing
+
+    INPUT PARAMETERS
+        data - 2d np.array of the data, with columns representing rois
+
+    OUTPUT PARAMETERS
+        sorted_data - np.array of the sorted data
+
+    """
+    if type(data) == pd.DataFrame:
+        data = np.array(data)
+
+    # Get the onset
+    data_list = [data[:, i] for i in range(data.shape[1])]
+    onsets = find_activity_onset(data_list, smooth=False)
+
+    # Sort based on onset
+    sort_idxs = np.argsort(onsets)
+    temp_data = data.T
+    temp_sorted = temp_data[sort_idxs, :]
+    sorted_data = temp_sorted.T
+
+    # sort onsets too
+    sorted_onsets = onsets[sort_idxs]
+    # peak_idxs = np.argmax(data, axis=0)
+    # sorted_idxs = np.argsort(peak_idxs)
+    # sorted_data = data[:, sorted_idxs]
+    # sorted_onsets = onsets[sorted_idxs]
+
+    return sorted_data, sorted_onsets
 
 
 def peak_normalize_data(data):
