@@ -64,6 +64,28 @@ def synaptic_opto_processing(
         activity_fname = os.path.join(session_path, fnames)
         activity_data = load_pickle([activity_fname])[0]
 
+        ## Try to get the followup volumes if there is one
+        try:
+            followup = next(os.walk(FOV_path))[1]
+            followup = [x for x in followup if "Followup" in x][0]
+            followup_path = os.path.join(FOV_path, followup)
+            fnames = next(os.walk(followup_path))[2]
+            fnames = [x for x in fnames if "imaging_data" in x][0]
+            followup_fname = os.path.join(followup_path, fnames)
+            followup_data = load_pickle([followup_fname])[0]
+            followup_volume = np.array(followup_data.corrected_spine_volume)
+            followup_positions = np.array(followup_data.ROI_positions["Spine"])
+            followup_flags = followup_data.ROI_flags["Spine"]
+            followup_groupings = followup_data.parameters["Spine Groupings"]
+            if len(followup_groupings) == 0:
+                followup_groupings = list(range(len(followup_volume)))
+        except:
+            print("No followup")
+            followup_volume = None
+            followup_positions = None
+            followup_flags = None
+            followup_groupings = None
+
         ## Get the matching behavioral file
         day = re.search("[0-9]{6}", os.path.basename(activity_fname)).group()
         matched_b_path = os.path.join(behavior_path, day)
@@ -143,6 +165,16 @@ def synaptic_opto_processing(
         for i, spines in enumerate(spine_groupings):
             spine_dendrite[spines] = i
 
+        # Assign dendrite id for each spine
+        if followup_groupings is not None:
+            if type(followup_groupings[0]) != list:
+                followup_groupings = [followup_groupings]
+            followup_dendrite = np.zeros(len(followup_volume)) * np.nan
+            for i, follow in enumerate(followup_groupings):
+                followup_dendrite[follow] = i
+        else:
+            followup_dendrite = None
+
         # Store the data in a dataclass
         opto_data = Synaptic_Opto_Data(
             mouse_id=mouse_id,
@@ -165,6 +197,10 @@ def synaptic_opto_processing(
             spine_ranks=ranks,
             responsive_spines=sigs,
             stim_traces=stim_traces,
+            followup_volumes=followup_volume,
+            followup_positions=followup_positions,
+            followup_flags=followup_flags,
+            followup_dendrite=followup_dendrite,
         )
         opto_data_list.append(opto_data)
         # Save the data
