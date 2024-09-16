@@ -11,6 +11,7 @@ from Lab_Analyses.Utilities import activity_timestamps as t_stamps
 from Lab_Analyses.Utilities.coactivity_functions import (
     calculate_coactivity,
     calculate_relative_onset,
+    coactivity_cross_correlation,
     get_conservative_coactive_binary,
 )
 from Lab_Analyses.Utilities.mean_trace_functions import analyze_event_activity
@@ -192,6 +193,10 @@ def spine_dendrite_event_analysis(
     # coactive_onsets = [[] for i in range(spine_activity.shape[1])]
     dend_onsets = [[] for i in range(activity_matrix.shape[1])]
 
+    cross_corr_traces = [None for i in range(activity_matrix.shape[1])]
+    cross_corr_lags = [None for i in range(activity_matrix.shape[1])]
+    cross_corr_peaks = np.zeros(activity_matrix.shape[1]) * np.nan
+
     # Iterate through each spine
     for spine in range(activity_matrix.shape[1]):
         # Skip absent spines
@@ -264,6 +269,21 @@ def spine_dendrite_event_analysis(
         coactive_spines[spine] = coactive
         coactive_spines_norm[spine] = coactive_norm
 
+        s_dFoF = spine_dFoF[:, spine]
+        d_dFoF = dendrite_dFoF[:, spine]
+        corr_traces, corr_lags, corr_peaks = coactivity_cross_correlation(
+            s_activity,
+            d_activity,
+            s_dFoF,
+            d_dFoF,
+            activity_window=(-2, 2),
+            smooth=True,
+            sampling_rate=sampling_rate,
+        )
+        cross_corr_traces[spine] = corr_traces
+        cross_corr_lags[spine] = corr_lags
+        cross_corr_peaks[spine] = corr_peaks
+
         # Get timestamps of coactivity
         # coactive_stamps = t_stamps.get_activity_timestamps(coactive_trace)
         # if len(coactive_stamps) == 0:
@@ -309,7 +329,7 @@ def spine_dendrite_event_analysis(
     (
         dendrite_coactive_traces,
         dendrite_coactive_amplitude,
-        _,
+        temp_onsets,
     ) = analyze_event_activity(
         dendrite_dFoF,
         dend_onsets,
@@ -320,6 +340,13 @@ def spine_dendrite_event_analysis(
         norm_constant=None,
         sampling_rate=sampling_rate,
     )
+
+    # corr_dend_onsets = []
+    # for i, onset in enumerate(temp_onsets):
+    #    corr_onsets = t_stamps.timestamp_onset_correction(
+    #        dend_onsets[i], activity_window, onset, sampling_rate
+    #    )
+    #    corr_dend_onsets.append(corr_onsets)
 
     ## Spine GluSnFr
     (
@@ -382,6 +409,9 @@ def spine_dendrite_event_analysis(
         dendrite_coactive_traces,
         coactive_spines,
         coactive_spines_norm,
+        cross_corr_traces,
+        cross_corr_lags,
+        cross_corr_peaks,
     )
 
 
