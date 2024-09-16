@@ -10,6 +10,7 @@ class Dual_Soma_Apical_Basal_Data:
     """
 
     mouse_id: str
+    FOV: str
     apical_ids: list
     apical_dFoF: np.ndarray
     apical_processed_dFoF: np.ndarray
