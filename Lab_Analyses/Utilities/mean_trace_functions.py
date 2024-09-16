@@ -183,7 +183,7 @@ def find_peak_amplitude(
     return trace_amplitudes, trace_amplitudes_idx
 
 
-def find_activity_onset(mean_traces, sampling_rate=60):
+def find_activity_onset(mean_traces, smooth=True, sampling_rate=60):
     """Function to find the onset of mean activity traces
 
     INPUT PARAMETERS
@@ -208,7 +208,8 @@ def find_activity_onset(mean_traces, sampling_rate=60):
             activity_onsets[i] = np.nan
             continue
         # Smooth the trace
-        trace = sysignal.savgol_filter(trace, 31, 3)
+        if smooth:
+            trace = sysignal.savgol_filter(trace, 31, 3)
         # Find the offset of the rising phase
         peak_trace = trace[: int(peak_idxs[i])]
         try:
