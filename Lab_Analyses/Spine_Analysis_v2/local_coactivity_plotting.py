@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from itertools import compress
 
 import matplotlib.pyplot as plt
@@ -6,12 +7,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
+from skimage.measure import block_reduce
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
 from Lab_Analyses.Plotting.plot_cummulative_distribution import (
     plot_cummulative_distribution,
 )
+from Lab_Analyses.Plotting.plot_dot_plot import plot_dot_plot
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
 from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
@@ -78,9 +81,9 @@ def plot_coactive_vs_noncoactive_events(
     spine_coactive_calcium_amplitude = dataset.spine_coactive_calcium_amplitude
     spine_noncoactive_calcium_amplitude = dataset.spine_noncoactive_calcium_amplitude
     coactive_local_dend_traces = dataset.coactive_local_dend_traces
-    coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
+    # coactive_local_dend_amplitude = dataset.coactive_local_dend_amplitude
     noncoactive_local_dend_traces = dataset.noncoactive_local_dend_traces
-    noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
+    # noncoactive_local_dend_amplitude = dataset.noncoactive_local_dend_amplitude
     coactive_local_dend_amplitude_distribution = (
         dataset.coactive_local_dend_amplitude_dist
     )
@@ -96,7 +99,7 @@ def plot_coactive_vs_noncoactive_events(
         for i in range(coactive_local_dend_amplitude_distribution.shape[1]):
             co_norm_values = coactive_local_dend_amplitude_distribution[
                 :, i
-            ] - np.nanmedian(coactive_local_dend_amplitude_distribution[-3:, i])
+            ] - np.nanmean(coactive_local_dend_amplitude_distribution[-2:, i])
             coactive_local_dend_amplitude_dist[:, i] = co_norm_values
         noncoactive_local_dend_amplitude_dist = np.zeros(
             noncoactive_local_dend_amplitude_distribution.shape
@@ -104,13 +107,34 @@ def plot_coactive_vs_noncoactive_events(
         for j in range(noncoactive_local_dend_amplitude_distribution.shape[1]):
             nonco_norm_values = noncoactive_local_dend_amplitude_distribution[
                 :, j
-            ] - np.nanmedian(noncoactive_local_dend_amplitude_distribution[-3:, j])
+            ] - np.nanmean(noncoactive_local_dend_amplitude_distribution[-2:, j])
             noncoactive_local_dend_amplitude_dist[:, j] = nonco_norm_values
     else:
         coactive_local_dend_amplitude_dist = coactive_local_dend_amplitude_distribution
         noncoactive_local_dend_amplitude_dist = (
             noncoactive_local_dend_amplitude_distribution
         )
+
+    coactive_local_dend_amplitude = coactive_local_dend_amplitude_dist[0, :]
+    noncoactive_local_dend_amplitude = noncoactive_local_dend_amplitude_dist[0, :]
+
+    coactive_near_dend_amplitude = np.nanmean(
+        coactive_local_dend_amplitude_dist[:2, :], axis=0
+    )
+    noncoactive_near_dend_amplitude = np.nanmean(
+        noncoactive_local_dend_amplitude_dist[:2, :], axis=0
+    )
+
+    coactive_dist_dend_amplitude = np.nanmean(
+        coactive_local_dend_amplitude_dist[-4:, :], axis=0
+    )
+    noncoactive_dist_dend_amplitude = np.nanmean(
+        noncoactive_local_dend_amplitude_dist[-4:, :], axis=0
+    )
+    coactive_near_dist = coactive_near_dend_amplitude - coactive_dist_dend_amplitude
+    noncoactive_near_dist = (
+        noncoactive_near_dend_amplitude - noncoactive_dist_dend_amplitude
+    )
 
     # Organize the traces for plotting
     coactive_traces = [
@@ -164,7 +188,7 @@ def plot_coactive_vs_noncoactive_events(
     fig, axes = plt.subplot_mosaic(
         """
         ABCD
-        EFG.
+        EFGH
         """,
         figsize=figsize,
     )
@@ -227,7 +251,7 @@ def plot_coactive_vs_noncoactive_events(
         colors=COLORS,
         title="Local dendrite traces",
         ytitle=activity_type,
-        ylim=None,
+        ylim=(-0.01, 0.1),
         axis_width=1.5,
         minor_ticks="both",
         tick_len=3,
@@ -307,7 +331,7 @@ def plot_coactive_vs_noncoactive_events(
         title="Local Dendrite",
         xtitle=None,
         ytitle=f"Event amplitude ({activity_type})",
-        ylim=None,
+        ylim=(-0.1, 0.1),
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -339,8 +363,8 @@ def plot_coactive_vs_noncoactive_events(
         title="Distance Dependence Local Dendrite",
         ytitle=f"Event amplitude ({activity_type})",
         xtitle="Distance (\u03BCm)",
-        mean_type="mean",
-        ylim=None,
+        mean_type="median",
+        ylim=(-0.005, 0.02),
         line_color=COLORS,
         face_color="white",
         m_size=5,
@@ -351,6 +375,37 @@ def plot_coactive_vs_noncoactive_events(
         tick_len=3,
         ax=axes["G"],
         legend=True,
+        save=False,
+        save_path=None,
+    )
+    # Near vs distance dend amplitude
+    plot_box_plot(
+        data_dict={
+            "Coactive": coactive_near_dist,
+            "Noncoactive": noncoactive_near_dist,
+        },
+        figsize=(5, 5),
+        title="GluSnFr",
+        xtitle=None,
+        ytitle=f"Relative local amplitude",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.5,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["H"],
         save=False,
         save_path=None,
     )
@@ -392,6 +447,11 @@ def plot_coactive_vs_noncoactive_events(
             rm_vals=distance_bins,
             compare_type="between",
         )
+        near_dist_amp_t, near_dist_amp_p = stats.ttest_ind(
+            coactive_near_dist,
+            noncoactive_near_dist,
+            nan_policy="omit",
+        )
         test_title = "T-Test"
     elif test_type == "nonparametric":
         amp_t, amp_p = stats.mannwhitneyu(
@@ -412,22 +472,25 @@ def plot_coactive_vs_noncoactive_events(
                 ~np.isnan(noncoactive_local_dend_amplitude)
             ],
         )
-        dend_dist_table, _, dend_dist_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
+        dend_dist_table, dend_dist_posthoc = t_utils.two_way_RM_ART_ANOVA(
             data_dict={
                 "Co": coactive_local_dend_amplitude_dist,
                 "Non": noncoactive_local_dend_amplitude_dist,
             },
-            method="fdr_bh",
+            post_method="fdr_bh",
             rm_vals=distance_bins,
-            compare_type="between",
+        )
+        near_dist_amp_t, near_dist_amp_p = stats.mannwhitneyu(
+            coactive_near_dist[~np.isnan(coactive_near_dist)],
+            noncoactive_near_dist[~np.isnan(noncoactive_near_dist)],
         )
         test_title = "Mann-Whitney U"
 
     # Organize the results
     results_dict = {
-        "test": ["GluSnFr Amp", "Calcium Amp", "Local Dend"],
-        "stat": [amp_t, ca_amp_t, dend_amp_t],
-        "p-val": [amp_p, ca_amp_p, dend_amp_p],
+        "test": ["GluSnFr Amp", "Calcium Amp", "Local Dend", "Near Dist."],
+        "stat": [amp_t, ca_amp_t, dend_amp_t, near_dist_amp_t],
+        "p-val": [amp_p, ca_amp_p, dend_amp_p, near_dist_amp_p],
     }
     results_df = pd.DataFrame.from_dict(results_dict)
     results_df.update(results_df[["p-val"]].applymap("{:.4E}".format))
@@ -1533,6 +1596,19 @@ def plot_plasticity_coactivity_rates(
         coactive_event_num = dataset.spine_coactive_event_num
         mvmt_coactive_event_num = mvmt_dataset.spine_coactive_event_num
 
+    # local_coactivity_rate_distribution = dataset.local_coactivity_rate_distribution
+    local_coactivity_rate_distribution = (
+        dataset.stable_local_coactivity_rate_distribution
+    )
+    # local_coactivity_rate_distribution = (
+    #    dataset.other_spine_relative_coactivity_distrubution
+    # )
+    avg_nearby_coactivity_rate = local_coactivity_rate_distribution[0, :]
+    # avg_nearby_coactivity_rate = np.nanmean(
+    #    local_coactivity_rate_distribution[:2, :], axis=0
+    # )
+    avg_local_coactivity_rate = distance_coactivity_rate[0, :]
+
     # Calculate relative volumes
     volumes = [spine_volumes, followup_volumes]
     flags = [spine_flags, followup_flags]
@@ -1555,7 +1631,7 @@ def plot_plasticity_coactivity_rates(
     shuff_local_coactivity_rate = d_utils.subselect_data_by_idxs(
         shuff_local_coactivity_rate, spine_idxs
     )
-    near_vs_dist = d_utils.subselect_data_by_idxs(near_vs_dist, spine_idxs)
+
     mvmt_distance_coactivity_rate = d_utils.subselect_data_by_idxs(
         mvmt_distance_coactivity_rate, spine_idxs
     )
@@ -1577,6 +1653,23 @@ def plot_plasticity_coactivity_rates(
     nonmvmt_spines = d_utils.subselect_data_by_idxs(
         dataset.nonmovement_spines, spine_idxs
     )
+    near_vs_dist = d_utils.subselect_data_by_idxs(near_vs_dist, spine_idxs)
+    avg_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
+        avg_nearby_coactivity_rate, spine_idxs
+    )
+
+    if MRSs == "MRS":
+        near_vs_dist_scatter = near_vs_dist[mvmt_spines]
+        vol_scatter = delta_volume[mvmt_spines]
+    elif MRSs == "nMRS":
+        near_vs_dist_scatter = near_vs_dist[nonmvmt_spines]
+        vol_scatter = delta_volume[nonmvmt_spines]
+    else:
+        near_vs_dist_scatter = deepcopy(near_vs_dist)
+        vol_scatter = deepcopy(delta_volume)
+
+    print(f"Near vs dist scatter: {len(near_vs_dist_scatter)}")
+
     mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
     fovs = d_utils.subselect_data_by_idxs(fovs, spine_idxs)
 
@@ -1584,6 +1677,9 @@ def plot_plasticity_coactivity_rates(
     #    mouse_ids, fovs, enlarged_spines, delta_volume, avg_local_coactivity_rate
     # ):
     #    print(f"{m}:{f} - {e} - {v}: {coa}")
+
+    # Calculate relative coactivity
+    relative_local_coactivity = avg_local_coactivity_rate - avg_nearby_coactivity_rate
 
     # Seperate into groups
     plastic_distance_rates = {}
@@ -1595,6 +1691,8 @@ def plot_plasticity_coactivity_rates(
     mvmt_local_rates = {}
     nonmvmt_distance_rates = {}
     nonmvmt_local_rates = {}
+    plastic_relative_coa = {}
+    plastic_other_coa = {}
     fraction_mvmt = {}
     plastic_ids = {}
     distance_bins = dataset.parameters["position bins"][1:]
@@ -1619,11 +1717,17 @@ def plot_plasticity_coactivity_rates(
         shuff_rates = shuff_local_coactivity_rate[:, spines]
         plastic_shuff_rates[key] = shuff_rates
         plastic_shuff_medians[key] = np.nanmedian(shuff_rates, axis=1)
+        plastic_relative_coa[key] = relative_local_coactivity[spines]
+        plastic_other_coa[key] = avg_nearby_coactivity_rate[spines]
         ## Calculate fractions
         event_num = coactive_event_num[spines]
         mvmt_event_num = mvmt_coactive_event_num[spines]
         fraction_mvmt[key] = mvmt_event_num / event_num
         plastic_ids[key] = mouse_ids[spines]
+
+    print(f"sLTP: {plastic_distance_rates['sLTP'].shape[1]}")
+    print(f"sLTD: {plastic_distance_rates['sLTD'].shape[1]}")
+    print(f"Stable: {plastic_distance_rates['Stable'].shape[1]}")
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -1631,7 +1735,8 @@ def plot_plasticity_coactivity_rates(
         ABCD
         EFGa
         IJKL
-        MNO.
+        MNOP
+        QR..
         """,
         figsize=figsize,
     )
@@ -1639,17 +1744,19 @@ def plot_plasticity_coactivity_rates(
     fig.subplots_adjust(hspace=1, wspace=0.5)
 
     ########################### Plot data onto axes ######################
+    plot_bins = distance_bins - 2.5
     # Distance coactivity rates
     plot_multi_line_plot(
         data_dict=plastic_distance_rates,
-        x_vals=distance_bins,
+        x_vals=plot_bins,
+        x_labels=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
         mean_type="median",
         title="All periods",
         ytitle=coactivity_title,
         xtitle="Distance (\u03BCm)",
-        ylim=None,
+        ylim=(0, 1.2),
         line_color=COLORS,
         face_color="white",
         m_size=6,
@@ -1737,14 +1844,14 @@ def plot_plasticity_coactivity_rates(
     )
     # Near - dist vs relative volume
     plot_scatter_correlation(
-        x_var=near_vs_dist,
-        y_var=delta_volume,
+        x_var=near_vs_dist_scatter,
+        y_var=vol_scatter,
         CI=95,
         title="All periods",
         xtitle=f"Near-dist coactivity",
         ytitle="\u0394 volume",
         figsize=(5, 5),
-        xlim=(0, 1.5),
+        xlim=(-2, 3),
         ylim=(0, 4),
         marker_size=25,
         face_color="cmap",
@@ -1947,6 +2054,103 @@ def plot_plasticity_coactivity_rates(
         save=False,
         save_path=None,
     )
+    # local coactivity vs nearby coactivity
+    local_nearby_dict = {
+        "sLTP": [plastic_local_rates["sLTP"], plastic_other_coa["sLTP"]],
+        "sLTD": [plastic_local_rates["sLTD"], plastic_other_coa["sLTD"]],
+        "Stable": [plastic_local_rates["Stable"], plastic_other_coa["Stable"]],
+    }
+    plot_box_plot(
+        data_dict={
+            "Target": plastic_local_rates["sLTP"],
+            "Nearby": plastic_other_coa["sLTP"],
+        },
+        figsize=(5, 5),
+        title="sLTP",
+        xtitle=None,
+        ytitle=f"Local coactivity rate",
+        ylim=(0, 3.5),
+        b_colors=["mediumslateblue", "mediumslateblue"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["P"],
+        save=False,
+        save_path=None,
+    )
+    plot_box_plot(
+        data_dict={
+            "Target": plastic_local_rates["sLTD"],
+            "Nearby": plastic_other_coa["sLTD"],
+        },
+        figsize=(5, 5),
+        title="sLTD",
+        xtitle=None,
+        ytitle=f"Local coactivity rate",
+        ylim=(0, 3.5),
+        b_colors=["tomato", "tomato"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["Q"],
+        save=False,
+        save_path=None,
+    )
+    plot_box_plot(
+        data_dict={
+            "Target": plastic_local_rates["Stable"],
+            "Nearby": plastic_other_coa["Stable"],
+        },
+        figsize=(5, 5),
+        title="Stable",
+        xtitle=None,
+        ytitle=f"Local coactivity rate",
+        ylim=(0, 3.5),
+        b_colors=["silver", "silver"],
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["R"],
+        save=False,
+        save_path=None,
+    )
+
     # Enlarged local vs chance
     ## histogram
     plot_cummulative_distribution(
@@ -2184,6 +2388,10 @@ def plot_plasticity_coactivity_rates(
             fraction_mvmt,
             test_method,
         )
+        relative_f, relative_p, _, relative_df = t_utils.ANOVA_1way_posthoc(
+            plastic_relative_coa,
+            test_method,
+        )
         all_coactivity_table, _, all_coactivity_posthoc = (
             t_utils.ANOVA_2way_mixed_posthoc(
                 data_dict=plastic_distance_rates,
@@ -2240,6 +2448,11 @@ def plot_plasticity_coactivity_rates(
         )
         frac_mvmt_f, frac_mvmt_p, frac_mvmt_df = t_utils.kruskal_wallis_test(
             fraction_mvmt,
+            "Conover",
+            test_method,
+        )
+        relative_f, relative_p, relative_df = t_utils.kruskal_wallis_test(
+            plastic_relative_coa,
             "Conover",
             test_method,
         )
@@ -2307,6 +2520,12 @@ def plot_plasticity_coactivity_rates(
             test_method,
             slopes_intercept=False,
         )
+        relative_f, relative_p, relative_df = t_utils.one_way_mixed_effects_model(
+            plastic_relative_coa,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
         all_coactivity_table, all_coactivity_posthoc = (
             t_utils.two_way_RM_mixed_effects_model(
                 data_dict=plastic_distance_rates,
@@ -2314,7 +2533,6 @@ def plot_plasticity_coactivity_rates(
                 post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
-                test_type="nonparametric",
             )
         )
         mvmt_coactivity_table, mvmt_coactivity_posthoc = (
@@ -2324,7 +2542,6 @@ def plot_plasticity_coactivity_rates(
                 post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
-                test_type="nonparametric",
             )
         )
         nonmvmt_coactivity_table, nonmvmt_coactivity_posthoc = (
@@ -2334,10 +2551,59 @@ def plot_plasticity_coactivity_rates(
                 post_method=test_method,
                 rm_vals=distance_bins,
                 compare_type="between",
-                test_type="nonparametric",
             )
         )
         test_title = f"Mixed-Effects {test_method}"
+    elif test_type == "ART":
+        coactivity_f, coactivity_p, coactivity_df = t_utils.one_way_ART(
+            plastic_local_rates,
+            plastic_ids,
+            test_method,
+        )
+        diff_f, diff_p, diff_df = t_utils.one_way_ART(
+            plastic_diffs,
+            plastic_ids,
+            test_method,
+        )
+        mvmt_coactivity_f, mvmt_coactivity_p, mvmt_coactivity_df = t_utils.one_way_ART(
+            mvmt_local_rates,
+            plastic_ids,
+            test_method,
+        )
+        non_coactivity_f, non_coactivity_p, non_coactivity_df = t_utils.one_way_ART(
+            nonmvmt_local_rates,
+            plastic_ids,
+            test_method,
+        )
+        frac_mvmt_f, frac_mvmt_p, frac_mvmt_df = t_utils.one_way_ART(
+            fraction_mvmt,
+            plastic_ids,
+            test_method,
+        )
+        relative_f, relative_p, relative_df = t_utils.one_way_ART(
+            plastic_relative_coa,
+            plastic_ids,
+            test_method,
+        )
+        all_coactivity_table, all_coactivity_posthoc = t_utils.two_way_RM_ART(
+            data_dict=plastic_distance_rates,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+        )
+        mvmt_coactivity_table, mvmt_coactivity_posthoc = t_utils.two_way_RM_ART(
+            data_dict=mvmt_distance_rates,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+        )
+        nonmvmt_coactivity_table, nonmvmt_coactivity_posthoc = t_utils.two_way_RM_ART(
+            data_dict=nonmvmt_distance_rates,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+        )
+        test_title = f"ART {test_method}"
 
     # Comparisons to chance
     enlarged_above, enlarged_below = t_utils.test_against_chance(
@@ -2356,6 +2622,45 @@ def plot_plasticity_coactivity_rates(
     }
     chance_df = pd.DataFrame.from_dict(chance_dict)
 
+    # One sample relative values against no change
+    # sLTP_t, sLTP_p = stats.wilcoxon(
+    #     x=plastic_relative_coa["sLTP"] - 1,
+    #     mode="approx",
+    #     zero_method="zsplit",
+    # )
+    # sLTD_t, sLTD_p = stats.wilcoxon(
+    #     x=plastic_relative_coa["sLTD"] - 1,
+    #     mode="approx",
+    #     zero_method="zsplit",
+    # )
+    # stable_t, stable_p = stats.wilcoxon(
+    #     x=plastic_relative_coa["Stable"] - 1,
+    #     mode="approx",
+    #     zero_method="zsplit",
+    # )
+
+    sLTP_t, sLTP_p = stats.mannwhitneyu(
+        plastic_local_rates["sLTP"][~np.isnan(plastic_local_rates["sLTP"])],
+        plastic_other_coa["sLTP"][~np.isnan(plastic_other_coa["sLTP"])],
+    )
+    sLTD_t, sLTD_p = stats.mannwhitneyu(
+        plastic_local_rates["sLTD"][~np.isnan(plastic_local_rates["sLTD"])],
+        plastic_other_coa["sLTD"][~np.isnan(plastic_other_coa["sLTD"])],
+    )
+    stable_t, stable_p = stats.mannwhitneyu(
+        plastic_local_rates["Stable"][~np.isnan(plastic_local_rates["Stable"])],
+        plastic_other_coa["Stable"][~np.isnan(plastic_other_coa["Stable"])],
+    )
+
+    onesample_dict = {
+        "comparison": ["sLTP", "sLTD", "stable"],
+        "statistic": [sLTP_t, sLTD_t, stable_t],
+        "p-value": [sLTP_p, sLTD_p, stable_p],
+    }
+    onesample_df = pd.DataFrame.from_dict(onesample_dict)
+    onesample_df.update(onesample_df[["statistic"]].applymap("{:.4}".format))
+    onesample_df.update(onesample_df[["p-value"]].applymap("{:3E}".format))
+
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
         """
@@ -2363,6 +2668,7 @@ def plot_plasticity_coactivity_rates(
         ABC
         DEF
         GHI
+        JK.
         """,
         figsize=(17, 30),
     )
@@ -2507,6 +2813,30 @@ def plot_plasticity_coactivity_rates(
     )
     I_table.auto_set_font_size(False)
     I_table.set_fontsize(8)
+    axes2["J"].axis("off")
+    axes2["J"].axis("tight")
+    axes2["J"].set_title(
+        f"Rel vs near {test_title}\nF = {relative_f:.4} p = {relative_p:.3E}"
+    )
+    J_table = axes2["J"].table(
+        cellText=relative_df.values,
+        colLabels=relative_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    J_table.auto_set_font_size(False)
+    J_table.set_fontsize(8)
+    axes2["K"].axis("off")
+    axes2["K"].axis("tight")
+    axes2["K"].set_title(f"Rel vs near onesample")
+    K_table = axes2["K"].table(
+        cellText=onesample_df.values,
+        colLabels=onesample_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    K_table.auto_set_font_size(False)
+    K_table.set_fontsize(8)
 
     fig2.tight_layout()
 
@@ -4002,6 +4332,7 @@ def plot_nearby_spine_properties(
     }
 
     # Pull relevant data
+    mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
     spine_volumes = dataset.spine_volumes
     spine_flags = dataset.spine_flags
     if followup_dataset is None:
@@ -4019,9 +4350,14 @@ def plot_nearby_spine_properties(
     avg_nearby_coactivity_rate = dataset.avg_nearby_coactivity_rate
     shuff_nearby_coactivity_rate = dataset.shuff_nearby_coactivity_rate
     near_vs_dist_nearby_coactivity_rate = dataset.near_vs_dist_nearby_coactivity_rate
-    MRS_density_distribution = dataset.MRS_density_distribution
-    avg_local_MRS_density = dataset.avg_local_MRS_density
-    shuff_local_MRS_density = dataset.shuff_local_MRS_density
+    stable_local_coactivity_rate_distribution = (
+        dataset.stable_local_coactivity_rate_distribution
+    )
+    avg_nearby_stable_coactivity_rate = dataset.avg_nearby_stable_coactivity_rate
+    shuff_nearby_stable_coactivity_rate = dataset.shuff_nearby_stable_coactivity_rate
+    near_vs_dist_stable_nearby_coactivity_rate = (
+        dataset.near_vs_dist_stable_nearby_coactivity_rate
+    )
     rMRS_density_distribution = dataset.rMRS_density_distribution
     avg_local_rMRS_density = dataset.avg_local_rMRS_density
     shuff_local_rMRS_density = dataset.shuff_local_rMRS_density
@@ -4080,14 +4416,20 @@ def plot_nearby_spine_properties(
         near_vs_dist_nearby_coactivity_rate,
         spine_idxs,
     )
-    MRS_density_distribution = d_utils.subselect_data_by_idxs(
-        MRS_density_distribution, spine_idxs
+    stable_local_coactivity_rate_distribution = d_utils.subselect_data_by_idxs(
+        stable_local_coactivity_rate_distribution,
+        spine_idxs,
     )
-    avg_local_MRS_density = d_utils.subselect_data_by_idxs(
-        avg_local_MRS_density, spine_idxs
+    avg_nearby_stable_coactivity_rate = d_utils.subselect_data_by_idxs(
+        avg_nearby_stable_coactivity_rate,
+        spine_idxs,
     )
-    shuff_local_MRS_density = d_utils.subselect_data_by_idxs(
-        shuff_local_MRS_density, spine_idxs
+    shuff_nearby_stable_coactivity_rate = d_utils.subselect_data_by_idxs(
+        shuff_nearby_stable_coactivity_rate, spine_idxs
+    )
+    near_vs_dist_stable_nearby_coactivity_rate = d_utils.subselect_data_by_idxs(
+        near_vs_dist_stable_nearby_coactivity_rate,
+        spine_idxs,
     )
     rMRS_density_distribution = d_utils.subselect_data_by_idxs(
         rMRS_density_distribution, spine_idxs
@@ -4147,6 +4489,7 @@ def plot_nearby_spine_properties(
     nonmvmt_spines = d_utils.subselect_data_by_idxs(
         dataset.nonmovement_spines, spine_idxs
     )
+    mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
 
     # Seperate into groups
     plastic_rate_dist = {}
@@ -4159,10 +4502,11 @@ def plot_nearby_spine_properties(
     plastic_shuff_coactivity = {}
     plastic_shuff_coactivity_medians = {}
     plastic_near_dist_coactivity = {}
-    plastic_MRS_dist = {}
-    plastic_MRS_density = {}
-    plastic_MRS_shuff_density = {}
-    plastic_MRS_shuff_density_medians = {}
+    plastic_stable_coactivity_dist = {}
+    plastic_avg_stable_coactivity = {}
+    plastic_shuff_stable_coactivity = {}
+    plastic_shuff_stable_coactivity_medians = {}
+    plastic_near_dist_stable_coactivity = {}
     plastic_rMRS_dist = {}
     plastic_rMRS_density = {}
     plastic_rMRS_shuff_density = {}
@@ -4182,6 +4526,7 @@ def plot_nearby_spine_properties(
     plastic_rel_vol_dist = {}
     plastic_near_dist_rel_vol = {}
     distance_bins = dataset.parameters["position bins"][1:]
+    plastic_ids = {}
 
     for key, value in plastic_groups.items():
         spines = eval(value)
@@ -4201,11 +4546,18 @@ def plot_nearby_spine_properties(
         plastic_shuff_coactivity[key] = shuff_coactivity
         plastic_shuff_coactivity_medians[key] = np.nanmedian(shuff_coactivity, axis=1)
         plastic_near_dist_coactivity[key] = near_vs_dist_nearby_coactivity_rate[spines]
-        plastic_MRS_dist[key] = MRS_density_distribution[:, spines]
-        plastic_MRS_density[key] = avg_local_MRS_density[spines]
-        shuff_MRS = shuff_local_MRS_density[:, spines]
-        plastic_MRS_shuff_density[key] = shuff_MRS
-        plastic_MRS_shuff_density_medians[key] = np.nanmedian(shuff_MRS, axis=1)
+        plastic_stable_coactivity_dist[key] = stable_local_coactivity_rate_distribution[
+            :, spines
+        ]
+        plastic_avg_stable_coactivity[key] = avg_nearby_stable_coactivity_rate[spines]
+        shuff_stable_coactivity = shuff_nearby_stable_coactivity_rate[:, spines]
+        plastic_shuff_stable_coactivity[key] = shuff_stable_coactivity
+        plastic_shuff_stable_coactivity_medians[key] = np.nanmedian(
+            shuff_stable_coactivity, axis=1
+        )
+        plastic_near_dist_stable_coactivity[key] = (
+            near_vs_dist_stable_nearby_coactivity_rate[spines]
+        )
         plastic_rMRS_dist[key] = rMRS_density_distribution[:, spines]
         plastic_rMRS_density[key] = avg_local_rMRS_density[spines]
         shuff_rMRS = shuff_local_rMRS_density[:, spines]
@@ -4227,6 +4579,7 @@ def plot_nearby_spine_properties(
         plastic_rel_vols[key] = local_relative_vol[spines]
         plastic_shuff_rel_vols[key] = shuff_relative_vol[:, spines]
         plastic_near_dist_rel_vol[key] = near_vs_dist_relative_volume[spines]
+        plastic_ids[key] = mouse_ids[spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
@@ -4239,7 +4592,7 @@ def plot_nearby_spine_properties(
         Zabc.
         defg.
         hijkl
-        mnop.
+        mnqop
         """,
         figsize=figsize,
     )
@@ -4281,7 +4634,7 @@ def plot_nearby_spine_properties(
         title="Coactivity Rate",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
-        ylim=None,
+        ylim=(0.2, 1.0),
         line_color=COLORS,
         face_color="white",
         mean_type="median",
@@ -4298,14 +4651,14 @@ def plot_nearby_spine_properties(
     )
     # MRS density distribution
     plot_multi_line_plot(
-        data_dict=plastic_MRS_dist,
+        data_dict=plastic_stable_coactivity_dist,
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
-        title="MRS density",
-        ytitle="MRS density (spines/\u03BCm)",
+        title="Coactivity Rate \n (w/out plastic)",
+        ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
-        ylim=None,
+        ylim=(0.2, 1.0),
         line_color=COLORS,
         face_color="white",
         mean_type="median",
@@ -4786,11 +5139,11 @@ def plot_nearby_spine_properties(
     )
     # Avg local MRS rate
     plot_box_plot(
-        plastic_MRS_density,
+        plastic_avg_stable_coactivity,
         figsize=(5, 5),
-        title="Local MRS Density",
+        title="Local Coactivity \n (w/out plastic)",
         xtitle=None,
-        ytitle="MRS density (spines/\u03BCm)",
+        ytitle="Coactivity (events/min)",
         ylim=(0, None),
         b_colors=COLORS,
         b_edgecolors="black",
@@ -4816,13 +5169,13 @@ def plot_nearby_spine_properties(
     plot_cummulative_distribution(
         data=list(
             (
-                plastic_MRS_density["sLTP"],
-                plastic_MRS_shuff_density["sLTP"],
+                plastic_avg_stable_coactivity["sLTP"],
+                plastic_shuff_stable_coactivity["sLTP"],
             )
         ),
         plot_ind=True,
         title="Enlarged",
-        xtitle="MRS density (spines/\u03BCm)",
+        xtitle="Coactivity (events/min)",
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[0], "black"],
@@ -4842,15 +5195,17 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_m_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_MRS_density["sLTP"],
-            "shuff": plastic_MRS_shuff_density["sLTP"].flatten().astype(np.float32),
+            "data": plastic_avg_stable_coactivity["sLTP"],
+            "shuff": plastic_shuff_stable_coactivity["sLTP"]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
         figsize=(5, 5),
         title=None,
         xtitle=None,
-        ytitle="MRS density (spines/\u03BCm)",
+        ytitle="Coactivity rate",
         ylim=None,
         b_colors=[COLORS[0], "grey"],
         b_edgecolors="black",
@@ -4872,13 +5227,13 @@ def plot_nearby_spine_properties(
     plot_cummulative_distribution(
         data=list(
             (
-                plastic_MRS_density["sLTD"],
-                plastic_MRS_shuff_density["sLTD"],
+                plastic_avg_stable_coactivity["sLTD"],
+                plastic_shuff_stable_coactivity["sLTD"],
             )
         ),
         plot_ind=True,
         title="Shrunken",
-        xtitle="MRS density (spines/\u03BCm)",
+        xtitle="Coactivity rate (events/min)",
         xlim=(0, None),
         figsize=(5, 5),
         color=[COLORS[1], "black"],
@@ -4898,8 +5253,10 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_n_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_MRS_density["sLTD"],
-            "shuff": plastic_MRS_shuff_density["sLTD"].flatten().astype(np.float32),
+            "data": plastic_avg_stable_coactivity["sLTD"],
+            "shuff": plastic_shuff_stable_coactivity["sLTD"]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -4928,8 +5285,8 @@ def plot_nearby_spine_properties(
     plot_cummulative_distribution(
         data=list(
             (
-                plastic_MRS_density["Stable"],
-                plastic_MRS_shuff_density["Stable"],
+                plastic_avg_stable_coactivity["Stable"],
+                plastic_shuff_stable_coactivity["Stable"],
             )
         ),
         plot_ind=True,
@@ -4954,8 +5311,10 @@ def plot_nearby_spine_properties(
     sns.despine(ax=ax_o_inset)
     plot_swarm_bar_plot(
         data_dict={
-            "data": plastic_MRS_density["Stable"],
-            "shuff": plastic_MRS_shuff_density["Stable"].flatten().astype(np.float32),
+            "data": plastic_avg_stable_coactivity["Stable"],
+            "shuff": plastic_shuff_stable_coactivity["Stable"]
+            .flatten()
+            .astype(np.float32),
         },
         mean_type=mean_type,
         err_type=err_type,
@@ -6010,6 +6369,34 @@ def plot_nearby_spine_properties(
         save=False,
         save_path=None,
     )
+    # Near vs distant coactivity rates
+    plot_box_plot(
+        plastic_near_dist_stable_coactivity,
+        figsize=(5, 5),
+        title="Near - distant coactivity rates \n (w/out plastic)",
+        xtitle=None,
+        ytitle="Relative coactivity rate (events/min)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["q"],
+        save=False,
+        save_path=None,
+    )
     # Near vs distant spine volumes
     plot_box_plot(
         plastic_near_dist_vol,
@@ -6085,6 +6472,18 @@ def plot_nearby_spine_properties(
 
     # Perform the F-tests
     if test_type == "parametric":
+        activity_table, _, activity_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
+            data_dict=plastic_rate_dist,
+            method=test_method,
+            rm_vals=distance_bins,
+            compare_type="between,",
+        )
+        coactivity_table, _, coactivity_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
+            data_dict=plastic_coactivity_dist,
+            method=test_method,
+            rm_vals=distance_bins,
+            compare_type="between",
+        )
         activity_f, activity_p, _, activity_df = t_utils.ANOVA_1way_posthoc(
             plastic_avg_rates,
             method=test_method,
@@ -6094,7 +6493,7 @@ def plot_nearby_spine_properties(
             method=test_method,
         )
         MRS_f, MRS_p, _, MRS_df = t_utils.ANOVA_1way_posthoc(
-            plastic_MRS_density,
+            plastic_avg_stable_coactivity,
             method=test_method,
         )
         rMRS_f, rMRS_p, _, rMRS_df = t_utils.ANOVA_1way_posthoc(
@@ -6139,6 +6538,18 @@ def plot_nearby_spine_properties(
         )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
+        activity_table, _, activity_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
+            data_dict=plastic_rate_dist,
+            method=test_method,
+            rm_vals=distance_bins,
+            compare_type="between,",
+        )
+        coactivity_table, _, coactivity_posthoc = t_utils.ANOVA_2way_mixed_posthoc(
+            data_dict=plastic_coactivity_dist,
+            method=test_method,
+            rm_vals=distance_bins,
+            compare_type="between",
+        )
         activity_f, activity_p, activity_df = t_utils.kruskal_wallis_test(
             plastic_avg_rates,
             "Conover",
@@ -6150,7 +6561,7 @@ def plot_nearby_spine_properties(
             test_method,
         )
         MRS_f, MRS_p, MRS_df = t_utils.kruskal_wallis_test(
-            plastic_MRS_density,
+            plastic_avg_stable_coactivity,
             "Conover",
             test_method,
         )
@@ -6200,6 +6611,172 @@ def plot_nearby_spine_properties(
             test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
+    elif test_type == "mixed-effect":
+        activity_table, activity_posthoc = t_utils.two_way_RM_mixed_effects_model(
+            data_dict=plastic_rate_dist,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+            slopes_intercept=False,
+        )
+        coactivity_table, coactivity_posthoc = t_utils.two_way_RM_mixed_effects_model(
+            data_dict=plastic_coactivity_dist,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+            slopes_intercept=False,
+        )
+        activity_f, activity_p, activity_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_avg_rates,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        coactivity_f, coactivity_p, coactivity_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_avg_coactivity,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        MRS_f, MRS_p, MRS_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_avg_stable_coactivity,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        rMRS_f, rMRS_p, rMRS_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_rMRS_density,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        enlarged_f, enlarged_p, enlarged_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_nn_enlarged,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        shrunken_f, shrunken_p, shrunken_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_nn_shrunken,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        volume_f, volume_p, volume_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_nearby_volumes,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        relative_f, relative_p, relative_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_rel_vols,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        nd_activity_f, nd_activity_p, nd_activity_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=plastic_near_dist_rates,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        nd_coactivity_f, nd_coactivity_p, nd_coactivity_df = (
+            t_utils.one_way_mixed_effects_model(
+                data_dict=plastic_near_dist_coactivity,
+                random_dict=plastic_ids,
+                post_method=test_method,
+                slopes_intercept=False,
+            )
+        )
+        nd_volume_f, nd_volume_p, nd_volume_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_near_dist_vol,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        nd_rel_vol_f, nd_rel_vol_p, nd_rel_vol_df = t_utils.one_way_mixed_effects_model(
+            data_dict=plastic_near_dist_rel_vol,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            slopes_intercept=False,
+        )
+        test_title = f"Mixed-effects {test_method}"
+    elif test_type == "ART":
+        activity_table, activity_posthoc = t_utils.two_way_RM_ART(
+            data_dict=plastic_rate_dist,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+        )
+        coactivity_table, coactivity_posthoc = t_utils.two_way_RM_ART(
+            data_dict=plastic_coactivity_dist,
+            random_dict=plastic_ids,
+            post_method=test_method,
+            rm_vals=distance_bins,
+        )
+        activity_f, activity_p, activity_df = t_utils.one_way_ART(
+            data_dict=plastic_avg_rates,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        coactivity_f, coactivity_p, coactivity_df = t_utils.one_way_ART(
+            data_dict=plastic_avg_coactivity,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        MRS_f, MRS_p, MRS_df = t_utils.one_way_ART(
+            data_dict=plastic_avg_stable_coactivity,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        rMRS_f, rMRS_p, rMRS_df = t_utils.one_way_ART(
+            data_dict=plastic_rMRS_density,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        enlarged_f, enlarged_p, enlarged_df = t_utils.one_way_ART(
+            data_dict=plastic_nn_enlarged,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        shrunken_f, shrunken_p, shrunken_df = t_utils.one_way_ART(
+            data_dict=plastic_nn_shrunken,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        volume_f, volume_p, volume_df = t_utils.one_way_ART(
+            data_dict=plastic_nearby_volumes,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        relative_f, relative_p, relative_df = t_utils.one_way_ART(
+            data_dict=plastic_rel_vols,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        nd_activity_f, nd_activity_p, nd_activity_df = t_utils.one_way_ART(
+            data_dict=plastic_near_dist_rates,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        nd_coactivity_f, nd_coactivity_p, nd_coactivity_df = t_utils.one_way_ART(
+            data_dict=plastic_near_dist_coactivity,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        nd_volume_f, nd_volume_p, nd_volume_df = t_utils.one_way_ART(
+            data_dict=plastic_near_dist_vol,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        nd_rel_vol_f, nd_rel_vol_p, nd_rel_vol_df = t_utils.one_way_ART(
+            data_dict=plastic_near_dist_rel_vol,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        test_title = f"Aligned rank transform {test_method}"
 
     # Perform correlations
     _, activity_corr_df = t_utils.correlate_grouped_data(
@@ -6211,7 +6788,7 @@ def plot_nearby_spine_properties(
         distance_bins,
     )
     _, MRS_corr_df = t_utils.correlate_grouped_data(
-        plastic_MRS_dist,
+        plastic_stable_coactivity_dist,
         distance_bins,
     )
     _, rMRS_corr_df = t_utils.correlate_grouped_data(
@@ -6256,13 +6833,14 @@ def plot_nearby_spine_properties(
     chance_coactivity_df = pd.DataFrame.from_dict(chance_coactivity)
     ## MRS density
     e_MRS_above, e_MRS_below = t_utils.test_against_chance(
-        plastic_MRS_density["sLTP"], plastic_MRS_shuff_density["sLTP"]
+        plastic_avg_stable_coactivity["sLTP"], plastic_shuff_stable_coactivity["sLTP"]
     )
     s_MRS_above, s_MRS_below = t_utils.test_against_chance(
-        plastic_MRS_density["sLTD"], plastic_MRS_shuff_density["sLTD"]
+        plastic_avg_stable_coactivity["sLTD"], plastic_shuff_stable_coactivity["sLTD"]
     )
     st_MRS_above, st_MRS_below = t_utils.test_against_chance(
-        plastic_MRS_density["Stable"], plastic_MRS_shuff_density["Stable"]
+        plastic_avg_stable_coactivity["Stable"],
+        plastic_shuff_stable_coactivity["Stable"],
     )
     chance_MRS = {
         "Comparison": ["sLTP", "sLTD", "Stable"],
@@ -6354,7 +6932,9 @@ def plot_nearby_spine_properties(
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
         """
+        yz
         AB
+        ab
         CD
         EF
         GH
@@ -6368,34 +6948,79 @@ def plot_nearby_spine_properties(
         WX
         YZ
         """,
-        figsize=(10, 20),
+        figsize=(10, 60),
+        height_ratios=[1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     )
     # Format the tables
-    axes2["A"].axis("off")
-    axes2["A"].axis("tight")
-    axes2["A"].set_title("Average Activity Rate")
-    A_table = axes2["A"].table(
+    axes2["y"].axis("off")
+    axes2["y"].axis("tight")
+    axes2["y"].set_title("Distance Activity Corr")
+    y_table = axes2["y"].table(
         cellText=activity_corr_df.values,
         colLabels=activity_corr_df.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
-    A_table.auto_set_font_size(False)
-    A_table.set_fontsize(8)
-    axes2["B"].axis("off")
-    axes2["B"].axis("tight")
-    axes2["B"].set_title("Average Local Coactivity Rate")
-    B_table = axes2["B"].table(
+    y_table.auto_set_font_size(False)
+    y_table.set_fontsize(8)
+    axes2["z"].axis("off")
+    axes2["z"].axis("tight")
+    axes2["z"].set_title("Distance Activity Corr")
+    z_table = axes2["z"].table(
         cellText=coactivity_corr_df.values,
         colLabels=coactivity_corr_df.columns,
         loc="center",
         bbox=[0, 0.2, 0.9, 0.5],
     )
+    z_table.auto_set_font_size(False)
+    z_table.set_fontsize(8)
+    axes2["A"].axis("off")
+    axes2["A"].axis("tight")
+    axes2["A"].set_title("Distance Activity Table")
+    A_table = axes2["A"].table(
+        cellText=activity_table.values,
+        colLabels=activity_table.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    A_table.auto_set_font_size(False)
+    A_table.set_fontsize(8)
+    axes2["a"].axis("off")
+    axes2["a"].axis("tight")
+    axes2["a"].set_title("Distance Activity Posthoc")
+    a_table = axes2["a"].table(
+        cellText=activity_posthoc.values,
+        colLabels=activity_posthoc.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    a_table.auto_set_font_size(False)
+    a_table.set_fontsize(8)
+    axes2["B"].axis("off")
+    axes2["B"].axis("tight")
+    axes2["B"].set_title("Distance Local Coactivity Table")
+    B_table = axes2["B"].table(
+        cellText=coactivity_table.values,
+        colLabels=coactivity_table.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
     B_table.auto_set_font_size(False)
     B_table.set_fontsize(8)
+    axes2["b"].axis("off")
+    axes2["b"].axis("tight")
+    axes2["b"].set_title("Distance Local Coactivity Posthoc")
+    b_table = axes2["b"].table(
+        cellText=coactivity_posthoc.values,
+        colLabels=coactivity_posthoc.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    b_table.auto_set_font_size(False)
+    b_table.set_fontsize(8)
     axes2["C"].axis("off")
     axes2["C"].axis("tight")
-    axes2["C"].set_title("MRS density")
+    axes2["C"].set_title("Local Coactivity \n (w/out plastic)")
     C_table = axes2["C"].table(
         cellText=MRS_corr_df.values,
         colLabels=MRS_corr_df.columns,
@@ -6444,7 +7069,7 @@ def plot_nearby_spine_properties(
     axes2["G"].axis("off")
     axes2["G"].axis("tight")
     axes2["G"].set_title(
-        f"Local MRS density\n{test_title}\nF = {MRS_f:.4} p ={MRS_p:.3E}"
+        f"Local Coactivity (w/out plastic)\n{test_title}\nF = {MRS_f:.4} p ={MRS_p:.3E}"
     )
     G_table = axes2["G"].table(
         cellText=MRS_df.values,
@@ -6517,7 +7142,7 @@ def plot_nearby_spine_properties(
     L_table.set_fontsize(8)
     axes2["M"].axis("off")
     axes2["M"].axis("tight")
-    axes2["M"].set_title(f"Chance MRS density")
+    axes2["M"].set_title(f"Chance Coactivity\n(w/out plastic)")
     M_table = axes2["M"].table(
         cellText=chance_MRS_df.values,
         colLabels=chance_MRS_df.columns,
@@ -6774,12 +7399,10 @@ def plot_stable_nearby_spine_properties(
         dataset.enlarged_spine_activity_rate_distribution
     )
     near_vs_dist_enlarged_activity_rate = dataset.near_vs_dist_enlarged_activity_rate
-    avg_nearby_shrunken_spine_rate = dataset.avg_nearby_shrunken_spine_rate
-    shuff_nearby_shrunken_spine_rate = dataset.shuff_nearby_shrunken_spine_rate
-    shrunken_spine_activity_rate_dist = (
-        dataset.shrunken_spine_activity_rate_distribution
-    )
-    near_vs_dist_shrunken_activity_rate = dataset.near_vs_dist_shrunken_activity_rate
+    avg_nearby_shrunken_spine_rate = dataset.avg_nearby_stable_spine_rate
+    shuff_nearby_shrunken_spine_rate = dataset.shuff_nearby_stable_spine_rate
+    shrunken_spine_activity_rate_dist = dataset.stable_spine_activity_rate_distribution
+    near_vs_dist_shrunken_activity_rate = dataset.near_vs_dist_stable_activity_rate
 
     # Coactivity rate data
     avg_nearby_enlarged_coactivity_rate = dataset.avg_nearby_enlarged_coactivity_rate
@@ -6792,15 +7415,13 @@ def plot_stable_nearby_spine_properties(
     near_vs_dist_enlarged_nearby_coactivity_rate = (
         dataset.near_vs_dist_enlarged_nearby_coactivity_rate
     )
-    avg_nearby_shrunken_coactivity_rate = dataset.avg_nearby_shrunken_coactivity_rate
-    shuff_nearby_shrunken_coactivity_rate = (
-        dataset.shuff_nearby_shrunken_coactivity_rate
-    )
+    avg_nearby_shrunken_coactivity_rate = dataset.avg_nearby_stable_coactivity_rate
+    shuff_nearby_shrunken_coactivity_rate = dataset.shuff_nearby_stable_coactivity_rate
     shrunken_local_coactivity_rate_dist = (
-        dataset.shrunken_local_coactivity_rate_distribution
+        dataset.stable_local_coactivity_rate_distribution
     )
     near_vs_dist_shrunken_nearby_coactivity_rate = (
-        dataset.near_vs_dist_shrunken_nearby_coactivity_rate
+        dataset.near_vs_dist_stable_nearby_coactivity_rate
     )
 
     # Calculate spine volume
@@ -6986,6 +7607,7 @@ def plot_stable_nearby_spine_properties(
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
+        mean_type="median",
         title="Coactivity Rate (w/out enlarged)",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
@@ -7032,6 +7654,7 @@ def plot_stable_nearby_spine_properties(
         x_vals=distance_bins,
         plot_ind=False,
         figsize=(5, 5),
+        mean_type="median",
         title="Coactivity Rate (w/out shrunken)",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
@@ -7196,7 +7819,7 @@ def plot_stable_nearby_spine_properties(
         title="Near vs dist Coactivity Rate \n(w/out enlarged)",
         xtitle=None,
         ytitle="Coactivity rate (events/min)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -7252,7 +7875,7 @@ def plot_stable_nearby_spine_properties(
         title="Near vs dist Coactivity Rate \n(w/out shrunken)",
         xtitle=None,
         ytitle="Coactivity rate (events/min)",
-        ylim=(0, None),
+        ylim=None,
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
