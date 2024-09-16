@@ -30,27 +30,27 @@ def spine_activity_analysis(
     save_grouped=False,
 ):
     """Function to handle the analysis of spine and dendrite centric analyses of dual spine
-        imaging datasets across all mice and FOVs. 
-        
-        INPUT PARAMETERS
-            mice_list - list of str specifying all the mice to be analyzed
-            
-            session - str specifying the session to be analyzed
-            
-            fov_type - str specifying whether to analyze apical or basal FOVs
+    imaging datasets across all mice and FOVs.
 
-            activity_window - tuple specifying the window around which activity 
-                             should be analyzed in seconds
-            
-            zscore - boolean of whether or not to zscore the activity for analysis
-            
-            volume_norm - boolean of whetehr or not to normalize activity by spine
-            
-            save_ind - boolean specifying whether to save data for each FOV
-            
-            save_grouped - boolean specifying whether or not to group all FOVs together
-                            and save
-                            
+    INPUT PARAMETERS
+        mice_list - list of str specifying all the mice to be analyzed
+
+        session - str specifying the session to be analyzed
+
+        fov_type - str specifying whether to analyze apical or basal FOVs
+
+        activity_window - tuple specifying the window around which activity
+                         should be analyzed in seconds
+
+        zscore - boolean of whether or not to zscore the activity for analysis
+
+        volume_norm - boolean of whetehr or not to normalize activity by spine
+
+        save_ind - boolean specifying whether to save data for each FOV
+
+        save_grouped - boolean specifying whether or not to group all FOVs together
+                        and save
+
     """
     # Get normalization constants
     if volume_norm:
@@ -106,10 +106,12 @@ def spine_activity_analysis(
                 nonrwd_movement_spines,
             ) = parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines)
             # Dendrite activity
+            if type(spine_groupings[0]) != list:
+                spine_groupings = [spine_groupings]
             dendrite_number = np.zeros(spine_activity.shape[1]) * np.nan
             for grouping in spine_groupings:
                 dendrite_number[grouping] = dendrite_tracker
-            dendrite_tracker = dendrite_tracker + 1
+                dendrite_tracker = dendrite_tracker + 1
             dendrite_activity = data.dendrite_calcium_activity
             dendrite_dFoF = data.dendrite_calcium_processed_dFoF
             # Dendrite MRD information
