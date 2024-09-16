@@ -4,21 +4,14 @@ import numpy as np
 
 from Lab_Analyses.Population_Analysis import population_utilities as p_utils
 from Lab_Analyses.Population_Analysis.assess_MRN_activity import (
-    calculate_movement_encoding,
-    get_fraction_MRNs,
-)
-from Lab_Analyses.Population_Analysis.paAIP2_population_dataclass import (
-    paAIP2_Population_Data,
-)
+    calculate_movement_encoding, get_fraction_MRNs)
+from Lab_Analyses.Population_Analysis.paAIP2_population_dataclass_v2 import \
+    paAIP2_Population_Data
 from Lab_Analyses.Population_Analysis.population_vector_analysis import (
-    pca_population_vector_analysis,
-    simple_population_vector_analysis,
-)
+    pca_population_vector_analysis, simple_population_vector_analysis)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.movement_related_activity_v2 import (
-    get_movement_onsets,
-    movement_related_activity,
-)
+    get_movement_onsets, movement_related_activity)
 
 
 def paAIP2_population_analysis(
