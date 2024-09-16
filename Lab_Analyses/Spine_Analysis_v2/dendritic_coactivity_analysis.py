@@ -207,6 +207,9 @@ def dendritic_coactivity_analysis(
                 all_dendrite_coactive_traces,
                 all_coactive_spines,
                 all_coactive_spines_norm,
+                all_cross_corr_traces,
+                all_cross_corr_lags,
+                all_cross_corr_peaks,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -247,6 +250,9 @@ def dendritic_coactivity_analysis(
                 conj_dendrite_coactive_traces,
                 conj_coactive_spines,
                 conj_coactive_spines_norm,
+                conj_cross_corr_traces,
+                _,
+                conj_cross_corr_peaks,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -287,6 +293,9 @@ def dendritic_coactivity_analysis(
                 nonconj_dendrite_coactive_traces,
                 nonconj_coactive_spines,
                 nonconj_coactive_spines_norm,
+                nonconj_cross_corr_traces,
+                _,
+                nonconj_cross_corr_peaks,
             ) = spine_dendrite_event_analysis(
                 spine_activity,
                 spine_dFoF,
@@ -669,6 +678,7 @@ def dendritic_coactivity_analysis(
                 "movement period": movement_period,
                 "extended": extend,
                 "position bins": position_bins,
+                "cross_corr_lags": all_cross_corr_lags[0],
             }
 
             # Store data in dataclass
@@ -706,6 +716,8 @@ def dendritic_coactivity_analysis(
                 all_dendrite_coactive_traces=all_dendrite_coactive_traces,
                 all_coactive_spines=all_coactive_spines,
                 all_coactive_spines_norm=all_coactive_spines_norm,
+                all_cross_corr_traces=all_cross_corr_traces,
+                all_cross_corr_peaks=all_cross_corr_peaks,
                 conj_dendrite_coactivity_rate=conj_dendrite_coactivity_rate,
                 conj_dendrite_coactivity_rate_norm=conj_dendrite_coactivity_rate_norm,
                 conj_shuff_dendrite_coactivity_rate=conj_shuff_dendrite_coactivity_rate,
@@ -723,6 +735,8 @@ def dendritic_coactivity_analysis(
                 conj_dendrite_coactive_traces=conj_dendrite_coactive_traces,
                 conj_coactive_spines=conj_coactive_spines,
                 conj_coactive_spines_norm=conj_coactive_spines_norm,
+                conj_cross_corr_traces=conj_cross_corr_traces,
+                conj_cross_corr_peaks=conj_cross_corr_peaks,
                 nonconj_dendrite_coactivity_rate=nonconj_dendrite_coactivity_rate,
                 nonconj_dendrite_coactivity_rate_norm=nonconj_dendrite_coactivity_rate_norm,
                 nonconj_shuff_dendrite_coactivity_rate=nonconj_shuff_dendrite_coactivity_rate,
@@ -741,6 +755,8 @@ def dendritic_coactivity_analysis(
                 nonconj_coactive_spines=nonconj_coactive_spines,
                 nonconj_coactive_spines_norm=nonconj_coactive_spines_norm,
                 fraction_conj_events=fraction_conj_events,
+                nonconj_cross_corr_traces=nonconj_cross_corr_traces,
+                nonconj_cross_corr_peaks=nonconj_cross_corr_peaks,
                 conj_coactive_spine_num=conj_coactive_spine_num,
                 conj_nearby_coactive_spine_amplitude=conj_nearby_coactive_spine_amplitude,
                 conj_nearby_coactive_spine_calcium=conj_nearby_coactive_spine_calcium,
