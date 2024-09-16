@@ -30,12 +30,12 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
 
 
     """
-    ALPHA = 0.05
+    ALPHA = 0.01
     DISTANCE = 0.5 * sampling_rate
     CENTER_POINT = int(np.absolute(window[0]) * sampling_rate)
     BEFORE = int(0.5 * sampling_rate)
     AFTER = int(0.5 * sampling_rate)
-    AVG_RANGE = int(0.25 * sampling_rate)
+    AVG_RANGE = int(0.5 * sampling_rate)
 
     # Initialize outputs
     diffs = np.zeros(dFoF.shape[1])
@@ -86,10 +86,11 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
         diff = np.nanmean(np.array(stim_values) - np.array(baseline_values))
         rank, pval = stats.wilcoxon(baseline_values, stim_values)
 
-        consistancy = np.nanmean(trial_diffs >= 0.5)
+        consistancy = np.nanmean(trial_diffs >= 0.75)
 
         # Assess significance
         sig = ((pval < ALPHA) and (consistancy >= 0.5)) * 1
+        # sig = (pval < ALPHA) * 1
         diffs[spine] = diff
         pvalues[spine] = pval
         ranks[spine] = rank
