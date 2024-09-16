@@ -226,7 +226,7 @@ def local_coactivity_analysis(
                 sampling_rate=sampling_rate,
                 norm_method="mean",
                 alpha=0.05,
-                iterations=1000,
+                iterations=10,
             )
 
             # Assess activity and coactivity of nearby spines
@@ -264,12 +264,12 @@ def local_coactivity_analysis(
                 iterations=10000,
             )
             (
-                avg_nearby_coactivity_rate_norm,
-                shuff_nearby_coactivity_rate_norm,
-                local_coactivity_rate_norm_distribution,
-                near_vs_dist_nearby_coactivity_rate_norm,
+                other_spine_relative_coactivity,
+                shuff_other_spine_relative_coactivity,
+                other_spine_relative_coactivity_distribution,
+                near_vs_dist_other_spine_relative_coactivity,
             ) = variable_distance_dependence(
-                avg_local_coactivity_rate_norm,
+                near_vs_dist_coactivity,
                 spine_positions,
                 spine_flags,
                 spine_groupings,
@@ -337,13 +337,14 @@ def local_coactivity_analysis(
                 exclude="Shaft Spine",
             )
             relative_volumes[stable_idxs] = rel_vols[-1]
-            enlarged, shrunken, _ = classify_plasticity(
+            enlarged, shrunken, stable = classify_plasticity(
                 relative_volumes,
                 threshold=(0.25, 0.5),
                 norm=False,
             )
             enlarged = np.array(enlarged)
             shrunken = np.array(shrunken)
+            stable = np.array(stable)
             ## Relative volume
             (
                 local_relative_vol,
@@ -433,16 +434,16 @@ def local_coactivity_analysis(
             # Shrunken Spine partners
             ## Activity
             (
-                avg_nearby_shrunken_spine_rate,
-                shuff_nearby_shrunken_spine_rate,
-                shrunken_spine_activity_rate_distribution,
-                near_vs_dist_shrunken_activity_rate,
+                avg_nearby_stable_spine_rate,
+                shuff_nearby_stable_spine_rate,
+                stable_spine_activity_rate_distribution,
+                near_vs_dist_stable_activity_rate,
             ) = variable_distance_dependence(
                 spine_activity_rate,
                 spine_positions,
                 spine_flags,
                 spine_groupings,
-                partner_list=np.array([not x for x in shrunken]),
+                partner_list=stable,
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
@@ -450,16 +451,16 @@ def local_coactivity_analysis(
             )
             ## All local coactivity
             (
-                avg_nearby_shrunken_coactivity_rate,
-                shuff_nearby_shrunken_coactivity_rate,
-                shrunken_local_coactivity_rate_distribution,
-                near_vs_dist_shrunken_nearby_coactivity_rate,
+                avg_nearby_stable_coactivity_rate,
+                shuff_nearby_stable_coactivity_rate,
+                stable_local_coactivity_rate_distribution,
+                near_vs_dist_stable_nearby_coactivity_rate,
             ) = variable_distance_dependence(
                 avg_local_coactivity_rate,
                 spine_positions,
                 spine_flags,
                 spine_groupings,
-                partner_list=np.array([not x for x in shrunken]),
+                partner_list=stable,
                 bin_size=5,
                 cluster_dist=cluster_dist,
                 method="local",
@@ -730,10 +731,10 @@ def local_coactivity_analysis(
                 shuff_nearby_coactivity_rate=shuff_nearby_coactivity_rate,
                 local_coactivity_rate_distribution=local_coactivity_rate_distribution,
                 near_vs_dist_nearby_coactivity_rate=near_vs_dist_nearby_coactivity_rate,
-                avg_nearby_coactivity_rate_norm=avg_nearby_coactivity_rate_norm,
-                shuff_nearby_coactivity_rate_norm=shuff_nearby_coactivity_rate_norm,
-                local_coactivity_rate_norm_distrubution=local_coactivity_rate_norm_distribution,
-                near_vs_dist_nearby_coactivity_rate_norm=near_vs_dist_nearby_coactivity_rate_norm,
+                other_spine_relative_coactivity=other_spine_relative_coactivity,
+                shuff_other_spine_relative_coactivity=shuff_other_spine_relative_coactivity,
+                other_spine_relative_coactivity_distrubution=other_spine_relative_coactivity_distribution,
+                near_vs_dist_other_spine_relative_coactivity=near_vs_dist_other_spine_relative_coactivity,
                 spine_density_distribution=spine_density_distribution,
                 MRS_density_distribution=MRS_density_distribution,
                 avg_local_MRS_density=avg_local_MRS_density,
@@ -763,14 +764,14 @@ def local_coactivity_analysis(
                 shuff_nearby_enlarged_coactivity_rate=shuff_nearby_enlarged_coactivity_rate,
                 enlarged_local_coactivity_rate_distribution=enlarged_local_coactivity_rate_distribution,
                 near_vs_dist_enlarged_nearby_coactivity_rate=near_vs_dist_enlarged_nearby_coactivity_rate,
-                avg_nearby_shrunken_spine_rate=avg_nearby_shrunken_spine_rate,
-                shuff_nearby_shrunken_spine_rate=shuff_nearby_shrunken_spine_rate,
-                shrunken_spine_activity_rate_distribution=shrunken_spine_activity_rate_distribution,
-                near_vs_dist_shrunken_activity_rate=near_vs_dist_shrunken_activity_rate,
-                avg_nearby_shrunken_coactivity_rate=avg_nearby_shrunken_coactivity_rate,
-                shuff_nearby_shrunken_coactivity_rate=shuff_nearby_shrunken_coactivity_rate,
-                shrunken_local_coactivity_rate_distribution=shrunken_local_coactivity_rate_distribution,
-                near_vs_dist_shrunken_nearby_coactivity_rate=near_vs_dist_shrunken_nearby_coactivity_rate,
+                avg_nearby_stable_spine_rate=avg_nearby_stable_spine_rate,
+                shuff_nearby_stable_spine_rate=shuff_nearby_stable_spine_rate,
+                stable_spine_activity_rate_distribution=stable_spine_activity_rate_distribution,
+                near_vs_dist_stable_activity_rate=near_vs_dist_stable_activity_rate,
+                avg_nearby_stable_coactivity_rate=avg_nearby_stable_coactivity_rate,
+                shuff_nearby_stable_coactivity_rate=shuff_nearby_stable_coactivity_rate,
+                stable_local_coactivity_rate_distribution=stable_local_coactivity_rate_distribution,
+                near_vs_dist_stable_nearby_coactivity_rate=near_vs_dist_stable_nearby_coactivity_rate,
                 spine_coactive_event_num=spine_coactive_event_num,
                 spine_coactive_traces=spine_coactive_traces,
                 spine_noncoactive_traces=spine_noncoactive_traces,
