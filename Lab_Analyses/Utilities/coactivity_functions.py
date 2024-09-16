@@ -1,6 +1,8 @@
 import numpy as np
+import scipy.signal as sysignal
 from scipy import stats
 
+from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities.activity_timestamps import (
     get_activity_timestamps,
     refine_activity_timestamps,
@@ -288,3 +290,140 @@ def find_individual_onsets(
         trace_2_onsets[i] = int(event - offset_2)
 
     return trace_1_onsets.astype(int), trace_2_onsets.astype(int)
+
+
+def coactivity_cross_correlation(
+    activity_1,
+    activity_2,
+    dFoF_1,
+    dFoF_2,
+    activity_window=(-2, 4),
+    smooth=False,
+    sampling_rate=60,
+):
+    """
+    Function to calculate the cross-correlation between traces around coactivity events
+
+    INPUT PARAMETERS
+        activity_1 - 1d np.ndarray of the binarized activity for the first trace
+
+        activity_2 - 1d np.ndarray of the binarized activity for the second trace
+
+        dFoF_1 - 1d np.ndarray of the dFoF for the first trace
+
+        dFoF_2 - 1d np.ndarray of the dFoF for the second trace
+
+        activity_window - tuple specifying the window around coactivity to calculate
+                            the cross correlation
+
+        smooth - boolean specifying whether to smooth the traces
+
+        sampling_rate - int specifying the sampling rate
+
+    OUTPUT PARAMETERS
+        cross_corr_traces - 2d np.array of the cross correlation traces
+                            around each event. Columns = events, rows = time
+
+        cross_corr_lags - 1d np.array of the cross correlation lags converted
+                            to seconds
+
+        avg_cross_corr_peak - float of the average peak of the cross correlation
+                          between the two traces
+
+    """
+    window_size = (activity_window[1] - activity_window[0]) * sampling_rate
+    # Get coactive events for trace 1
+    ## Cross corr will be sentered around trace 2 events
+    coactive_1, _ = get_conservative_coactive_binary(activity_1, activity_2)
+
+    # Get event onsets
+    onsets = get_activity_timestamps(coactive_1)
+    onsets = [x[0] for x in onsets]
+
+    # Make sure there are coactive events
+    if len(onsets) == 0:
+        cross_corr_traces = None
+        cross_corr_peak = np.nan
+        lags = sysignal.correlation_lags(window_size, window_size) / sampling_rate
+        return cross_corr_traces, lags, cross_corr_peak
+    else:
+        # Refine onsets if present
+        onsets = refine_activity_timestamps(
+            onsets,
+            window=activity_window,
+            max_len=(len(dFoF_1)),
+            sampling_rate=sampling_rate,
+        )
+
+    # Get the dFoF traces around each event\
+    traces_1, _ = d_utils.get_trace_mean_sem(
+        dFoF_1.reshape(-1, 1),
+        ["Trace_1"],
+        timestamps=onsets,
+        window=activity_window,
+        sampling_rate=sampling_rate,
+    )
+    traces_1 = traces_1["Trace_1"]
+    traces_2, _ = d_utils.get_trace_mean_sem(
+        dFoF_2.reshape(-1, 1),
+        ["Trace_2"],
+        timestamps=onsets,
+        window=activity_window,
+        sampling_rate=sampling_rate,
+    )
+    traces_2 = traces_2["Trace_2"]
+
+    # Set up outputs
+    cross_corr_traces = []
+    corr_lags = []
+
+    # Analyze each event
+    for event in range(traces_1.shape[1]):
+        t1 = traces_1[:, event]
+        t2 = traces_2[:, event]
+        # smooth if specified
+        if smooth:
+            t1_smooth = sysignal.savgol_filter(t1, 15, 3)
+            t2_smooth = sysignal.savgol_filter(t2, 15, 3)
+            ## Normalize data
+            norm_1 = np.linalg.norm(t1_smooth)
+            norm_2 = np.linalg.norm(t2_smooth)
+            t1_smooth = t1_smooth / norm_1
+            t2_smooth = t2_smooth / norm_2
+        else:
+            norm_1 = np.linalg.norm(t1)
+            norm_2 = np.linalg.norm(t2)
+            t1_smooth = t1 / norm_1
+            t2_smooth = t2 / norm_2
+
+        # Perform cross correlation
+        corr = sysignal.correlate(t1_smooth, t2_smooth)
+        # Get the lags
+        ## Should be all the same
+        lags = sysignal.correlation_lags(len(t1_smooth), len(t2_smooth))
+        ## Find index of peak cross correlation
+        # peak = np.argmax(corr)
+        # peak_lag = lags[peak]
+
+        cross_corr_traces.append(corr)
+        corr_lags.append(lags)
+
+    # Organize outputs
+    ## Put correlation traces into array
+    cross_corr_traces = np.vstack(cross_corr_traces).T
+
+    ## Average peaks and convert to seconds
+    # avg_cross_corr_peaks = np.nanmean(cross_corr_peaks) / sampling_rate
+    ## Check lags are all the same
+    corr_lags = np.vstack(corr_lags)
+    if (corr_lags == corr_lags[0]).all():
+        cross_corr_lags = corr_lags[0] / sampling_rate
+    else:
+        print(corr_lags)
+        raise Exception("Corr lags are not the same for each event")
+    avg_cross_corr_trace = np.nanmean(cross_corr_traces, axis=1)
+    avg_cross_corr_peaks = (
+        cross_corr_lags[np.argmax(avg_cross_corr_trace)] / sampling_rate
+    )
+
+    return cross_corr_traces, cross_corr_lags, avg_cross_corr_peaks
