@@ -141,6 +141,7 @@ def calculate_spine_dynamics(
 
     base_flags = spine_flag_list[0]
     base_present = find_present_spines(base_flags)
+    base_num = int(np.sum(base_present))
 
     # Iterate through each session
     for i, (flags, positions, groupings) in enumerate(
@@ -173,7 +174,7 @@ def calculate_spine_dynamics(
         # Iterate through each dendrite grouping
         for j, spines in enumerate(groupings):
             # Get the current flags
-            base_num = np.sum(base_present[spines])
+            # base_num = np.sum(base_present[spines])
             curr_flags = [x for i, x in enumerate(temp_flags) if i in spines]
             # Calculate the spine density
             present_spines = find_present_spines(curr_flags)
