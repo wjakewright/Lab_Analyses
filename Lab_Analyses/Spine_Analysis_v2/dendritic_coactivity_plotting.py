@@ -9,18 +9,19 @@ from scipy import stats
 
 from Lab_Analyses.Plotting.plot_activity_heatmap import plot_activity_heatmap
 from Lab_Analyses.Plotting.plot_box_plot import plot_box_plot
-from Lab_Analyses.Plotting.plot_cummulative_distribution import \
-    plot_cummulative_distribution
+from Lab_Analyses.Plotting.plot_cummulative_distribution import (
+    plot_cummulative_distribution,
+)
 from Lab_Analyses.Plotting.plot_histogram import plot_histogram
-from Lab_Analyses.Plotting.plot_mean_activity_traces import \
-    plot_mean_activity_traces
+from Lab_Analyses.Plotting.plot_mean_activity_traces import plot_mean_activity_traces
 from Lab_Analyses.Plotting.plot_multi_line_plot import plot_multi_line_plot
-from Lab_Analyses.Plotting.plot_scatter_correlation import \
-    plot_scatter_correlation
+from Lab_Analyses.Plotting.plot_scatter_correlation import plot_scatter_correlation
 from Lab_Analyses.Plotting.plot_swarm_bar_plot import plot_swarm_bar_plot
 from Lab_Analyses.Spine_Analysis_v2 import spine_utilities as s_utils
 from Lab_Analyses.Spine_Analysis_v2.structural_plasticity import (
-    calculate_volume_change, classify_plasticity)
+    calculate_volume_change,
+    classify_plasticity,
+)
 from Lab_Analyses.Utilities import data_utilities as d_utils
 from Lab_Analyses.Utilities import test_utilities as t_utils
 
@@ -1575,9 +1576,9 @@ def plot_plasticity_coactivity_rates(
     mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
     fovs = d_utils.subselect_data_by_idxs(fovs, spine_idxs)
 
-    #for m, f, e, v, coa in zip(
+    # for m, f, e, v, coa in zip(
     #    mouse_ids, fovs, enlarged_spines, delta_volume, all_dendrite_coactivity_rate
-    #):
+    # ):
     #    print(f"{m}:{f} - {e} - {v}: {coa}")
 
     ## Seperate into groups
@@ -1619,6 +1620,21 @@ def plot_plasticity_coactivity_rates(
         frac_conj_events[key] = fraction_conj_events[spines]
         plastic_ids[key] = mouse_ids[spines]
 
+    if MRSs == "MRS":
+        corr_dendrite_coactivity_rate = all_dendrite_coactivity_rate[mvmt_spines]
+        corr_volume = delta_volume[mvmt_spines]
+    elif MRSs == "nMRS":
+        corr_dendrite_coactivity_rate = all_dendrite_coactivity_rate[nonmvmt_spines]
+        corr_volume = delta_volume[nonmvmt_spines]
+    else:
+        corr_dendrite_coactivity_rate = all_dendrite_coactivity_rate
+        corr_volume = delta_volume
+
+    print(f"Corr n = {len(corr_dendrite_coactivity_rate)}")
+    print(f"sLTP: {all_coactivity_rate['sLTP'].shape}")
+    print(f"sLTD: {all_coactivity_rate['sLTD'].shape}")
+    print(f"Stable: {all_coactivity_rate['Stable'].shape}")
+
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
@@ -1638,15 +1654,15 @@ def plot_plasticity_coactivity_rates(
     ###################### Plot data onto axes #############################
     # All coactivity scatter
     plot_scatter_correlation(
-        x_var=all_dendrite_coactivity_rate,
-        y_var=delta_volume,
+        x_var=corr_dendrite_coactivity_rate,
+        y_var=corr_volume,
         CI=95,
         title="All events",
         xtitle=f"{coactivity_title}",
         ytitle="\u0394 volume",
         figsize=(5, 5),
-        xlim=(0, 6),
-        ylim=(0, None),
+        xlim=(0, 4),
+        ylim=(0, 4),
         marker_size=25,
         face_color="cmap",
         edge_color="white",
@@ -2719,6 +2735,60 @@ def plot_plasticity_coactivity_rates(
             slopes_intercept=False,
         )
         test_title = f"Mixed-effects {test_method}"
+    elif test_type == "ART":
+        all_coactivity_f, all_coactivity_p, all_coactivity_df = t_utils.one_way_ART(
+            data_dict=all_coactivity_rate,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        all_s_frac_f, all_s_frac_p, all_s_frac_df = t_utils.one_way_ART(
+            data_dict=all_spine_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        all_d_frac_f, all_d_frac_p, all_d_frac_df = t_utils.one_way_ART(
+            data_dict=all_dend_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        nonconj_coactivity_f, nonconj_coactivity_p, nonconj_coactivity_df = (
+            t_utils.one_way_ART(
+                data_dict=nonconj_coactivity_rate,
+                random_dict=plastic_ids,
+                post_method=test_method,
+            )
+        )
+        nonconj_s_frac_f, nonconj_s_frac_p, nonconj_s_frac_df = t_utils.one_way_ART(
+            data_dict=nonconj_spine_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        nonconj_d_frac_f, nonconj_d_frac_p, nonconj_d_frac_df = t_utils.one_way_ART(
+            data_dict=nonconj_dend_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        conj_coactivity_f, conj_coactivity_p, conj_coactivity_df = t_utils.one_way_ART(
+            data_dict=conj_coactivity_rate,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        conj_s_frac_f, conj_s_frac_p, conj_s_frac_df = t_utils.one_way_ART(
+            data_dict=conj_spine_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        conj_d_frac_f, conj_d_frac_p, conj_d_frac_df = t_utils.one_way_ART(
+            data_dict=conj_dend_fraction,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        frac_conj_f, frac_conj_p, frac_conj_df = t_utils.one_way_ART(
+            data_dict=frac_conj_events,
+            random_dict=plastic_ids,
+            post_method=test_method,
+        )
+        test_title = f"Aligned Rank Transform {test_method}"
 
     # Comparisions to chance
     ## All events
@@ -3067,8 +3137,10 @@ def plot_coactive_event_properties(
         period_title = "Nonmovement periods"
 
     # Pull relevant data
+    mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
     sampling_rate = dataset.parameters["Sampling Rate"]
     activity_window = dataset.parameters["Activity Window"]
+    corr_lags = dataset.parameters["cross_corr_lags"]
     if dataset.parameters["zscore"]:
         activity_type = "zscore"
     else:
@@ -3092,6 +3164,8 @@ def plot_coactive_event_properties(
         spine_coactive_calcium_amplitude = dataset.all_spine_coactive_calcium_amplitude
         dendrite_coactive_amplitude = dataset.all_dendrite_coactive_amplitude
         relative_onsets = dataset.all_relative_onsets
+        cross_corr_traces = dataset.all_cross_corr_traces
+        cross_corr_peaks = dataset.all_cross_corr_peaks
     elif event_type == "nonconj":
         spine_coactive_traces = dataset.nonconj_spine_coactive_traces
         spine_coactive_calcium_traces = dataset.nonconj_spine_coactive_calcium_traces
@@ -3102,6 +3176,8 @@ def plot_coactive_event_properties(
         )
         dendrite_coactive_amplitude = dataset.nonconj_dendrite_coactive_amplitude
         relative_onsets = dataset.nonconj_relative_onsets
+        cross_corr_traces = dataset.nonconj_cross_corr_traces
+        cross_corr_peaks = dataset.nonconj_cross_corr_peaks
     elif event_type == "conj":
         spine_coactive_traces = dataset.conj_spine_coactive_traces
         spine_coactive_calcium_traces = dataset.conj_spine_coactive_calcium_traces
@@ -3110,6 +3186,8 @@ def plot_coactive_event_properties(
         spine_coactive_calcium_amplitude = dataset.conj_spine_coactive_calcium_amplitude
         dendrite_coactive_amplitude = dataset.conj_dendrite_coactive_amplitude
         relative_onsets = dataset.conj_relative_onsets
+        cross_corr_traces = dataset.conj_cross_corr_traces
+        cross_corr_peaks = dataset.conj_cross_corr_peaks
 
     # Calculate relative volumes
     volumes = [spine_volumes, followup_volumes]
@@ -3158,6 +3236,9 @@ def plot_coactive_event_properties(
     nonmvmt_spines = d_utils.subselect_data_by_idxs(
         dataset.nonmovement_spines, spine_idxs
     )
+    cross_corr_traces = d_utils.subselect_data_by_idxs(cross_corr_traces, spine_idxs)
+    cross_corr_peaks = d_utils.subselect_data_by_idxs(cross_corr_peaks, spine_idxs)
+    mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
 
     # Seperate into dicts for plotting
     hmap_traces = {}
@@ -3171,6 +3252,10 @@ def plot_coactive_event_properties(
     plastic_ca_amps = {}
     plastic_dend_amps = {}
     plastic_onsets = {}
+    plastic_ids = {}
+    plastic_corr_traces = {}
+    plastic_corr_sems = {}
+    plastic_corr_peaks = {}
 
     for key, value in plastic_groups.items():
         spines = eval(value)
@@ -3202,13 +3287,25 @@ def plot_coactive_event_properties(
         plastic_ca_amps[key] = spine_coactive_calcium_amplitude[spines]
         plastic_dend_amps[key] = dendrite_coactive_amplitude[spines]
         plastic_onsets[key] = relative_onsets[spines]
+        plastic_ids[key] = mouse_ids[spines]
+        plastic_corr_peaks[key] = cross_corr_peaks[spines]
+        corr_traces = compress(cross_corr_traces, spines)
+        corr_means = [
+            np.nanmean(x, axis=1) for x in corr_traces if type(x) == np.ndarray
+        ]
+        plastic_corr_traces[key] = np.nanmean(corr_means, axis=0)
+        plastic_corr_sems[key] = stats.sem(corr_means, axis=0, nan_policy="omit")
+
+    print(f"sLTP: {len(~np.isnan(plastic_onsets['sLTP']))}")
+    print(f"sLTD: {len(~np.isnan(plastic_onsets['sLTD']))}")
+    print(f"Stable: {len(~np.isnan(plastic_onsets['Stable']))}")
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
         ABCDE
         FGHI.
-        JK...
+        JKLMN
         """,
         figsize=figsize,
     )
@@ -3226,9 +3323,10 @@ def plot_coactive_event_properties(
         cbar_label=activity_type,
         hmap_range=(0, 1),
         center=None,
-        sorted="peak",
+        sorted="onset",
+        onset_color="white",
         normalize=True,
-        cmap="Blues",
+        cmap="plasma",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -3246,9 +3344,10 @@ def plot_coactive_event_properties(
         cbar_label=activity_type,
         hmap_range=(0, 1),
         center=None,
-        sorted="peak",
+        sorted="onset",
+        onset_color="white",
         normalize=True,
-        cmap="Reds",
+        cmap="plasma",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -3266,9 +3365,10 @@ def plot_coactive_event_properties(
         cbar_label=activity_type,
         hmap_range=(0, 1),
         center=None,
-        sorted="peak",
+        sorted="onset",
+        onset_color="white",
         normalize=True,
-        cmap="Greys",
+        cmap="plasma",
         axis_width=2,
         minor_ticks="x",
         tick_len=3,
@@ -3430,7 +3530,7 @@ def plot_coactive_event_properties(
         title=None,
         xtitle=None,
         ytitle=f"Relative onset (s)",
-        ylim=None,
+        ylim=(-2, 4),
         b_colors=COLORS,
         b_edgecolors="black",
         b_err_colors="black",
@@ -3458,7 +3558,7 @@ def plot_coactive_event_properties(
         plot_ind=False,
         title="Relative onset",
         xtitle="Relative onset (s)",
-        xlim=None,
+        xlim=(-2, 4),
         figsize=(5, 5),
         color=COLORS,
         ind_color=COLORS,
@@ -3469,6 +3569,75 @@ def plot_coactive_event_properties(
         minor_ticks="both",
         tick_len=3,
         ax=axes["J"],
+        save=False,
+        save_path=None,
+    )
+    # Cross correlation traces
+    plot_mean_activity_traces(
+        means=list(plastic_corr_traces.values()),
+        sems=list(plastic_corr_sems.values()),
+        group_names=list(plastic_corr_traces.keys()),
+        sampling_rate=sampling_rate,
+        activity_window=(int(corr_lags[0]), int(corr_lags[-1])),
+        avlines=[0],
+        ahlines=None,
+        figsize=(5, 5),
+        colors=COLORS,
+        title="Cross-Correlation",
+        ytitle=activity_type,
+        ylim=None,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["L"],
+        save=False,
+        save_path=None,
+    )
+    # Cross correlation peaks
+    plot_box_plot(
+        plastic_corr_peaks,
+        figsize=(5, 5),
+        title=None,
+        xtitle=None,
+        ytitle=f"Relative lag (s)",
+        ylim=None,
+        b_colors=COLORS,
+        b_edgecolors="black",
+        b_err_colors="black",
+        m_color="black",
+        m_width=1.5,
+        b_width=0.5,
+        b_linewidth=1.5,
+        b_alpha=0.9,
+        b_err_alpha=1,
+        whisker_lim=None,
+        whisk_width=1.5,
+        outliers=False,
+        showmeans=showmeans,
+        axis_width=1.5,
+        minor_ticks="y",
+        tick_len=3,
+        ax=axes["M"],
+        save=False,
+        save_path=None,
+    )
+    # Corr peak cummulative distribution
+    plot_cummulative_distribution(
+        data=list(plastic_corr_peaks.values()),
+        plot_ind=False,
+        title="Corr peaks",
+        xtitle="Relative lag (s)",
+        xlim=None,
+        figsize=(5, 5),
+        color=COLORS,
+        ind_color=COLORS,
+        line_width=1.5,
+        ind_line_width=0.5,
+        alpha=0.03,
+        axis_width=1.5,
+        minor_ticks="both",
+        tick_len=3,
+        ax=axes["N"],
         save=False,
         save_path=None,
     )
@@ -3552,6 +3721,10 @@ def plot_coactive_event_properties(
             plastic_onsets,
             test_method,
         )
+        cross_f, cross_p, _, cross_df = t_utils.ANOVA_1way_posthoc(
+            plastic_corr_peaks,
+            test_method,
+        )
         test_title = f"One-way ANOVA {test_method}"
     elif test_type == "nonparametric":
         amp_f, amp_p, amp_df = t_utils.kruskal_wallis_test(
@@ -3574,15 +3747,81 @@ def plot_coactive_event_properties(
             "Conover",
             test_method,
         )
+        cross_f, cross_p, cross_df = t_utils.kruskal_wallis_test(
+            plastic_corr_peaks,
+            "Conover",
+            test_method,
+        )
         test_title = f"Kruskal-Wallis {test_method}"
+
+    elif test_type == "mixed-effect":
+        amp_f, amp_p, amp_df = t_utils.one_way_mixed_effects_model(
+            plastic_amps,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        ca_amp_f, ca_amp_p, ca_amp_df = t_utils.one_way_mixed_effects_model(
+            plastic_ca_amps,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        dend_amp_f, dend_amp_p, dend_amp_df = t_utils.one_way_mixed_effects_model(
+            plastic_dend_amps,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        onset_f, onset_p, onset_df = t_utils.one_way_mixed_effects_model(
+            plastic_onsets,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        cross_f, cross_p, cross_df = t_utils.one_way_mixed_effects_model(
+            plastic_corr_peaks,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        test_title = f"Mixed-Effects {test_method}"
+    elif test_type == "ART":
+        amp_f, amp_p, amp_df = t_utils.one_way_ART(
+            plastic_amps,
+            plastic_ids,
+            test_method,
+        )
+        ca_amp_f, ca_amp_p, ca_amp_df = t_utils.one_way_ART(
+            plastic_ca_amps,
+            plastic_ids,
+            test_method,
+        )
+        dend_amp_f, dend_amp_p, dend_amp_df = t_utils.one_way_ART(
+            plastic_dend_amps,
+            plastic_ids,
+            test_method,
+        )
+        onset_f, onset_p, onset_df = t_utils.one_way_ART(
+            plastic_onsets,
+            plastic_ids,
+            test_method,
+        )
+        cross_f, cross_p, cross_df = t_utils.one_way_ART(
+            plastic_corr_peaks,
+            plastic_ids,
+            test_method,
+        )
+        test_title = f"Aligned Rank Transform {test_method}"
 
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
         """
         AB
         CD
+        E.
         """,
-        figsize=(8, 8),
+        figsize=(8, 10),
     )
     # Format the tables
     axes2["A"].axis("off")
@@ -3635,6 +3874,19 @@ def plot_coactive_event_properties(
     )
     D_table.auto_set_font_size(False)
     D_table.set_fontsize(8)
+    axes2["E"].axis("off")
+    axes2["E"].axis("tight")
+    axes2["E"].set_title(
+        f"Cross correlation\n{test_title}\nF = {cross_f:.4} p = {cross_p:.3E}"
+    )
+    E_table = axes2["E"].table(
+        cellText=cross_df.values,
+        colLabels=cross_df.columns,
+        loc="center",
+        bbox=[0, 0.2, 0.9, 0.5],
+    )
+    E_table.auto_set_font_size(False)
+    E_table.set_fontsize(8)
 
     fig2.tight_layout()
 
