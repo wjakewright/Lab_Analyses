@@ -1,7 +1,10 @@
+import os
+
 import numpy as np
 from sklearn import preprocessing
 
 from Lab_Analyses.Utilities.event_detection import event_detection
+from Lab_Analyses.Utilities.save_load_pickle import save_pickle
 
 
 def preprocess_dual_plane_data(data):
@@ -92,5 +95,16 @@ def preprocess_dual_plane_data(data):
         "b_somatic_activity": b_somatic_activity,
         "sampling_rate": sampling_rate,
     }
+
+    mouse = data.mouse_id
+    FOV = data.FOV
+    fname = f"{mouse}_{FOV}_processed_dual_plane_data"
+
+    initial_path = r"G:\Repository_data\individual"
+    save_path = os.path.join(initial_path, mouse, "dual_plane", FOV)
+    if not os.path.isdir(save_path):
+        os.makedirs(save_path)
+
+    save_pickle(fname, output_dict, save_path)
 
     return output_dict
