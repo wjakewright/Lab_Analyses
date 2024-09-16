@@ -187,13 +187,9 @@ def plot_kir_vs_ctl_basic_props(
             ctl_elim_spines.append(temp_elim[-1])
 
     # Organize plasticity per dendrite
-    kir_dendrites = d_utils.subselect_data_by_idxs(
-        kir_activity_dataset.dendrite_number, kir_idxs
-    )
+    kir_dendrites = kir_activity_dataset.dendrite_number
     kir_dendrites_u = np.unique(kir_dendrites)
-    ctl_dendrites = d_utils.subselect_data_by_idxs(
-        ctl_activity_dataset.dendrite_number, ctl_idxs
-    )
+    ctl_dendrites = ctl_activity_dataset.dendrite_number
     ctl_dendrites_u = np.unique(ctl_dendrites)
 
     kir_ltp = []
@@ -358,7 +354,9 @@ def plot_kir_vs_ctl_basic_props(
 
     # Initial spine volume
     ctl_volume = d_utils.subselect_data_by_idxs(ctl_volume, ctl_present)
+    print(f"ctl spines: {len(ctl_volume)}")
     kir_volume = d_utils.subselect_data_by_idxs(kir_volume, kir_present)
+    print(f"kir spines: {len(kir_volume)}")
     plot_histogram(
         data=[ctl_volume, kir_volume],
         bins=hist_bins,
@@ -422,7 +420,7 @@ def plot_kir_vs_ctl_basic_props(
         avlines=None,
         title="Volume Change",
         xtitle="Volume Change",
-        xlim=(0, None),
+        xlim=(0, 4),
         figsize=(5, 5),
         color=COLORS,
         alpha=0.4,
@@ -556,7 +554,7 @@ def plot_kir_vs_ctl_basic_props(
         title="Raw Coactivity",
         ytitle="Coactivity rate (events/min)",
         xtitle="Distance (\u03BCm)",
-        mean_type="median",
+        mean_type="mean",
         ylim=None,
         line_color=COLORS,
         face_color="white",
@@ -663,6 +661,9 @@ def plot_kir_vs_ctl_basic_props(
     ctl_ltd = np.array(ctl_ltd)
     kir_ltp = np.array(kir_ltp)
     kir_ltd = np.array(kir_ltd)
+
+    print(f"ctl dend: {len(ctl_ltp)}")
+    print(f"kir dend: {len(kir_ltp)}")
 
     # Save section
     if save:
@@ -1179,7 +1180,7 @@ def plot_kir_coactivity_plasticity(
         title="All periods",
         ytitle=coactivity_title,
         xtitle="Distance (\u03BCm)",
-        mean_type="mean",
+        mean_type="median",
         ylim=None,
         line_color=COLORS,
         face_color="white",
