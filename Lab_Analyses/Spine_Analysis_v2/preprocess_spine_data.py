@@ -269,6 +269,9 @@ def organize_dual_spine_data(
                 )
                 followup_positions = np.array(followup_data.ROI_positions["Spine"])
                 followup_groupings = followup_data.parameters["Spine Groupings"]
+                if len(followup_groupings) == 0:
+                    followup_groupings = list(range(len(followup_flags)))
+
             else:
                 followup_flags = [None for x in spine_flags]
                 followup_volume = np.zeros(spine_volume.shape) * np.nan
@@ -353,7 +356,7 @@ def organize_dual_spine_data(
                 if redetection is True:
                     da, df, _ = event_detection(
                         calcium_processed_dFoF["Dendrite"][:, d].reshape(-1, 1),
-                        threshold=3,
+                        threshold=2,
                         lower_threshold=0,
                         lower_limit=None,
                         sampling_rate=imaging_parameters["Sampling Rate"],
