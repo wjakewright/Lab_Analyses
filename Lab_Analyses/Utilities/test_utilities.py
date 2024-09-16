@@ -3,6 +3,7 @@
 import itertools
 import os
 import random
+import subprocess
 
 os.environ["R_HOME"] = r"C:\Users\Jake\Documents\Anaconda3\envs\analysis_env\Lib\R"
 
@@ -143,6 +144,12 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
     model = ols(formula=formula, data=test_df).fit()
     two_way_anova = sm.stats.anova_lm(model, typ=2)
 
+    two_way_anova = two_way_anova.rename_axis("Comp").reset_index()
+    two_way_anova.update(two_way_anova[["sum_sq"]].applymap("{:.3}".format))
+    two_way_anova.update(two_way_anova[["df"]].applymap("{:.3}".format))
+    two_way_anova.update(two_way_anova[["F"]].applymap("{:.3}".format))
+    two_way_anova.update(two_way_anova[["PR(>F)"]].applymap("{:.3E}".format))
+
     # Get all the combos
     all_keys = [g1_keys, g2_keys]
     groups = [c for c in itertools.product(*all_keys)]
@@ -158,7 +165,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             group_names = []
             for c in combo:
                 names = [x.split("_")[0] for x in c]
-                names.append("spines")
+                # names.append("spines")
                 group_names.append(" ".join(names))
             test_performed.append(f"{group_names[0]} vs {group_names[1]}")
             # Get the data for each group
@@ -491,7 +498,7 @@ def correlate_grouped_data(data_dict, x_vals):
         binned_non_nan = np.nonzero(~np.isnan(binned_values))[0]
         binned_values = binned_values[binned_non_nan]
         binned_pos = binned_pos[binned_non_nan]
-        r, p = stats.pearsonr(binned_pos, binned_values)
+        r, p = stats.spearmanr(binned_pos, binned_values)
         corr_dict["Group"].append(key)
         corr_dict["r"].append(r)
         corr_dict["p val"].append(p)
@@ -709,15 +716,34 @@ def one_way_mixed_effects_model(
     p_val = anova["P-val"]["Group"]
 
     # Perform the posthocs
-    posthoc = model.post_hoc(marginal_vars=["Group"], p_adjust="fdr")
-    results_df = posthoc[1]
-    results_df.update(results_df[["Estimate"]].applymap("{:.3}".format))
-    results_df.update(results_df[["2.5_ci"]].applymap("{:.3}".format))
-    results_df.update(results_df[["97.5_ci"]].applymap("{:.3}".format))
-    results_df.update(results_df[["SE"]].applymap("{:.3}".format))
-    results_df.update(results_df[["DF"]].applymap("{:.3}".format))
-    results_df.update(results_df[["T-stat"]].applymap("{:.3}".format))
-    results_df.update(results_df[["P-val"]].applymap("{:.3E}".format))
+    combos = list(itertools.combinations(data_dict.keys(), 2))
+    test_performed = []
+    t_vals = []
+    raw_pvals = []
+    for combo in combos:
+        test_performed.append(combo[0] + " vs. " + combo[1])
+        t, p = stats.ttest_ind(
+            data_dict[combo[0]], data_dict[combo[1]], nan_policy="omit"
+        )
+        t_vals.append(t)
+        raw_pvals.append(p)
+    # Perform corrections
+    _, adj_pvals, _, alpha_corrected = multipletests(
+        raw_pvals,
+        alpha=0.05,
+        method=post_method,
+        is_sorted=False,
+        returnsorted=False,
+    )
+    results_dict = {
+        "comparison": test_performed,
+        "t stat": t_vals,
+        "raw p-vals": raw_pvals,
+        "adjusted p-vals": adj_pvals,
+    }
+    results_df = pd.DataFrame.from_dict(results_dict)
+    results_df.update(results_df[["raw p-vals"]].applymap("{:.4E}".format))
+    results_df.update(results_df[["adjusted p-vals"]].applymap("{:.4E}".format))
 
     return t_stat, p_val, results_df
 
@@ -729,7 +755,6 @@ def two_way_RM_mixed_effects_model(
     rm_vals=None,
     compare_type="between",
     slopes_intercept=False,
-    test_type="parametric",
 ):
     """Function to perform a linear mixed effects model test between groups across
     different time points (e.g., 2-way RM ANOVA like)
@@ -766,6 +791,7 @@ def two_way_RM_mixed_effects_model(
         print("Inputed RM Values do not match data!!")
         rm_vals = list(range(data_len))
     rm_vals = np.array(rm_vals).astype(int)
+    rm_vals_groups = list(rm_vals.astype(str))
 
     # Organize the data in the appropriate format
     dfs = []
@@ -791,7 +817,8 @@ def two_way_RM_mixed_effects_model(
     for i, key in enumerate(data_dict.keys()):
         map_dict[key] = codes[i]
     test_df = test_df.assign(Group_Coded=test_df["Group"].map(map_dict))
-    test_df = test_df.dropna(axis=0, how="any")
+    # test_df = test_df.dropna(axis=0, how="any")
+    test_df = test_df.fillna(0)
 
     test_df.reset_index(inplace=True, drop=True)
 
@@ -806,9 +833,11 @@ def two_way_RM_mixed_effects_model(
     model = Lmer(formula, data=test_df)
     model.fit(
         summarize=False,
-        factors={"Group": list(data_dict.keys())},
+        factors={"Group": list(data_dict.keys()), "RM_Vals": rm_vals_groups},
         ordered=True,
     )
+    fitted_data = model.fits
+    test_df["Fitted Data"] = fitted_data
     # model_df = model.coefs
     model_df = model.anova(force_orthogonal=True)
 
@@ -816,19 +845,6 @@ def two_way_RM_mixed_effects_model(
     model_df.update(model_df[["MS"]].applymap("{:.3}".format))
     model_df.update(model_df[["F-stat"]].applymap("{:.3}".format))
     model_df.update(model_df[["P-val"]].applymap("{:.3E}".format))
-
-    # # Perform the posthocs
-    # posthoc = model.post_hoc(
-    #     marginal_vars=["Group"], grouping_vars=["RM_Vals"], p_adjust="fdr"
-    # )
-    # results_df = posthoc[1]
-    # results_df.update(results_df[["Estimate"]].applymap("{:.3}".format))
-    # results_df.update(results_df[["2.5_ci"]].applymap("{:.3}".format))
-    # results_df.update(results_df[["97.5_ci"]].applymap("{:.3}".format))
-    # results_df.update(results_df[["SE"]].applymap("{:.3}".format))
-    # results_df.update(results_df[["DF"]].applymap("{:.3}".format))
-    # results_df.update(results_df[["T-stat"]].applymap("{:.3}".format))
-    # results_df.update(results_df[["P-val"]].applymap("{:.3E}".format))
 
     # Perform the posthoc tests
     # Between group comparisions
@@ -854,10 +870,7 @@ def two_way_RM_mixed_effects_model(
                 data1 = np.array(data1["Data"])
                 data2 = np.array(data2["Data"])
                 ## Perform the t-tests
-                if test_type == "parametric":
-                    t, p = stats.ttest_ind(data1, data2)
-                elif test_type == "nonparametric":
-                    t, p = stats.mannwhitneyu(data1, data2)
+                t, p = stats.ttest_ind(data1, data2)
                 t_vals.append(t)
                 raw_pvals.append(p)
         ## Correct for multiple comparisons
@@ -888,3 +901,352 @@ def two_way_RM_mixed_effects_model(
     posthoc_df.update(posthoc_df[["adjusted p-vals"]].applymap("{:.3E}".format))
 
     return model_df, posthoc_df
+
+
+def one_way_ART(data_dict, random_dict, post_method="fdr_bh"):
+    """Fuction to perform one-way aligned rank transform statistics
+    for comparison across groups (e.g., t-test or one-way ANOVA like).
+    Takes additional random effect parameter to control for (e.g., animal id).
+    Equivalent to a non-parametric mixed effects model
+
+    INPUT PARAMETERS
+        data_dict - dict of data to be analyzed. Each item is a different group
+                    Keys are group names, and values represent data points
+
+        random_dict - dict containing the random variable corresponding to each
+                        data sample. Keys are the same group names
+
+    OUTPUT PARAMETERS
+        t_stat - float of the t-stat from the mixed effects model test
+
+        p_val - float of the p-val from the mixed effects model test
+
+        results_df - pd.Dataframe of the posthoc test results
+
+    """
+    # Organize the data into a DataFrame
+    ## Convert from dictionaries
+    data_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in data_dict.items()]))
+    rand_df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in random_dict.items()]))
+    ## Linearize the data into columnes
+    data_df = pd.melt(
+        data_df, value_vars=data_dict.keys(), var_name="Group", value_name="Data"
+    )
+    rand_df = pd.melt(
+        rand_df, value_vars=random_dict.keys(), var_name="Group", value_name="Rand_Var"
+    )
+    ## Merge the random variable into the data dict
+    data_df["Rand_Var"] = rand_df["Rand_Var"]
+    ## Hot code the group values
+    map_dict = {}
+    codes = list(range(len(data_dict.keys())))
+    for i, key in enumerate(data_dict.keys()):
+        map_dict[key] = codes[i]
+    data_df = data_df.assign(Group_Coded=data_df["Group"].map(map_dict))
+    data_df = data_df.dropna(axis=0, how="any")
+
+    # Store the dataframe to be read by R
+    data_df.to_csv(
+        "C:\\Users\\Jake\\Desktop\\python_code\\Lab_Analyses\\Lab_Analyses\\Utilities\\one_way_ART_input.csv"
+    )
+    # Run ART through R
+    subprocess.run(
+        [
+            "Rscript",
+            r"C:\Users\Jake\Desktop\python_code\Lab_Analyses\Lab_Analyses\Utilities\one_way_ART.r",
+        ],
+        capture_output=False,
+    )
+
+    # Read back in the result
+    anova_df = pd.read_csv(
+        "C:\\Users\\Jake\\Desktop\\python_code\\Lab_Analyses\\Lab_Analyses\\Utilities\\one_way_ART_anova.csv"
+    )
+
+    # Grab relevant values
+    t_stat = anova_df.iloc[0]["F"]
+    p_val = anova_df.iloc[0]["Pr(>F)"]
+
+    # Perform the posthocs
+    combos = list(itertools.combinations(data_dict.keys(), 2))
+    test_performed = []
+    t_vals = []
+    raw_pvals = []
+    for combo in combos:
+        test_performed.append(combo[0] + " vs. " + combo[1])
+        combo_1_data = data_dict[combo[0]]
+        combo_2_data = data_dict[combo[1]]
+        t, p = stats.mannwhitneyu(
+            combo_1_data[~np.isnan(combo_1_data)], combo_2_data[~np.isnan(combo_2_data)]
+        )
+        t_vals.append(t)
+        raw_pvals.append(p)
+    # Perform corrections
+    _, adj_pvals, _, alpha_corrected = multipletests(
+        raw_pvals,
+        alpha=0.05,
+        method=post_method,
+        is_sorted=False,
+        returnsorted=False,
+    )
+    results_dict = {
+        "comparison": test_performed,
+        "t stat": t_vals,
+        "raw p-vals": raw_pvals,
+        "adjusted p-vals": adj_pvals,
+    }
+    results_df = pd.DataFrame.from_dict(results_dict)
+    results_df.update(results_df[["raw p-vals"]].applymap("{:.4E}".format))
+    results_df.update(results_df[["adjusted p-vals"]].applymap("{:.4E}".format))
+
+    return t_stat, p_val, results_df
+
+
+def two_way_RM_ART(data_dict, random_dict, rm_vals=None, post_method="fdr_bh"):
+    """Function to perform a aligned rank transform corrected linear mixed-effect model
+    test between groups across different time points (e.g., 2-way RM ANOVA like)
+
+    INPUT PARAMETERS
+        data_dict - dictionary with each key representing a group that contains
+                    a 2d array with the data. Each column represents each sample,
+                    while rows represent the repeated measures
+
+        random_dict - dictionary with a list or 1d array of the random variable values
+                    for each sample in each group
+
+        rm_vals - list or array containing the values of the repeated measures
+                (e.g., 5, 10, 15um). If none, index will be used as labels
+
+    OUTPUT PARAMETERS
+        anova_df - DataFrame witht the anova results of the model
+
+        posthoc_df - DataFrame with the results of the posthoc tests
+
+    """
+    groups = list(data_dict.keys())
+    # Set up the RM_Vals
+    data_len = list(data_dict.values())[0].shape[0]
+    if rm_vals is None:
+        rm_vals = list(range(data_len))
+    elif len(rm_vals) != data_len:
+        print("Inputed RM Values do not match data!!")
+        rm_vals = list(range(data_len))
+    rm_vals = np.array(rm_vals).astype(int)
+
+    # Organize data into the appropriate format
+    dfs = []
+    for key, value in data_dict.items():
+        for v in range(value.shape[1]):
+            data = value[:, v]
+            random_val = random_dict[key][v]
+            g = [key for x in range(len(data))]
+            rm = [random_val for x in range(len(data))]
+            temp_dict = {
+                "Rand_Var": rm,
+                "Data": data,
+                "Group": g,
+                "RM_Vals": rm_vals,
+            }
+            temp_df = pd.DataFrame(temp_dict)
+            dfs.append(temp_df)
+    test_df = pd.concat(dfs)
+
+    # Hot code group values
+    map_dict = {}
+    codes = list(range(len(data_dict.keys())))
+    for i, key in enumerate(data_dict.keys()):
+        map_dict[key] = codes[i]
+    test_df = test_df.assign(Group_Coded=test_df["Group"].map(map_dict))
+    test_df = test_df.fillna(0)
+
+    test_df.reset_index(inplace=True, drop=True)
+
+    # Store the dataframe to be read by R
+    test_df.to_csv(
+        "C:\\Users\\Jake\\Desktop\\python_code\\Lab_Analyses\\Lab_Analyses\\Utilities\\two_way_ART_input.csv"
+    )
+    # Run ART through R
+    subprocess.run(
+        [
+            "Rscript",
+            r"C:\Users\Jake\Desktop\python_code\Lab_Analyses\Lab_Analyses\Utilities\two_way_ART.r",
+        ],
+        capture_output=False,
+    )
+
+    # Read back in the result
+    anova_df = pd.read_csv(
+        "C:\\Users\\Jake\\Desktop\\python_code\\Lab_Analyses\\Lab_Analyses\\Utilities\\two_way_ART_anova.csv"
+    )
+
+    # Format the output dataframes
+    ## Reformat the anova table
+    anova_df.update(anova_df[["F"]].applymap("{:.4}".format))
+    anova_df.update(anova_df[["Df.res"]].applymap("{:.4}".format))
+    anova_df.update(anova_df[["Pr(>F)"]].applymap("{:.4E}".format))
+
+    ## Get combinations of tests
+    combos = list(itertools.combinations(groups, 2))
+    test_performed = []
+    rm_point = []
+    t_vals = []
+    raw_pvals = []
+    for combo in combos:
+        for rm in rm_vals:
+            ## Keep track of the comparisions being made
+            test_performed.append(combo[0] + " vs. " + combo[1])
+            rm_point.append(rm)
+            ## Get the data for the groups
+            data1 = test_df[(test_df["Group"] == combo[0]) & (test_df["RM_Vals"] == rm)]
+            data2 = test_df[(test_df["Group"] == combo[1]) & (test_df["RM_Vals"] == rm)]
+            data1 = np.array(data1["Data"])
+            data2 = np.array(data2["Data"])
+            ## Perform the t-tests
+            t, p = stats.mannwhitneyu(data1, data2)
+            t_vals.append(t)
+            raw_pvals.append(p)
+    ## Correct for multiple comparisons
+    _, adj_pvals, _, _ = multipletests(
+        raw_pvals,
+        alpha=0.05,
+        method=post_method,
+        is_sorted=False,
+        returnsorted=False,
+    )
+    posthoc_dict = {
+        "Comparision": test_performed,
+        "RM Value": rm_point,
+        "t stat": t_vals,
+        "raw p-vals": np.array(raw_pvals),
+        "adjusted p-vals": adj_pvals,
+    }
+    posthoc_df = pd.DataFrame.from_dict(posthoc_dict)
+    posthoc_df.update(posthoc_df[["t stat"]].applymap("{:.4}".format))
+    posthoc_df.update(posthoc_df[["raw p-vals"]].applymap("{:.3E}".format))
+    posthoc_df.update(posthoc_df[["adjusted p-vals"]].applymap("{:.3E}".format))
+
+    return anova_df, posthoc_df
+
+
+def two_way_RM_ART_ANOVA(data_dict, rm_vals=None, post_method="fdr_bh"):
+    """Function to perform a aligned rank transform corrected Mixed ANOVA
+    test between groups across different time points (e.g., 2-way RM ANOVA like)
+
+    INPUT PARAMETERS
+        data_dict - dictionary with each key representing a group that contains
+                    a 2d array with the data. Each column represents each sample,
+                    while rows represent the repeated measures
+
+        random_dict - dictionary with a list or 1d array of the random variable values
+                    for each sample in each group
+
+        rm_vals - list or array containing the values of the repeated measures
+                (e.g., 5, 10, 15um). If none, index will be used as labels
+
+    OUTPUT PARAMETERS
+        anova_df - DataFrame witht the anova results of the model
+
+        posthoc_df - DataFrame with the results of the posthoc tests
+
+    """
+    groups = list(data_dict.keys())
+    # Set up the RM_Vals
+    data_len = list(data_dict.values())[0].shape[0]
+    if rm_vals is None:
+        rm_vals = list(range(data_len))
+    elif len(rm_vals) != data_len:
+        print("Inputed RM Values do not match data!!")
+        rm_vals = list(range(data_len))
+    rm_vals = np.array(rm_vals).astype(int)
+
+    # Organize data into the appropriate format
+    dfs = []
+    sub_count = 1
+    for key, value in data_dict.items():
+        for v in range(value.shape[1]):
+            data = value[:, v]
+            g = [key for x in range(len(data))]
+            sub = [sub_count for x in range(len(data))]
+            temp_dict = {"Subject": sub, "Data": data, "Group": g, "RM_Vals": rm_vals}
+            temp_df = pd.DataFrame(temp_dict)
+            dfs.append(temp_df.dropna(axis=0))
+            sub_count = sub_count + 1
+    test_df = pd.concat(dfs)
+
+    # Hot code group values
+    map_dict = {}
+    codes = list(range(len(data_dict.keys())))
+    for i, key in enumerate(data_dict.keys()):
+        map_dict[key] = codes[i]
+    test_df = test_df.assign(Group_Coded=test_df["Group"].map(map_dict))
+    # test_df = test_df.dropna(axis=0, how="any")
+    test_df = test_df.fillna(0)
+
+    test_df.reset_index(inplace=True, drop=True)
+
+    # Store the dataframe to be read by R
+    test_df.to_csv(
+        "C:\\Users\\Jake\\Desktop\\python_code\\Lab_Analyses\\Lab_Analyses\\Utilities\\two_way_ART_ANOVA_input.csv"
+    )
+    # Run ART through R
+    subprocess.run(
+        [
+            "Rscript",
+            r"C:\Users\Jake\Desktop\python_code\Lab_Analyses\Lab_Analyses\Utilities\two_way_ART_ANOVA.r",
+        ],
+        capture_output=False,
+    )
+
+    # Read back in the result
+    anova_df = pd.read_csv(
+        "C:\\Users\\Jake\\Desktop\\python_code\\Lab_Analyses\\Lab_Analyses\\Utilities\\two_way_ART_ANOVA_anova.csv"
+    )
+
+    # Format the output dataframes
+    ## Reformat the anova table
+    anova_df.update(anova_df[["F value"]].applymap("{:.4}".format))
+    anova_df.update(anova_df[["Sum Sq"]].applymap("{:.4}".format))
+    anova_df.update(anova_df[["Sum Sq.res"]].applymap("{:.4}".format))
+    anova_df.update(anova_df[["Pr(>F)"]].applymap("{:.4E}".format))
+
+    ## Get combinations of tests
+    combos = list(itertools.combinations(groups, 2))
+    test_performed = []
+    rm_point = []
+    t_vals = []
+    raw_pvals = []
+    for combo in combos:
+        for rm in rm_vals:
+            ## Keep track of the comparisions being made
+            test_performed.append(combo[0] + " vs. " + combo[1])
+            rm_point.append(rm)
+            ## Get the data for the groups
+            data1 = test_df[(test_df["Group"] == combo[0]) & (test_df["RM_Vals"] == rm)]
+            data2 = test_df[(test_df["Group"] == combo[1]) & (test_df["RM_Vals"] == rm)]
+            data1 = np.array(data1["Data"])
+            data2 = np.array(data2["Data"])
+            ## Perform the t-tests
+            t, p = stats.mannwhitneyu(data1, data2)
+            t_vals.append(t)
+            raw_pvals.append(p)
+    ## Correct for multiple comparisons
+    _, adj_pvals, _, _ = multipletests(
+        raw_pvals,
+        alpha=0.05,
+        method=post_method,
+        is_sorted=False,
+        returnsorted=False,
+    )
+    posthoc_dict = {
+        "Comparision": test_performed,
+        "RM Value": rm_point,
+        "t stat": t_vals,
+        "raw p-vals": np.array(raw_pvals),
+        "adjusted p-vals": adj_pvals,
+    }
+    posthoc_df = pd.DataFrame.from_dict(posthoc_dict)
+    posthoc_df.update(posthoc_df[["t stat"]].applymap("{:.4}".format))
+    posthoc_df.update(posthoc_df[["raw p-vals"]].applymap("{:.3E}".format))
+    posthoc_df.update(posthoc_df[["adjusted p-vals"]].applymap("{:.3E}".format))
+
+    return anova_df, posthoc_df
