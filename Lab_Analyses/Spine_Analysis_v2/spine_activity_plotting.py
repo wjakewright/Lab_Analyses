@@ -3,6 +3,7 @@ from itertools import compress
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from scipy import stats
 
@@ -357,6 +358,19 @@ def plot_basic_features(
         )
         test_title = f"Mixed-Effect {test_method}"
 
+    elif test_type == "ART":
+        vol_f, vol_p, vol_test_df = t_utils.one_way_ART(
+            initial_vol_dict,
+            vol_mouse_dict,
+            test_method,
+        )
+        activity_f, activity_p, activity_test_df = t_utils.one_way_ART(
+            activity_dict,
+            activity_mouse_dict,
+            test_method,
+        )
+        test_title = f"Aligned Rank Transform {test_method}"
+
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic([["left", "right"]], figsize=(13, 6))
     ## Format the first table
@@ -455,6 +469,7 @@ def plot_movement_related_activity(
     }
 
     # Pull relevant data
+    mouse_ids = np.array(d_utils.code_str_to_int(dataset.mouse_id))
     sampling_rate = dataset.parameters["Sampling Rate"]
     activity_window = dataset.parameters["Activity Window"]
     if dataset.parameters["zscore"]:
@@ -471,7 +486,7 @@ def plot_movement_related_activity(
         followup_volumes = followup_dataset.spine_volumes
         followup_flags = followup_dataset.spine_flags
 
-    mouse_ids = dataset.mouse_id
+    # mouse_ids = dataset.mouse_id
 
     ## Movement identifiers
     movement_spines = dataset.movement_spines
@@ -538,10 +553,11 @@ def plot_movement_related_activity(
     mrs_mvmt_calcium_amps = spine_movement_calcium_amplitude[movement_spines]
 
     ## Seperate groups into dictionaries for grouped plots
+    sLTP_fractions = {}
+    sLTD_fractions = {}
+    stable_fractions = {}
     mvmt_fractions = {}
     nonmvmt_fractions = {}
-    rwd_mvmt_fractions = {}
-    nonrwd_mvmt_fractions = {}
     mrs_ind_mvmt_traces = {}
     mrs_ind_mvmt_calcium_traces = {}
     mrs_avg_mvmt_traces = {}
@@ -552,19 +568,33 @@ def plot_movement_related_activity(
     mrs_grouped_mvmt_calcium_amps = {}
     mrs_grouped_mvmt_onsets = {}
     mrs_grouped_mvmt_calcium_onsets = {}
+    plastic_ids = {}
 
     for key, value in spine_groups.items():
         ## Get spine types
         spines = eval(value)
         mvmt_spines = spines * movement_spines
         nmvmt_spines = spines * nonmovement_spines
-        rwd_mvmt_spines = spines * rwd_movement_spines
-        nrwd_mvmt_spines = spines * nonrwd_movement_spines
-        ## Get fractions of the different types
         mvmt_fractions[key] = np.nansum(mvmt_spines)
         nonmvmt_fractions[key] = np.nansum(nmvmt_spines)
-        rwd_mvmt_fractions[key] = np.nansum(rwd_mvmt_spines)
-        nonrwd_mvmt_fractions[key] = np.nansum(nrwd_mvmt_spines)
+
+        ## Get fractions of the different types
+        if key == "sLTP":
+            sLTP_fractions = {
+                "MRS": np.nansum(mvmt_spines),
+                "nMRS": np.nansum(nmvmt_spines),
+            }
+        elif key == "sLTD":
+            sLTD_fractions = {
+                "MRS": np.nansum(mvmt_spines),
+                "nMRS": np.nansum(nmvmt_spines),
+            }
+        elif key == "Stable":
+            stable_fractions = {
+                "MRS": np.nansum(mvmt_spines),
+                "nMRS": np.nansum(nmvmt_spines),
+            }
+
         ## Grab grouped traces, amps, onsets
         mrs_traces = list(compress(spine_movement_traces, mvmt_spines))
         mrs_calcium_traces = list(compress(spine_movement_calcium_traces, mvmt_spines))
@@ -598,11 +628,12 @@ def plot_movement_related_activity(
         mrs_grouped_mvmt_calcium_amps[key] = mvmt_ca_amps[~np.isnan(mvmt_ca_amps)]
         mrs_grouped_mvmt_onsets[key] = mvmt_onsets[~np.isnan(mvmt_onsets)]
         mrs_grouped_mvmt_calcium_onsets[key] = mvmt_ca_onsets[~np.isnan(mvmt_ca_onsets)]
+        plastic_ids[key] = mouse_ids[mvmt_spines]
 
     # Construct the figure
     fig, axes = plt.subplot_mosaic(
         """
-        ABGH.
+        ABG..
         CDEF.
         IJKLM
         NOPQR
@@ -641,25 +672,8 @@ def plot_movement_related_activity(
     ## Fraction non MRSs
     plot_pie_chart(
         nonmvmt_fractions,
-        title="nMRSs",
+        title="nMRS",
         figsize=(5, 5),
-        colors=COLORS,
-        alpha=0.9,
-        edgecolor="white",
-        txt_color="white",
-        txt_size=9,
-        legend=None,
-        donut=0.6,
-        linewidth=1.5,
-        ax=axes["G"],
-        save=False,
-        save_path=None,
-    )
-    ## Fraction of reward MRSs
-    plot_pie_chart(
-        rwd_mvmt_fractions,
-        figsize=(5, 5),
-        title="rMRSs",
         colors=COLORS,
         alpha=0.9,
         edgecolor="white",
@@ -672,11 +686,12 @@ def plot_movement_related_activity(
         save=False,
         save_path=None,
     )
+
     ## Fraction of non reward MRSs
     plot_pie_chart(
-        nonrwd_mvmt_fractions,
-        title="nrMRSs",
-        colors=COLORS,
+        stable_fractions,
+        title="stable",
+        colors=["grey", "silver"],
         alpha=0.9,
         edgecolor="white",
         txt_color="white",
@@ -684,7 +699,7 @@ def plot_movement_related_activity(
         legend=None,
         donut=0.6,
         linewidth=1.5,
-        ax=axes["H"],
+        ax=axes["G"],
         save=False,
         save_path=None,
     )
@@ -1068,13 +1083,113 @@ def plot_movement_related_activity(
             test_method,
         )
         test_title = f"Kruskal-Wallis {test_method}"
+    elif test_type == "mixed-effect":
+        g_amp_f, g_amp_p, g_amp_df = t_utils.one_way_mixed_effects_model(
+            mrs_grouped_mvmt_amps,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        c_amp_f, c_amp_p, c_amp_df = t_utils.one_way_mixed_effects_model(
+            mrs_grouped_mvmt_calcium_amps,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        g_onset_f, g_onset_p, g_onset_df = t_utils.one_way_mixed_effects_model(
+            mrs_grouped_mvmt_onsets,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        c_onset_f, c_onset_p, c_onset_df = t_utils.one_way_mixed_effects_model(
+            mrs_grouped_mvmt_calcium_onsets,
+            plastic_ids,
+            test_method,
+            slopes_intercept=False,
+        )
+        test_title = f"Mixed-Effects {test_method}"
+    elif test_type == "ART":
+        g_amp_f, g_amp_p, g_amp_df = t_utils.one_way_ART(
+            mrs_grouped_mvmt_amps,
+            plastic_ids,
+            test_method,
+        )
+        c_amp_f, c_amp_p, c_amp_df = t_utils.one_way_ART(
+            mrs_grouped_mvmt_calcium_amps,
+            plastic_ids,
+            test_method,
+        )
+        g_onset_f, g_onset_p, g_onset_df = t_utils.one_way_ART(
+            mrs_grouped_mvmt_onsets,
+            plastic_ids,
+            test_method,
+        )
+        c_onset_f, c_onset_p, c_onset_df = t_utils.one_way_ART(
+            mrs_grouped_mvmt_calcium_onsets,
+            plastic_ids,
+            test_method,
+        )
+        test_title = f"Aligned Rank Transform {test_method}"
+
+    # Perform fishers exact tests
+    sLTP_sLTD_table = np.array(
+        [
+            [np.nansum(sLTP_fractions["MRS"]), np.nansum(sLTD_fractions["MRS"])],
+            [np.nansum(sLTP_fractions["nMRS"]), np.nansum(sLTD_fractions["nMRS"])],
+        ]
+    )
+    sLTP_stable_table = np.array(
+        [
+            [np.nansum(sLTP_fractions["MRS"]), np.nansum(stable_fractions["MRS"])],
+            [np.nansum(sLTP_fractions["nMRS"]), np.nansum(stable_fractions["nMRS"])],
+        ]
+    )
+    stable_sLTD_table = np.array(
+        [
+            [np.nansum(stable_fractions["MRS"]), np.nansum(sLTD_fractions["MRS"])],
+            [np.nansum(stable_fractions["nMRS"]), np.nansum(sLTD_fractions["nMRS"])],
+        ]
+    )
+    chi_table = np.array(
+        [
+            [mvmt_fractions["sLTP"], mvmt_fractions["sLTD"], mvmt_fractions["Stable"]],
+            [
+                nonmvmt_fractions["sLTP"],
+                nonmvmt_fractions["sLTD"],
+                nonmvmt_fractions["Stable"],
+            ],
+        ]
+    )
+    print(chi_table)
+    chi_result = stats.chi2_contingency(chi_table)
+    contingency_dict = {
+        "comp": "MRS vs nMRS",
+        "ratio": chi_result[0],
+        "p-val": chi_result[1],
+    }
+    print(contingency_dict)
+    # sLTP_sLTD_ratio, sLTP_sLTD_p = stats.fisher_exact(sLTP_sLTD_table)
+    # sLTP_stable_ratio, sLTP_stable_p = stats.fisher_exact(sLTP_stable_table)
+    # stable_sLTD_ratio, stable_sLTD_p = stats.fisher_exact(stable_sLTD_table)
+
+    # contingency_dict = {
+    #     "comp.": ["sLTP vs sLTD", "sLTD vs stable", "sLTD vs stable"],
+    #     "ratio": [sLTP_sLTD_ratio, sLTP_stable_ratio, stable_sLTD_ratio],
+    #     "p-val": [sLTP_sLTD_p, sLTP_stable_p, stable_sLTD_p],
+    # }
+
+    # cont_df = pd.DataFrame.from_dict(contingency_dict)
+    # cont_df.update(cont_df[["ratio"]].applymap("{:.4}".format))
+    # cont_df.update(cont_df[["p-val"]].applymap("{:.4E}".format))
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
         """
         AB
         CD
+        E.
         """,
-        figsize=(8, 6),
+        figsize=(8, 8),
     )
     ## Format the tables
     axes2["A"].axis("off")
@@ -1129,6 +1244,17 @@ def plot_movement_related_activity(
     )
     D_table.auto_set_font_size(False)
     D_table.set_fontsize(8)
+    axes2["E"].axis("off")
+    axes2["E"].axis("tight")
+    axes2["E"].set_title(f"Fisher's exact results")
+    # E_table = axes2["E"].table(
+    #     cellText=cont_df.values,
+    #     colLabels=cont_df.columns,
+    #     loc="center",
+    #     bbox=[0, 0.2, 0.9, 0.5],
+    # )
+    # E_table.auto_set_font_size(False)
+    # E_table.set_fontsize(8)
 
     fig2.tight_layout()
 
@@ -2095,6 +2221,7 @@ def plot_spine_movement_encoding(
     exclude="Shaft Spine",
     threshold=0.3,
     figsize=(10, 4),
+    MRSs=None,
     showmeans=False,
     test_type="nonparametric",
     test_method="holm-sidak",
@@ -2168,6 +2295,8 @@ def plot_spine_movement_encoding(
     spine_rwd_movement_reliability = dataset.spine_rwd_movement_reliability
     spine_rwd_movement_specificity = dataset.spine_rwd_movement_specificity
     spine_fraction_rwd_mvmts = dataset.spine_fraction_rwd_mvmts
+    movement_spines = dataset.movement_spines
+    nonmovement_spines = dataset.nonmovement_spines
 
     # Calculate the relative volumes
     volumes = [spine_volumes, followup_volumes]
@@ -2231,6 +2360,8 @@ def plot_spine_movement_encoding(
         spine_idxs,
     )
     mouse_ids = d_utils.subselect_data_by_idxs(mouse_ids, spine_idxs)
+    movement_spines = d_utils.subselect_data_by_idxs(movement_spines, spine_idxs)
+    nonmovement_spines = d_utils.subselect_data_by_idxs(nonmovement_spines, spine_idxs)
 
     ## Seperate groups
     group_mvmt_corr = {}
@@ -2247,6 +2378,10 @@ def plot_spine_movement_encoding(
     group_mouse_ids = {}
     for key, value in plastic_groups.items():
         spines = eval(value)
+        if MRSs == "MRS":
+            spines = spines * movement_spines
+        elif MRSs == "nMRS":
+            spines = spines * nonmovement_spines
         group_mvmt_corr[key] = spine_movement_correlation[spines]
         group_mvmt_stero[key] = spine_movement_stereotypy[spines]
         group_mvmt_reli[key] = spine_movement_reliability[spines]
@@ -2770,6 +2905,63 @@ def plot_spine_movement_encoding(
             slopes_intercept=False,
         )
         test_title = f"Mixed-Effect {test_method}"
+    elif test_type == "ART":
+        mvmt_corr_f, mvmt_corr_p, mvmt_corr_df = t_utils.one_way_ART(
+            group_mvmt_corr,
+            group_mouse_ids,
+            test_method,
+        )
+        mvmt_stereo_f, mvmt_stereo_p, mvmt_stereo_df = t_utils.one_way_ART(
+            group_mvmt_stero,
+            group_mouse_ids,
+            test_method,
+        )
+        mvmt_rel_f, mvmt_rel_p, mvmt_rel_df = t_utils.one_way_ART(
+            group_mvmt_reli,
+            group_mouse_ids,
+            test_method,
+        )
+        mvmt_spec_f, mvmt_spec_p, mvmt_spec_df = t_utils.one_way_ART(
+            group_mvmt_spec,
+            group_mouse_ids,
+            test_method,
+        )
+        LMP_rel_f, LMP_rel_p, LMP_rel_df = t_utils.one_way_ART(
+            group_LMP_reli,
+            group_mouse_ids,
+            test_method,
+        )
+        LMP_spec_f, LMP_spec_p, LMP_spec_df = t_utils.one_way_ART(
+            group_LMP_spec,
+            group_mouse_ids,
+            test_method,
+        )
+        rwd_corr_f, rwd_corr_p, rwd_corr_df = t_utils.one_way_ART(
+            group_rwd_mvmt_corr,
+            group_mouse_ids,
+            test_method,
+        )
+        rwd_stereo_f, rwd_stereo_p, rwd_stereo_df = t_utils.one_way_ART(
+            group_rwd_mvmt_stero,
+            group_mouse_ids,
+            test_method,
+        )
+        rwd_rel_f, rwd_rel_p, rwd_rel_df = t_utils.one_way_ART(
+            group_rwd_mvmt_reli,
+            group_mouse_ids,
+            test_method,
+        )
+        rwd_spec_f, rwd_spec_p, rwd_spec_df = t_utils.one_way_ART(
+            group_rwd_mvmt_spec,
+            group_mouse_ids,
+            test_method,
+        )
+        frac_f, frac_p, frac_df = t_utils.one_way_ART(
+            group_frac_rwd,
+            group_mouse_ids,
+            test_method,
+        )
+        test_title = f"Aligned Rank Transform {test_method}"
 
     # Display the statistics
     fig2, axes2 = plt.subplot_mosaic(
