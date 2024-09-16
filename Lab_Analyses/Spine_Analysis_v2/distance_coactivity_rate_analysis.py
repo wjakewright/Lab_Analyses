@@ -71,6 +71,7 @@ def distance_coactivity_rate_analysis(
         spine_positions,
         spine_flags,
         spine_groupings,
+        bin_size=bin_size,
         cluster_dist=cluster_dist,
         constrain_matrix=constrain_matrix,
         partner_list=partner_list,
