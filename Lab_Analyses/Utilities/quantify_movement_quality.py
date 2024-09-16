@@ -83,7 +83,7 @@ def quantify_movement_quality(
         ## Center start of movement to zero
         l_movement = l_movement - l_movement[0]
         learned_movements.append(l_movement)
-    learned_movement = np.nanmean(np.vstack(learned_movements))
+    learned_movement = np.nanmean(np.vstack(learned_movements), axis=0)
 
     # Downsample the learned movement to match imaging rate
     frac = Fraction(sampling_rate / 1000).limit_denominator()
