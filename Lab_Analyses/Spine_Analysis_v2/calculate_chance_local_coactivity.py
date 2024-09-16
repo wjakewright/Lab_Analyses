@@ -93,12 +93,12 @@ def calculate_chance_local_coactivity(
         spine_groupings,
         constrain_matrix,
         partner_list,
-        bin_size,
+        cluster_dist,
         sampling_rate,
         norm_method,
     )
-    real_coactivity = real_coactivity[CLUST_IDX, :]
-    real_coactivity_norm = real_coactivity_norm[CLUST_IDX, :]
+    real_coactivity = real_coactivity[0, :]
+    real_coactivity_norm = real_coactivity_norm[0, :]
 
     # Iterate through each shuffle
     for i in range(iterations):
@@ -120,14 +120,14 @@ def calculate_chance_local_coactivity(
             spine_groupings,
             constrain_matrix,
             partner_list,
-            bin_size,
+            cluster_dist,
             sampling_rate,
             norm_method,
         )
         full_shuffled_coactivity_rate.append(shuff_coactivity)
         full_shuffled_coactivity_rate_norm.append(shuff_coactivity_norm)
-        shuff_coactivity = shuff_coactivity[CLUST_IDX, :]
-        shuff_coactivity_norm = shuff_coactivity_norm[CLUST_IDX, :]
+        shuff_coactivity = shuff_coactivity[0, :]
+        shuff_coactivity_norm = shuff_coactivity_norm[0, :]
         # Store values
         shuffled_coactivity_rate[i, :] = shuff_coactivity
         shuffled_coactivity_rate_norm[i, :] = shuff_coactivity_norm
