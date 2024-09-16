@@ -80,7 +80,10 @@ def kir_spine_coactivity_analysis(
         print("-------------------------------------------------")
         print(f"- Analyzing {mouse}")
         # Load the datasets
-        datasets = load_spine_datasets(mouse, [session], fov_type)
+        try:
+            datasets = load_spine_datasets(mouse, [session], fov_type)
+        except:
+            continue
 
         # Analyze each FOV seperately
         for FOV, dataset in datasets.items():
