@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticks
 import numpy as np
+import scipy.signal as sysignal
 import seaborn as sns
 
 from Lab_Analyses.Utilities import data_utilities as d_utils
@@ -17,7 +18,9 @@ def plot_activity_heatmap(
     cbar_label=None,
     hmap_range=None,
     center=None,
+    vline=None,
     sorted=None,
+    onset_color="mediumslateblue",
     normalize=False,
     cmap="plasma",
     axis_width=1,
@@ -84,14 +87,17 @@ def plot_activity_heatmap(
         cbar_ticks = (hmap_range[0], center, hmap_range[1])
 
     # Process data if specified
+    if normalize:
+        data = d_utils.peak_normalize_data(data)
     if sorted == "peak":
         data = d_utils.peak_sorting(data)
     elif sorted == "difference":
         data = d_utils.diff_sorting(
             data.T, np.absolute(activity_window), sampling_rate
         ).T
-    if normalize:
-        data = d_utils.peak_normalize_data(data)
+    elif sorted == "onset":
+        data, onsets = d_utils.onset_sorting(data)
+
     # Rotate data for plotting
     data_t = data.T
 
@@ -111,6 +117,11 @@ def plot_activity_heatmap(
         yticklabels=False,
         ax=ax,
     )
+
+    # Add onset markers for onset sorted
+    if sorted == "onset":
+        for i in range(data_t.shape[0]):
+            ax.scatter(x=onsets[i] - 1, y=i, c=onset_color, s=1)
 
     # Adjust colorbar
     cbar = hax.collections[0].colorbar
@@ -137,6 +148,9 @@ def plot_activity_heatmap(
         length=tick_len / 1.5,
         width=axis_width,
     )
+
+    if vline is not None:
+        ax.axvline(x=vline, color="black", linestyle="--")
 
     if save:
         if save_path is None:
