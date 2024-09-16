@@ -50,10 +50,10 @@ class Local_Coactivity_Data:
     shuff_nearby_coactivity_rate: np.ndarray
     local_coactivity_rate_distribution: np.ndarray
     near_vs_dist_nearby_coactivity_rate: np.ndarray
-    avg_nearby_coactivity_rate_norm: np.ndarray
-    shuff_nearby_coactivity_rate_norm: np.ndarray
-    local_coactivity_rate_norm_distrubution: np.ndarray
-    near_vs_dist_nearby_coactivity_rate_norm: np.ndarray
+    other_spine_relative_coactivity: np.ndarray
+    shuff_other_spine_relative_coactivity: np.ndarray
+    other_spine_relative_coactivity_distrubution: np.ndarray
+    near_vs_dist_other_spine_relative_coactivity: np.ndarray
     spine_density_distribution: np.ndarray
     MRS_density_distribution: np.ndarray
     avg_local_MRS_density: np.ndarray
@@ -83,14 +83,14 @@ class Local_Coactivity_Data:
     shuff_nearby_enlarged_coactivity_rate: np.ndarray
     enlarged_local_coactivity_rate_distribution: np.ndarray
     near_vs_dist_enlarged_nearby_coactivity_rate: np.ndarray
-    avg_nearby_shrunken_spine_rate: np.ndarray
-    shuff_nearby_shrunken_spine_rate: np.ndarray
-    shrunken_spine_activity_rate_distribution: np.ndarray
-    near_vs_dist_shrunken_activity_rate: np.ndarray
-    avg_nearby_shrunken_coactivity_rate: np.ndarray
-    shuff_nearby_shrunken_coactivity_rate: np.ndarray
-    shrunken_local_coactivity_rate_distribution: np.ndarray
-    near_vs_dist_shrunken_nearby_coactivity_rate: np.ndarray
+    avg_nearby_stable_spine_rate: np.ndarray
+    shuff_nearby_stable_spine_rate: np.ndarray
+    stable_spine_activity_rate_distribution: np.ndarray
+    near_vs_dist_stable_activity_rate: np.ndarray
+    avg_nearby_stable_coactivity_rate: np.ndarray
+    shuff_nearby_stable_coactivity_rate: np.ndarray
+    stable_local_coactivity_rate_distribution: np.ndarray
+    near_vs_dist_stable_nearby_coactivity_rate: np.ndarray
     # Coactive and Noncoactive spine events
     spine_coactive_event_num: np.ndarray
     spine_coactive_traces: list
