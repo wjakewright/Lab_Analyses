@@ -52,7 +52,10 @@ def kir_spine_activity_analysis(
         print("----------------------------------------")
         print(f"- Analyzing {mouse}")
         # Load the datasets
-        datasets = load_spine_datasets(mouse, [session], fov_type)
+        try:
+            datasets = load_spine_datasets(mouse, [session], fov_type)
+        except:
+            continue
 
         # Analyze each FOV seperately
         for FOV, dataset in datasets.items():
@@ -81,10 +84,12 @@ def kir_spine_activity_analysis(
                 nonrwd_movement_spines,
             ) = parse_movement_nonmovement_spines(movement_spines, rwd_movement_spines)
             ## Dendrite variables
+            if type(spine_groupings[0]) != list:
+                spine_groupings = [spine_groupings]
             dendrite_number = np.zeros(spine_activity.shape[1]) * np.nan
             for grouping in spine_groupings:
                 dendrite_number[grouping] = dendrite_tracker
-            dendrite_tracker = dendrite_tracker + 1
+                dendrite_tracker = dendrite_tracker + 1
             ## Behavioral data
             lever_active = data.lever_active
             lever_force = data.lever_force_smooth
