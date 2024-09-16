@@ -33,6 +33,10 @@ class Synaptic_Opto_Data:
     spine_ranks: np.ndarray
     responsive_spines: np.ndarray
     stim_traces: list
+    followup_volumes: np.ndarray
+    followup_positions: np.ndarray
+    followup_flags: list
+    followup_dendrite: list
 
     def save(self):
         """Method to save the dataclass"""
@@ -72,6 +76,7 @@ class Grouped_Synaptic_Opto_Data:
         # Get a list of the attributes
         attributes = list(data_list[0].__dict__.keys())
         dend_tracker = 0
+        follow_dend_tracker = 0
         max_activity_len = np.max([x.spine_dFoF.shape[0] for x in data_list])
         # Iterate through each dataclass
         for i, data in enumerate(data_list):
@@ -98,6 +103,14 @@ class Grouped_Synaptic_Opto_Data:
                         variable[np.where(temp_var == u)] = dend_tracker
                         dend_tracker = dend_tracker + 1
 
+                if attribute == "followup_dendrite":
+                    temp_var = getattr(data, attribute)
+                    variable = np.zeros(len(temp_var))
+                    unique = set(temp_var)
+                    for u in unique:
+                        variable[np.where(temp_var == u)] = follow_dend_tracker
+                        follow_dend_tracker = follow_dend_tracker + 1
+
                 if i == 0:
                     if type(variable) == np.ndarray:
                         if len(variable.shape) == 2:
@@ -113,7 +126,7 @@ class Grouped_Synaptic_Opto_Data:
                             new_var = np.concatenate((old_var, variable))
                         elif len(variable.shape) == 2:
                             variable = d_utils.pad_array_to_length(
-                                old_var,
+                                variable,
                                 max_activity_len,
                                 axis=0,
                             )
