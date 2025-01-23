@@ -78,7 +78,10 @@ def quantify_movement_quality(
         load_path = os.path.join(behavior_path, b_day)
         fnames = next(os.walk(load_path))[2]
         fname = [x for x in fnames if "summarized_lever_data" in x]
-        learned_file = load_pickle(fname, load_path)[0]
+        try:
+            learned_file = load_pickle(fname, load_path)[0]
+        except IndexError:
+            continue
         l_movement = np.nanmean(learned_file.corr_matrix, axis=0)
         ## Center start of movement to zero
         l_movement = l_movement - l_movement[0]

@@ -100,7 +100,7 @@ def preprocess_dual_plane_data(data):
     FOV = data.FOV
     fname = f"{mouse}_{FOV}_processed_dual_plane_data"
 
-    initial_path = r"G:\Repository_data\individual"
+    initial_path = r"G:\Spine_Project_Data"
     save_path = os.path.join(initial_path, mouse, "dual_plane", FOV)
     if not os.path.isdir(save_path):
         os.makedirs(save_path)

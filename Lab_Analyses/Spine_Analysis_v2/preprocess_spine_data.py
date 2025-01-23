@@ -76,9 +76,9 @@ def organize_dual_spine_data(
         print(f"- Preprocessing {FOV}")
         FOV_path = os.path.join(imaging_path, FOV)
         # Get the different imaging session periods
-        session = next(os.walk(FOV_path))[1]
+        sessions = next(os.walk(FOV_path))[1]
         # Reorder the periods if Early, Middle, Late
-        if "Early" and "Late" and "Middle" in session:
+        if "Early" and "Late" and "Middle" in sessions:
             sessions = ["Early", "Middle", "Late"]
 
         # Setup containers for the data files

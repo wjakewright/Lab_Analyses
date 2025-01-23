@@ -135,20 +135,23 @@ def plot_longitudinal_structural_plasticity(
                     exclude="Shaft Spine",
                     norm=False,
                 )
-                e, s, _ = classify_plasticity(
-                    delta[-1],
+                e, s, _ = calculate_fraction_plastic(
+                    [
+                        temp_data.corrected_spine_volume,
+                        temp_data.corrected_followup_volume,
+                    ],
+                    [
+                        temp_data.spine_flags,
+                        temp_data.followup_flags,
+                    ],
                     threshold=threshold,
-                    norm=False,
+                    exclude="Shaft Spine",
                 )
                 apical_relative_volumes[session].append(np.nanmean(delta[-1]))
-                apical_enlarged_spines[session].append(np.nansum(e) / len(e))
-                apical_shrunken_spines[session].append(np.nansum(s) / len(s))
-                apical_enlarged_volumes[session].append(
-                    np.nanmean(np.array(delta[-1])[e])
-                )
-                apical_shrunken_volumes[session].append(
-                    np.nanmean(np.array(delta[-1])[s])
-                )
+                apical_enlarged_spines[session].append(e)
+                apical_shrunken_spines[session].append(s)
+                apical_enlarged_volumes[session].append(np.nanmean(delta[-1]))
+                apical_shrunken_volumes[session].append(np.nanmean(delta[-1]))
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -183,20 +186,23 @@ def plot_longitudinal_structural_plasticity(
                     exclude="Shaft Spine",
                     norm=False,
                 )
-                e, s, _ = classify_plasticity(
-                    delta[-1],
+                e, s, _ = calculate_fraction_plastic(
+                    [
+                        temp_data.corrected_spine_volume,
+                        temp_data.corrected_followup_volume,
+                    ],
+                    [
+                        temp_data.spine_flags,
+                        temp_data.followup_flags,
+                    ],
                     threshold=threshold,
-                    norm=False,
+                    exclude="Shaft Spine",
                 )
                 basal_relative_volumes[session].append(np.nanmean(delta[-1]))
-                basal_enlarged_spines[session].append(np.nansum(e) / len(e))
-                basal_shrunken_spines[session].append(np.nansum(s) / len(s))
-                basal_enlarged_volumes[session].append(
-                    np.nanmean(np.array(delta[-1])[e])
-                )
-                basal_shrunken_volumes[session].append(
-                    np.nanmean(np.array(delta[-1])[s])
-                )
+                basal_enlarged_spines[session].append(e)
+                basal_shrunken_spines[session].append(s)
+                basal_enlarged_volumes[session].append(np.nanmean(delta[-1]))
+                basal_shrunken_volumes[session].append(np.nanmean(delta[-1]))
             temp_density, temp_new, temp_elim = calculate_spine_dynamics(
                 temp_flags,
                 temp_positions,
@@ -359,6 +365,10 @@ def plot_longitudinal_structural_plasticity(
         save_path=None,
     )
     # Fraction LTP
+    print("APICAL")
+    print(apical_enlarged_spines)
+    print("BASAL")
+    print(basal_enlarged_spines)
     plot_multi_line_plot(
         data_dict={
             "Apical": np.vstack(list(apical_enlarged_spines.values())),
@@ -370,7 +380,7 @@ def plot_longitudinal_structural_plasticity(
         title="Fraction sLTP",
         ytitle="Fraction of sLTP",
         xtitle="Session",
-        ylim=None,
+        ylim=(0.05, 0.2),
         line_color=COLORS,
         face_color="white",
         m_size=6,

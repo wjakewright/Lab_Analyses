@@ -184,6 +184,7 @@ def ANOVA_2way_posthoc(data_dict, groups_list, variable, method, exclude=None):
             t, p = stats.ttest_ind(data_1, data_2, nan_policy="omit")
             t_vals.append(t)
             raw_pvals.append(p)
+        raw_pvals = np.nan_to_num(raw_pvals, nan=1)
         _, adj_pvals, _, alpha_corrected = multipletests(
             raw_pvals,
             alpha=0.5,
@@ -365,6 +366,7 @@ def ANOVA_2way_mixed_posthoc(
                 raw_pvals.append(p)
 
         ## Correct multiple comparisons
+        raw_pvals = np.nan_to_num(raw_pvals, nan=1)
         _, adj_pvals, _, alpha_corrected = multipletests(
             raw_pvals,
             alpha=0.05,

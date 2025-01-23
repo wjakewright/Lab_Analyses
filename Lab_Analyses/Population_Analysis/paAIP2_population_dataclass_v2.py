@@ -21,7 +21,7 @@ class paAIP2_Population_Data:
     lever_force: list
     lever_active_rwd: list
     dFoF: list
-    zscore_spikes: list
+    spikes: list
     zscore_dFoF: list
     zscore_spikes: list
     activity: list
@@ -47,10 +47,27 @@ class paAIP2_Population_Data:
     individual_rwd_mvmt_onsets: dict
     mvmt_onset_jitter: dict
     rwd_mvmt_onset_jitter: dict
-    avg_pop_vector: dict
-    event_pop_vectors: dict
-    med_vector_similarity: dict
+    corr_matrices: dict
+    pairwise_correlations: dict
+    avg_correlations: dict
+    corr_matrices_MRN: dict
+    pairwise_correlations_MRN: dict
+    avg_correlations_MRN: dict
     med_vector_correlation: dict
+    avg_population_vector: dict
+    event_population_vector: dict
+    all_similarities: dict
+    med_similarity: dict
+    avg_population_vector_fa: dict
+    event_population_vector_fa: dict
+    all_similarities_fa: dict
+    med_similarity_fa: dict
+    dimensionality: dict
+    cum_variance: dict
+    variance_explained: dict
+    dimensionality_fa: dict
+    cum_variance_fa: dict
+    variance_explained_fa: dict
 
     def save(self):
         """Method to save the dataclass"""

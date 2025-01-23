@@ -450,7 +450,7 @@ def plot_multi_group_bar_plots(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
-        fname = os.path.jon(save_path, f"{main_title}_bar_plots")
+        fname = os.path.join(save_path, f"{main_title}_bar_plots")
         fig.savefig(fname + ".pdf")
 
     # Stats section
@@ -680,5 +680,5 @@ def plot_multi_group_bar_plots(
             save_path = r"C:\Users\Jake\Desktop\Figures"
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
-        fname = os.path.jon(save_path, f"{main_title}_bar_plots_stats")
+        fname = os.path.join(save_path, f"{main_title}_bar_plots_stats")
         fig2.savefig(fname + ".pdf")

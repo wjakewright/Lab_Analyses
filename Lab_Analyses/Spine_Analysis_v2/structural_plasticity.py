@@ -226,8 +226,8 @@ def calculate_fraction_plastic(
 
     # Calculate Fractions
 
-    frac_LTP = np.sum(enlarged_spines) / base_num
-    frac_LTD = np.sum(shrunken_spines) / base_num
-    frac_stable = np.sum(stable_spines) / base_num
+    frac_LTP = np.nansum(enlarged_spines) / base_num
+    frac_LTD = np.nansum(shrunken_spines) / base_num
+    frac_stable = np.nansum(stable_spines) / base_num
 
     return frac_LTP, frac_LTD, frac_stable

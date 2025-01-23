@@ -40,7 +40,7 @@ def load_population_datasets(mouse_id, sessions):
     return mouse_data, mouse_spikes
 
 
-def calc_pairwise_distances_btw_vectors(array_list):
+def calc_pairwise_distances_btw_vectors(reference_vector, array_list):
     """Helper function to calculate the Eucledian distances between
     multidimensional vectors
 
@@ -56,22 +56,22 @@ def calc_pairwise_distances_btw_vectors(array_list):
 
     """
     # Get all combinations of events
-    combos = itertools.combinations(array_list, 2)
+    # combos = itertools.combinations(array_list, 2)
     # Perform pariwise similarities
     similarities = []
-    for combo in combos:
+    for array in array_list:
         # Seperate vectors
-        a = combo[0]
-        b = combo[1]
+        a = reference_vector
+        b = array
         # Calculate the distance
         dist = np.linalg.norm(a - b, axis=1)
         # Average the distance across all time points
         avg_dist = np.nanmean(dist)
         # Get the inverse
-        similarities.append(1 / avg_dist)
+        similarities.append(avg_dist)
 
     # Calculate the overall median similarity
-    med_similarity = np.nanmedian(similarities)
+    med_similarity = np.nanmean(similarities)
 
     return np.array(similarities), med_similarity
 

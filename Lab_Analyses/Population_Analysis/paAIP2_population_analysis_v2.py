@@ -7,10 +7,18 @@ from Lab_Analyses.Population_Analysis.assess_MRN_activity import (
     calculate_movement_encoding,
     get_fraction_MRNs,
 )
+from Lab_Analyses.Population_Analysis.estimate_dimensionality import (
+    estimate_dimensionality_fa,
+    estimate_dimensionality_pca,
+)
 from Lab_Analyses.Population_Analysis.paAIP2_population_dataclass_v2 import (
     paAIP2_Population_Data,
 )
+from Lab_Analyses.Population_Analysis.population_pairwise_correlation import (
+    population_pairwise_correlation,
+)
 from Lab_Analyses.Population_Analysis.population_vector_analysis import (
+    fa_population_vector_analysis,
     pca_population_vector_analysis,
     simple_population_vector_analysis,
 )
@@ -82,6 +90,7 @@ def paAIP2_population_analysis(
         ## z-scored activity
         zscore_dFoF = [d_utils.z_score(x) for x in dFoF]
         zscore_spikes = [d_utils.z_score(x) for x in spikes]
+        zscore_floored = [d_utils.z_score(x) for x in floored]
 
         # Get overall activity rates for each cell
         cell_activity_rate = {}
@@ -94,17 +103,18 @@ def paAIP2_population_analysis(
         silent_cells_spikes = []
         rwd_movement_cells_spikes = []
         for i, spike in enumerate(spikes):
+            print(spike.shape)
             mvmt_cells_spikes, sil_cells_spikes, _ = movement_responsiveness(
                 spike,
                 lever_active[i],
                 permutations=1000,
-                percentile=99,
+                percentile=99.5,
             )
             rwd_mvmt_cells_spikes, _, _ = movement_responsiveness(
                 spike,
                 lever_active_rwd[i],
                 permutations=1000,
-                percentile=99,
+                percentile=99.5,
             )
             movement_cells_spikes.append(mvmt_cells_spikes)
             silent_cells_spikes.append(sil_cells_spikes)
@@ -144,11 +154,27 @@ def paAIP2_population_analysis(
         individual_rwd_mvmt_onsets = {}
         mvmt_onset_jitter = {}
         rwd_mvmt_onset_jitter = {}
-        avg_pop_vector = {}
-        event_pop_vectors = {}
-        all_similarities = {}
-        med_vector_similarity = {}
+        corr_matrices = {}
+        pairwise_correlations = {}
+        avg_correlations = {}
+        corr_matrices_MRN = {}
+        pairwise_correlations_MRN = {}
+        avg_correlations_MRN = {}
         med_vector_correlation = {}
+        avg_population_vector = {}
+        event_population_vector = {}
+        all_similarities = {}
+        med_similarity = {}
+        avg_population_vector_fa = {}
+        event_population_vector_fa = {}
+        all_similarities_fa = {}
+        med_similarity_fa = {}
+        dimensionality = {}
+        cum_variance = {}
+        variance_explained = {}
+        dimensionality_fa = {}
+        cum_variance_fa = {}
+        variance_explained_fa = {}
 
         for i, session in enumerate(sessions):
             # Get movement related activity
@@ -201,34 +227,95 @@ def paAIP2_population_analysis(
             individual_rwd_mvmt_onsets[session] = ind_rwd_mvmt_onsets
             rwd_mvmt_onset_jitter[session] = rwd_m_onset_jitter
 
-            # Analyze population level activity
+            # Calculate the pairwise correlation between neurons
+            corr_matrix, pairwise_corr, avg_corr = population_pairwise_correlation(
+                spikes[i]
+            )
+
+            corr_matrices[session] = corr_matrix
+            pairwise_correlations[session] = pairwise_corr
+            avg_correlations[session] = avg_corr
+
             ## Needs to be only MRNs
             MRNs = movement_cells_spikes[i]
-            pop_vector, evt_pop_vectors, similarities, med_similarity = (
-                pca_population_vector_analysis(
-                    dFoF=zscore_spikes[i][:, MRNs],
-                    lever_active=lever_active_rwd[i],
-                    activity_window=(-0.5, 1.5),
-                    sampling_rate=sampling_rate,
-                    n_comps=10,
-                )
-            )
-            avg_pop_vector[session] = pop_vector
-            event_pop_vectors[session] = evt_pop_vectors
-            all_similarities[session] = similarities
-            med_vector_similarity[session] = med_similarity
+            print(sum(MRNs))
 
+            corr_matrix_MRN, pairwise_corr_MRN, avg_corr_MRN = (
+                population_pairwise_correlation(spikes[i][:, MRNs])
+            )
+
+            corr_matrices_MRN[session] = corr_matrix_MRN
+            pairwise_correlations_MRN[session] = pairwise_corr_MRN
+            avg_correlations_MRN[session] = avg_corr_MRN
+
+            # Analyze population level activity
+            ## Needs to be only MRNs
             med_correlation = simple_population_vector_analysis(
-                dFoF=zscore_spikes[i][:, MRNs],
+                dFoF=spikes[i],
                 lever_active=lever_active_rwd[i],
                 activity_window=(-0.5, 1.5),
                 sampling_rate=sampling_rate,
             )
             med_vector_correlation[session] = med_correlation
 
+            avg_pop_vec, event_pop_vec, all_sim, med_sim = (
+                pca_population_vector_analysis(
+                    dFoF=spikes[i],
+                    lever_active=lever_active_rwd[i],
+                    activity_window=(-0.5, 1.5),
+                    sampling_rate=sampling_rate,
+                    n_comps=3,
+                )
+            )
+            avg_population_vector[session] = avg_pop_vec
+            event_population_vector[session] = event_pop_vec
+            all_similarities[session] = all_sim
+            med_similarity[session] = med_sim
+
+            avg_pop_vec_fa, event_pop_vec_fa, all_sim_fa, med_sim_fa = (
+                fa_population_vector_analysis(
+                    dFoF=spikes[i],
+                    lever_active=lever_active_rwd[i],
+                    activity_window=(-0.5, 1.5),
+                    sampling_rate=sampling_rate,
+                    n_comps=3,
+                )
+            )
+            avg_population_vector_fa[session] = avg_pop_vec_fa
+            event_population_vector_fa[session] = event_pop_vec_fa
+            all_similarities_fa[session] = all_sim_fa
+            med_similarity_fa[session] = med_sim_fa
+
+            # Estimate dimenstionality
+            cutoff = 0.80
+            dim, cum_var, var_explained = estimate_dimensionality_pca(
+                spikes[i],
+                lever_active=lever_active_rwd[i],
+                cutoff=cutoff,
+                activity_window=(-0.5, 2),
+                sampling_rate=sampling_rate,
+                n_comps=30,
+            )
+            dimensionality[session] = dim
+            cum_variance[session] = cum_var
+            variance_explained[session] = var_explained
+
+            dim_fa, cum_var_fa, var_explained_fa = estimate_dimensionality_fa(
+                spikes[i],
+                lever_active=lever_active_rwd[i],
+                cutoff=cutoff,
+                activity_window=(-0.5, 2),
+                sampling_rate=sampling_rate,
+                n_comps=30,
+            )
+            dimensionality_fa[session] = dim_fa
+            cum_variance_fa[session] = cum_var_fa
+            variance_explained_fa[session] = var_explained_fa
+
         parameters = {
             "Sampling Rate": sampling_rate,
             "Activity Window": activity_window,
+            "Dimensionality Cutoff": cutoff,
         }
 
         # Store individual data
@@ -272,10 +359,27 @@ def paAIP2_population_analysis(
             individual_rwd_mvmt_onsets=individual_rwd_mvmt_onsets,
             mvmt_onset_jitter=mvmt_onset_jitter,
             rwd_mvmt_onset_jitter=rwd_mvmt_onset_jitter,
-            avg_pop_vector=avg_pop_vector,
-            event_pop_vectors=event_pop_vectors,
-            med_vector_similarity=med_vector_similarity,
+            corr_matrices=corr_matrices,
+            pairwise_correlations=pairwise_correlations,
+            avg_correlations=avg_correlations,
+            corr_matrices_MRN=corr_matrices_MRN,
+            pairwise_correlations_MRN=pairwise_correlations_MRN,
+            avg_correlations_MRN=avg_correlations_MRN,
             med_vector_correlation=med_vector_correlation,
+            avg_population_vector=avg_population_vector,
+            event_population_vector=event_population_vector,
+            all_similarities=all_similarities,
+            med_similarity=med_similarity,
+            avg_population_vector_fa=avg_population_vector_fa,
+            event_population_vector_fa=event_population_vector_fa,
+            all_similarities_fa=all_similarities_fa,
+            med_similarity_fa=med_similarity_fa,
+            dimensionality=dimensionality,
+            cum_variance=cum_variance,
+            variance_explained=variance_explained,
+            dimensionality_fa=dimensionality_fa,
+            cum_variance_fa=cum_variance_fa,
+            variance_explained_fa=variance_explained_fa,
         )
         ## Save individual if specified
         if save_ind:

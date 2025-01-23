@@ -130,7 +130,8 @@ def synaptic_opto_processing(
         )
         stims = [x[0] for x in stims]
         # Zscore some of the activity to use
-        z_processed_dFoF = d_utils.z_score(processed_dFoF)
+        # z_processed_dFoF = d_utils.z_score(processed_dFoF)
+        z_processed_dFoF = processed_dFoF
 
         # Get the activity around each stimulation for each spine
         stim_traces, _ = d_utils.get_trace_mean_sem(

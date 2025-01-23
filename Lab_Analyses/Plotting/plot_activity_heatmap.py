@@ -150,7 +150,7 @@ def plot_activity_heatmap(
     )
 
     if vline is not None:
-        ax.axvline(x=vline, color="black", linestyle="--")
+        ax.axvline(x=vline, color="white", linestyle="--")
 
     if save:
         if save_path is None:

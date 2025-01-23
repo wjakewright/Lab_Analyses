@@ -64,7 +64,10 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
             if smooth:
                 event_trace = sysignal.savgol_filter(event_trace, 31, 3)
             # Get baseline value
-            baseline = np.nanmean(event_trace[CENTER_POINT - BEFORE : CENTER_POINT])
+            # baseline = np.nanmedian(
+            #    event_trace[CENTER_POINT - BEFORE : CENTER_POINT]
+            # )
+            baseline = np.nanmedian(event_trace[0:CENTER_POINT])
             # Get the post stimulation values
             ## Get max value after stim
             stim_peak = np.argmax(event_trace[CENTER_POINT : CENTER_POINT + AFTER])
@@ -78,7 +81,9 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
                     + AVG_RANGE
                 ]
             )
-            stim_amp = np.nanmean(event_trace[CENTER_POINT : CENTER_POINT + AFTER])
+            stim_amp = np.nanmean(
+                event_trace[CENTER_POINT + 10 : CENTER_POINT + AFTER + 10]
+            )
             baseline_values.append(baseline)
             stim_values.append(stim_amp)
         # Perform Wilcoxon signed-rank test
@@ -86,7 +91,7 @@ def synaptic_opto_responsive(dFoF, timestamps, window, sampling_rate, smooth=Fal
         diff = np.nanmean(np.array(stim_values) - np.array(baseline_values))
         rank, pval = stats.wilcoxon(baseline_values, stim_values)
 
-        consistancy = np.nanmean(trial_diffs >= 0.75)
+        consistancy = np.nanmean(trial_diffs >= 0.1)
 
         # Assess significance
         sig = ((pval < ALPHA) and (consistancy >= 0.5)) * 1

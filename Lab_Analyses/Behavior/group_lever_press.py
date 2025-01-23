@@ -1,6 +1,7 @@
 """"Module to analyze lever press behavior across mice within the same experimental group
 
     CREATOR - William (Jake) Wright 3/7/2022"""
+
 import os
 
 import matplotlib.pyplot as plt
@@ -17,9 +18,9 @@ class Group_Lever_Press:
     def __init__(self, files):
         """Initialize Group_Lever_Press Class
 
-            INPUT PARAMETERS
-                files - list containing Mouse_Lever_Behavior dataclass objects for each
-                        mouse to be analyzed in the group
+        INPUT PARAMETERS
+            files - list containing Mouse_Lever_Behavior dataclass objects for each
+                    mouse to be analyzed in the group
         """
 
         # Store variables and attributes
@@ -173,19 +174,19 @@ class Group_Lever_Press:
         save_path=None,
     ):
         """Function to plot data
-            
-            INPUT PARAMETERS
-                colors - dictionary to specify what color to plot each plot, with each key corresponding to the plot type
-                        Keys it accepts: "success", "cue_to_reward", "reaction_time", "within", "across", "cmap"
-                        Optional with default set to None. Can specify on the ones you wish to change. 
-                        
-                ylims - dictionary to specify what ylim to set each plot, with each key corresponding to the plot type
-                        Keys it accepts: "success", "cue_to_reward", "reaction_time", "within", "across", "cmap"
-                        Optional with default set to None. Can specify on the ones you wish to change.
 
-                save - boolean specifying whether or not you want to save the figure
+        INPUT PARAMETERS
+            colors - dictionary to specify what color to plot each plot, with each key corresponding to the plot type
+                    Keys it accepts: "success", "cue_to_reward", "reaction_time", "within", "across", "cmap"
+                    Optional with default set to None. Can specify on the ones you wish to change.
 
-                save_path - str with the path of where to save the data
+            ylims - dictionary to specify what ylim to set each plot, with each key corresponding to the plot type
+                    Keys it accepts: "success", "cue_to_reward", "reaction_time", "within", "across", "cmap"
+                    Optional with default set to None. Can specify on the ones you wish to change.
+
+            save - boolean specifying whether or not you want to save the figure
+
+            save_path - str with the path of where to save the data
         """
         # Pull the data
         success_rate = self.ind_success_rate
@@ -394,4 +395,3 @@ class Group_Lever_Press:
             print(f"Supposed to have {majority_num} sessions")
             [print(f"{x} has {y} sessions") for x, y in error_mice_values]
             raise ValueError("Mice cannot have different number of sessions!!!!")
-
